@@ -75,6 +75,7 @@ declare module "ssh2" {
     on(event: "ready", listener: () => void): void;
     on(event: "session", listener: (accept: () => ServerSession, reject: () => void) => void): void;
     on(event: "close", listener: () => void): void;
+    on(event: "error", listener: (err: Error) => void): void;
   }
 
   export interface ServerAddress {
