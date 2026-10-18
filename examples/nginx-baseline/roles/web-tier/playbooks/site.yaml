@@ -1,0 +1,6 @@
+- name: Enable the web-tier site
+  hosts: all
+  tasks:
+    - name: Enable nginx site
+      myorg.enable-site:
+        site: default

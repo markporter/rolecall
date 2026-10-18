@@ -1,0 +1,39 @@
+# RoleCall playbook for nginx-baseline (top-level list of plays).
+# Runs against the hosts in inventory/inventory.yaml (group `web`).
+#
+# A play may compose roles via its `roles:` list (e.g. `roles: [web-tier]`); this
+# example inlines tasks for clarity. A playbook file is ALWAYS a YAML list of plays
+# (Ansible's document form); a bare single-play object is rejected.
+#
+# Modern conventions demonstrated below:
+#   * typed `when` — operators like `$eq` with structured `{ $var: vars.x }` refs
+#     (never a raw Jinja `"{{ ... }}"` string).
+#   * `$template:` — the EJS `<%= %>` escape hatch, so the group/host vars from
+#     `group_vars/` + `host_vars/` render into file contents.
+- name: Baseline web nodes
+  hosts: web
+  vars:
+    nginx_version: "1.24"
+  tasks:
+    # A registered module (file) creating a marker config — idempotent by design.
+    - name: Ensure a demo file exists
+      copy:
+        dest: /etc/nginx/conf.d/demo.conf
+        state: present
+
+    # Typed `when` gates the task on the group var `nginx_port == 80`, and the
+    # `$template` content block renders group/host vars into the rendered vhost.
+    - name: Write the nginx baseline vhost (only when nginx_port is 80)
+      copy:
+        when:
+          $eq:
+            - $var: vars.nginx_port
+            - 80
+        dest: /etc/nginx/sites-enabled/baseline.conf
+        content:
+          $template: |
+            server {
+                listen <%= vars.nginx_port %>;
+                worker_processes <%= vars.nginx_worker_processes %>;
+                server_name _;
+            }

@@ -1,0 +1,11 @@
+---
+title: CI
+---
+
+Continuous integration runs the product gates plus isolated documentation checks. Triggers fire on pushes to main, on every pull request, and manually through workflow_dispatch, with a concurrency group keyed to the workflow and ref cancelling overlapping runs. Three jobs carry the load today.
+
+The `unit` job runs the Bun-native assertion suite (`bun test`) and type-checks (`bunx tsc --noEmit`) across Linux, macOS, and Windows runners. It forces each platform/detect branch twice more with `ROLECALL_RUNTIME=bun bun test` and `ROLECALL_RUNTIME=node bun test`, so every PAL selection gets exercised while the runner stays Bun throughout. The `native` job builds one host-target binary per OS using `node scripts/build-bin.mjs`, smoke-tests `<binary> --version`, then proves cross-runtime parity by importing product source and running it under both `bun` and `node`. Both matrix jobs pin Bun 1.4.2 and install dependencies frozen from the lockfile.
+
+The `node-package-smoke` job is the acceptance gate for the npm channel: it builds the Node-target bundle (`bun run build:js`), packs the tarball (`npm pack`), installs it globally into a temp prefix with `bun` stripped from `PATH`, and then runs the CLI like a real user: `--help`, `--version`, `inventory show`, and a live `playbook run` over the local transport. It finishes with a store-backed round-trip: a `--trace playbook run` persists an execution ledger into the durable store, the run id is captured from the trace output, and `run replay <id>` reads it back — proving the SQLite store (node:sqlite via the PAL) works on Node with no Bun present (see ADR 0018 for the distribution decision and ADR 0019 for the dual-runtime store).
+
+Extending this pipeline to also build the user-facing documentation sits as an additive, isolated job that must not alter the unit or native gate. Such a docs check runs TypeDoc emit sanity plus a VitePress build on Node 22 or newer, mirroring how the local `docs:build` script chains those two stages. Its exact step list lands alongside whatever change introduces it, leaving the established product gates untouched. See [/contributing/testing](/contributing/testing) for the underlying test mechanics.

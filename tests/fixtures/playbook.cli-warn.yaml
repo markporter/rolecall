@@ -1,0 +1,9 @@
+- name: Unguarded shell warning probe
+  hosts: localgrp
+  vars:
+    http_port: 80
+  tasks:
+    - name: Unguarded shell command
+      module: shell
+      args:
+        command: "echo hi"

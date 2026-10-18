@@ -1,0 +1,7 @@
+groups:
+  localgrp:
+    hosts:
+      - localhost
+    vars:
+      rolecall_connection: local
+      role: local

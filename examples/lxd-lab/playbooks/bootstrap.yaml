@@ -1,0 +1,18 @@
+  # Bootstrap the LXD host (lxdhost / localhost over local transport): install snap, join lxd group, verify.
+- name: Bootstrap LXD on the lab host
+  hosts: lxdhost
+  tasks:
+      - name: Install the lxd snap
+        shell:
+          cmd: sudo snap install lxd
+          creates: /snap/bin/lxd
+
+      - name: Add current user to the lxd group
+        shell:
+          run_mode: always
+          cmd: sudo usermod -aG lxd $USER || true
+
+      - name: Verify LXD is installed
+        shell:
+          run_mode: always
+          cmd: sudo lxd --version

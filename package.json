@@ -1,0 +1,57 @@
+{
+  "name": "rolecall",
+  "version": "0.0.0",
+  "description": "RoleCall — config management & orchestration CLI. Runs on Node >=22.19 and Bun >=1.4.2.",
+  "type": "module",
+  "bin": {
+    "rolecall": "lib/cli.js"
+  },
+  "engines": {
+    "node": ">=22.19.0",
+    "bun": ">=1.4.2"
+  },
+  "files": [
+    "lib",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "bun test",
+    "embed:docs": "bun scripts/generate-module-reference.ts && bun scripts/embed-docs.ts",
+    "build": "bun scripts/generate-module-reference.ts && bun scripts/embed-docs.ts && bunx tsc --noEmit",
+    "compile": "bun scripts/embed-docs.ts && bun build --compile --target=bun-linux-x64 src/cli/index.ts --outfile rolecall-bin",
+    "build-bin": "node scripts/build-bin.mjs",
+    "build:js": "node scripts/build-js.mjs",
+    "prepack": "npm run build:js",
+    "dev": "bun run src/cli/index.ts",
+    "docs:api": "typedoc",
+    "docs:guide": "vitepress build docs/guide",
+    "docs:build": "bun run docs:api && bun run docs:guide"
+  },
+  "devDependencies": {
+    "@clean-jsdoc-theme/typedoc": "^5.2.0",
+    "@types/bun": "^1.4.1",
+    "@types/node": "^26.5.0",
+    "@types/swagger-ui-express": "^4.1.8",
+    "p-queue": "^9.3.3",
+    "typedoc": "^0.28.20",
+    "typescript": "^5.6.0",
+    "undici": "^8.10.2",
+    "vento": "^2.1.1",
+    "vitepress": "^1.6.4",
+    "vitest": "^5.0.0",
+    "vue": "^3.5.42"
+  },
+  "dependencies": {
+    "diff": "^9.0.0",
+    "eta": "^4.6.0",
+    "express": "^5.2.1",
+    "js-yaml": "^5.4.1",
+    "known-hosts": "^0.1.0",
+    "liquidjs": "^10.29.0",
+    "p-limit": "^7.3.2",
+    "p-retry": "^8.0.1",
+    "ssh2": "^1.17.0",
+    "swagger-ui-express": "^5.0.1",
+    "zod": "^4.5.4"
+  }
+}

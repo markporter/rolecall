@@ -1,0 +1,6 @@
+name: bare object probe
+hosts: all
+tasks:
+  - name: t
+    module: ping
+    args: {}

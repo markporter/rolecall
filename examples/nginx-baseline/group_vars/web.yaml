@@ -1,0 +1,5 @@
+# Group vars for the `web` inventory group (auto-loaded by T4 for its members).
+# Referenced from playbooks/site.yaml via the merged `vars` namespace, e.g.
+# `{ $var: vars.nginx_port }` in a `when` guard or `<%= vars.nginx_port %>` inside
+# a `$template:` content block.
+nginx_port: 80

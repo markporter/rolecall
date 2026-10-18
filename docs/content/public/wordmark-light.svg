@@ -1,0 +1,62 @@
+<!--
+wordmark-e - corrective revision of D (round 2, lead candidate)
+  Fixes the two USER-rejected defects of wordmark-d: a serif-reading e
+  (modulated stroke contrast) and a skinny C with a 19.5u phantom gap to a.
+
+  e (monoline family match, kills the serif signal):
+    outer circle r17 (same as o), centre (118.5,40), rounds y23..57 +1u overshoot.
+    counter ellipse rx9/ry10 -> walls: sides 8u, top/bottom 7u, contrast 8/7=1.14
+    (d-era e: 7.5u sides / 4u top-bottom = 1.9:1 modulation -> the serif tell).
+    bar y36.1..42.1 (6u); eye 6.1u tall (38.1% of the o counter 16u; >=6 and
+    <=55% per the NEW gate); lower counter 7.9u at widest (opens into aperture).
+    Terminal: ANGLED chord cut from outer circle t=45 (130.5,52.04) to counter
+    t=65.5 (122.23,49.1); face 8.78u; mouth 7.0u at the inner tip; bar overhang
+    past the cut 4.87u (d: 9.88u beak).
+    Why not parametric-radial (like the C)? Proven impossible: radial needs
+    overhang = sqrt(288)-17cos(t) <=5 -> t>=45.2 AND mouth = 10sin(t)-2.1 >=6
+    -> t>=54.1; at t=54.1 overhang = 6.9 >5. Contradiction -> chord cut that
+    flattens toward the bar. e and C therefore share ONE terminal language:
+    non-vertical angled cuts through the ring wall (the d-era "vertical-only"
+    rule is relaxed, documented here per the task).
+  C (fixes skinny ink + 19.5u C->a gap):
+    outer rx22/ry25, inner rx13/ry16, walls 9/9 monoline, cap y7..57 (+1u
+    overshoot), centre (165.72,32).
+    Terminals: parametric-radial cuts at t=+-45 (outer t45 -> inner t45) ->
+    face = exactly 9u (monoline). Mouth 22.62u = 45.2% of the 50u height.
+    Ink widened by the angled cuts: drawn ink 143.72..181.28 = 37.56u wide
+    (d: 29u, aspect 0.58); aspect 37.56/50 = 0.751.
+    Vertical-cut impossibility (why angled cuts were authorised): span available
+    e-ink 135.5 -> a-ink 189.5 = 54u; gaps<=11 both sides -> C ink >=32u ->
+    vertical dx>=10 -> mouth = 32*sqrt(1-(10/13)^2) = 20.3 <22. Cannot have
+    mouth>=22 AND gaps<=11 with vertical cuts. Angled cuts decouple ink width
+    (outer tip reach) from mouth (inner tip separation): ink 37.56, mouth 22.62.
+  Tracking (INK-to-INK via drawn path extremes incl. arc sweeps, never bbox):
+    R 4.5..44.5 | o 50.5..84.5 | l 89.5..98.5 | e 103.5..137.5 |
+    C 143.72..181.28 | a 186..221 | l 226..235 | l 238.5..247.5.
+    gaps: R-o 6 | o-l 5 | l-e 5 | e-C 6.22 | C-a 4.72 (optically balanced:
+    C-a runs 1.5u tighter to offset the C's open-mouth air; |L-R|=1.5 <= 2;
+    round-1 E had 8.22/8.22 which the user still read as a wide C->a) |
+    a-l 5 | l-l 3.5 (l-l 1.5u tighter than a-l).
+  Frozen house rules: R verbatim (translate -8.5 only, incl. the v5 seam fix
+  leg M26 33L37 33L45 56L34 56Z); o, a, l constructions and positions unchanged;
+  x-height rounds y23..57 (+1u overshoot); baseline 56; cap 8..56 (R/l stems),
+  C cap y7..57; round counters only (R horn excepted); no fonts/<text>;
+    #4C6EF5; viewBox 252x64 (reflow: right ink 247.5 + 4.5 pad).
+  Status: PENDING USER APPROVAL (D rejected by user: serif-e, skinny-C/gap;
+  round-1 E gaps 8.22/8.22 rejected by user: C->a still too wide).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 252 64" fill="#4C6EF5" role="img" aria-label="rolecall wordmark">
+  <title>rolecall wordmark (wordmark-light)</title>
+  <g transform="translate(-8.5,0)">
+    <path fill-rule="evenodd" d="M13 8H40C48 8 53 13 53 21C53 29 48 34 40 34H13ZM26 17C33.5 16.5 39 13 43 13L43 29C39 28.5 33.5 25.5 26 25Z"/>
+    <path d="M13 8H22V56H13Z"/>
+    <path d="M26 33L37 33L45 56L34 56Z"/>
+  </g>
+  <path fill-rule="evenodd" d="M50.5,40A17,17 0 0 1 84.5,40A17,17 0 0 1 50.5,40ZM59.5,40A8,8 0 0 1 75.5,40A8,8 0 0 1 59.5,40Z"/>
+  <path fill-rule="evenodd" d="M89.5,8H98.5V56H89.5Z"/>
+  <path fill-rule="evenodd" d="M137.37,42.1A17,17 0 1 0 132.5,52.04L124.23,49.1A9,10 0 0 1 111.7,42.1L137.37,42.1ZM128.79,36.1L112.21,36.1A9,10 0 0 1 128.79,36.1Z"/>
+  <path fill-rule="evenodd" d="M181.28,14.32A22,25 0 1 0 181.28,49.68L174.91,43.31A13,16 0 1 1 174.91,20.69Z"/>
+  <path fill-rule="evenodd" d="M203,23L221,23L221,57L203,57A17,17 0 0 1 203,23ZM203,32L212,32L212,48L203,48A8,8 0 0 1 203,32Z"/>
+  <path fill-rule="evenodd" d="M226,8H235V56H226Z"/>
+  <path fill-rule="evenodd" d="M238.5,8H247.5V56H238.5Z"/>
+</svg>

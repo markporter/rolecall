@@ -1,0 +1,8 @@
+- hosts: imported
+  tasks:
+    - name: imported one
+      module: ping
+      args: {}
+    - name: imported two
+      module: ping
+      args: {}

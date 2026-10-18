@@ -1,0 +1,10 @@
+- name: NUL-byte hygiene probe
+  hosts: localgrp
+  vars:
+    http_port: 80
+  tasks:
+    - name: Emit a stray NUL on stdout
+      module: shell
+      args:
+        command: "printf 'a\\x00b'"
+        creates: /tmp/rolecall-nul-probe-done

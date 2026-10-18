@@ -1,0 +1,12 @@
+# RoleCall inventory (flat `groups` form — RoleCall has no ansible-style `all:`/`children:`).
+# The `web` group is targeted by playbooks/site.yaml; the `all` group exists so
+# group_vars/all.yaml (auto-loaded by T4) applies to every member.
+groups:
+  all:
+    hosts:
+      - web1
+      - web2
+  web:
+    hosts:
+      - web1
+      - web2

@@ -1,0 +1,8 @@
+- name: importer
+  hosts: web
+  imports:
+    - playbook.imported.yaml
+  tasks:
+    - name: local task
+      module: ping
+      args: {}

@@ -1,0 +1,16 @@
+groups:
+  all:
+    hosts: [web1, web2, db1]
+    vars:
+      env: prod
+      region: us-east
+  web:
+    hosts: [web1, web2]
+    vars:
+      role: web
+      region: us-west
+      retries: 0
+  db:
+    hosts: [db1]
+    vars:
+      role: db

@@ -1,0 +1,9 @@
+---
+title: Testing
+---
+
+Tests run through Bun's native `bun:test` runner across both declared runtimes. Kick things off locally with `bun test`, the primary suite that imports Bun's own assertion module. Because that module is unavailable under plain Node without a loader the project deliberately does not vendor, force the runtime branch explicitly instead: `ROLECALL_RUNTIME=bun bun test` exercises the native PAL side, while `ROLECALL_RUNTIME=node bun test` forces the Node PAL branch and is green — the runner stays Bun throughout, but the code under test is the Node implementation set.
+
+CI mirrors those three invocations plus one extra probe. Beyond the forced-branches suites it drops a tiny temporary file and runs `node --test` directly against the pure-JS runtime-detection module in `src/util/runtime.ts`, verifying that the `ROLECALL_RUNTIME` override flips detection correctly even under real Node. That gives coverage of the Node code path without needing a Node-compatible test file anywhere in the repo. The full picture lives in `.github/workflows/ci.yml`, and the rationale repeats in the README's Testing section.
+
+The Node PAL under `src/pal/*.node.ts` is implemented for sqlite (node:sqlite), crypto, dns, spawn, file, http, and observability; the SSH PAL surface stays a stub on Node because product SSH goes through ssh2 directly. The durable SQLite store runs on both runtimes over the PAL SqliteDb seam (ADR 0019 — drizzle-orm removed), so store tests run under both forced branches with no early-return. Transport, executor, and facts-collection are implemented and exercised in CI. When writing new tests, prefer asserting deterministic behavior like sorted inventory resolution over anything touching live remote state. Read [/contributing/ci](/contributing/ci) for how these checks fit into the pipeline.

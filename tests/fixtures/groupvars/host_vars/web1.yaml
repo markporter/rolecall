@@ -1,0 +1,3 @@
+region: host_region
+role: host_role
+host_specific: yes

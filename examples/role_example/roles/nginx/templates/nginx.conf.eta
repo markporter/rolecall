@@ -1,0 +1,22 @@
+user <%= nginx_user %>;
+worker_processes <%= nginx_worker_processes %>;
+pid /run/nginx.pid;
+error_log /var/log/nginx/error.log;
+events {
+    worker_connections <%= nginx_worker_connections %>;
+}
+http {
+    include /usr/share/nginx/modules/*.conf;
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    sendfile <%= nginx_sendfile %>;
+    keepalive_timeout <%= nginx_keepalive_timeout %>;
+    client_max_body_size <%= nginx_client_max_body_size %>;
+    server_tokens <%= nginx_server_tokens %>;
+    access_log /var/log/nginx/access.log;
+<% if (nginx_upstreams && nginx_upstreams.length > 0) { %>    upstream backend {
+<% nginx_upstreams.forEach(function(u) { %>        server <%= u %>;
+<% }); %>    }
+<% } %>    <%= nginx_extra_http_options %>
+    include <%= nginx_vhost_path %>/*.conf;
+}

@@ -1,0 +1,445 @@
+<!doctype html><html lang="en" data-scrollbar="styled"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="generator" content="clean-jsdoc-theme 5.2.0" /><title>src/modules/builtins/copy.ts | RoleCall</title><script>(function(){try{var d=document.documentElement;var t=localStorage.getItem('theme');if(t==='dark'){d.dataset.theme='dark'}else{d.dataset.theme='light'}var fs=localStorage.getItem('clean-font-size');if(fs==='sm'){d.style.fontSize='15px'}else if(fs==='lg'){d.style.fontSize='18px'}var ls=localStorage.getItem('clean-line-spacing');if(ls==='compact'){d.style.setProperty('--clean-line-height','1.4')}else if(ls==='relaxed'){d.style.setProperty('--clean-line-height','1.8')}}catch(_){}}());</script><link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin /><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;500;600;700&amp;family=Roboto:wght@400;500;600;700&amp;display=swap" /><link rel="stylesheet" href="/_assets/styles.mve0ywe9-ed9f7f0f.css" /></head><body><div class="flex min-h-screen flex-col bg-background text-(--clean-fg)"><header class="sticky top-0 z-30 border-b border-(--clean-border) bg-background"><div class="mx-auto flex h-16 w-full min-w-0 max-w-screen-2xl items-center gap-4 px-4"><a href="/" class="flex min-w-0 items-center pl-3 no-underline"><span class="truncate text-lg font-heading font-bold text-(--clean-fg)">RoleCall</span></a><span class="shrink-0 rounded bg-(--clean-bg-muted) px-2 py-0.5 text-xs text-muted-foreground">v0.0.0</span><div class="ml-auto flex shrink-0 items-center gap-1"><div class="flex items-center gap-1"><div data-island="cmdk" data-island-id="i1"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-muted-foreground hover:bg-accent hover:text-accent-foreground h-9 w-9" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Search" title="Search (Ctrl K)"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search" aria-hidden="true"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg></button></div></div><div class="hidden items-center gap-1 md:flex"><div data-island="theme-toggle" data-island-id="i2"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-muted-foreground hover:bg-accent hover:text-accent-foreground h-9 w-9" type="button" aria-label="Switch to dark theme" title="Toggle theme"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg></button></div><div data-island="settings" data-island-id="i3"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-muted-foreground hover:bg-accent hover:text-accent-foreground h-9 w-9" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Settings" title="Settings"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings" aria-hidden="true"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"></path><circle cx="12" cy="12" r="3"></circle></svg></button></div></div><div class="md:hidden"><div data-island="mobile-nav" data-island-id="i4"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-muted-foreground hover:bg-accent hover:text-accent-foreground h-9 w-9" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Open navigation" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panel-right" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M15 3v18"></path></svg></button></div></div></div></div></header><div class="mx-auto grid w-full max-w-screen-2xl flex-1 grid-cols-1 gap-6 px-4 py-6 md:grid-cols-[16rem_minmax(0,1fr)]"><aside class="hidden md:block"><div class="sticky overflow-y-auto [scrollbar-gutter:stable] pr-2 top-20 max-h-[calc(100vh-6rem)]"><div data-island="sidebar" data-island-id="i5"><nav aria-label="Documentation navigation" class="text-(--clean-fg)"><div class="mt-4 first:mt-0"><ul class="m-0 list-none p-0"><li class="my-0.5"><a href="/" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">Home</span></a></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/cli" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">cli</span></a><button type="button" aria-expanded="false" aria-label="cli" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/config" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">config</span></a><button type="button" aria-expanded="false" aria-label="config" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/facts" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">facts</span></a><button type="button" aria-expanded="false" aria-label="facts" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/modules" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">modules</span></a><button type="button" aria-expanded="false" aria-label="modules" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/orchestrator" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">orchestrator</span></a><button type="button" aria-expanded="false" aria-label="orchestrator" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/store" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">store</span></a><button type="button" aria-expanded="false" aria-label="store" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/transport" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">transport</span></a><button type="button" aria-expanded="false" aria-label="transport" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/util-runtime" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">util/runtime</span></a><button type="button" aria-expanded="false" aria-label="util/runtime" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><a href="/source" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">Source Files</span></a></li></ul></div></nav></div></div></aside><main class="min-w-0 px-4 md:px-8 lg:px-12"><div data-island="code-viewer" data-island-id="i0"><div class="my-4 overflow-hidden rounded-lg border border-(--clean-border) bg-(--clean-bg)"><div class="flex items-center justify-between border-b border-(--clean-border) bg-(--clean-bg-muted) px-3 py-2 text-sm"><span class="font-mono text-(--clean-fg)">src/modules/builtins/copy.ts</span><span class="text-xs text-(--clean-fg-muted)">typescript</span></div><div class="h-[calc(100vh-13rem)] min-h-[24rem]"><pre class="m-0 h-full overflow-auto whitespace-pre p-4 text-sm leading-relaxed text-(--clean-fg)"><code class="language-typescript">// Built-in module: `copy` (literal file copy + on-host templating) — Ansible-
+// compatible implementation, formed by merging the old `template` and
+// `config_write` builtins into one surface. Copies a LOCAL source file (or inline
+// `content`, or a `content` template spec rendered on-host) onto a remote target over
+// SSH / localhost via a Connection, idempotently. The desired bytes are read HERE
+// on the control node and BASE64-ENCODED locally; they are DECODED at runtime by
+// `base64 -d` inside a single bash invocation that runs entirely ON the target
+// host. Neither the raw path nor the payload ever round-trips through Node as
+// shell text, so arbitrary bytes survive untouched. A temp file + atomic `mv`
+// makes each apply crash-consistent, and the whole compare+write stays in one
+// script that returns CHANGED / WOULD_CHANGE / NOOP. Attributes are applied after
+// the write, and `backup` snapshots the prior file first. Idempotency is exposed
+// both imperatively (the write script compares SHA-256 itself) and declaratively
+// via `check()`.
+
+import { createHash } from &quot;node:crypto&quot;;
+import { readFileSync, statSync } from &quot;node:fs&quot;;
+import { isAbsolute, join } from &quot;node:path&quot;;
+
+import type { Module, ModuleContext, ModuleResult } from &quot;../../executor/module&quot;;
+import type { CheckableModule } from &quot;../../idempotency&quot;;
+import type { ModuleSummary } from &quot;../search&quot;;
+import { render } from &quot;../../templating/fast&quot;;
+import { renderJinja } from &quot;../../templating/jinja&quot;;
+
+/** Resolved source content plus its checksum, ready to ship to the target. */
+interface SourceBytes {
+  /** Base64 of the desired bytes; decoded on-target by `base64 -d`. */
+  b64: string;
+  /** SHA-256 hex digest of the desired bytes (for reporting and `check`). */
+  checksum: string;
+  /** Human-readable provenance for messages/data. */
+  origin: string;
+}
+
+/** Structured on-host render spec supplied as the `content` object (bypasses the runner's literal-by-default string handling). */
+interface ContentSpec {
+  template?: unknown;
+  template_file?: unknown;
+  engine?: unknown;
+}
+
+
+const MODULE_NAME = &quot;copy&quot;;
+
+/**
+ * Resolve a possibly-relative source path to something readable here. Precedence:
+ * absolute as-is; then `&lt;roleDir>/src/&lt;name>` (when the task came from a role);
+ * then `&lt;playbookDir>/&lt;name>`; then `&lt;cwd>/&lt;name>`. Returns the first existing
+ * regular file, else the last candidate so the caller can report a precise error.
+ */
+function resolveSourcePath(name: string, roleDir?: string, playbookDir?: string): string {
+  if (isAbsolute(name)) return name;
+  const candidates: string[] = [];
+  if (roleDir) candidates.push(join(roleDir, &quot;src&quot;, name));
+  if (playbookDir) candidates.push(join(playbookDir, name));
+  candidates.push(join(process.cwd(), name));
+  for (const c of candidates) {
+    try {
+      if (statSync(c).isFile()) return c;
+    } catch {
+      // try next candidate
+    }
+  }
+  return candidates[candidates.length - 1]!;
+}
+
+/**
+ * Resolve a template_file reference to an absolute path. Precedence: absolute as-is;
+ * then `&lt;roleDir>/templates/&lt;name>` (when the task came from a role); then
+ * `&lt;playbookDir>/&lt;name>`; then `&lt;cwd>/&lt;name>`. Returns the first existing file, else
+ * the last candidate so the caller can report a precise missing-path error.
+ */
+function resolveTemplatePath(name: string, roleDir?: string, playbookDir?: string): string {
+  if (isAbsolute(name)) return name;
+  const candidates: string[] = [];
+  if (roleDir) candidates.push(join(roleDir, &quot;templates&quot;, name));
+  if (playbookDir) candidates.push(join(playbookDir, name));
+  candidates.push(join(process.cwd(), name));
+  for (const c of candidates) {
+    try {
+      if (statSync(c).isFile()) return c;
+    } catch {
+      // try next candidate
+    }
+  }
+  return candidates[candidates.length - 1]!;
+}
+
+/** Render a template string or template_file on-host with the chosen engine (eta default). */
+function renderTemplate(spec: ContentSpec | undefined, ctx: ModuleContext): string {
+  const engine = String(spec?.engine ?? &quot;eta&quot;);
+  const vars: Record&lt;string, unknown> = { ...ctx.vars, ...(ctx.facts || {}), item: ctx.loop?.item, index: ctx.loop?.index };
+  const fileRef = spec?.template_file;
+  if (fileRef !== undefined &amp;&amp; fileRef !== null &amp;&amp; String(fileRef).length > 0) {
+    const abs = resolveTemplatePath(String(fileRef), ctx.roleDir, ctx.playbookDir);
+    let src: string;
+    try {
+      src = readFileSync(abs, &quot;utf8&quot;);
+    } catch (e) {
+      throw new Error(
+        `copy: cannot read template_file '${fileRef}' (resolved: ${abs}): ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+    return engine === &quot;jinja&quot; ? renderJinja(src, vars, { strict: false }) : render(src, vars);
+  }
+  if (spec &amp;&amp; typeof spec.template === &quot;string&quot;) {
+    return engine === &quot;jinja&quot; ? renderJinja(spec.template, vars, { strict: false }) : render(spec.template, vars);
+  }
+  return &quot;&quot;;
+}
+
+/** Read the desired bytes locally: from `src`, inline `content` (string), or a rendered `content` template spec. */
+function resolveSource(ctx: ModuleContext): SourceBytes {
+  const raw = ctx.args[&quot;content&quot;];
+  const spec = typeof raw === &quot;object&quot; &amp;&amp; raw !== null ? (raw as ContentSpec) : undefined;
+  const hasTemplate = spec !== undefined;
+
+  if (hasTemplate) {
+    const s = renderTemplate(spec, ctx);
+    const buf = Buffer.from(s, &quot;utf8&quot;);
+    return {
+      b64: buf.toString(&quot;base64&quot;),
+      checksum: createHash(&quot;sha256&quot;).update(buf).digest(&quot;hex&quot;),
+      origin: `${MODULE_NAME}: rendered template`,
+    };
+  }
+
+  const hasSrc = typeof ctx.args[&quot;src&quot;] === &quot;string&quot; &amp;&amp; String(ctx.args[&quot;src&quot;]).length > 0;
+  const hasContent = typeof ctx.args[&quot;content&quot;] === &quot;string&quot;;
+
+  if (hasSrc) {
+    const ref = String(ctx.args[&quot;src&quot;]);
+    const abs = resolveSourcePath(ref, ctx.roleDir, ctx.playbookDir);
+    let buf: Buffer;
+    try {
+      buf = readFileSync(abs);
+    } catch (e) {
+      throw new Error(
+        `copy: cannot read source '${ref}' (resolved: ${abs}): ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+    return {
+      b64: buf.toString(&quot;base64&quot;),
+      checksum: createHash(&quot;sha256&quot;).update(buf).digest(&quot;hex&quot;),
+      origin: `${MODULE_NAME}: copied ${ref}`,
+    };
+  }
+
+  if (hasContent) {
+    const s = String(ctx.args[&quot;content&quot;]);
+    const buf = Buffer.from(s, &quot;utf8&quot;);
+    return {
+      b64: buf.toString(&quot;base64&quot;),
+      checksum: createHash(&quot;sha256&quot;).update(buf).digest(&quot;hex&quot;),
+      origin: `${MODULE_NAME}: wrote inline content`,
+    };
+  }
+
+  return { b64: &quot;&quot;, checksum: &quot;&quot;, origin: MODULE_NAME };
+}
+
+/** Build the single bash invocation that reads the current remote checksum (or MISSING). */
+function buildCompareScript(destB64: string): string {
+  const script = [
+    'P=&quot;$(printf %s &quot;$1&quot; | base64 -d)&quot;',
+    'if [ -e &quot;$P&quot; ]; then sha256sum &lt; &quot;$P&quot; | cut -d&quot; &quot; -f1; else echo MISSING; fi',
+  ].join(&quot;\n&quot;);
+  return `bash -c '${script}' -- &quot;${destB64}&quot;`;
+}
+
+/** Build the single bash invocation that compares-and-writes entirely on-target. */
+function buildCopyScript(
+  destB64: string,
+  payloadB64: string,
+  opts: { force: boolean; check: boolean; backup: boolean; mode: string; owner: string; group: string; validate: string },
+): string {
+  // PB/BP/BM/BO/BG are base64(path)/base64(payload)/mode/owner/group; decoded at
+  // runtime by base64 -d. They never appear as assignment targets, so arbitrary
+  // bytes cannot corrupt the command. Booleans stay bare digits.
+  const fArg = opts.force ? &quot;1&quot; : &quot;0&quot;;
+  const cArg = opts.check ? &quot;1&quot; : &quot;0&quot;;
+  const bkArg = opts.backup ? &quot;1&quot; : &quot;0&quot;;
+  const mB64 = Buffer.from(opts.mode ?? &quot;&quot;, &quot;utf8&quot;).toString(&quot;base64&quot;);
+  const oB64 = Buffer.from(opts.owner ?? &quot;&quot;, &quot;utf8&quot;).toString(&quot;base64&quot;);
+  const gB64 = Buffer.from(opts.group ?? &quot;&quot;, &quot;utf8&quot;).toString(&quot;base64&quot;);
+  const vB64 = Buffer.from(opts.validate ?? &quot;&quot;, &quot;utf8&quot;).toString(&quot;base64&quot;);
+
+  const script = [
+    &quot;set -eo pipefail&quot;,
+    'P=&quot;$(printf %s &quot;$1&quot; | base64 -d)&quot;',
+    'F=&quot;$3&quot;; C=&quot;$4&quot;; B=&quot;$5&quot;',
+    'MODE=&quot;$(printf %s &quot;$6&quot; | base64 -d)&quot;',
+    'OWNER=&quot;$(printf %s &quot;$7&quot; | base64 -d)&quot;',
+    'GROUP=&quot;$(printf %s &quot;$8&quot; | base64 -d)&quot;',
+    'VALIDATE=&quot;$(printf %s &quot;$9&quot; | base64 -d)&quot;',
+    'DESI=&quot;$(printf %s &quot;$2&quot; | base64 -d | sha256sum | cut -d&quot; &quot; -f1)&quot;',
+    'if [ -e &quot;$P&quot; ]; then CUR=&quot;$(sha256sum &lt; &quot;$P&quot; | cut -d&quot; &quot; -f1)&quot;; else CUR=&quot;MISSING&quot;; fi',
+    'WOULD=0; [ &quot;$CUR&quot; != &quot;$DESI&quot; ] &amp;&amp; WOULD=1',
+    // Backup existing dest iff would-change AND writing AND backup requested. Done
+    // BEFORE the overwrite so the snapshot captures the prior bytes; $BK persists in
+    // this one bash process for the status marker emitted at the end. The .bak name
+    // is built from the reconstructed path so it can contain anything unseen by Node.
+    'if [ &quot;$WOULD&quot; = &quot;1&quot; ] &amp;&amp; [ &quot;$C&quot; = &quot;0&quot; ] &amp;&amp; [ &quot;$B&quot; = &quot;1&quot; ]; then BK=&quot;${P}.$(date +%Y%m%d%H%M%S%N).bak&quot;; cp -p &quot;$P&quot; &quot;$BK&quot;; fi',
+    // Write iff not dry-run AND (forced OR would-change). --force bypasses the
+    // compare; --check never writes regardless of force.
+    'if [ &quot;$C&quot; = &quot;0&quot; ] &amp;&amp; { [ &quot;$F&quot; = &quot;1&quot; ] || [ &quot;$WOULD&quot; = &quot;1&quot; ]; }; then',
+    '  mkdir -p &quot;$(dirname &quot;$P&quot;)&quot;',
+    '  TMP=&quot;$P.rolecall.$$.tmp&quot;',
+    '  printf %s &quot;$2&quot; | base64 -d > &quot;$TMP&quot;',
+    '  if [ -n &quot;$VALIDATE&quot; ]; then VCMD=&quot;${VALIDATE//%s/$TMP}&quot;; if ! bash -c &quot;$VCMD&quot;; then echo &quot;VALIDATE_FAILED&quot;; exit 1; fi; fi',
+    '  mv &quot;$TMP&quot; &quot;$P&quot;',
+    // Apply attributes only when provided, via guarded ifs so `set -e` is never
+    // tripped by an empty value.
+    '  if [ -n &quot;$MODE&quot; ]; then chmod &quot;$MODE&quot; &quot;$P&quot;; fi',
+    '  if [ -n &quot;$OWNER&quot; ]; then chown &quot;$OWNER&quot; &quot;$P&quot;; fi',
+    '  if [ -n &quot;$GROUP&quot; ]; then chgrp &quot;$GROUP&quot; &quot;$P&quot;; fi',
+    // Emit CHANGED plus, when a backup was taken, its .bak path as a second
+    // whitespace-delimited token (base64, unwrapped with -w0) so run() recovers the
+    // exact file that was snapshotted above.
+    '  if [ &quot;$B&quot; = &quot;1&quot; ]; then echo &quot;CHANGED $(printf %s &quot;$BK&quot; | base64 -w0)&quot;; else echo CHANGED; fi',
+    &quot;elif [ \&quot;$WOULD\&quot; = \&quot;1\&quot; ]; then echo WOULD_CHANGE&quot;,
+    &quot;else echo NOOP&quot;,
+    &quot;fi&quot;,
+  ].join(&quot;\n&quot;);
+
+  return `bash -c '${script}' -- &quot;${destB64}&quot; &quot;${payloadB64}&quot; &quot;${fArg}&quot; &quot;${cArg}&quot; &quot;${bkArg}&quot; &quot;${mB64}&quot; &quot;${oB64}&quot; &quot;${gB64}&quot; &quot;${vB64}&quot;`;
+}
+
+/**
+ * Parse the changed result's output. The script prints `CHANGED` on its own line,
+ * or `CHANGED &lt;base64-of-.bak-path>` (two whitespace-delimited tokens) when a
+ * backup was taken. Returns the decoded backup filename, or undefined otherwise.
+ */
+function extractBackup(stdout: string): string | undefined {
+  const parts = stdout.trim().split(/\s+/);
+  const marker = parts[1];
+  return marker === undefined ? undefined : Buffer.from(marker, &quot;base64&quot;).toString(&quot;utf8&quot;);
+}
+
+// check() and run() share arg resolution; keep this narrow to avoid drift.
+interface CopyArgs {
+  src?: unknown;
+  content?: string | ContentSpec;
+  dest?: unknown;
+  path?: unknown;
+  mode?: unknown;
+  owner?: unknown;
+  group?: unknown;
+  backup?: unknown;
+  force?: unknown;
+  _force?: unknown;
+  check?: unknown;
+  _check?: unknown;
+  validate?: unknown;
+}
+
+/** @summary Copy a local source file (or inline content, or a `content` template spec rendered on-host) to a remote destination idempotently. Ships bytes base64-encoded and decodes on-target in one compare+write script; supports on-host templating (content template spec, eta/jinja), atomic mv, optional mode/owner/group, backup, validate, become, and --check. @param ctx ModuleContext carrying copy args (`src`|`content` (string or template spec), `dest`/`path`, `mode`, `force`, `backup`, `validate`, `owner`, `group`) plus connection/become/check flags. @returns ModuleResult with data.{dest,changed,checksum,backup_file?}; skipped=true when unchanged or in --check dry-run. */
+export const copyModule: CheckableModule = {
+  name: MODULE_NAME,
+  async run(ctx: ModuleContext): Promise&lt;ModuleResult> {
+    const args = ctx.args as unknown as CopyArgs;
+    const dest = String(args.dest ?? args.path ?? &quot;&quot;);
+    if (!dest) {
+      return { changed: false, failed: true, msg: `${MODULE_NAME}: 'dest' (or 'path') is required` };
+    }
+    const hasSrc = typeof args.src === &quot;string&quot; &amp;&amp; String(args.src).length > 0;
+    const hasContent = typeof args.content === &quot;string&quot; &amp;&amp; String(args.content).length > 0;
+    const hasTemplate = typeof args.content === &quot;object&quot; &amp;&amp; args.content !== null;
+    if (!hasSrc &amp;&amp; !hasContent &amp;&amp; !hasTemplate) {
+      return { changed: false, failed: true, msg: `${MODULE_NAME}: one of 'src' or 'content' is required` };
+    }
+
+    const src = resolveSource(ctx);
+    const destB64 = Buffer.from(dest, &quot;utf8&quot;).toString(&quot;base64&quot;);
+
+    const opts = {
+      force: Boolean(args.force ?? args._force),
+      check: Boolean(args.check ?? args._check),
+      backup: Boolean(args.backup),
+      mode: typeof args.mode === &quot;string&quot; ? args.mode : &quot;&quot;,
+      owner: typeof args.owner === &quot;string&quot; ? args.owner : &quot;&quot;,
+      group: typeof args.group === &quot;string&quot; ? args.group : &quot;&quot;,
+      validate: typeof args.validate === &quot;string&quot; ? args.validate : &quot;&quot;,
+    };
+
+    const cmd = buildCopyScript(destB64, src.b64, opts);
+    // Executor owns the connection lifecycle, so we must NOT connect/disconnect here.
+    // When `become` is set, prefix the whole script with `sudo` so it runs as root.
+    // The script body contains no single quotes, so `sudo bash -c '...'` stays safe.
+    const execCmd = ctx.become ? `sudo ${cmd}` : cmd;
+
+    let stdout = &quot;&quot;;
+    let stderr = &quot;&quot;;
+    let exitCode = 0;
+    try {
+      const res = await ctx.connection.exec(execCmd);
+      stdout = res.stdout ?? &quot;&quot;;
+      stderr = res.stderr ?? &quot;&quot;;
+      exitCode = res.exitCode ?? 0;
+    } catch (e) {
+      return {
+        changed: false,
+        failed: true,
+        msg: `${MODULE_NAME}: transport error (${e instanceof Error ? e.message : String(e)})`,
+        stderr: stderr || undefined,
+      };
+    }
+
+    // Status is the first whitespace-delimited token; when a backup was taken the
+    // script appends &quot;&lt;base64-of-.bak-path>&quot; after &quot;CHANGED&quot; for run() to recover.
+    const status = stdout.trim().split(/\s+/)[0];
+    if (exitCode !== 0) {
+      return {
+        changed: false,
+        failed: true,
+        msg: `${MODULE_NAME}: remote write failed`,
+        stdout,
+        stderr,
+      };
+    }
+    if (status !== &quot;CHANGED&quot; &amp;&amp; status !== &quot;WOULD_CHANGE&quot; &amp;&amp; status !== &quot;NOOP&quot;) {
+      return {
+        changed: false,
+        failed: true,
+        msg: `${MODULE_NAME}: unexpected remote status: ${JSON.stringify(status)}`,
+        stdout,
+        stderr,
+      };
+    }
+
+    const data: Record&lt;string, unknown> = { dest, checksum: src.checksum, origin: src.origin };
+
+    if (status === &quot;WOULD_CHANGE&quot;) {
+      return {
+        changed: false,
+        skipped: true,
+        msg: opts.check ? `${dest} would change (dry run)` : `${dest} would change`,
+        data: { ...data, changed: false, wouldChange: true },
+      };
+    }
+
+    if (status === &quot;NOOP&quot;) {
+      return { changed: false, skipped: true, msg: `${dest} unchanged`, data: { ...data, changed: false } };
+    }
+
+    // CHANGED — report what landed (and whether a backup was written).
+    const backupFile = extractBackup(stdout);
+    return {
+      changed: true,
+      msg: `${originLabel(src)} -> ${dest}`,
+      stdout,
+      data: { ...data, changed: true, ...(backupFile ? { backup_file: backupFile } : {}) },
+    };
+  },
+  /** Report current target state for declarative reconciliation (used by applyIdempotent's skip-unchanged path). */
+  async check(_args: Record&lt;string, unknown>, ctx: ModuleContext): Promise&lt;{ current: string | null; inDesired: boolean }> {
+    const src = resolveSource(ctx);
+    const destB64 = Buffer.from(String(ctx.args[&quot;dest&quot;] ?? ctx.args[&quot;path&quot;] ?? &quot;&quot;), &quot;utf8&quot;).toString(&quot;base64&quot;);
+    const cmpCmd = ctx.become ? `sudo ${buildCompareScript(destB64)}` : buildCompareScript(destB64);
+    try {
+      const res = await ctx.connection.exec(cmpCmd);
+      const current = (res.stdout ?? &quot;&quot;).trim();
+      return {
+        current: current === &quot;&quot; ? null : current,
+        inDesired: current !== &quot;&quot; &amp;&amp; current !== &quot;MISSING&quot; &amp;&amp; current === src.checksum,
+      };
+    } catch {
+      return { current: null, inDesired: false };
+    }
+  },
+};
+
+/** Describe where the copied bytes came from, for user-facing messages. */
+function originLabel(src: SourceBytes): string {
+  return src.origin;
+}
+
+/** Search metadata for the `copy` module (auto-collected by builtins/index.ts). */
+export const meta: ModuleSummary = {
+  name: MODULE_NAME,
+  description:
+    &quot;Literal idempotent file copy to a remote target, or on-host template render (_content/template_file, EJS or Jinja). SHA-256 compare; ships bytes base64-encoded and decodes on-target in one compare+write script with atomic mv. Supports inline content, a local source file, optional mode/owner/group, backup, validate, become, and --check.&quot;,
+  source: &quot;builtin&quot;,
+  args: {
+    src: {
+      type: &quot;string&quot;,
+      required: false,
+      description: &quot;Local path to the source file on the control node. At least one of `src` or `content` is required.&quot;,
+    },
+    content: {
+      type: &quot;string | { template, template_file, engine }&quot;,
+      required: false,
+      description: &quot;Inline content for the destination. A bare string is written verbatim (never interpreted as a template). Pass an object with `template` (inline string) or `template_file` (path) and optional `engine` ('ejs' default, or 'jinja') to render on-host.&quot;,
+    },
+    dest: { type: &quot;string&quot;, required: false, description: &quot;Destination path on the target.&quot; },
+    path: { type: &quot;string&quot;, required: false, description: &quot;Alias for `dest` (accepted for drop-in `config_write` parity).&quot; },
+    mode: { type: &quot;string&quot;, required: false, description: &quot;Octal mode to apply after writing, e.g. '0644'.&quot; },
+    force: {
+      type: &quot;boolean&quot;,
+      required: false,
+      description: &quot;Rewrite unconditionally even when the destination already matches. Defaults to false (rewrite only on mismatch).&quot;,
+    },
+    backup: {
+      type: &quot;boolean&quot;,
+      required: false,
+      description: &quot;Back up an existing destination before overwriting it (a timestamped .bak sibling is created). Defaults to false.&quot;,
+    },
+    validate: {
+      type: &quot;string&quot;,
+      required: false,
+      description: &quot;Validation command run against the temp file before it is moved into place; `%s` is replaced with the temp path. The task fails if the command exits non-zero (e.g. `visudo -cf %s`).&quot;,
+    },
+    owner: { type: &quot;string&quot;, required: false, description: &quot;Owner user to chown after writing.&quot; },
+    group: { type: &quot;string&quot;, required: false, description: &quot;Group to chgrp after writing.&quot; },
+  },
+  examples: [
+    `- copy:
+    src: files/app.conf
+    dest: /etc/app/app.conf
+    mode: '0644'`,
+    `- copy:
+    content: 'port=8080'
+    dest: /etc/app/port.conf`,
+    `- copy:
+    dest: /etc/nginx/conf.d/site.conf
+    content:
+      template_file: vhost.j2
+      engine: jinja`,
+    `- copy:
+    dest: /etc/app/app.conf
+    content:
+      template: 'port=&lt;%= vars.port %>'`,
+    `- copy:
+    dest: /etc/sudoers.d/app
+    content: 'app ALL=(ALL) NOPASSWD:ALL'
+    validate: 'visudo -cf %s'`,
+  ],
+    notes:
+    &quot;≠ Ansible `copy`: `force` defaults to FALSE here (Ansible defaults TRUE), so copy only rewrites when the destination differs unless you pass force:true. Templating is on-host: pass `content` as an object with `template`/`template_file` and optional `engine` (EJS default, or `jinja`); a bare `content` string is written literally (never interpreted as a template). Attribute application relies on stat/chown/chgrp availability; no SELinux context handling.&quot;,
+};
+
+(copyModule as Module &amp; { meta: ModuleSummary }).meta = meta;
+export default copyModule;
+</code></pre></div></div></div></main></div><footer class="border-t border-(--clean-border) bg-background py-6 text-sm text-muted-foreground"><div class="mx-auto flex w-full max-w-screen-2xl flex-col items-start justify-between gap-2 px-4 md:flex-row md:items-center"><div class="flex items-center gap-1.5"><span>RoleCall</span><span>© 2026</span></div></div></footer></div><script type="application/json" data-island-props>{"i0":{"language":"typescript","filename":"src/modules/builtins/copy.ts"},"i1":{"basePath":"/","searchIndexUrl":"/_assets/search-index.mve0ywe9-ed9f7f0f.json"},"i2":{},"i3":{},"i4":{"nav":[{"label":"Home","slug":"","order":-1},{"label":"cli","slug":"module/cli","children":[{"label":"CliError","slug":"module/cli/clierror","group":"cli"},{"label":"AgentManifestResult","slug":"module/cli/agentmanifestresult","group":"cli"},{"label":"ApplyTotals","slug":"module/cli/applytotals","group":"cli"},{"label":"DocsModuleEntry","slug":"module/cli/docsmoduleentry","group":"cli"},{"label":"DocsModulesResult","slug":"module/cli/docsmodulesresult","group":"cli"},{"label":"DocsSearchResult","slug":"module/cli/docssearchresult","group":"cli"},{"label":"FactsGatherResult","slug":"module/cli/factsgatherresult","group":"cli"},{"label":"GlobalFlags","slug":"module/cli/globalflags","group":"cli"},{"label":"InventoryListResult","slug":"module/cli/inventorylistresult","group":"cli"},{"label":"InventoryShowResult","slug":"module/cli/inventoryshowresult","group":"cli"},{"label":"OutputPlugin","slug":"module/cli/outputplugin","group":"cli"},{"label":"PlaybookRunResult","slug":"module/cli/playbookrunresult","group":"cli"},{"label":"PluginEntryView","slug":"module/cli/pluginentryview","group":"cli"},{"label":"PluginListResult","slug":"module/cli/pluginlistresult","group":"cli"},{"label":"PluginRegisterResult","slug":"module/cli/pluginregisterresult","group":"cli"},{"label":"RenderedTemplate","slug":"module/cli/renderedtemplate","group":"cli"},{"label":"RunReplayResult","slug":"module/cli/runreplayresult","group":"cli"},{"label":"TaskApplyOutcome","slug":"module/cli/taskapplyoutcome","group":"cli"},{"label":"VarsListResult","slug":"module/cli/varslistresult","group":"cli"},{"label":"VarsTraceResult","slug":"module/cli/varstraceresult","group":"cli"},{"label":"CliResult","slug":"module/cli/cliresult","group":"cli"},{"label":"getOutputPlugin","slug":"module/cli/getoutputplugin","group":"cli"},{"label":"getVersion","slug":"module/cli/getversion","group":"cli"},{"label":"listOutputPlugins","slug":"module/cli/listoutputplugins","group":"cli"},{"label":"main","slug":"module/cli/main","group":"cli"},{"label":"registerOutputPlugin","slug":"module/cli/registeroutputplugin","group":"cli"},{"label":"renderOutput","slug":"module/cli/renderoutput","group":"cli"},{"label":"runAgentCommand","slug":"module/cli/runagentcommand","group":"cli"},{"label":"runDocsCommand","slug":"module/cli/rundocscommand","group":"cli"},{"label":"runFactsCommand","slug":"module/cli/runfactscommand","group":"cli"},{"label":"runInventoryCommand","slug":"module/cli/runinventorycommand","group":"cli"},{"label":"runPlaybookCommand","slug":"module/cli/runplaybookcommand","group":"cli"},{"label":"runPluginCommand","slug":"module/cli/runplugincommand","group":"cli"},{"label":"runReplayCommand","slug":"module/cli/runreplaycommand","group":"cli"},{"label":"runVarsCommand","slug":"module/cli/runvarscommand","group":"cli"},{"label":"writeOut","slug":"module/cli/writeout","group":"cli"}],"deepExpand":true},{"label":"config","slug":"module/config","children":[{"label":"Config","slug":"module/config/config","group":"config"},{"label":"DirectoryVars","slug":"module/config/directoryvars","group":"config"},{"label":"IdempotencyWarning","slug":"module/config/idempotencywarning","group":"config"},{"label":"NormalizedInventory","slug":"module/config/normalizedinventory","group":"config"},{"label":"NormalizedPlaybook","slug":"module/config/normalizedplaybook","group":"config"},{"label":"NormalizedTask","slug":"module/config/normalizedtask","group":"config"},{"label":"ServeConfig","slug":"module/config/serveconfig","group":"config"},{"label":"TemplateRefProblem","slug":"module/config/templaterefproblem","group":"config"},{"label":"ZodError","slug":"module/config/zoderror","group":"config"},{"label":"DbBackend","slug":"module/config/dbbackend","group":"config"},{"label":"InventoryFormat","slug":"module/config/inventoryformat","group":"config"},{"label":"NormalizedPlaybookFile","slug":"module/config/normalizedplaybookfile","group":"config"},{"label":"RawInventory","slug":"module/config/rawinventory","group":"config"},{"label":"RawInventoryGroup","slug":"module/config/rawinventorygroup","group":"config"},{"label":"RawPlaybook","slug":"module/config/rawplaybook","group":"config"},{"label":"RawPlaybookFile","slug":"module/config/rawplaybookfile","group":"config"},{"label":"RawTask","slug":"module/config/rawtask","group":"config"},{"label":"ScratchStrategy","slug":"module/config/scratchstrategy","group":"config"},{"label":"TriggerSpec","slug":"module/config/triggerspec","group":"config"},{"label":"CanonicalTaskSchema","slug":"module/config/canonicaltaskschema","group":"config"},{"label":"InventoryGroupSchema","slug":"module/config/inventorygroupschema","group":"config"},{"label":"InventorySchema","slug":"module/config/inventoryschema","group":"config"},{"label":"KNOWN_NAMESPACES","slug":"module/config/known-namespaces","group":"config"},{"label":"PlaybookObject","slug":"module/config/playbookobject","group":"config"},{"label":"PlaybookSchema","slug":"module/config/playbookschema","group":"config"},{"label":"TaskSchema","slug":"module/config/taskschema","group":"config"},{"label":"TriggerSchema","slug":"module/config/triggerschema","group":"config"},{"label":"canonicalizeTask","slug":"module/config/canonicalizetask","group":"config"},{"label":"deepMerge","slug":"module/config/deepmerge","group":"config"},{"label":"detectInventoryFormat","slug":"module/config/detectinventoryformat","group":"config"},{"label":"lintPlaybookIdempotency","slug":"module/config/lintplaybookidempotency","group":"config"},{"label":"lintTemplateRefs","slug":"module/config/linttemplaterefs","group":"config"},{"label":"loadConfig","slug":"module/config/loadconfig","group":"config"},{"label":"loadInventory","slug":"module/config/loadinventory","group":"config"},{"label":"loadInventoryFile","slug":"module/config/loadinventoryfile","group":"config"},{"label":"loadPlaybook","slug":"module/config/loadplaybook","group":"config"},{"label":"loadPlaybookFile","slug":"module/config/loadplaybookfile","group":"config"},{"label":"normalizeInventory","slug":"module/config/normalizeinventory","group":"config"},{"label":"normalizePlaybook","slug":"module/config/normalizeplaybook","group":"config"},{"label":"normalizeTask","slug":"module/config/normalizetask","group":"config"},{"label":"resolveDirectoryVars","slug":"module/config/resolvedirectoryvars","group":"config"},{"label":"serializeInventory","slug":"module/config/serializeinventory","group":"config"},{"label":"serializePlaybook","slug":"module/config/serializeplaybook","group":"config"},{"label":"serializeTask","slug":"module/config/serializetask","group":"config"}],"deepExpand":true},{"label":"facts","slug":"module/facts","children":[{"label":"FactError","slug":"module/facts/facterror","group":"facts"},{"label":"FactsEngine","slug":"module/facts/factsengine","group":"facts"},{"label":"FactCache","slug":"module/facts/factcache","group":"facts"},{"label":"FactGatherer","slug":"module/facts/factgatherer","group":"facts"},{"label":"FactPlugin","slug":"module/facts/factplugin","group":"facts"},{"label":"FactsEngineOptions","slug":"module/facts/factsengineoptions","group":"facts"},{"label":"GatherOptions","slug":"module/facts/gatheroptions","group":"facts"},{"label":"ConnectionKind","slug":"module/facts/connectionkind","group":"facts"},{"label":"FactKey","slug":"module/facts/factkey","group":"facts"},{"label":"FactMap","slug":"module/facts/factmap","group":"facts"},{"label":"BUILTIN_GATHERERS","slug":"module/facts/builtin-gatherers","group":"facts"},{"label":"defaultFactsEngine","slug":"module/facts/defaultfactsengine","group":"facts"},{"label":"networkGatherer","slug":"module/facts/networkgatherer","group":"facts"},{"label":"osGatherer","slug":"module/facts/osgatherer","group":"facts"},{"label":"serviceGathererHttp","slug":"module/facts/servicegathererhttp","group":"facts"},{"label":"serviceGathererPosix","slug":"module/facts/servicegathererposix","group":"facts"},{"label":"createFactPlugin","slug":"module/facts/createfactplugin","group":"facts"},{"label":"createInMemoryFactCache","slug":"module/facts/createinmemoryfactcache","group":"facts"},{"label":"getDeclaredFactEntries","slug":"module/facts/getdeclaredfactentries","group":"facts"},{"label":"getDeclaredFactNames","slug":"module/facts/getdeclaredfactnames","group":"facts"},{"label":"getRegisteredFactPlugins","slug":"module/facts/getregisteredfactplugins","group":"facts"},{"label":"registerFactPlugin","slug":"module/facts/registerfactplugin","group":"facts"}],"deepExpand":true},{"label":"modules","slug":"module/modules","children":[{"label":"ModuleCollisionError","slug":"module/modules/modulecollisionerror","group":"modules"},{"label":"DescribeResult","slug":"module/modules/describeresult","group":"modules"},{"label":"Module","slug":"module/modules/module","group":"modules"},{"label":"ModuleContext","slug":"module/modules/modulecontext","group":"modules"},{"label":"ModuleResult","slug":"module/modules/moduleresult","group":"modules"},{"label":"ModuleSummary","slug":"module/modules/modulesummary","group":"modules"},{"label":"PluginScanEntry","slug":"module/modules/pluginscanentry","group":"modules"},{"label":"ResourceOptions","slug":"module/modules/resourceoptions","group":"modules"},{"label":"PluginType","slug":"module/modules/plugintype","group":"modules"},{"label":"ResolveResult","slug":"module/modules/resolveresult","group":"modules"},{"label":"addHostModule","slug":"module/modules/addhostmodule","group":"modules"},{"label":"blockinfileModule","slug":"module/modules/blockinfilemodule","group":"modules"},{"label":"commandModule","slug":"module/modules/commandmodule","group":"modules"},{"label":"configEditModule","slug":"module/modules/configeditmodule","group":"modules"},{"label":"copyModule","slug":"module/modules/copymodule","group":"modules"},{"label":"failModule","slug":"module/modules/failmodule","group":"modules"},{"label":"fileModule","slug":"module/modules/filemodule","group":"modules"},{"label":"getUrlModule","slug":"module/modules/geturlmodule","group":"modules"},{"label":"gitModule","slug":"module/modules/gitmodule","group":"modules"},{"label":"groupModule","slug":"module/modules/groupmodule","group":"modules"},{"label":"httpModule","slug":"module/modules/httpmodule","group":"modules"},{"label":"lineinfileModule","slug":"module/modules/lineinfilemodule","group":"modules"},{"label":"pkgModule","slug":"module/modules/pkgmodule","group":"modules"},{"label":"rawModule","slug":"module/modules/rawmodule","group":"modules"},{"label":"replaceModule","slug":"module/modules/replacemodule","group":"modules"},{"label":"scriptModule","slug":"module/modules/scriptmodule","group":"modules"},{"label":"serviceModule","slug":"module/modules/servicemodule","group":"modules"},{"label":"setFactModule","slug":"module/modules/setfactmodule","group":"modules"},{"label":"shellModule","slug":"module/modules/shellmodule","group":"modules"},{"label":"sqlModule","slug":"module/modules/sqlmodule","group":"modules"},{"label":"statModule","slug":"module/modules/statmodule","group":"modules"},{"label":"userModule","slug":"module/modules/usermodule","group":"modules"},{"label":"waitForModule","slug":"module/modules/waitformodule","group":"modules"},{"label":"buildResolutionTable","slug":"module/modules/buildresolutiontable","group":"modules"},{"label":"getModule","slug":"module/modules/getmodule","group":"modules"},{"label":"getModuleSummary","slug":"module/modules/getmodulesummary","group":"modules"},{"label":"listModules","slug":"module/modules/listmodules","group":"modules"},{"label":"loadModuleFromFile","slug":"module/modules/loadmodulefromfile","group":"modules"},{"label":"registerAllModules","slug":"module/modules/registerallmodules","group":"modules"},{"label":"registerModule","slug":"module/modules/registermodule","group":"modules"},{"label":"resolveModule","slug":"module/modules/resolvemodule","group":"modules"},{"label":"resource","slug":"module/modules/resource","group":"modules"},{"label":"scanAndRegister","slug":"module/modules/scanandregister","group":"modules"},{"label":"scanProject","slug":"module/modules/scanproject","group":"modules"},{"label":"searchModules","slug":"module/modules/searchmodules","group":"modules"},{"label":"setModuleMeta","slug":"module/modules/setmodulemeta","group":"modules"}],"deepExpand":true},{"label":"orchestrator","slug":"module/orchestrator","children":[{"label":"CronScheduler","slug":"module/orchestrator/cronscheduler","group":"orchestrator"},{"label":"Engine","slug":"module/orchestrator/engine","group":"orchestrator"},{"label":"CronSchedulerOptions","slug":"module/orchestrator/cronscheduleroptions","group":"orchestrator"},{"label":"Enqueuer","slug":"module/orchestrator/enqueuer","group":"orchestrator"},{"label":"HostOutcome","slug":"module/orchestrator/hostoutcome","group":"orchestrator"},{"label":"JobBody","slug":"module/orchestrator/jobbody","group":"orchestrator"},{"label":"ParsedCron","slug":"module/orchestrator/parsedcron","group":"orchestrator"},{"label":"PlanTask","slug":"module/orchestrator/plantask","group":"orchestrator"},{"label":"RouteContext","slug":"module/orchestrator/routecontext","group":"orchestrator"},{"label":"RunRecord","slug":"module/orchestrator/runrecord","group":"orchestrator"},{"label":"SchedulerApi","slug":"module/orchestrator/schedulerapi","group":"orchestrator"},{"label":"ServerHandle","slug":"module/orchestrator/serverhandle","group":"orchestrator"},{"label":"ServerOptions","slug":"module/orchestrator/serveroptions","group":"orchestrator"},{"label":"ShutdownOptions","slug":"module/orchestrator/shutdownoptions","group":"orchestrator"},{"label":"TargetDescriptor","slug":"module/orchestrator/targetdescriptor","group":"orchestrator"},{"label":"TriggerSuccess","slug":"module/orchestrator/triggersuccess","group":"orchestrator"},{"label":"WebhookRouteContext","slug":"module/orchestrator/webhookroutecontext","group":"orchestrator"},{"label":"ActionType","slug":"module/orchestrator/actiontype","group":"orchestrator"},{"label":"RunStatus","slug":"module/orchestrator/runstatus","group":"orchestrator"},{"label":"TransportKind","slug":"module/orchestrator/transportkind","group":"orchestrator"},{"label":"ValidationError","slug":"module/orchestrator/validationerror","group":"orchestrator"},{"label":"ValidationResult","slug":"module/orchestrator/validationresult","group":"orchestrator"},{"label":"ValidationSuccess","slug":"module/orchestrator/validationsuccess","group":"orchestrator"},{"label":"VALID_JOB_TYPES","slug":"module/orchestrator/valid-job-types","group":"orchestrator"},{"label":"createServer","slug":"module/orchestrator/createserver","group":"orchestrator"},{"label":"installSignalHandlers","slug":"module/orchestrator/installsignalhandlers","group":"orchestrator"},{"label":"isActionType","slug":"module/orchestrator/isactiontype","group":"orchestrator"},{"label":"isValid","slug":"module/orchestrator/isvalid","group":"orchestrator"},{"label":"mountRoutes","slug":"module/orchestrator/mountroutes","group":"orchestrator"},{"label":"mountWebhooks","slug":"module/orchestrator/mountwebhooks","group":"orchestrator"},{"label":"nextOccurrence","slug":"module/orchestrator/nextoccurrence","group":"orchestrator"},{"label":"parseExpr","slug":"module/orchestrator/parseexpr","group":"orchestrator"},{"label":"startServe","slug":"module/orchestrator/startserve","group":"orchestrator"},{"label":"validateJobBody","slug":"module/orchestrator/validatejobbody","group":"orchestrator"}],"deepExpand":true},{"label":"store","slug":"module/store","children":[{"label":"ProjectsRepository","slug":"module/store/projectsrepository","group":"store"},{"label":"RunsRepository","slug":"module/store/runsrepository","group":"store"},{"label":"SchedulesRepository","slug":"module/store/schedulesrepository","group":"store"},{"label":"TracesRepository","slug":"module/store/tracesrepository","group":"store"},{"label":"WriteQueue","slug":"module/store/writequeue","group":"store"},{"label":"CreateProjectInput","slug":"module/store/createprojectinput","group":"store"},{"label":"CreateRunInput","slug":"module/store/createruninput","group":"store"},{"label":"CreateScheduleInput","slug":"module/store/createscheduleinput","group":"store"},{"label":"CreateTraceInput","slug":"module/store/createtraceinput","group":"store"},{"label":"OpenStoreOptions","slug":"module/store/openstoreoptions","group":"store"},{"label":"PatchRun","slug":"module/store/patchrun","group":"store"},{"label":"PatchSchedule","slug":"module/store/patchschedule","group":"store"},{"label":"PatchTrace","slug":"module/store/patchtrace","group":"store"},{"label":"Project","slug":"module/store/project","group":"store"},{"label":"ProjectsRepo","slug":"module/store/projectsrepo","group":"store"},{"label":"Run","slug":"module/store/run","group":"store"},{"label":"RunsRepo","slug":"module/store/runsrepo","group":"store"},{"label":"RunTrace","slug":"module/store/runtrace","group":"store"},{"label":"Schedule","slug":"module/store/schedule","group":"store"},{"label":"SchedulesRepo","slug":"module/store/schedulesrepo","group":"store"},{"label":"Store","slug":"module/store/store","group":"store"},{"label":"TracesRepo","slug":"module/store/tracesrepo","group":"store"},{"label":"UpdateProjectPatch","slug":"module/store/updateprojectpatch","group":"store"},{"label":"REGISTRY_DB_NAME","slug":"module/store/registry-db-name","group":"store"},{"label":"openStore","slug":"module/store/openstore","group":"store"},{"label":"resolveRegistryPath","slug":"module/store/resolveregistrypath","group":"store"}],"deepExpand":true},{"label":"transport","slug":"module/transport","children":[{"label":"AbortError","slug":"module/transport/aborterror","group":"transport"},{"label":"HttpApiConnection","slug":"module/transport/httpapiconnection","group":"transport"},{"label":"LocalConnection","slug":"module/transport/localconnection","group":"transport"},{"label":"NetworkSshConnection","slug":"module/transport/networksshconnection","group":"transport"},{"label":"SshConnection","slug":"module/transport/sshconnection","group":"transport"},{"label":"TimeoutError","slug":"module/transport/timeouterror","group":"transport"},{"label":"ApplyOptions","slug":"module/transport/applyoptions","group":"transport"},{"label":"ApplyResult","slug":"module/transport/applyresult","group":"transport"},{"label":"BaseConnectionOptions","slug":"module/transport/baseconnectionoptions","group":"transport"},{"label":"ConfigDiff","slug":"module/transport/configdiff","group":"transport"},{"label":"Connection","slug":"module/transport/connection","group":"transport"},{"label":"ConnectionFacts","slug":"module/transport/connectionfacts","group":"transport"},{"label":"Credentials","slug":"module/transport/credentials","group":"transport"},{"label":"ExecOptions","slug":"module/transport/execoptions","group":"transport"},{"label":"ExecResult","slug":"module/transport/execresult","group":"transport"},{"label":"HealthStatus","slug":"module/transport/healthstatus","group":"transport"},{"label":"HttpApiConnectionOptions","slug":"module/transport/httpapiconnectionoptions","group":"transport"},{"label":"HttpApiRequest","slug":"module/transport/httpapirequest","group":"transport"},{"label":"HttpGrpcCapability","slug":"module/transport/httpgrpccapability","group":"transport"},{"label":"LocalConnectionOptions","slug":"module/transport/localconnectionoptions","group":"transport"},{"label":"NetworkConnectionOptions","slug":"module/transport/networkconnectionoptions","group":"transport"},{"label":"ResilienceConfig","slug":"module/transport/resilienceconfig","group":"transport"},{"label":"RetryConfig","slug":"module/transport/retryconfig","group":"transport"},{"label":"SshConnectionOptions","slug":"module/transport/sshconnectionoptions","group":"transport"},{"label":"VendorDriver","slug":"module/transport/vendordriver","group":"transport"},{"label":"ConnectionOptions","slug":"module/transport/connectionoptions","group":"transport"},{"label":"CoreExec","slug":"module/transport/coreexec","group":"transport"},{"label":"HttpAuth","slug":"module/transport/httpauth","group":"transport"},{"label":"Server","slug":"module/transport/server","group":"transport"},{"label":"DEFAULT_CONCURRENCY","slug":"module/transport/default-concurrency","group":"transport"},{"label":"DEFAULT_RETRY_CONFIG","slug":"module/transport/default-retry-config","group":"transport"},{"label":"DEFAULT_TIMEOUT_MS","slug":"module/transport/default-timeout-ms","group":"transport"},{"label":"IOS_DRIVER","slug":"module/transport/ios-driver","group":"transport"},{"label":"createConnection","slug":"module/transport/createconnection","group":"transport"},{"label":"createResilientRunner","slug":"module/transport/createresilientrunner","group":"transport"},{"label":"diffConfigs","slug":"module/transport/diffconfigs","group":"transport"},{"label":"isFatalError","slug":"module/transport/isfatalerror","group":"transport"},{"label":"normalizeConfig","slug":"module/transport/normalizeconfig","group":"transport"},{"label":"planCommit","slug":"module/transport/plancommit","group":"transport"},{"label":"resolveRetryConfig","slug":"module/transport/resolveretryconfig","group":"transport"},{"label":"verifyHostKey","slug":"module/transport/verifyhostkey","group":"transport"}],"deepExpand":true},{"label":"util/runtime","slug":"module/util-runtime","children":[{"label":"RuntimeInfo","slug":"module/util-runtime/runtimeinfo","group":"util/runtime"},{"label":"RuntimeName","slug":"module/util-runtime/runtimename","group":"util/runtime"},{"label":"detectRuntime","slug":"module/util-runtime/detectruntime","group":"util/runtime"}],"deepExpand":true},{"label":"Source Files","slug":"source"}],"currentSlug":"source/src/modules/builtins/copy-ts","siteName":"RoleCall","basePath":"/","collapsibleGroups":[]},"i5":{"nav":[{"label":"Home","slug":"","order":-1},{"label":"cli","slug":"module/cli","children":[{"label":"CliError","slug":"module/cli/clierror","group":"cli"},{"label":"AgentManifestResult","slug":"module/cli/agentmanifestresult","group":"cli"},{"label":"ApplyTotals","slug":"module/cli/applytotals","group":"cli"},{"label":"DocsModuleEntry","slug":"module/cli/docsmoduleentry","group":"cli"},{"label":"DocsModulesResult","slug":"module/cli/docsmodulesresult","group":"cli"},{"label":"DocsSearchResult","slug":"module/cli/docssearchresult","group":"cli"},{"label":"FactsGatherResult","slug":"module/cli/factsgatherresult","group":"cli"},{"label":"GlobalFlags","slug":"module/cli/globalflags","group":"cli"},{"label":"InventoryListResult","slug":"module/cli/inventorylistresult","group":"cli"},{"label":"InventoryShowResult","slug":"module/cli/inventoryshowresult","group":"cli"},{"label":"OutputPlugin","slug":"module/cli/outputplugin","group":"cli"},{"label":"PlaybookRunResult","slug":"module/cli/playbookrunresult","group":"cli"},{"label":"PluginEntryView","slug":"module/cli/pluginentryview","group":"cli"},{"label":"PluginListResult","slug":"module/cli/pluginlistresult","group":"cli"},{"label":"PluginRegisterResult","slug":"module/cli/pluginregisterresult","group":"cli"},{"label":"RenderedTemplate","slug":"module/cli/renderedtemplate","group":"cli"},{"label":"RunReplayResult","slug":"module/cli/runreplayresult","group":"cli"},{"label":"TaskApplyOutcome","slug":"module/cli/taskapplyoutcome","group":"cli"},{"label":"VarsListResult","slug":"module/cli/varslistresult","group":"cli"},{"label":"VarsTraceResult","slug":"module/cli/varstraceresult","group":"cli"},{"label":"CliResult","slug":"module/cli/cliresult","group":"cli"},{"label":"getOutputPlugin","slug":"module/cli/getoutputplugin","group":"cli"},{"label":"getVersion","slug":"module/cli/getversion","group":"cli"},{"label":"listOutputPlugins","slug":"module/cli/listoutputplugins","group":"cli"},{"label":"main","slug":"module/cli/main","group":"cli"},{"label":"registerOutputPlugin","slug":"module/cli/registeroutputplugin","group":"cli"},{"label":"renderOutput","slug":"module/cli/renderoutput","group":"cli"},{"label":"runAgentCommand","slug":"module/cli/runagentcommand","group":"cli"},{"label":"runDocsCommand","slug":"module/cli/rundocscommand","group":"cli"},{"label":"runFactsCommand","slug":"module/cli/runfactscommand","group":"cli"},{"label":"runInventoryCommand","slug":"module/cli/runinventorycommand","group":"cli"},{"label":"runPlaybookCommand","slug":"module/cli/runplaybookcommand","group":"cli"},{"label":"runPluginCommand","slug":"module/cli/runplugincommand","group":"cli"},{"label":"runReplayCommand","slug":"module/cli/runreplaycommand","group":"cli"},{"label":"runVarsCommand","slug":"module/cli/runvarscommand","group":"cli"},{"label":"writeOut","slug":"module/cli/writeout","group":"cli"}],"deepExpand":true},{"label":"config","slug":"module/config","children":[{"label":"Config","slug":"module/config/config","group":"config"},{"label":"DirectoryVars","slug":"module/config/directoryvars","group":"config"},{"label":"IdempotencyWarning","slug":"module/config/idempotencywarning","group":"config"},{"label":"NormalizedInventory","slug":"module/config/normalizedinventory","group":"config"},{"label":"NormalizedPlaybook","slug":"module/config/normalizedplaybook","group":"config"},{"label":"NormalizedTask","slug":"module/config/normalizedtask","group":"config"},{"label":"ServeConfig","slug":"module/config/serveconfig","group":"config"},{"label":"TemplateRefProblem","slug":"module/config/templaterefproblem","group":"config"},{"label":"ZodError","slug":"module/config/zoderror","group":"config"},{"label":"DbBackend","slug":"module/config/dbbackend","group":"config"},{"label":"InventoryFormat","slug":"module/config/inventoryformat","group":"config"},{"label":"NormalizedPlaybookFile","slug":"module/config/normalizedplaybookfile","group":"config"},{"label":"RawInventory","slug":"module/config/rawinventory","group":"config"},{"label":"RawInventoryGroup","slug":"module/config/rawinventorygroup","group":"config"},{"label":"RawPlaybook","slug":"module/config/rawplaybook","group":"config"},{"label":"RawPlaybookFile","slug":"module/config/rawplaybookfile","group":"config"},{"label":"RawTask","slug":"module/config/rawtask","group":"config"},{"label":"ScratchStrategy","slug":"module/config/scratchstrategy","group":"config"},{"label":"TriggerSpec","slug":"module/config/triggerspec","group":"config"},{"label":"CanonicalTaskSchema","slug":"module/config/canonicaltaskschema","group":"config"},{"label":"InventoryGroupSchema","slug":"module/config/inventorygroupschema","group":"config"},{"label":"InventorySchema","slug":"module/config/inventoryschema","group":"config"},{"label":"KNOWN_NAMESPACES","slug":"module/config/known-namespaces","group":"config"},{"label":"PlaybookObject","slug":"module/config/playbookobject","group":"config"},{"label":"PlaybookSchema","slug":"module/config/playbookschema","group":"config"},{"label":"TaskSchema","slug":"module/config/taskschema","group":"config"},{"label":"TriggerSchema","slug":"module/config/triggerschema","group":"config"},{"label":"canonicalizeTask","slug":"module/config/canonicalizetask","group":"config"},{"label":"deepMerge","slug":"module/config/deepmerge","group":"config"},{"label":"detectInventoryFormat","slug":"module/config/detectinventoryformat","group":"config"},{"label":"lintPlaybookIdempotency","slug":"module/config/lintplaybookidempotency","group":"config"},{"label":"lintTemplateRefs","slug":"module/config/linttemplaterefs","group":"config"},{"label":"loadConfig","slug":"module/config/loadconfig","group":"config"},{"label":"loadInventory","slug":"module/config/loadinventory","group":"config"},{"label":"loadInventoryFile","slug":"module/config/loadinventoryfile","group":"config"},{"label":"loadPlaybook","slug":"module/config/loadplaybook","group":"config"},{"label":"loadPlaybookFile","slug":"module/config/loadplaybookfile","group":"config"},{"label":"normalizeInventory","slug":"module/config/normalizeinventory","group":"config"},{"label":"normalizePlaybook","slug":"module/config/normalizeplaybook","group":"config"},{"label":"normalizeTask","slug":"module/config/normalizetask","group":"config"},{"label":"resolveDirectoryVars","slug":"module/config/resolvedirectoryvars","group":"config"},{"label":"serializeInventory","slug":"module/config/serializeinventory","group":"config"},{"label":"serializePlaybook","slug":"module/config/serializeplaybook","group":"config"},{"label":"serializeTask","slug":"module/config/serializetask","group":"config"}],"deepExpand":true},{"label":"facts","slug":"module/facts","children":[{"label":"FactError","slug":"module/facts/facterror","group":"facts"},{"label":"FactsEngine","slug":"module/facts/factsengine","group":"facts"},{"label":"FactCache","slug":"module/facts/factcache","group":"facts"},{"label":"FactGatherer","slug":"module/facts/factgatherer","group":"facts"},{"label":"FactPlugin","slug":"module/facts/factplugin","group":"facts"},{"label":"FactsEngineOptions","slug":"module/facts/factsengineoptions","group":"facts"},{"label":"GatherOptions","slug":"module/facts/gatheroptions","group":"facts"},{"label":"ConnectionKind","slug":"module/facts/connectionkind","group":"facts"},{"label":"FactKey","slug":"module/facts/factkey","group":"facts"},{"label":"FactMap","slug":"module/facts/factmap","group":"facts"},{"label":"BUILTIN_GATHERERS","slug":"module/facts/builtin-gatherers","group":"facts"},{"label":"defaultFactsEngine","slug":"module/facts/defaultfactsengine","group":"facts"},{"label":"networkGatherer","slug":"module/facts/networkgatherer","group":"facts"},{"label":"osGatherer","slug":"module/facts/osgatherer","group":"facts"},{"label":"serviceGathererHttp","slug":"module/facts/servicegathererhttp","group":"facts"},{"label":"serviceGathererPosix","slug":"module/facts/servicegathererposix","group":"facts"},{"label":"createFactPlugin","slug":"module/facts/createfactplugin","group":"facts"},{"label":"createInMemoryFactCache","slug":"module/facts/createinmemoryfactcache","group":"facts"},{"label":"getDeclaredFactEntries","slug":"module/facts/getdeclaredfactentries","group":"facts"},{"label":"getDeclaredFactNames","slug":"module/facts/getdeclaredfactnames","group":"facts"},{"label":"getRegisteredFactPlugins","slug":"module/facts/getregisteredfactplugins","group":"facts"},{"label":"registerFactPlugin","slug":"module/facts/registerfactplugin","group":"facts"}],"deepExpand":true},{"label":"modules","slug":"module/modules","children":[{"label":"ModuleCollisionError","slug":"module/modules/modulecollisionerror","group":"modules"},{"label":"DescribeResult","slug":"module/modules/describeresult","group":"modules"},{"label":"Module","slug":"module/modules/module","group":"modules"},{"label":"ModuleContext","slug":"module/modules/modulecontext","group":"modules"},{"label":"ModuleResult","slug":"module/modules/moduleresult","group":"modules"},{"label":"ModuleSummary","slug":"module/modules/modulesummary","group":"modules"},{"label":"PluginScanEntry","slug":"module/modules/pluginscanentry","group":"modules"},{"label":"ResourceOptions","slug":"module/modules/resourceoptions","group":"modules"},{"label":"PluginType","slug":"module/modules/plugintype","group":"modules"},{"label":"ResolveResult","slug":"module/modules/resolveresult","group":"modules"},{"label":"addHostModule","slug":"module/modules/addhostmodule","group":"modules"},{"label":"blockinfileModule","slug":"module/modules/blockinfilemodule","group":"modules"},{"label":"commandModule","slug":"module/modules/commandmodule","group":"modules"},{"label":"configEditModule","slug":"module/modules/configeditmodule","group":"modules"},{"label":"copyModule","slug":"module/modules/copymodule","group":"modules"},{"label":"failModule","slug":"module/modules/failmodule","group":"modules"},{"label":"fileModule","slug":"module/modules/filemodule","group":"modules"},{"label":"getUrlModule","slug":"module/modules/geturlmodule","group":"modules"},{"label":"gitModule","slug":"module/modules/gitmodule","group":"modules"},{"label":"groupModule","slug":"module/modules/groupmodule","group":"modules"},{"label":"httpModule","slug":"module/modules/httpmodule","group":"modules"},{"label":"lineinfileModule","slug":"module/modules/lineinfilemodule","group":"modules"},{"label":"pkgModule","slug":"module/modules/pkgmodule","group":"modules"},{"label":"rawModule","slug":"module/modules/rawmodule","group":"modules"},{"label":"replaceModule","slug":"module/modules/replacemodule","group":"modules"},{"label":"scriptModule","slug":"module/modules/scriptmodule","group":"modules"},{"label":"serviceModule","slug":"module/modules/servicemodule","group":"modules"},{"label":"setFactModule","slug":"module/modules/setfactmodule","group":"modules"},{"label":"shellModule","slug":"module/modules/shellmodule","group":"modules"},{"label":"sqlModule","slug":"module/modules/sqlmodule","group":"modules"},{"label":"statModule","slug":"module/modules/statmodule","group":"modules"},{"label":"userModule","slug":"module/modules/usermodule","group":"modules"},{"label":"waitForModule","slug":"module/modules/waitformodule","group":"modules"},{"label":"buildResolutionTable","slug":"module/modules/buildresolutiontable","group":"modules"},{"label":"getModule","slug":"module/modules/getmodule","group":"modules"},{"label":"getModuleSummary","slug":"module/modules/getmodulesummary","group":"modules"},{"label":"listModules","slug":"module/modules/listmodules","group":"modules"},{"label":"loadModuleFromFile","slug":"module/modules/loadmodulefromfile","group":"modules"},{"label":"registerAllModules","slug":"module/modules/registerallmodules","group":"modules"},{"label":"registerModule","slug":"module/modules/registermodule","group":"modules"},{"label":"resolveModule","slug":"module/modules/resolvemodule","group":"modules"},{"label":"resource","slug":"module/modules/resource","group":"modules"},{"label":"scanAndRegister","slug":"module/modules/scanandregister","group":"modules"},{"label":"scanProject","slug":"module/modules/scanproject","group":"modules"},{"label":"searchModules","slug":"module/modules/searchmodules","group":"modules"},{"label":"setModuleMeta","slug":"module/modules/setmodulemeta","group":"modules"}],"deepExpand":true},{"label":"orchestrator","slug":"module/orchestrator","children":[{"label":"CronScheduler","slug":"module/orchestrator/cronscheduler","group":"orchestrator"},{"label":"Engine","slug":"module/orchestrator/engine","group":"orchestrator"},{"label":"CronSchedulerOptions","slug":"module/orchestrator/cronscheduleroptions","group":"orchestrator"},{"label":"Enqueuer","slug":"module/orchestrator/enqueuer","group":"orchestrator"},{"label":"HostOutcome","slug":"module/orchestrator/hostoutcome","group":"orchestrator"},{"label":"JobBody","slug":"module/orchestrator/jobbody","group":"orchestrator"},{"label":"ParsedCron","slug":"module/orchestrator/parsedcron","group":"orchestrator"},{"label":"PlanTask","slug":"module/orchestrator/plantask","group":"orchestrator"},{"label":"RouteContext","slug":"module/orchestrator/routecontext","group":"orchestrator"},{"label":"RunRecord","slug":"module/orchestrator/runrecord","group":"orchestrator"},{"label":"SchedulerApi","slug":"module/orchestrator/schedulerapi","group":"orchestrator"},{"label":"ServerHandle","slug":"module/orchestrator/serverhandle","group":"orchestrator"},{"label":"ServerOptions","slug":"module/orchestrator/serveroptions","group":"orchestrator"},{"label":"ShutdownOptions","slug":"module/orchestrator/shutdownoptions","group":"orchestrator"},{"label":"TargetDescriptor","slug":"module/orchestrator/targetdescriptor","group":"orchestrator"},{"label":"TriggerSuccess","slug":"module/orchestrator/triggersuccess","group":"orchestrator"},{"label":"WebhookRouteContext","slug":"module/orchestrator/webhookroutecontext","group":"orchestrator"},{"label":"ActionType","slug":"module/orchestrator/actiontype","group":"orchestrator"},{"label":"RunStatus","slug":"module/orchestrator/runstatus","group":"orchestrator"},{"label":"TransportKind","slug":"module/orchestrator/transportkind","group":"orchestrator"},{"label":"ValidationError","slug":"module/orchestrator/validationerror","group":"orchestrator"},{"label":"ValidationResult","slug":"module/orchestrator/validationresult","group":"orchestrator"},{"label":"ValidationSuccess","slug":"module/orchestrator/validationsuccess","group":"orchestrator"},{"label":"VALID_JOB_TYPES","slug":"module/orchestrator/valid-job-types","group":"orchestrator"},{"label":"createServer","slug":"module/orchestrator/createserver","group":"orchestrator"},{"label":"installSignalHandlers","slug":"module/orchestrator/installsignalhandlers","group":"orchestrator"},{"label":"isActionType","slug":"module/orchestrator/isactiontype","group":"orchestrator"},{"label":"isValid","slug":"module/orchestrator/isvalid","group":"orchestrator"},{"label":"mountRoutes","slug":"module/orchestrator/mountroutes","group":"orchestrator"},{"label":"mountWebhooks","slug":"module/orchestrator/mountwebhooks","group":"orchestrator"},{"label":"nextOccurrence","slug":"module/orchestrator/nextoccurrence","group":"orchestrator"},{"label":"parseExpr","slug":"module/orchestrator/parseexpr","group":"orchestrator"},{"label":"startServe","slug":"module/orchestrator/startserve","group":"orchestrator"},{"label":"validateJobBody","slug":"module/orchestrator/validatejobbody","group":"orchestrator"}],"deepExpand":true},{"label":"store","slug":"module/store","children":[{"label":"ProjectsRepository","slug":"module/store/projectsrepository","group":"store"},{"label":"RunsRepository","slug":"module/store/runsrepository","group":"store"},{"label":"SchedulesRepository","slug":"module/store/schedulesrepository","group":"store"},{"label":"TracesRepository","slug":"module/store/tracesrepository","group":"store"},{"label":"WriteQueue","slug":"module/store/writequeue","group":"store"},{"label":"CreateProjectInput","slug":"module/store/createprojectinput","group":"store"},{"label":"CreateRunInput","slug":"module/store/createruninput","group":"store"},{"label":"CreateScheduleInput","slug":"module/store/createscheduleinput","group":"store"},{"label":"CreateTraceInput","slug":"module/store/createtraceinput","group":"store"},{"label":"OpenStoreOptions","slug":"module/store/openstoreoptions","group":"store"},{"label":"PatchRun","slug":"module/store/patchrun","group":"store"},{"label":"PatchSchedule","slug":"module/store/patchschedule","group":"store"},{"label":"PatchTrace","slug":"module/store/patchtrace","group":"store"},{"label":"Project","slug":"module/store/project","group":"store"},{"label":"ProjectsRepo","slug":"module/store/projectsrepo","group":"store"},{"label":"Run","slug":"module/store/run","group":"store"},{"label":"RunsRepo","slug":"module/store/runsrepo","group":"store"},{"label":"RunTrace","slug":"module/store/runtrace","group":"store"},{"label":"Schedule","slug":"module/store/schedule","group":"store"},{"label":"SchedulesRepo","slug":"module/store/schedulesrepo","group":"store"},{"label":"Store","slug":"module/store/store","group":"store"},{"label":"TracesRepo","slug":"module/store/tracesrepo","group":"store"},{"label":"UpdateProjectPatch","slug":"module/store/updateprojectpatch","group":"store"},{"label":"REGISTRY_DB_NAME","slug":"module/store/registry-db-name","group":"store"},{"label":"openStore","slug":"module/store/openstore","group":"store"},{"label":"resolveRegistryPath","slug":"module/store/resolveregistrypath","group":"store"}],"deepExpand":true},{"label":"transport","slug":"module/transport","children":[{"label":"AbortError","slug":"module/transport/aborterror","group":"transport"},{"label":"HttpApiConnection","slug":"module/transport/httpapiconnection","group":"transport"},{"label":"LocalConnection","slug":"module/transport/localconnection","group":"transport"},{"label":"NetworkSshConnection","slug":"module/transport/networksshconnection","group":"transport"},{"label":"SshConnection","slug":"module/transport/sshconnection","group":"transport"},{"label":"TimeoutError","slug":"module/transport/timeouterror","group":"transport"},{"label":"ApplyOptions","slug":"module/transport/applyoptions","group":"transport"},{"label":"ApplyResult","slug":"module/transport/applyresult","group":"transport"},{"label":"BaseConnectionOptions","slug":"module/transport/baseconnectionoptions","group":"transport"},{"label":"ConfigDiff","slug":"module/transport/configdiff","group":"transport"},{"label":"Connection","slug":"module/transport/connection","group":"transport"},{"label":"ConnectionFacts","slug":"module/transport/connectionfacts","group":"transport"},{"label":"Credentials","slug":"module/transport/credentials","group":"transport"},{"label":"ExecOptions","slug":"module/transport/execoptions","group":"transport"},{"label":"ExecResult","slug":"module/transport/execresult","group":"transport"},{"label":"HealthStatus","slug":"module/transport/healthstatus","group":"transport"},{"label":"HttpApiConnectionOptions","slug":"module/transport/httpapiconnectionoptions","group":"transport"},{"label":"HttpApiRequest","slug":"module/transport/httpapirequest","group":"transport"},{"label":"HttpGrpcCapability","slug":"module/transport/httpgrpccapability","group":"transport"},{"label":"LocalConnectionOptions","slug":"module/transport/localconnectionoptions","group":"transport"},{"label":"NetworkConnectionOptions","slug":"module/transport/networkconnectionoptions","group":"transport"},{"label":"ResilienceConfig","slug":"module/transport/resilienceconfig","group":"transport"},{"label":"RetryConfig","slug":"module/transport/retryconfig","group":"transport"},{"label":"SshConnectionOptions","slug":"module/transport/sshconnectionoptions","group":"transport"},{"label":"VendorDriver","slug":"module/transport/vendordriver","group":"transport"},{"label":"ConnectionOptions","slug":"module/transport/connectionoptions","group":"transport"},{"label":"CoreExec","slug":"module/transport/coreexec","group":"transport"},{"label":"HttpAuth","slug":"module/transport/httpauth","group":"transport"},{"label":"Server","slug":"module/transport/server","group":"transport"},{"label":"DEFAULT_CONCURRENCY","slug":"module/transport/default-concurrency","group":"transport"},{"label":"DEFAULT_RETRY_CONFIG","slug":"module/transport/default-retry-config","group":"transport"},{"label":"DEFAULT_TIMEOUT_MS","slug":"module/transport/default-timeout-ms","group":"transport"},{"label":"IOS_DRIVER","slug":"module/transport/ios-driver","group":"transport"},{"label":"createConnection","slug":"module/transport/createconnection","group":"transport"},{"label":"createResilientRunner","slug":"module/transport/createresilientrunner","group":"transport"},{"label":"diffConfigs","slug":"module/transport/diffconfigs","group":"transport"},{"label":"isFatalError","slug":"module/transport/isfatalerror","group":"transport"},{"label":"normalizeConfig","slug":"module/transport/normalizeconfig","group":"transport"},{"label":"planCommit","slug":"module/transport/plancommit","group":"transport"},{"label":"resolveRetryConfig","slug":"module/transport/resolveretryconfig","group":"transport"},{"label":"verifyHostKey","slug":"module/transport/verifyhostkey","group":"transport"}],"deepExpand":true},{"label":"util/runtime","slug":"module/util-runtime","children":[{"label":"RuntimeInfo","slug":"module/util-runtime/runtimeinfo","group":"util/runtime"},{"label":"RuntimeName","slug":"module/util-runtime/runtimename","group":"util/runtime"},{"label":"detectRuntime","slug":"module/util-runtime/detectruntime","group":"util/runtime"}],"deepExpand":true},{"label":"Source Files","slug":"source"}],"currentSlug":"source/src/modules/builtins/copy-ts","basePath":"/","collapsibleGroups":[]}}</script><script type="module">(function(){var map={"theme-toggle":"/_islands/theme-toggle-RQJWK6UH.js","settings":"/_islands/settings-YODNV3SD.js","code-viewer":"/_islands/code-viewer-U3WRLQLX.js","embed":"/_islands/embed-HOMSSC3V.js","playground":"/_islands/playground-KT5R4UYJ.js","tabs":"/_islands/tabs-NRSQKCSU.js","sidebar":"/_islands/sidebar-6ULZ3KUU.js","mobile-nav":"/_islands/mobile-nav-CEVIJOY5.js","toc":"/_islands/toc-OVW2UK3I.js","toc-mobile":"/_islands/toc-mobile-IGCYO5QO.js","cmdk":"/_islands/cmdk-J5HVDM6W.js","code-tabs":"/_islands/code-tabs-DXMGOVSV.js","copy-btn":"/_islands/copy-btn-RPMIR26R.js","copy-page":"/_islands/copy-page-IM7ZKESR.js"};var seen=new Set();document.querySelectorAll('[data-island]').forEach(function(el){seen.add(el.getAttribute('data-island'));});seen.forEach(function(name){var src=map[name];if(src){import(src);}});})();</script><script>(function(){function flash(h){var b=h.querySelector('[data-heading-anchor]');if(!b)return;b.setAttribute('data-copied','');window.setTimeout(function(){b.removeAttribute('data-copied');},3000);}function onClick(e){var t=e.target;if(!t||!t.closest)return;if(t.closest('a'))return;var h=t.closest('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');if(!h)return;var id=h.id;if(!id)return;var iconOnly=!!t.closest('[data-heading-anchor]');if(!iconOnly){if(location.hash.slice(1)===id){h.scrollIntoView();}else{location.hash=id;}}try{var url=location.origin+location.pathname+location.search+'#'+id;if(navigator.clipboard){navigator.clipboard.writeText(url).then(function(){flash(h);}).catch(function(){});}}catch(_){}}document.addEventListener('click',onClick);}());</script><script>(function(){var IDLE=700;var timers=new WeakMap();function onScroll(e){var el=e.target;if(el===document||el===window)el=document.documentElement;if(!el||!el.classList)return;el.classList.add('clean-scrolling');var prev=timers.get(el);if(prev)window.clearTimeout(prev);timers.set(el,window.setTimeout(function(){el.classList.remove('clean-scrolling');},IDLE));}document.addEventListener('scroll',onScroll,true);}());</script></body></html>

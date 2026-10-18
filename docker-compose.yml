@@ -1,0 +1,9 @@
+services:
+  ssh-sim:
+    build:
+      context: ./docker/sshd
+    image: rolecall-ssh-sim
+    ports:
+      - "22"
+    environment:
+      - AUTHORIZED_KEY=${AUTHORIZED_KEY:-}

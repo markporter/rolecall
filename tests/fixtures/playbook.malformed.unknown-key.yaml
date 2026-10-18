@@ -1,0 +1,8 @@
+- name: Bad playbook with idempotent flag
+  hosts: all
+  tasks:
+    - name: Run a command
+      module: command
+      args:
+        cmd: echo hi
+      idempotent: false

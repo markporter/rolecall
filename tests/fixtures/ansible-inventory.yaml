@@ -1,0 +1,21 @@
+# Ansible-style YAML inventory used by tests/inventory-ansible-loader.test.ts.
+all:
+  vars:
+    env: production
+  children:
+    web:
+      vars:
+        role: web
+        retries: 3
+      hosts:
+        web1.example.com:
+          http_port: 80
+          ansible_user: deploy
+        web2.example.com:
+      children:
+        web_edge:
+          hosts:
+            edge1.example.com:
+    db:
+      hosts:
+        db1.example.com:

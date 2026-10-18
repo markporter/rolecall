@@ -1,0 +1,10 @@
+groups:
+  web:
+    hosts:
+      - web1.example.com
+      - web2.example.com
+    vars:
+      role: web
+  db:
+    hosts:
+      - db1.example.com

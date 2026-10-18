@@ -1,0 +1,27 @@
+nginx_package_name: nginx
+nginx_service_state: started
+nginx_service_enabled: true
+
+nginx_user: www-data
+nginx_worker_processes: auto
+nginx_worker_connections: "1024"
+
+nginx_sendfile: "on"
+nginx_keepalive_timeout: "65"
+nginx_client_max_body_size: "64m"
+
+nginx_server_tokens: "on"
+
+nginx_listen_ipv6: true
+
+nginx_remove_default_vhost: false
+
+nginx_extra_http_options: ""
+
+nginx_upstreams: []
+nginx_vhosts: []
+
+nginx_conf_path: /etc/nginx/nginx.conf
+nginx_vhost_path: /etc/nginx/conf.d
+nginx_default_vhost_path: /etc/nginx/sites-enabled/default
+nginx_ssl_path: /etc/nginx/ssl

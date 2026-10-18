@@ -1,0 +1,7 @@
+groups:
+  web:
+    hosts: [web1, web2, web3]
+  db:
+    hosts: [db1]
+  lb:
+    hosts: [lb1]

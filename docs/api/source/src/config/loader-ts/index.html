@@ -1,0 +1,882 @@
+<!doctype html><html lang="en" data-scrollbar="styled"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="generator" content="clean-jsdoc-theme 5.2.0" /><title>src/config/loader.ts | RoleCall</title><script>(function(){try{var d=document.documentElement;var t=localStorage.getItem('theme');if(t==='dark'){d.dataset.theme='dark'}else{d.dataset.theme='light'}var fs=localStorage.getItem('clean-font-size');if(fs==='sm'){d.style.fontSize='15px'}else if(fs==='lg'){d.style.fontSize='18px'}var ls=localStorage.getItem('clean-line-spacing');if(ls==='compact'){d.style.setProperty('--clean-line-height','1.4')}else if(ls==='relaxed'){d.style.setProperty('--clean-line-height','1.8')}}catch(_){}}());</script><link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin /><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;500;600;700&amp;family=Roboto:wght@400;500;600;700&amp;display=swap" /><link rel="stylesheet" href="/_assets/styles.mve0ywe9-ed9f7f0f.css" /></head><body><div class="flex min-h-screen flex-col bg-background text-(--clean-fg)"><header class="sticky top-0 z-30 border-b border-(--clean-border) bg-background"><div class="mx-auto flex h-16 w-full min-w-0 max-w-screen-2xl items-center gap-4 px-4"><a href="/" class="flex min-w-0 items-center pl-3 no-underline"><span class="truncate text-lg font-heading font-bold text-(--clean-fg)">RoleCall</span></a><span class="shrink-0 rounded bg-(--clean-bg-muted) px-2 py-0.5 text-xs text-muted-foreground">v0.0.0</span><div class="ml-auto flex shrink-0 items-center gap-1"><div class="flex items-center gap-1"><div data-island="cmdk" data-island-id="i1"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-muted-foreground hover:bg-accent hover:text-accent-foreground h-9 w-9" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Search" title="Search (Ctrl K)"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search" aria-hidden="true"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg></button></div></div><div class="hidden items-center gap-1 md:flex"><div data-island="theme-toggle" data-island-id="i2"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-muted-foreground hover:bg-accent hover:text-accent-foreground h-9 w-9" type="button" aria-label="Switch to dark theme" title="Toggle theme"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg></button></div><div data-island="settings" data-island-id="i3"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-muted-foreground hover:bg-accent hover:text-accent-foreground h-9 w-9" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Settings" title="Settings"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings" aria-hidden="true"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"></path><circle cx="12" cy="12" r="3"></circle></svg></button></div></div><div class="md:hidden"><div data-island="mobile-nav" data-island-id="i4"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-muted-foreground hover:bg-accent hover:text-accent-foreground h-9 w-9" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Open navigation" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panel-right" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M15 3v18"></path></svg></button></div></div></div></div></header><div class="mx-auto grid w-full max-w-screen-2xl flex-1 grid-cols-1 gap-6 px-4 py-6 md:grid-cols-[16rem_minmax(0,1fr)]"><aside class="hidden md:block"><div class="sticky overflow-y-auto [scrollbar-gutter:stable] pr-2 top-20 max-h-[calc(100vh-6rem)]"><div data-island="sidebar" data-island-id="i5"><nav aria-label="Documentation navigation" class="text-(--clean-fg)"><div class="mt-4 first:mt-0"><ul class="m-0 list-none p-0"><li class="my-0.5"><a href="/" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">Home</span></a></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/cli" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">cli</span></a><button type="button" aria-expanded="false" aria-label="cli" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/config" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">config</span></a><button type="button" aria-expanded="false" aria-label="config" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/facts" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">facts</span></a><button type="button" aria-expanded="false" aria-label="facts" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/modules" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">modules</span></a><button type="button" aria-expanded="false" aria-label="modules" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/orchestrator" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">orchestrator</span></a><button type="button" aria-expanded="false" aria-label="orchestrator" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/store" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">store</span></a><button type="button" aria-expanded="false" aria-label="store" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/transport" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">transport</span></a><button type="button" aria-expanded="false" aria-label="transport" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/util-runtime" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">util/runtime</span></a><button type="button" aria-expanded="false" aria-label="util/runtime" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><a href="/source" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">Source Files</span></a></li></ul></div></nav></div></div></aside><main class="min-w-0 px-4 md:px-8 lg:px-12"><div data-island="code-viewer" data-island-id="i0"><div class="my-4 overflow-hidden rounded-lg border border-(--clean-border) bg-(--clean-bg)"><div class="flex items-center justify-between border-b border-(--clean-border) bg-(--clean-bg-muted) px-3 py-2 text-sm"><span class="font-mono text-(--clean-fg)">src/config/loader.ts</span><span class="text-xs text-(--clean-fg-muted)">typescript</span></div><div class="h-[calc(100vh-13rem)] min-h-[24rem]"><pre class="m-0 h-full overflow-auto whitespace-pre p-4 text-sm leading-relaxed text-(--clean-fg)"><code class="language-typescript">// RoleCall config loader — parse YAML via js-yaml into Zod-validated + normalized
+// models. Pure config parsing only: NO templating, NO transport/SSH/HTTP.
+//
+// On invalid input the underlying ZodError is thrown as-is, so callers can read
+// `error.issues[].path` to learn exactly which field failed (e.g. [&quot;tasks&quot;, 0,
+// &quot;module&quot;]). Unknown keys are rejected by the strict() schemas.
+
+import { load as yamlLoad } from &quot;js-yaml&quot;;
+import { basename, dirname, extname, join, relative, resolve } from &quot;node:path&quot;;
+import type { ZodError, ZodSchema } from &quot;zod&quot;;
+
+import {
+  InventorySchema,
+  PlaybookSchema,
+  normalizeInventory,
+  normalizePlaybook,
+  normalizeTask,
+  type NormalizedInventory,
+  type NormalizedPlaybook,
+  type NormalizedTask,
+  type RawInventory,
+  type RawPlaybookFile,
+  type RawTask,
+  CanonicalTaskSchema,
+} from &quot;./schema&quot;;
+
+import { isStructured } from &quot;../templating/refs.js&quot;;
+
+import {
+  isAnsibleYamlInventory,
+  looksLikeIniInventory,
+  parseAnsibleIniInventory,
+  parseAnsibleYamlInventory,
+} from &quot;../inventory/ansible.js&quot;;
+
+import { parseManifestYaml, mergeManifests, type VarManifestEntry } from &quot;./var-manifest/index.js&quot;;
+import type { VarOriginMap, VarTier } from &quot;./var-trace.js&quot;;
+
+import { getDeclaredFactNames } from &quot;../facts/engine.js&quot;;
+
+import { FsProjectSource } from &quot;../vfs/fs-project-source.js&quot;;
+import type { ProjectSource } from &quot;../vfs/project-source.js&quot;;
+
+// Parse YAML text into an untyped value. js-yaml throws a YAMLException on
+// malformed syntax; we surface it unchanged (it is not a schema error).
+function parseYaml(text: string): unknown {
+  return yamlLoad(text);
+}
+
+// Validate + normalize a raw YAML value against `schema`, throwing the ZodError
+// (with named field paths) on failure.
+function validate&lt;TOut, TRaw>(
+  data: unknown,
+  schema: ZodSchema&lt;TRaw>,
+  normalize: (raw: TRaw) => TOut,
+): TOut {
+  const result = schema.safeParse(data);
+  if (!result.success) {
+    // Re-throw the ZodError so callers can inspect `issues[].path`.
+    throw result.error;
+  }
+  return normalize(result.data);
+}
+
+// --- Idempotency lint guard -------------------------------------------------
+//
+// The `shell` module is controlled by `run_mode` (default `idempotent`): in
+// `idempotent` mode it THROWS at apply time when no idempotency guard is set. This
+// lint is the earlier, softer WARNING that still fires at load time so authors
+// catch the issue before a run. A task set to `run_mode: readonly` or
+// `run_mode: always` explicitly opts out of guarding, which suppresses the warning.
+// Other modules are skipped; declarative idempotent modules self-guard.
+
+/** Modules whose repeated, unguarded runs are inherently non-idempotent. */
+const UNGUARDED_MODULES = new Set([&quot;shell&quot;]);
+/** Per-task args that signal an idempotency guard is present. */
+const GUARD_HINTS = [&quot;creates&quot;, &quot;removes&quot;, &quot;creates_cmd&quot;, &quot;removes_cmd&quot;];
+
+/** A single idempotency warning emitted during playbook load/normalize. */
+export interface IdempotencyWarning {
+  task: string;
+  module: string;
+  warning: string;
+}
+
+/**
+ * Inspect a normalized playbook for unguarded shell/command tasks and return
+ * human-readable warnings. Never throws — callers decide how to surface them.
+ * @param pb Normalized playbook model.
+ * @returns Zero or more idempotency warnings.
+ */
+export function lintPlaybookIdempotency(pb: NormalizedPlaybook): IdempotencyWarning[] {
+  const out: IdempotencyWarning[] = [];
+  for (const t of pb.tasks) {
+    const module = t.module ?? &quot;&quot;;
+    if (!UNGUARDED_MODULES.has(module)) continue;
+    const args = t.args ?? {};
+    // `run_mode: readonly`/`always` explicitly opt out of guarding, so no warning.
+    const runMode = args[&quot;run_mode&quot;];
+    if (runMode === &quot;readonly&quot; || runMode === &quot;always&quot;) continue;
+    const hasGuard = GUARD_HINTS.some((h) => h in args);
+    if (!hasGuard) {
+      out.push({
+        task: t.name,
+        module,
+        warning: `module '${module}' has run_mode '${runMode ?? &quot;idempotent&quot;}' but no idempotency guard (creates/removes/creates_cmd/removes_cmd); repeated runs may apply unconditionally`,
+      });
+    }
+  }
+  return out;
+}
+
+// --- Template ref lint guard ------------------------------------------------
+
+/** A single template-ref problem found during playbook load. */
+export interface TemplateRefProblem {
+  /** Dot/bracket path to the offending value within the playbook. */
+  path: string;
+  /** `jinja` = raw `{{ }}` delimiter; `namespace-unknown` = `$var` whose first segment is not one of the 9 reserved namespaces; `undeclared-var`/`undeclared-fact` = var_strict enforcement (vars./facts. leaves only). */
+  kind: &quot;jinja&quot; | &quot;namespace-unknown&quot; | &quot;undeclared-var&quot; | &quot;undeclared-fact&quot;;
+  /** Human-readable explanation of the problem. */
+  message: string;
+}
+
+/** The 9 reserved, fully-qualified namespaces of the `TemplateVars` map (ADR 0013). */
+export const KNOWN_NAMESPACES = new Set&lt;string>([
+  &quot;vars&quot;,
+  &quot;facts&quot;,
+  &quot;reg&quot;,
+  &quot;loop&quot;,
+  &quot;play&quot;,
+  &quot;inv&quot;,
+  &quot;role&quot;,
+  &quot;run&quot;,
+  &quot;rolecall&quot;,
+]);
+
+/**
+ * Inspect a normalized playbook for unsupported template constructs and return
+ * problems. Unlike {@link lintPlaybookIdempotency} these are hard errors: callers
+ * should throw. Scans task scalar args, `when`, `loop`, `notify`, and names; the
+ * `vars` data namespace is intentionally skipped (it holds literal values).
+ * @param pb Normalized playbook model.
+ * @returns Zero or more template-ref problems.
+ */
+export function lintTemplateRefs(pb: NormalizedPlaybook): TemplateRefProblem[] {
+  const problems: TemplateRefProblem[] = [];
+
+  // Build the declared-name sets from the merged manifest registry attached by the loader.
+  const declaredVars = new Set(
+    (pb.varManifests ?? []).filter((e) => e.kind === &quot;var&quot;).map((e) => e.name),
+  );
+  // Declared facts = manifest `kind: fact` entries ∪ facts declared by registered
+  // plugins/modules. A declared fact is, by construction, one a registered gatherer
+  // can produce — this unifies the previously-disconnected declaration and producer sets.
+  const declaredFacts = new Set&lt;string>([
+    ...(pb.varManifests ?? []).filter((e) => e.kind === &quot;fact&quot;).map((e) => e.name),
+    ...getDeclaredFactNames(),
+  ]);
+  // var_strict is on by default, but without any discovered declarations there is nothing
+  // to validate against (inventory-sourced vars are not in the registry yet), so enforcement
+  // is gated on a non-empty registry — it switches on naturally as manifests are added.
+  const strict = (pb.var_strict ?? true) &amp;&amp; (pb.varManifests?.length ?? 0) > 0;
+
+  const checkString = (value: string, path: string): void => {
+    if (value.includes(&quot;{{&quot;) || value.includes(&quot;}}&quot;)) {
+      problems.push({
+        path,
+        kind: &quot;jinja&quot;,
+        message: `Jinja-style '{{ }}' interpolation is not supported; use a structured ref node such as { $var: vars.foo } (found: ${JSON.stringify(value)})`,
+      });
+    }
+  };
+
+  const walk = (value: unknown, path: string): void => {
+    if (typeof value === &quot;string&quot;) {
+      checkString(value, path);
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach((item, i) => walk(item, `${path}[${i}]`));
+      return;
+    }
+    if (value !== null &amp;&amp; typeof value === &quot;object&quot;) {
+      const record = value as Record&lt;string, unknown>;
+      if (isStructured(value)) {
+        const op = Object.keys(record)[0];
+        if (op === &quot;$var&quot;) {
+          const ref = record.$var;
+          if (typeof ref === &quot;string&quot;) {
+            // ADR 0013: every $var MUST be fully-qualified with one of the 9 reserved
+            // namespaces as its first segment; bare refs (e.g. `foo`, `item`, `index`)
+            // are rejected so that registered/loop vars can never shadow a reserved alias.
+            const dot = ref.indexOf(&quot;.&quot;);
+            const ns = dot === -1 ? ref : ref.slice(0, dot);
+            if (!KNOWN_NAMESPACES.has(ns)) {
+              problems.push({
+                path,
+                kind: &quot;namespace-unknown&quot;,
+                message: `$var must use one of the 9 reserved namespaces (${[...KNOWN_NAMESPACES].join(&quot;, &quot;)}); bare refs like { $var: ${JSON.stringify(ref)} } are not allowed (use e.g. { $var: vars.foo })`,
+              });
+              // Do not apply var_strict on an already-unknown namespace.
+            } else if (strict &amp;&amp; ns === &quot;vars&quot;) {
+              const name = ref.slice(&quot;vars.&quot;.length);
+              if (!declaredVars.has(name)) {
+                problems.push({
+                  path,
+                  kind: &quot;undeclared-var&quot;,
+                  message: `var '${name}' is not declared in any var manifest (var_strict)`,
+                });
+              }
+            } else if (strict &amp;&amp; ns === &quot;facts&quot;) {
+              const name = ref.slice(&quot;facts.&quot;.length);
+              if (!declaredFacts.has(name)) {
+                problems.push({
+                  path,
+                  kind: &quot;undeclared-fact&quot;,
+                  message: `fact '${name}' is not declared in any var manifest (var_strict)`,
+                });
+              }
+            }
+          }
+        }
+      }
+      for (const [k, v] of Object.entries(record)) walk(v, `${path}.${k}`);
+    }
+  };
+
+  if (pb.name !== undefined) walk(pb.name, &quot;name&quot;);
+  for (const t of pb.tasks) {
+    walk(t.name, &quot;tasks[].name&quot;);
+    walk(t.module, &quot;tasks[].module&quot;);
+    walk(t.args, &quot;tasks[].args&quot;);
+    if (t.when !== undefined) walk(t.when, &quot;tasks[].when&quot;);
+    if (t.loop !== undefined) walk(t.loop, &quot;tasks[].loop&quot;);
+    for (const n of t.notify) walk(n, &quot;tasks[].notify&quot;);
+    if (t.register !== undefined) walk(t.register, &quot;tasks[].register&quot;);
+    if (t.delegate_to !== undefined) walk(t.delegate_to, &quot;tasks[].delegate_to&quot;);
+    if (t.listen !== undefined) walk(t.listen, &quot;tasks[].listen&quot;);
+    if (t.tx !== undefined) walk(t.tx, &quot;tasks[].tx&quot;);
+    if (t.checkpoint !== undefined) walk(t.checkpoint, &quot;tasks[].checkpoint&quot;);
+  }
+
+  return problems;
+}
+
+// --- Playbook ---------------------------------------------------------------
+
+/**
+ * Parse + validate raw playbook YAML text into a normalized array of plays.
+ * Template-ref problems (`{{ }}` / unprefixed `$var`) are hard errors that fail
+ * closed; every expanded/imported file is linted at its own load.
+ * @param yaml Raw playbook YAML text (a single play object or a top-level list of plays).
+ * @returns The normalized array of plays (a single object becomes a 1-element array).
+ * @throws {ZodError} When the YAML fails schema validation.
+ * @throws {Error} When a template-ref problem is detected.
+ */
+export function loadPlaybook(yaml: string): NormalizedPlaybook[] {
+  const plays = validate&lt;NormalizedPlaybook[], RawPlaybookFile>(
+    parseYaml(yaml),
+    PlaybookSchema,
+    normalizePlaybook,
+  );
+  // Template-ref problems are hard errors: `{{ }}` and unprefixed `$var` are
+  // silently wrong, so fail closed rather than shipping a broken playbook. Each
+  // expanded/imported file is linted here at its own load (load-time chokepoint).
+  const tmplProblems = plays.flatMap((pb) => lintTemplateRefs(pb));
+  if (tmplProblems.length > 0) {
+    throw new Error(
+      `[rolecall:template-refs] ${tmplProblems.length} problem(s) in playbook:\n` +
+        tmplProblems.map((p) => `  - ${p.path}: ${p.message}`).join(&quot;\n&quot;),
+    );
+  }
+  return plays;
+}
+
+/**
+ * Maximum import/include nesting depth before {@link loadPlaybookFile} aborts. A
+ * sane bound that prevents runaway recursion even if the cycle guard were bypassed.
+ */
+const MAX_IMPORT_DEPTH = 32;
+
+/**
+ * Honor a task's own `hosts:` if present, otherwise inherit the parent play's hosts.
+ * Implements the documented hosts-inheritance default for imported/included tasks.
+ * @param task A normalized task coming from an imported/included playbook file.
+ * @param parentHosts The hosts of the play that is importing/including `task`.
+ * @returns A copy of `task` with its effective `hosts` resolved.
+ */
+function inheritHosts(
+  task: NormalizedTask,
+  parentHosts: string[],
+): NormalizedTask {
+  return { ...task, hosts: task.hosts ?? parentHosts };
+}
+
+/**
+ * Recursively load a playbook file from disk and expand every `imports` (play-level)
+ * and `include_tasks` (task-level) directive in place. Each referenced file is loaded
+ * through {@link loadPlaybook} (so it is validated + template-ref linted) and its tasks
+ * are spliced into the importing play. A `visited` set keyed by absolute path plus a
+ * max-depth cap guard against circular imports/includes (which throw a bounded error).
+ * @param fileAbs Absolute path of the playbook file to load and expand.
+ * @param source Project VFS used to read file bytes.
+ * @param visited Absolute paths already on the current load stack (cycle guard).
+ * @param depth Current import/include nesting depth.
+ * @returns The fully-expanded array of normalized plays for `fileAbs`.
+ */
+async function loadAndExpand(
+  fileAbs: string,
+  source: ProjectSource,
+  visited: Set&lt;string>,
+  depth: number,
+): Promise&lt;NormalizedPlaybook[]> {
+  if (visited.has(fileAbs)) {
+    throw new Error(
+      `[rolecall:circular-import] circular import/include detected: ${fileAbs} is already on the load stack`,
+    );
+  }
+  visited.add(fileAbs);
+  if (depth > MAX_IMPORT_DEPTH) {
+    throw new Error(
+      `[rolecall:circular-import] import/include depth exceeded maximum of ${MAX_IMPORT_DEPTH} at ${fileAbs}`,
+    );
+  }
+  const text = await source.readText(fileAbs);
+  const plays = loadPlaybook(text);
+  for (const play of plays) {
+    await expandPlay(play, fileAbs, source, visited, depth);
+  }
+  return plays;
+}
+
+// --- Role composition ------------------------------------------
+//
+// A play's `roles:` list names roles resolved to directories whose tasks/defaults/
+// vars/handlers are merged into the play at load time — exactly like `imports`, but
+// contributing a layered var set and splicing tasks BEFORE the play's own tasks.
+// Reuses the loader's VFS read seam (`source.readText`) so non-disk sources work too.
+
+/** Read one file through the VFS seam, returning null instead of throwing when absent. */
+async function tryReadText(source: ProjectSource, absPath: string): Promise&lt;string | null> {
+  try {
+    return await source.readText(absPath);
+  } catch {
+    return null;
+  }
+}
+
+/** Try each candidate path (joined under `dirAbs`) in order; return the first readable one, else null. */
+async function firstReadable(
+  source: ProjectSource,
+  dirAbs: string,
+  ...candidates: string[][]
+): Promise&lt;string | null> {
+  for (const segments of candidates) {
+    const text = await tryReadText(source, join(dirAbs, ...segments));
+    if (text !== null) return text;
+  }
+  return null;
+}
+
+/** Parse an OPTIONAL yaml file into a plain record map; absent or non-map yields `{}`. */
+async function readOptionalMap(
+  source: ProjectSource,
+  dirAbs: string,
+  ...candidates: string[][]
+): Promise&lt;Record&lt;string, unknown>> {
+  const text = await firstReadable(source, dirAbs, ...candidates);
+  if (text === null) return {};
+  const data = parseYaml(text);
+  return isPlainRecord(data) ? data : {};
+}
+
+/** Like {@link firstReadable} but also returns the path of the first readable candidate. */
+async function firstReadableOrigin(
+  source: ProjectSource,
+  dirAbs: string,
+  ...candidates: string[][]
+): Promise&lt;{ text: string; path: string } | null> {
+  for (const segments of candidates) {
+    const abs = join(dirAbs, ...segments);
+    const text = await tryReadText(source, abs);
+    if (text !== null) return { text, path: abs };
+  }
+  return null;
+}
+
+/**
+ * @summary Parse an OPTIONAL yaml file into an origin-tagged var map for provenance tracing.
+ * @param tier Precedence tier to stamp on every entry (e.g. `role-default`).
+ * @returns Var name → origin (value + file), or `{}` when the file is absent/non-map.
+ */
+async function readOptionalMapOrigins(
+  source: ProjectSource,
+  dirAbs: string,
+  tier: VarTier,
+  ...candidates: string[][]
+): Promise&lt;VarOriginMap> {
+  const found = await firstReadableOrigin(source, dirAbs, ...candidates);
+  if (found === null) return {};
+  const data = parseYaml(found.text);
+  const map: VarOriginMap = {};
+  if (isPlainRecord(data)) {
+    for (const [k, v] of Object.entries(data)) map[k] = { value: v, tier, file: found.path };
+  }
+  return map;
+}
+
+/** True when a role name points inside the tree rather than naming a bare role (`a/b` / `.x`). */
+function looksLikeRolePath(name: string): boolean {
+  return name.includes(&quot;/&quot;) || name.startsWith(&quot;.&quot;);
+}
+
+/**
+ * Resolve a role name to its directory. Path-like names resolve against the playbook's
+ * own directory; otherwise `&lt;playbookDir>/roles/&lt;name>` is tried first, then
+ * `&lt;root>/roles/&lt;name>`. A role only counts as resolved once a readable tasks entrypoint
+ * exists, so unresolvable names (or those lacking `tasks/main.yml`) surface below.
+ * @param roleName Role identifier from the play's `roles:` list.
+ * @param playbookDir Absolute directory holding the declaring playbook file.
+ * @param root Source root serving as the second search base.
+ * @param source Project VFS used to probe candidate files.
+ * @returns The resolved role directory absolute path, or undefined when none qualifies.
+ */
+async function resolveRoleDirectory(
+  roleName: string,
+  playbookDir: string,
+  root: string,
+  source: ProjectSource,
+): Promise&lt;string | undefined> {
+  const candidates = looksLikeRolePath(roleName)
+    ? [resolve(playbookDir, roleName)]
+    : [resolve(playbookDir, &quot;roles&quot;, roleName), resolve(root, &quot;roles&quot;, roleName)];
+  for (const dir of candidates) {
+    if ((await firstReadable(source, dir, [&quot;tasks&quot;, &quot;main.yml&quot;], [&quot;tasks&quot;, &quot;main.yaml&quot;])) !== null) {
+      return dir;
+    }
+  }
+  return undefined;
+}
+
+/** Normalized contribution of a single role: composed normal+handler tasks plus merged defaults/vars. */
+interface RoleContribution {
+  /** Normalized tasks from `tasks/main.yml`, followed by handler tasks from `handlers/main.yml`. */
+  tasks: NormalizedTask[];
+  /** Deep-merged defaults across every role seen so far (lowest precedence tier). */
+  defaults: Record&lt;string, unknown>;
+  /** Deep-merged vars across every role seen so far (middle precedence tier). */
+  vars: Record&lt;string, unknown>;
+  /** Declared var entries discovered in this role's defaults/var-manifest.yml. */
+  manifest: VarManifestEntry[];
+  /** Origin-tagged role defaults (tier `role-default`) for provenance tracing. */
+  defaultsOrigins: VarOriginMap;
+  /** Origin-tagged role vars (tier `role-vars`) for provenance tracing. */
+  varsOrigins: VarOriginMap;
+}
+
+/**
+ * Load and normalize a resolved role's optional files through the VFS seam. `tasks/main.yml`
+ * is REQUIRED (its list is normalized task-by-task via {@link CanonicalTaskSchema}/normalizeTask);
+ * `handlers/main.yml` (task list carrying `listen`), `defaults/main.yml`, and `vars/main.yml`
+ * (maps) are all optional. Handler tasks are returned alongside normal tasks — the executor
+ * separates them later and flushes only on notify.
+ * @param dirAbs Resolved role directory.
+ * @param source Project VFS used to read role files.
+ * @returns The role's normalized task list plus merged defaults/vars maps.
+ */
+async function loadRoleFiles(
+  dirAbs: string,
+  source: ProjectSource,
+): Promise&lt;RoleContribution> {
+  const tasksText = await firstReadable(source, dirAbs, [&quot;tasks&quot;, &quot;main.yml&quot;], [&quot;tasks&quot;, &quot;main.yaml&quot;]);
+  if (tasksText === null) {
+    throw new Error(
+      `[rolecall:roles] role has no readable ${join(dirAbs, &quot;tasks&quot;, &quot;main.yml&quot;)} (expected a YAML list of tasks)`,
+    );
+  }
+  const rawTasks = parseYaml(tasksText);
+  if (!Array.isArray(rawTasks)) {
+    throw new Error(`[rolecall:roles] ${join(dirAbs, &quot;tasks&quot;, &quot;main.yml&quot;)} must be a YAML list of tasks`);
+  }
+  const tasks = rawTasks.map((item) => validate&lt;NormalizedTask, RawTask>(item, CanonicalTaskSchema, normalizeTask));
+
+  // handlers/main.yml is optional; each result keeps its `listen` field intact.
+  let handlerTasks: NormalizedTask[] = [];
+  const handlersText = await firstReadable(source, dirAbs, [&quot;handlers&quot;, &quot;main.yml&quot;], [&quot;handlers&quot;, &quot;main.yaml&quot;]);
+  if (handlersText !== null) {
+    const rawHandlers = parseYaml(handlersText);
+    if (!Array.isArray(rawHandlers)) {
+      throw new Error(`[rolecall:roles] ${join(dirAbs, &quot;handlers&quot;, &quot;main.yml&quot;)} must be a YAML list of tasks`);
+    }
+    handlerTasks = rawHandlers.map((item) => validate&lt;NormalizedTask, RawTask>(item, CanonicalTaskSchema, normalizeTask));
+  }
+
+  // Tag every role task with its directory so modules can resolve role-relative
+  // paths (e.g. copy `content.template_file` -> roles/&lt;role>/templates).
+  for (const t of [...tasks, ...handlerTasks]) t.roleDir = dirAbs;
+
+  let defaults = await readOptionalMap(source, dirAbs, [&quot;defaults&quot;, &quot;main.yml&quot;], [&quot;defaults&quot;, &quot;main.yaml&quot;]);
+  const vars = await readOptionalMap(source, dirAbs, [&quot;vars&quot;, &quot;main.yml&quot;], [&quot;vars&quot;, &quot;main.yaml&quot;]);
+  const defaultsOriginPath = (await firstReadableOrigin(source, dirAbs, [&quot;defaults&quot;, &quot;main.yml&quot;], [&quot;defaults&quot;, &quot;main.yaml&quot;]))?.path;
+  const varsOriginPath = (await firstReadableOrigin(source, dirAbs, [&quot;vars&quot;, &quot;main.yml&quot;], [&quot;vars&quot;, &quot;main.yaml&quot;]))?.path;
+
+  let defaultsOrigins: VarOriginMap = {};
+  if (defaultsOriginPath) {
+    for (const [k, v] of Object.entries(defaults)) defaultsOrigins[k] = { value: v, tier: &quot;role-default&quot;, file: defaultsOriginPath };
+  }
+  const varsOrigins: VarOriginMap = {};
+  if (varsOriginPath) {
+    for (const [k, v] of Object.entries(vars)) varsOrigins[k] = { value: v, tier: &quot;role-vars&quot;, file: varsOriginPath };
+  }
+
+  // Discover the role's declared var manifest (defaults/var-manifest.yml) and seed its
+  // declared `default` values into the role defaults layer (explicit defaults/main.yml wins).
+  const manifestOrigin = await firstReadableOrigin(source, dirAbs, [&quot;defaults&quot;, &quot;var-manifest.yml&quot;], [&quot;defaults&quot;, &quot;var-manifest.yaml&quot;]);
+  let manifest: VarManifestEntry[] = [];
+  if (manifestOrigin !== null) {
+    manifest = parseManifestYaml(manifestOrigin.text).map((e) => ({ ...e, declaredIn: manifestOrigin.path }));
+    const manifestDefaults: Record&lt;string, unknown> = {};
+    const manifestDefaultsOrigins: VarOriginMap = {};
+    for (const entry of manifest) {
+      if (entry.default !== undefined &amp;&amp; !Object.prototype.hasOwnProperty.call(defaults, entry.name)) {
+        manifestDefaults[entry.name] = entry.default;
+        manifestDefaultsOrigins[entry.name] = { value: entry.default, tier: &quot;role-default&quot;, file: manifestOrigin.path };
+      }
+    }
+    if (Object.keys(manifestDefaults).length > 0) {
+      defaults = deepMerge(manifestDefaults, defaults);
+      defaultsOrigins = { ...defaultsOrigins, ...manifestDefaultsOrigins };
+    }
+  }
+
+  return { tasks: [...tasks, ...handlerTasks], defaults, vars, manifest, defaultsOrigins, varsOrigins };
+}
+
+/**
+ * Compose an entire play's `roles:` list in listed order. Later roles override earlier ones
+ * at the same var tier (deep-merge). Tasks accumulate in listed order; defaults merge into one
+ * accumulated map, vars into another.
+ * @param play Play whose `roles:` are being expanded.
+ * @param playbookDir Absolute directory holding the declaring playbook file.
+ * @param root Source root serving as the second role-search base.
+ * @param source Project VFS used to read role files.
+ * @returns Accumulated role tasks plus the deep-merged defaults/vars maps.
+ * @throws {Error} When any named role cannot be resolved.
+ */
+async function composeRoles(
+  play: NormalizedPlaybook,
+  playbookDir: string,
+  root: string,
+  source: ProjectSource,
+): Promise&lt;{ tasks: NormalizedTask[]; defaults: Record&lt;string, unknown>; vars: Record&lt;string, unknown>; manifest: VarManifestEntry[]; defaultsOrigins: VarOriginMap; varsOrigins: VarOriginMap }> {
+  let collectedTasks: NormalizedTask[] = [];
+  let accumulatedDefaults: Record&lt;string, unknown> = {};
+  let accumulatedVars: Record&lt;string, unknown> = {};
+  let accumulatedManifest: VarManifestEntry[] = [];
+  let accumulatedDefaultsOrigins: VarOriginMap = {};
+  let accumulatedVarsOrigins: VarOriginMap = {};
+
+  for (const roleName of play.roles ?? []) {
+    const dirAbs = await resolveRoleDirectory(roleName, playbookDir, root, source);
+    if (dirAbs === undefined) {
+      throw new Error(
+        `[rolecall:roles] could not resolve role '${roleName}' — expected a readable ` +
+          `${join(&quot;roles&quot;, roleName, &quot;tasks&quot;, &quot;main.yml&quot;)} relative to the playbook or project root`,
+      );
+    }
+    const contribution = await loadRoleFiles(dirAbs, source);
+    collectedTasks.push(...contribution.tasks);
+    accumulatedDefaults = deepMerge(accumulatedDefaults, contribution.defaults);
+    accumulatedVars = deepMerge(accumulatedVars, contribution.vars);
+    accumulatedManifest = accumulatedManifest.concat(contribution.manifest);
+    accumulatedDefaultsOrigins = { ...accumulatedDefaultsOrigins, ...contribution.defaultsOrigins };
+    accumulatedVarsOrigins = { ...accumulatedVarsOrigins, ...contribution.varsOrigins };
+  }
+
+  return { tasks: collectedTasks, defaults: accumulatedDefaults, vars: accumulatedVars, manifest: accumulatedManifest, defaultsOrigins: accumulatedDefaultsOrigins, varsOrigins: accumulatedVarsOrigins };
+}
+
+// --- Deep-merge helper ------------------------------------------------------
+
+/** @summary Deeply merge plain records left-to-right, later layers winning on key collisions (pure). Nested plain objects recurse; scalars, arrays, and null replace wholesale. Inputs are never mutated. Used to layer role defaults &lt; role vars &lt; play vars at load time. */
+export function deepMerge(
+  ...layers: Array&lt;Record&lt;string, unknown> | undefined>
+): Record&lt;string, unknown> {
+  const out: Record&lt;string, unknown> = {};
+  for (const layer of layers) {
+    if (!isPlainRecord(layer)) continue;
+    for (const [key, value] of Object.entries(layer)) {
+      const existing = out[key];
+      if (isPlainRecord(existing) &amp;&amp; isPlainRecord(value)) {
+        out[key] = deepMerge(existing, value);
+      } else {
+        out[key] = value;
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Expand a single play's `imports` and `include_tasks` directives in place. `imports`
+ * entries resolve against the project source root; `include_tasks` entries resolve
+ * against the directory containing the file currently being expanded.
+ * @param play The play to expand (mutated: its `tasks` are replaced by the expanded list).
+ * @param fileAbs Absolute path of the file that declared `play`.
+ * @param source Project VFS used to read referenced file bytes.
+ * @param visited Absolute paths already on the current load stack (cycle guard).
+ * @param depth Current import/include nesting depth.
+ */
+async function expandPlay(
+  play: NormalizedPlaybook,
+  fileAbs: string,
+  source: ProjectSource,
+  visited: Set&lt;string>,
+  depth: number,
+): Promise&lt;void> {
+  const fileDir = dirname(fileAbs);
+  const expanded: NormalizedTask[] = [];
+
+  // --- Role composition: gather each named role's tasks/handlers and
+  // merge their defaults/vars BEFORE the play's own tasks are spliced. Roles contribute
+  // only tasks/handlers/defaults/vars and are never recursed as separate playbook files,
+  // so they need no cycle guard. Handled before the include_tasks loop so those still run
+  // over the play's OWN tasks only (role tasks are prepended as a head afterwards).
+  let roleHead: NormalizedTask[] = [];
+  if (play.roles !== undefined &amp;&amp; play.roles.length > 0) {
+    const composed = await composeRoles(play, fileDir, source.root, source);
+    roleHead = composed.tasks.map((t) => inheritHosts(t, play.hosts));
+    // D1 precedence: role defaults (absolute lowest tier) are kept separate so the
+    // executor can layer them BELOW inventory host/group vars; role vars + play vars merge.
+    play.roleDefaults = composed.defaults;
+    play.vars = deepMerge(composed.vars, play.vars ?? {});
+    play.varManifests = composed.manifest;
+    // Origin-tagged role layer (role-defaults &lt; role-vars) for the `vars trace` command.
+    play.varOrigins = { ...composed.defaultsOrigins, ...composed.varsOrigins };
+  }
+
+  // Playbook-root var manifest (var-manifest.yml beside the playbook file): its declared
+  // defaults seed a playbook-level defaults layer and its entries extend the registry.
+  const pbManifestOrigin = await firstReadableOrigin(source, fileDir, [&quot;var-manifest.yml&quot;], [&quot;var-manifest.yaml&quot;]);
+  if (pbManifestOrigin !== null) {
+    const pbManifest = parseManifestYaml(pbManifestOrigin.text).map((e) => ({ ...e, declaredIn: pbManifestOrigin.path }));
+    const pbManifestDefaults: Record&lt;string, unknown> = {};
+    for (const entry of pbManifest) {
+      if (entry.default !== undefined) pbManifestDefaults[entry.name] = entry.default;
+    }
+    if (Object.keys(pbManifestDefaults).length > 0) {
+      play.vars = deepMerge(pbManifestDefaults, play.vars ?? {});
+    }
+    play.varManifests = [...(play.varManifests ?? []), ...pbManifest];
+  }
+
+  // De-duplicate the layered registry and hard-fail on conflicting shape declarations.
+  if (play.varManifests !== undefined &amp;&amp; play.varManifests.length > 0) {
+    play.varManifests = mergeManifests(play.varManifests);
+  }
+
+  // --- Task-level include_tasks: splice included tasks at the directive's index.
+  for (const task of play.tasks) {
+    if (task.include_tasks === undefined) {
+      expanded.push(task);
+      continue;
+    }
+    const files = Array.isArray(task.include_tasks)
+      ? task.include_tasks
+      : [task.include_tasks];
+    for (const entry of files) {
+      const incAbs = resolve(fileDir, entry);
+      const incPlays = await loadAndExpand(incAbs, source, visited, depth + 1);
+      for (const incPlay of incPlays) {
+        for (const incTask of incPlay.tasks) {
+          expanded.push(inheritHosts(incTask, play.hosts));
+        }
+      }
+    }
+  }
+
+  // --- Play-level imports: splice imported tasks at the end of this play's tasks.
+  if (play.imports !== undefined) {
+    for (const entry of play.imports) {
+      const impAbs = resolve(source.root, entry);
+      const impPlays = await loadAndExpand(impAbs, source, visited, depth + 1);
+      for (const impPlay of impPlays) {
+        for (const impTask of impPlay.tasks) {
+          expanded.push(inheritHosts(impTask, play.hosts));
+        }
+      }
+    }
+    // The directive is consumed by expansion; drop it so the expanded play is
+    // self-contained (and would not double-expand if serialized + re-loaded).
+    play.imports = undefined;
+  }
+
+  // Assemble the final task list: composed role tasks first, then the play's own
+  // (include-expanded) and imported tasks. Handler tasks ride along among the head;
+  // the executor later filters them out via `listen` and flushes on notify only.
+  play.tasks = roleHead.length > 0 ? [...roleHead, ...expanded] : expanded;
+
+  // Preserve the applied role names for the `play.roles` namespace (ADR 0013 §6)
+  // before consuming the `roles` directive after expansion (reload-safety). Only
+  // set when a `roles:` directive existed, so role-less plays gain no new field
+  // (keeps serialize(normalized) === normalized round-trip stable).
+  if (play.roles !== undefined) {
+    play.appliedRoleNames = play.roles;
+    play.roles = undefined;
+  }
+}
+
+/**
+ * Read a playbook YAML file, expand `imports`/`include_tasks` at load time, and return
+ * its normalized array of plays. Expansion is the single chokepoint for `import_playbook`
+ * / `include_tasks`, so downstream consumers (skeleton, task counts, executor) always see
+ * the fully-resolved task list. Reads through the VFS seam so a non-disk
+ * {@link ProjectSource} can serve playbooks unchanged. A single play object normalizes to
+ * a 1-element array.
+ * @param path Path to the playbook YAML file (relative paths resolve against the source root).
+ * @param source Optional project VFS; defaults to reading from the current working directory.
+ * @returns The normalized, fully-expanded array of plays.
+ */
+export async function loadPlaybookFile(
+  path: string,
+  source: ProjectSource = new FsProjectSource(process.cwd()),
+): Promise&lt;NormalizedPlaybook[]> {
+  const fileAbs = source.resolveImportablePath(path);
+  const plays = await loadAndExpand(fileAbs, source, new Set&lt;string>(), 0);
+  // Emit (but never throw on) idempotency warnings AFTER expansion so every
+  // expanded task is inspected once.
+  for (const pb of plays) {
+    for (const w of lintPlaybookIdempotency(pb)) {
+      console.warn(`[rolecall:idempotency] ${w.warning} (task: ${w.task})`);
+    }
+  }
+  return plays;
+}
+
+// --- Inventory --------------------------------------------------------------
+
+/**
+ * @summary Source format of an inventory, as recognized by {@link loadInventory}.
+ * `&quot;ini&quot;` = Ansible INI (`[group]` headers), `&quot;ansible-yaml&quot;` = Ansible's
+ * `all:`-rooted YAML, `&quot;native&quot;` = RoleCall's `groups:` YAML.
+ */
+export type InventoryFormat = &quot;ini&quot; | &quot;ansible-yaml&quot; | &quot;native&quot;;
+
+/**
+ * @summary Detect how an inventory's text should be parsed. The rules are
+ * deterministic — the same text + filename always yields the same result:
+ *  1. A `.ini` extension, or content whose first non-blank, non-comment line
+ *     opens with `[` (an Ansible `[group]` header), is `&quot;ini&quot;`.
+ *  2. Otherwise the text is parsed as YAML; a mapping root carrying an `all` key
+ *     and no `groups` key is Ansible's canonical layout → `&quot;ansible-yaml&quot;`.
+ *  3. Everything else (a `groups:` root, or YAML that fails to parse) is
+ *     `&quot;native&quot;`, so the strict native schema surfaces the usual error.
+ * @param text Raw inventory text.
+ * @param filename Optional source path; only its extension is consulted as a hint.
+ * @returns The detected {@link InventoryFormat}.
+ */
+export function detectInventoryFormat(text: string, filename = &quot;&quot;): InventoryFormat {
+  if (extname(filename).toLowerCase() === &quot;.ini&quot; || looksLikeIniInventory(text)) {
+    return &quot;ini&quot;;
+  }
+  let data: unknown;
+  try {
+    data = parseYaml(text);
+  } catch {
+    // Invalid YAML: fall through to the native path so it re-parses and reports
+    // the YAML error (or the schema error) exactly as before.
+    return &quot;native&quot;;
+  }
+  return isAnsibleYamlInventory(data) ? &quot;ansible-yaml&quot; : &quot;native&quot;;
+}
+
+/**
+ * @summary Parse + validate raw inventory text into normalized groups, auto-detecting
+ * the source format. RoleCall-native `groups:` YAML still validates against the strict
+ * {@link InventorySchema}; Ansible INI and Ansible `all:`-rooted YAML are parsed by
+ * `src/inventory/ansible.ts` and normalized into the same shape (children + host_vars),
+ * so the engine's hierarchical precedence applies unchanged.
+ * @param text Raw inventory text (native YAML, Ansible INI, or Ansible YAML).
+ * @param filename Optional source path; its extension is a detection hint.
+ * @returns The normalized inventory.
+ * @throws {ZodError} When native YAML fails schema validation.
+ * @throws {AnsibleInventoryError} When an Ansible inventory is malformed.
+ */
+export function loadInventory(text: string, filename = &quot;&quot;): NormalizedInventory {
+  switch (detectInventoryFormat(text, filename)) {
+    case &quot;ini&quot;:
+      return parseAnsibleIniInventory(text);
+    case &quot;ansible-yaml&quot;:
+      return parseAnsibleYamlInventory(text);
+    default:
+      return validate&lt;NormalizedInventory, RawInventory>(
+        parseYaml(text),
+        InventorySchema,
+        normalizeInventory,
+      );
+  }
+}
+
+/** Parsed `group_vars/` + `host_vars/` contribution discovered next to an inventory file. */
+export interface DirectoryVars {
+  /** group name -> var map (file `group_vars/&lt;group>.yaml` becomes group `&lt;group>`). */
+  groupVarsByGroup: Record&lt;string, Record&lt;string, unknown>>;
+  /** host name -> var map (file `host_vars/&lt;host>.yaml` becomes host `&lt;host>`). */
+  hostVarsByHost: Record&lt;string, Record&lt;string, unknown>>;
+}
+
+/** True iff `value` is a plain (non-array, non-null) object — the only safe var map shape. */
+function isPlainRecord(value: unknown): value is Record&lt;string, unknown> {
+  return (
+    typeof value === &quot;object&quot; &amp;&amp;
+    value !== null &amp;&amp;
+    !Array.isArray(value)
+  );
+}
+
+/**
+ * Discover directory-adjacent `group_vars/` and `host_vars/` var files next to an
+ * inventory and parse them through the VFS seam. Group/host names are derived from the
+ * file name with its extension stripped (`group_vars/web.yaml` -> group `web`). Discovery
+ * is graceful: a missing directory raises no error and yields an empty map for that layer,
+ * so inventories without these directories behave exactly as before.
+ * @param inventoryPath Inventory file path (used only to anchor discovery; the actual
+ *   scan is performed under `source.root`, which callers root at `dirname(inventoryPath)`).
+ * @param source Project VFS rooted at the inventory file's directory.
+ * @returns Parsed group/host var maps keyed by group/host name.
+ */
+export async function resolveDirectoryVars(
+  inventoryPath: string,
+  source: ProjectSource,
+): Promise&lt;DirectoryVars> {
+  void inventoryPath; // discovery is driven entirely by `source.root`
+  const groupVarsByGroup: Record&lt;string, Record&lt;string, unknown>> = {};
+  const hostVarsByHost: Record&lt;string, Record&lt;string, unknown>> = {};
+
+  const groupFiles = await source.listFiles(&quot;group_vars/*.yaml&quot;);
+  for (const file of groupFiles) {
+    const name = basename(file, extname(file));
+    if (!name) continue;
+    const text = await source.readText(file);
+    const data = parseYaml(text);
+    groupVarsByGroup[name] = isPlainRecord(data) ? data : {};
+  }
+
+  const hostFiles = await source.listFiles(&quot;host_vars/*.yaml&quot;);
+  for (const file of hostFiles) {
+    const name = basename(file, extname(file));
+    if (!name) continue;
+    const text = await source.readText(file);
+    const data = parseYaml(text);
+    hostVarsByHost[name] = isPlainRecord(data) ? data : {};
+  }
+
+  return { groupVarsByGroup, hostVarsByHost };
+}
+
+/**
+ * Read an inventory file and return its normalized form, auto-detecting the source
+ * format (native `groups:` YAML, Ansible INI, or Ansible `all:`-rooted YAML) via
+ * {@link detectInventoryFormat}. Reads through the VFS seam so a non-disk
+ * {@link ProjectSource} can serve inventories unchanged. Backward-compatible: with no
+ * `source` the default {@link FsProjectSource(cwd)} reads exactly as before.
+ * @param path Path to the inventory file (relative paths resolve against the source root).
+ * @param source Optional project VFS; defaults to reading from the current working directory.
+ * @returns The normalized inventory.
+ */
+export async function loadInventoryFile(
+  path: string,
+  source: ProjectSource = new FsProjectSource(process.cwd()),
+): Promise&lt;NormalizedInventory> {
+  // Read the inventory relative to the source root so a source rooted at the
+  // inventory's own directory (e.g. `new FsProjectSource(dirname(path))`) resolves the
+  // same `path` string correctly regardless of whether it is absolute or cwd-relative.
+  const readPath = relative(source.root, resolve(path)) || path;
+  const text = await source.readText(readPath);
+  return loadInventory(text, path);
+}
+
+export type { ZodError };
+</code></pre></div></div></div></main></div><footer class="border-t border-(--clean-border) bg-background py-6 text-sm text-muted-foreground"><div class="mx-auto flex w-full max-w-screen-2xl flex-col items-start justify-between gap-2 px-4 md:flex-row md:items-center"><div class="flex items-center gap-1.5"><span>RoleCall</span><span>© 2026</span></div></div></footer></div><script type="application/json" data-island-props>{"i0":{"language":"typescript","filename":"src/config/loader.ts"},"i1":{"basePath":"/","searchIndexUrl":"/_assets/search-index.mve0ywe9-ed9f7f0f.json"},"i2":{},"i3":{},"i4":{"nav":[{"label":"Home","slug":"","order":-1},{"label":"cli","slug":"module/cli","children":[{"label":"CliError","slug":"module/cli/clierror","group":"cli"},{"label":"AgentManifestResult","slug":"module/cli/agentmanifestresult","group":"cli"},{"label":"ApplyTotals","slug":"module/cli/applytotals","group":"cli"},{"label":"DocsModuleEntry","slug":"module/cli/docsmoduleentry","group":"cli"},{"label":"DocsModulesResult","slug":"module/cli/docsmodulesresult","group":"cli"},{"label":"DocsSearchResult","slug":"module/cli/docssearchresult","group":"cli"},{"label":"FactsGatherResult","slug":"module/cli/factsgatherresult","group":"cli"},{"label":"GlobalFlags","slug":"module/cli/globalflags","group":"cli"},{"label":"InventoryListResult","slug":"module/cli/inventorylistresult","group":"cli"},{"label":"InventoryShowResult","slug":"module/cli/inventoryshowresult","group":"cli"},{"label":"OutputPlugin","slug":"module/cli/outputplugin","group":"cli"},{"label":"PlaybookRunResult","slug":"module/cli/playbookrunresult","group":"cli"},{"label":"PluginEntryView","slug":"module/cli/pluginentryview","group":"cli"},{"label":"PluginListResult","slug":"module/cli/pluginlistresult","group":"cli"},{"label":"PluginRegisterResult","slug":"module/cli/pluginregisterresult","group":"cli"},{"label":"RenderedTemplate","slug":"module/cli/renderedtemplate","group":"cli"},{"label":"RunReplayResult","slug":"module/cli/runreplayresult","group":"cli"},{"label":"TaskApplyOutcome","slug":"module/cli/taskapplyoutcome","group":"cli"},{"label":"VarsListResult","slug":"module/cli/varslistresult","group":"cli"},{"label":"VarsTraceResult","slug":"module/cli/varstraceresult","group":"cli"},{"label":"CliResult","slug":"module/cli/cliresult","group":"cli"},{"label":"getOutputPlugin","slug":"module/cli/getoutputplugin","group":"cli"},{"label":"getVersion","slug":"module/cli/getversion","group":"cli"},{"label":"listOutputPlugins","slug":"module/cli/listoutputplugins","group":"cli"},{"label":"main","slug":"module/cli/main","group":"cli"},{"label":"registerOutputPlugin","slug":"module/cli/registeroutputplugin","group":"cli"},{"label":"renderOutput","slug":"module/cli/renderoutput","group":"cli"},{"label":"runAgentCommand","slug":"module/cli/runagentcommand","group":"cli"},{"label":"runDocsCommand","slug":"module/cli/rundocscommand","group":"cli"},{"label":"runFactsCommand","slug":"module/cli/runfactscommand","group":"cli"},{"label":"runInventoryCommand","slug":"module/cli/runinventorycommand","group":"cli"},{"label":"runPlaybookCommand","slug":"module/cli/runplaybookcommand","group":"cli"},{"label":"runPluginCommand","slug":"module/cli/runplugincommand","group":"cli"},{"label":"runReplayCommand","slug":"module/cli/runreplaycommand","group":"cli"},{"label":"runVarsCommand","slug":"module/cli/runvarscommand","group":"cli"},{"label":"writeOut","slug":"module/cli/writeout","group":"cli"}],"deepExpand":true},{"label":"config","slug":"module/config","children":[{"label":"Config","slug":"module/config/config","group":"config"},{"label":"DirectoryVars","slug":"module/config/directoryvars","group":"config"},{"label":"IdempotencyWarning","slug":"module/config/idempotencywarning","group":"config"},{"label":"NormalizedInventory","slug":"module/config/normalizedinventory","group":"config"},{"label":"NormalizedPlaybook","slug":"module/config/normalizedplaybook","group":"config"},{"label":"NormalizedTask","slug":"module/config/normalizedtask","group":"config"},{"label":"ServeConfig","slug":"module/config/serveconfig","group":"config"},{"label":"TemplateRefProblem","slug":"module/config/templaterefproblem","group":"config"},{"label":"ZodError","slug":"module/config/zoderror","group":"config"},{"label":"DbBackend","slug":"module/config/dbbackend","group":"config"},{"label":"InventoryFormat","slug":"module/config/inventoryformat","group":"config"},{"label":"NormalizedPlaybookFile","slug":"module/config/normalizedplaybookfile","group":"config"},{"label":"RawInventory","slug":"module/config/rawinventory","group":"config"},{"label":"RawInventoryGroup","slug":"module/config/rawinventorygroup","group":"config"},{"label":"RawPlaybook","slug":"module/config/rawplaybook","group":"config"},{"label":"RawPlaybookFile","slug":"module/config/rawplaybookfile","group":"config"},{"label":"RawTask","slug":"module/config/rawtask","group":"config"},{"label":"ScratchStrategy","slug":"module/config/scratchstrategy","group":"config"},{"label":"TriggerSpec","slug":"module/config/triggerspec","group":"config"},{"label":"CanonicalTaskSchema","slug":"module/config/canonicaltaskschema","group":"config"},{"label":"InventoryGroupSchema","slug":"module/config/inventorygroupschema","group":"config"},{"label":"InventorySchema","slug":"module/config/inventoryschema","group":"config"},{"label":"KNOWN_NAMESPACES","slug":"module/config/known-namespaces","group":"config"},{"label":"PlaybookObject","slug":"module/config/playbookobject","group":"config"},{"label":"PlaybookSchema","slug":"module/config/playbookschema","group":"config"},{"label":"TaskSchema","slug":"module/config/taskschema","group":"config"},{"label":"TriggerSchema","slug":"module/config/triggerschema","group":"config"},{"label":"canonicalizeTask","slug":"module/config/canonicalizetask","group":"config"},{"label":"deepMerge","slug":"module/config/deepmerge","group":"config"},{"label":"detectInventoryFormat","slug":"module/config/detectinventoryformat","group":"config"},{"label":"lintPlaybookIdempotency","slug":"module/config/lintplaybookidempotency","group":"config"},{"label":"lintTemplateRefs","slug":"module/config/linttemplaterefs","group":"config"},{"label":"loadConfig","slug":"module/config/loadconfig","group":"config"},{"label":"loadInventory","slug":"module/config/loadinventory","group":"config"},{"label":"loadInventoryFile","slug":"module/config/loadinventoryfile","group":"config"},{"label":"loadPlaybook","slug":"module/config/loadplaybook","group":"config"},{"label":"loadPlaybookFile","slug":"module/config/loadplaybookfile","group":"config"},{"label":"normalizeInventory","slug":"module/config/normalizeinventory","group":"config"},{"label":"normalizePlaybook","slug":"module/config/normalizeplaybook","group":"config"},{"label":"normalizeTask","slug":"module/config/normalizetask","group":"config"},{"label":"resolveDirectoryVars","slug":"module/config/resolvedirectoryvars","group":"config"},{"label":"serializeInventory","slug":"module/config/serializeinventory","group":"config"},{"label":"serializePlaybook","slug":"module/config/serializeplaybook","group":"config"},{"label":"serializeTask","slug":"module/config/serializetask","group":"config"}],"deepExpand":true},{"label":"facts","slug":"module/facts","children":[{"label":"FactError","slug":"module/facts/facterror","group":"facts"},{"label":"FactsEngine","slug":"module/facts/factsengine","group":"facts"},{"label":"FactCache","slug":"module/facts/factcache","group":"facts"},{"label":"FactGatherer","slug":"module/facts/factgatherer","group":"facts"},{"label":"FactPlugin","slug":"module/facts/factplugin","group":"facts"},{"label":"FactsEngineOptions","slug":"module/facts/factsengineoptions","group":"facts"},{"label":"GatherOptions","slug":"module/facts/gatheroptions","group":"facts"},{"label":"ConnectionKind","slug":"module/facts/connectionkind","group":"facts"},{"label":"FactKey","slug":"module/facts/factkey","group":"facts"},{"label":"FactMap","slug":"module/facts/factmap","group":"facts"},{"label":"BUILTIN_GATHERERS","slug":"module/facts/builtin-gatherers","group":"facts"},{"label":"defaultFactsEngine","slug":"module/facts/defaultfactsengine","group":"facts"},{"label":"networkGatherer","slug":"module/facts/networkgatherer","group":"facts"},{"label":"osGatherer","slug":"module/facts/osgatherer","group":"facts"},{"label":"serviceGathererHttp","slug":"module/facts/servicegathererhttp","group":"facts"},{"label":"serviceGathererPosix","slug":"module/facts/servicegathererposix","group":"facts"},{"label":"createFactPlugin","slug":"module/facts/createfactplugin","group":"facts"},{"label":"createInMemoryFactCache","slug":"module/facts/createinmemoryfactcache","group":"facts"},{"label":"getDeclaredFactEntries","slug":"module/facts/getdeclaredfactentries","group":"facts"},{"label":"getDeclaredFactNames","slug":"module/facts/getdeclaredfactnames","group":"facts"},{"label":"getRegisteredFactPlugins","slug":"module/facts/getregisteredfactplugins","group":"facts"},{"label":"registerFactPlugin","slug":"module/facts/registerfactplugin","group":"facts"}],"deepExpand":true},{"label":"modules","slug":"module/modules","children":[{"label":"ModuleCollisionError","slug":"module/modules/modulecollisionerror","group":"modules"},{"label":"DescribeResult","slug":"module/modules/describeresult","group":"modules"},{"label":"Module","slug":"module/modules/module","group":"modules"},{"label":"ModuleContext","slug":"module/modules/modulecontext","group":"modules"},{"label":"ModuleResult","slug":"module/modules/moduleresult","group":"modules"},{"label":"ModuleSummary","slug":"module/modules/modulesummary","group":"modules"},{"label":"PluginScanEntry","slug":"module/modules/pluginscanentry","group":"modules"},{"label":"ResourceOptions","slug":"module/modules/resourceoptions","group":"modules"},{"label":"PluginType","slug":"module/modules/plugintype","group":"modules"},{"label":"ResolveResult","slug":"module/modules/resolveresult","group":"modules"},{"label":"addHostModule","slug":"module/modules/addhostmodule","group":"modules"},{"label":"blockinfileModule","slug":"module/modules/blockinfilemodule","group":"modules"},{"label":"commandModule","slug":"module/modules/commandmodule","group":"modules"},{"label":"configEditModule","slug":"module/modules/configeditmodule","group":"modules"},{"label":"copyModule","slug":"module/modules/copymodule","group":"modules"},{"label":"failModule","slug":"module/modules/failmodule","group":"modules"},{"label":"fileModule","slug":"module/modules/filemodule","group":"modules"},{"label":"getUrlModule","slug":"module/modules/geturlmodule","group":"modules"},{"label":"gitModule","slug":"module/modules/gitmodule","group":"modules"},{"label":"groupModule","slug":"module/modules/groupmodule","group":"modules"},{"label":"httpModule","slug":"module/modules/httpmodule","group":"modules"},{"label":"lineinfileModule","slug":"module/modules/lineinfilemodule","group":"modules"},{"label":"pkgModule","slug":"module/modules/pkgmodule","group":"modules"},{"label":"rawModule","slug":"module/modules/rawmodule","group":"modules"},{"label":"replaceModule","slug":"module/modules/replacemodule","group":"modules"},{"label":"scriptModule","slug":"module/modules/scriptmodule","group":"modules"},{"label":"serviceModule","slug":"module/modules/servicemodule","group":"modules"},{"label":"setFactModule","slug":"module/modules/setfactmodule","group":"modules"},{"label":"shellModule","slug":"module/modules/shellmodule","group":"modules"},{"label":"sqlModule","slug":"module/modules/sqlmodule","group":"modules"},{"label":"statModule","slug":"module/modules/statmodule","group":"modules"},{"label":"userModule","slug":"module/modules/usermodule","group":"modules"},{"label":"waitForModule","slug":"module/modules/waitformodule","group":"modules"},{"label":"buildResolutionTable","slug":"module/modules/buildresolutiontable","group":"modules"},{"label":"getModule","slug":"module/modules/getmodule","group":"modules"},{"label":"getModuleSummary","slug":"module/modules/getmodulesummary","group":"modules"},{"label":"listModules","slug":"module/modules/listmodules","group":"modules"},{"label":"loadModuleFromFile","slug":"module/modules/loadmodulefromfile","group":"modules"},{"label":"registerAllModules","slug":"module/modules/registerallmodules","group":"modules"},{"label":"registerModule","slug":"module/modules/registermodule","group":"modules"},{"label":"resolveModule","slug":"module/modules/resolvemodule","group":"modules"},{"label":"resource","slug":"module/modules/resource","group":"modules"},{"label":"scanAndRegister","slug":"module/modules/scanandregister","group":"modules"},{"label":"scanProject","slug":"module/modules/scanproject","group":"modules"},{"label":"searchModules","slug":"module/modules/searchmodules","group":"modules"},{"label":"setModuleMeta","slug":"module/modules/setmodulemeta","group":"modules"}],"deepExpand":true},{"label":"orchestrator","slug":"module/orchestrator","children":[{"label":"CronScheduler","slug":"module/orchestrator/cronscheduler","group":"orchestrator"},{"label":"Engine","slug":"module/orchestrator/engine","group":"orchestrator"},{"label":"CronSchedulerOptions","slug":"module/orchestrator/cronscheduleroptions","group":"orchestrator"},{"label":"Enqueuer","slug":"module/orchestrator/enqueuer","group":"orchestrator"},{"label":"HostOutcome","slug":"module/orchestrator/hostoutcome","group":"orchestrator"},{"label":"JobBody","slug":"module/orchestrator/jobbody","group":"orchestrator"},{"label":"ParsedCron","slug":"module/orchestrator/parsedcron","group":"orchestrator"},{"label":"PlanTask","slug":"module/orchestrator/plantask","group":"orchestrator"},{"label":"RouteContext","slug":"module/orchestrator/routecontext","group":"orchestrator"},{"label":"RunRecord","slug":"module/orchestrator/runrecord","group":"orchestrator"},{"label":"SchedulerApi","slug":"module/orchestrator/schedulerapi","group":"orchestrator"},{"label":"ServerHandle","slug":"module/orchestrator/serverhandle","group":"orchestrator"},{"label":"ServerOptions","slug":"module/orchestrator/serveroptions","group":"orchestrator"},{"label":"ShutdownOptions","slug":"module/orchestrator/shutdownoptions","group":"orchestrator"},{"label":"TargetDescriptor","slug":"module/orchestrator/targetdescriptor","group":"orchestrator"},{"label":"TriggerSuccess","slug":"module/orchestrator/triggersuccess","group":"orchestrator"},{"label":"WebhookRouteContext","slug":"module/orchestrator/webhookroutecontext","group":"orchestrator"},{"label":"ActionType","slug":"module/orchestrator/actiontype","group":"orchestrator"},{"label":"RunStatus","slug":"module/orchestrator/runstatus","group":"orchestrator"},{"label":"TransportKind","slug":"module/orchestrator/transportkind","group":"orchestrator"},{"label":"ValidationError","slug":"module/orchestrator/validationerror","group":"orchestrator"},{"label":"ValidationResult","slug":"module/orchestrator/validationresult","group":"orchestrator"},{"label":"ValidationSuccess","slug":"module/orchestrator/validationsuccess","group":"orchestrator"},{"label":"VALID_JOB_TYPES","slug":"module/orchestrator/valid-job-types","group":"orchestrator"},{"label":"createServer","slug":"module/orchestrator/createserver","group":"orchestrator"},{"label":"installSignalHandlers","slug":"module/orchestrator/installsignalhandlers","group":"orchestrator"},{"label":"isActionType","slug":"module/orchestrator/isactiontype","group":"orchestrator"},{"label":"isValid","slug":"module/orchestrator/isvalid","group":"orchestrator"},{"label":"mountRoutes","slug":"module/orchestrator/mountroutes","group":"orchestrator"},{"label":"mountWebhooks","slug":"module/orchestrator/mountwebhooks","group":"orchestrator"},{"label":"nextOccurrence","slug":"module/orchestrator/nextoccurrence","group":"orchestrator"},{"label":"parseExpr","slug":"module/orchestrator/parseexpr","group":"orchestrator"},{"label":"startServe","slug":"module/orchestrator/startserve","group":"orchestrator"},{"label":"validateJobBody","slug":"module/orchestrator/validatejobbody","group":"orchestrator"}],"deepExpand":true},{"label":"store","slug":"module/store","children":[{"label":"ProjectsRepository","slug":"module/store/projectsrepository","group":"store"},{"label":"RunsRepository","slug":"module/store/runsrepository","group":"store"},{"label":"SchedulesRepository","slug":"module/store/schedulesrepository","group":"store"},{"label":"TracesRepository","slug":"module/store/tracesrepository","group":"store"},{"label":"WriteQueue","slug":"module/store/writequeue","group":"store"},{"label":"CreateProjectInput","slug":"module/store/createprojectinput","group":"store"},{"label":"CreateRunInput","slug":"module/store/createruninput","group":"store"},{"label":"CreateScheduleInput","slug":"module/store/createscheduleinput","group":"store"},{"label":"CreateTraceInput","slug":"module/store/createtraceinput","group":"store"},{"label":"OpenStoreOptions","slug":"module/store/openstoreoptions","group":"store"},{"label":"PatchRun","slug":"module/store/patchrun","group":"store"},{"label":"PatchSchedule","slug":"module/store/patchschedule","group":"store"},{"label":"PatchTrace","slug":"module/store/patchtrace","group":"store"},{"label":"Project","slug":"module/store/project","group":"store"},{"label":"ProjectsRepo","slug":"module/store/projectsrepo","group":"store"},{"label":"Run","slug":"module/store/run","group":"store"},{"label":"RunsRepo","slug":"module/store/runsrepo","group":"store"},{"label":"RunTrace","slug":"module/store/runtrace","group":"store"},{"label":"Schedule","slug":"module/store/schedule","group":"store"},{"label":"SchedulesRepo","slug":"module/store/schedulesrepo","group":"store"},{"label":"Store","slug":"module/store/store","group":"store"},{"label":"TracesRepo","slug":"module/store/tracesrepo","group":"store"},{"label":"UpdateProjectPatch","slug":"module/store/updateprojectpatch","group":"store"},{"label":"REGISTRY_DB_NAME","slug":"module/store/registry-db-name","group":"store"},{"label":"openStore","slug":"module/store/openstore","group":"store"},{"label":"resolveRegistryPath","slug":"module/store/resolveregistrypath","group":"store"}],"deepExpand":true},{"label":"transport","slug":"module/transport","children":[{"label":"AbortError","slug":"module/transport/aborterror","group":"transport"},{"label":"HttpApiConnection","slug":"module/transport/httpapiconnection","group":"transport"},{"label":"LocalConnection","slug":"module/transport/localconnection","group":"transport"},{"label":"NetworkSshConnection","slug":"module/transport/networksshconnection","group":"transport"},{"label":"SshConnection","slug":"module/transport/sshconnection","group":"transport"},{"label":"TimeoutError","slug":"module/transport/timeouterror","group":"transport"},{"label":"ApplyOptions","slug":"module/transport/applyoptions","group":"transport"},{"label":"ApplyResult","slug":"module/transport/applyresult","group":"transport"},{"label":"BaseConnectionOptions","slug":"module/transport/baseconnectionoptions","group":"transport"},{"label":"ConfigDiff","slug":"module/transport/configdiff","group":"transport"},{"label":"Connection","slug":"module/transport/connection","group":"transport"},{"label":"ConnectionFacts","slug":"module/transport/connectionfacts","group":"transport"},{"label":"Credentials","slug":"module/transport/credentials","group":"transport"},{"label":"ExecOptions","slug":"module/transport/execoptions","group":"transport"},{"label":"ExecResult","slug":"module/transport/execresult","group":"transport"},{"label":"HealthStatus","slug":"module/transport/healthstatus","group":"transport"},{"label":"HttpApiConnectionOptions","slug":"module/transport/httpapiconnectionoptions","group":"transport"},{"label":"HttpApiRequest","slug":"module/transport/httpapirequest","group":"transport"},{"label":"HttpGrpcCapability","slug":"module/transport/httpgrpccapability","group":"transport"},{"label":"LocalConnectionOptions","slug":"module/transport/localconnectionoptions","group":"transport"},{"label":"NetworkConnectionOptions","slug":"module/transport/networkconnectionoptions","group":"transport"},{"label":"ResilienceConfig","slug":"module/transport/resilienceconfig","group":"transport"},{"label":"RetryConfig","slug":"module/transport/retryconfig","group":"transport"},{"label":"SshConnectionOptions","slug":"module/transport/sshconnectionoptions","group":"transport"},{"label":"VendorDriver","slug":"module/transport/vendordriver","group":"transport"},{"label":"ConnectionOptions","slug":"module/transport/connectionoptions","group":"transport"},{"label":"CoreExec","slug":"module/transport/coreexec","group":"transport"},{"label":"HttpAuth","slug":"module/transport/httpauth","group":"transport"},{"label":"Server","slug":"module/transport/server","group":"transport"},{"label":"DEFAULT_CONCURRENCY","slug":"module/transport/default-concurrency","group":"transport"},{"label":"DEFAULT_RETRY_CONFIG","slug":"module/transport/default-retry-config","group":"transport"},{"label":"DEFAULT_TIMEOUT_MS","slug":"module/transport/default-timeout-ms","group":"transport"},{"label":"IOS_DRIVER","slug":"module/transport/ios-driver","group":"transport"},{"label":"createConnection","slug":"module/transport/createconnection","group":"transport"},{"label":"createResilientRunner","slug":"module/transport/createresilientrunner","group":"transport"},{"label":"diffConfigs","slug":"module/transport/diffconfigs","group":"transport"},{"label":"isFatalError","slug":"module/transport/isfatalerror","group":"transport"},{"label":"normalizeConfig","slug":"module/transport/normalizeconfig","group":"transport"},{"label":"planCommit","slug":"module/transport/plancommit","group":"transport"},{"label":"resolveRetryConfig","slug":"module/transport/resolveretryconfig","group":"transport"},{"label":"verifyHostKey","slug":"module/transport/verifyhostkey","group":"transport"}],"deepExpand":true},{"label":"util/runtime","slug":"module/util-runtime","children":[{"label":"RuntimeInfo","slug":"module/util-runtime/runtimeinfo","group":"util/runtime"},{"label":"RuntimeName","slug":"module/util-runtime/runtimename","group":"util/runtime"},{"label":"detectRuntime","slug":"module/util-runtime/detectruntime","group":"util/runtime"}],"deepExpand":true},{"label":"Source Files","slug":"source"}],"currentSlug":"source/src/config/loader-ts","siteName":"RoleCall","basePath":"/","collapsibleGroups":[]},"i5":{"nav":[{"label":"Home","slug":"","order":-1},{"label":"cli","slug":"module/cli","children":[{"label":"CliError","slug":"module/cli/clierror","group":"cli"},{"label":"AgentManifestResult","slug":"module/cli/agentmanifestresult","group":"cli"},{"label":"ApplyTotals","slug":"module/cli/applytotals","group":"cli"},{"label":"DocsModuleEntry","slug":"module/cli/docsmoduleentry","group":"cli"},{"label":"DocsModulesResult","slug":"module/cli/docsmodulesresult","group":"cli"},{"label":"DocsSearchResult","slug":"module/cli/docssearchresult","group":"cli"},{"label":"FactsGatherResult","slug":"module/cli/factsgatherresult","group":"cli"},{"label":"GlobalFlags","slug":"module/cli/globalflags","group":"cli"},{"label":"InventoryListResult","slug":"module/cli/inventorylistresult","group":"cli"},{"label":"InventoryShowResult","slug":"module/cli/inventoryshowresult","group":"cli"},{"label":"OutputPlugin","slug":"module/cli/outputplugin","group":"cli"},{"label":"PlaybookRunResult","slug":"module/cli/playbookrunresult","group":"cli"},{"label":"PluginEntryView","slug":"module/cli/pluginentryview","group":"cli"},{"label":"PluginListResult","slug":"module/cli/pluginlistresult","group":"cli"},{"label":"PluginRegisterResult","slug":"module/cli/pluginregisterresult","group":"cli"},{"label":"RenderedTemplate","slug":"module/cli/renderedtemplate","group":"cli"},{"label":"RunReplayResult","slug":"module/cli/runreplayresult","group":"cli"},{"label":"TaskApplyOutcome","slug":"module/cli/taskapplyoutcome","group":"cli"},{"label":"VarsListResult","slug":"module/cli/varslistresult","group":"cli"},{"label":"VarsTraceResult","slug":"module/cli/varstraceresult","group":"cli"},{"label":"CliResult","slug":"module/cli/cliresult","group":"cli"},{"label":"getOutputPlugin","slug":"module/cli/getoutputplugin","group":"cli"},{"label":"getVersion","slug":"module/cli/getversion","group":"cli"},{"label":"listOutputPlugins","slug":"module/cli/listoutputplugins","group":"cli"},{"label":"main","slug":"module/cli/main","group":"cli"},{"label":"registerOutputPlugin","slug":"module/cli/registeroutputplugin","group":"cli"},{"label":"renderOutput","slug":"module/cli/renderoutput","group":"cli"},{"label":"runAgentCommand","slug":"module/cli/runagentcommand","group":"cli"},{"label":"runDocsCommand","slug":"module/cli/rundocscommand","group":"cli"},{"label":"runFactsCommand","slug":"module/cli/runfactscommand","group":"cli"},{"label":"runInventoryCommand","slug":"module/cli/runinventorycommand","group":"cli"},{"label":"runPlaybookCommand","slug":"module/cli/runplaybookcommand","group":"cli"},{"label":"runPluginCommand","slug":"module/cli/runplugincommand","group":"cli"},{"label":"runReplayCommand","slug":"module/cli/runreplaycommand","group":"cli"},{"label":"runVarsCommand","slug":"module/cli/runvarscommand","group":"cli"},{"label":"writeOut","slug":"module/cli/writeout","group":"cli"}],"deepExpand":true},{"label":"config","slug":"module/config","children":[{"label":"Config","slug":"module/config/config","group":"config"},{"label":"DirectoryVars","slug":"module/config/directoryvars","group":"config"},{"label":"IdempotencyWarning","slug":"module/config/idempotencywarning","group":"config"},{"label":"NormalizedInventory","slug":"module/config/normalizedinventory","group":"config"},{"label":"NormalizedPlaybook","slug":"module/config/normalizedplaybook","group":"config"},{"label":"NormalizedTask","slug":"module/config/normalizedtask","group":"config"},{"label":"ServeConfig","slug":"module/config/serveconfig","group":"config"},{"label":"TemplateRefProblem","slug":"module/config/templaterefproblem","group":"config"},{"label":"ZodError","slug":"module/config/zoderror","group":"config"},{"label":"DbBackend","slug":"module/config/dbbackend","group":"config"},{"label":"InventoryFormat","slug":"module/config/inventoryformat","group":"config"},{"label":"NormalizedPlaybookFile","slug":"module/config/normalizedplaybookfile","group":"config"},{"label":"RawInventory","slug":"module/config/rawinventory","group":"config"},{"label":"RawInventoryGroup","slug":"module/config/rawinventorygroup","group":"config"},{"label":"RawPlaybook","slug":"module/config/rawplaybook","group":"config"},{"label":"RawPlaybookFile","slug":"module/config/rawplaybookfile","group":"config"},{"label":"RawTask","slug":"module/config/rawtask","group":"config"},{"label":"ScratchStrategy","slug":"module/config/scratchstrategy","group":"config"},{"label":"TriggerSpec","slug":"module/config/triggerspec","group":"config"},{"label":"CanonicalTaskSchema","slug":"module/config/canonicaltaskschema","group":"config"},{"label":"InventoryGroupSchema","slug":"module/config/inventorygroupschema","group":"config"},{"label":"InventorySchema","slug":"module/config/inventoryschema","group":"config"},{"label":"KNOWN_NAMESPACES","slug":"module/config/known-namespaces","group":"config"},{"label":"PlaybookObject","slug":"module/config/playbookobject","group":"config"},{"label":"PlaybookSchema","slug":"module/config/playbookschema","group":"config"},{"label":"TaskSchema","slug":"module/config/taskschema","group":"config"},{"label":"TriggerSchema","slug":"module/config/triggerschema","group":"config"},{"label":"canonicalizeTask","slug":"module/config/canonicalizetask","group":"config"},{"label":"deepMerge","slug":"module/config/deepmerge","group":"config"},{"label":"detectInventoryFormat","slug":"module/config/detectinventoryformat","group":"config"},{"label":"lintPlaybookIdempotency","slug":"module/config/lintplaybookidempotency","group":"config"},{"label":"lintTemplateRefs","slug":"module/config/linttemplaterefs","group":"config"},{"label":"loadConfig","slug":"module/config/loadconfig","group":"config"},{"label":"loadInventory","slug":"module/config/loadinventory","group":"config"},{"label":"loadInventoryFile","slug":"module/config/loadinventoryfile","group":"config"},{"label":"loadPlaybook","slug":"module/config/loadplaybook","group":"config"},{"label":"loadPlaybookFile","slug":"module/config/loadplaybookfile","group":"config"},{"label":"normalizeInventory","slug":"module/config/normalizeinventory","group":"config"},{"label":"normalizePlaybook","slug":"module/config/normalizeplaybook","group":"config"},{"label":"normalizeTask","slug":"module/config/normalizetask","group":"config"},{"label":"resolveDirectoryVars","slug":"module/config/resolvedirectoryvars","group":"config"},{"label":"serializeInventory","slug":"module/config/serializeinventory","group":"config"},{"label":"serializePlaybook","slug":"module/config/serializeplaybook","group":"config"},{"label":"serializeTask","slug":"module/config/serializetask","group":"config"}],"deepExpand":true},{"label":"facts","slug":"module/facts","children":[{"label":"FactError","slug":"module/facts/facterror","group":"facts"},{"label":"FactsEngine","slug":"module/facts/factsengine","group":"facts"},{"label":"FactCache","slug":"module/facts/factcache","group":"facts"},{"label":"FactGatherer","slug":"module/facts/factgatherer","group":"facts"},{"label":"FactPlugin","slug":"module/facts/factplugin","group":"facts"},{"label":"FactsEngineOptions","slug":"module/facts/factsengineoptions","group":"facts"},{"label":"GatherOptions","slug":"module/facts/gatheroptions","group":"facts"},{"label":"ConnectionKind","slug":"module/facts/connectionkind","group":"facts"},{"label":"FactKey","slug":"module/facts/factkey","group":"facts"},{"label":"FactMap","slug":"module/facts/factmap","group":"facts"},{"label":"BUILTIN_GATHERERS","slug":"module/facts/builtin-gatherers","group":"facts"},{"label":"defaultFactsEngine","slug":"module/facts/defaultfactsengine","group":"facts"},{"label":"networkGatherer","slug":"module/facts/networkgatherer","group":"facts"},{"label":"osGatherer","slug":"module/facts/osgatherer","group":"facts"},{"label":"serviceGathererHttp","slug":"module/facts/servicegathererhttp","group":"facts"},{"label":"serviceGathererPosix","slug":"module/facts/servicegathererposix","group":"facts"},{"label":"createFactPlugin","slug":"module/facts/createfactplugin","group":"facts"},{"label":"createInMemoryFactCache","slug":"module/facts/createinmemoryfactcache","group":"facts"},{"label":"getDeclaredFactEntries","slug":"module/facts/getdeclaredfactentries","group":"facts"},{"label":"getDeclaredFactNames","slug":"module/facts/getdeclaredfactnames","group":"facts"},{"label":"getRegisteredFactPlugins","slug":"module/facts/getregisteredfactplugins","group":"facts"},{"label":"registerFactPlugin","slug":"module/facts/registerfactplugin","group":"facts"}],"deepExpand":true},{"label":"modules","slug":"module/modules","children":[{"label":"ModuleCollisionError","slug":"module/modules/modulecollisionerror","group":"modules"},{"label":"DescribeResult","slug":"module/modules/describeresult","group":"modules"},{"label":"Module","slug":"module/modules/module","group":"modules"},{"label":"ModuleContext","slug":"module/modules/modulecontext","group":"modules"},{"label":"ModuleResult","slug":"module/modules/moduleresult","group":"modules"},{"label":"ModuleSummary","slug":"module/modules/modulesummary","group":"modules"},{"label":"PluginScanEntry","slug":"module/modules/pluginscanentry","group":"modules"},{"label":"ResourceOptions","slug":"module/modules/resourceoptions","group":"modules"},{"label":"PluginType","slug":"module/modules/plugintype","group":"modules"},{"label":"ResolveResult","slug":"module/modules/resolveresult","group":"modules"},{"label":"addHostModule","slug":"module/modules/addhostmodule","group":"modules"},{"label":"blockinfileModule","slug":"module/modules/blockinfilemodule","group":"modules"},{"label":"commandModule","slug":"module/modules/commandmodule","group":"modules"},{"label":"configEditModule","slug":"module/modules/configeditmodule","group":"modules"},{"label":"copyModule","slug":"module/modules/copymodule","group":"modules"},{"label":"failModule","slug":"module/modules/failmodule","group":"modules"},{"label":"fileModule","slug":"module/modules/filemodule","group":"modules"},{"label":"getUrlModule","slug":"module/modules/geturlmodule","group":"modules"},{"label":"gitModule","slug":"module/modules/gitmodule","group":"modules"},{"label":"groupModule","slug":"module/modules/groupmodule","group":"modules"},{"label":"httpModule","slug":"module/modules/httpmodule","group":"modules"},{"label":"lineinfileModule","slug":"module/modules/lineinfilemodule","group":"modules"},{"label":"pkgModule","slug":"module/modules/pkgmodule","group":"modules"},{"label":"rawModule","slug":"module/modules/rawmodule","group":"modules"},{"label":"replaceModule","slug":"module/modules/replacemodule","group":"modules"},{"label":"scriptModule","slug":"module/modules/scriptmodule","group":"modules"},{"label":"serviceModule","slug":"module/modules/servicemodule","group":"modules"},{"label":"setFactModule","slug":"module/modules/setfactmodule","group":"modules"},{"label":"shellModule","slug":"module/modules/shellmodule","group":"modules"},{"label":"sqlModule","slug":"module/modules/sqlmodule","group":"modules"},{"label":"statModule","slug":"module/modules/statmodule","group":"modules"},{"label":"userModule","slug":"module/modules/usermodule","group":"modules"},{"label":"waitForModule","slug":"module/modules/waitformodule","group":"modules"},{"label":"buildResolutionTable","slug":"module/modules/buildresolutiontable","group":"modules"},{"label":"getModule","slug":"module/modules/getmodule","group":"modules"},{"label":"getModuleSummary","slug":"module/modules/getmodulesummary","group":"modules"},{"label":"listModules","slug":"module/modules/listmodules","group":"modules"},{"label":"loadModuleFromFile","slug":"module/modules/loadmodulefromfile","group":"modules"},{"label":"registerAllModules","slug":"module/modules/registerallmodules","group":"modules"},{"label":"registerModule","slug":"module/modules/registermodule","group":"modules"},{"label":"resolveModule","slug":"module/modules/resolvemodule","group":"modules"},{"label":"resource","slug":"module/modules/resource","group":"modules"},{"label":"scanAndRegister","slug":"module/modules/scanandregister","group":"modules"},{"label":"scanProject","slug":"module/modules/scanproject","group":"modules"},{"label":"searchModules","slug":"module/modules/searchmodules","group":"modules"},{"label":"setModuleMeta","slug":"module/modules/setmodulemeta","group":"modules"}],"deepExpand":true},{"label":"orchestrator","slug":"module/orchestrator","children":[{"label":"CronScheduler","slug":"module/orchestrator/cronscheduler","group":"orchestrator"},{"label":"Engine","slug":"module/orchestrator/engine","group":"orchestrator"},{"label":"CronSchedulerOptions","slug":"module/orchestrator/cronscheduleroptions","group":"orchestrator"},{"label":"Enqueuer","slug":"module/orchestrator/enqueuer","group":"orchestrator"},{"label":"HostOutcome","slug":"module/orchestrator/hostoutcome","group":"orchestrator"},{"label":"JobBody","slug":"module/orchestrator/jobbody","group":"orchestrator"},{"label":"ParsedCron","slug":"module/orchestrator/parsedcron","group":"orchestrator"},{"label":"PlanTask","slug":"module/orchestrator/plantask","group":"orchestrator"},{"label":"RouteContext","slug":"module/orchestrator/routecontext","group":"orchestrator"},{"label":"RunRecord","slug":"module/orchestrator/runrecord","group":"orchestrator"},{"label":"SchedulerApi","slug":"module/orchestrator/schedulerapi","group":"orchestrator"},{"label":"ServerHandle","slug":"module/orchestrator/serverhandle","group":"orchestrator"},{"label":"ServerOptions","slug":"module/orchestrator/serveroptions","group":"orchestrator"},{"label":"ShutdownOptions","slug":"module/orchestrator/shutdownoptions","group":"orchestrator"},{"label":"TargetDescriptor","slug":"module/orchestrator/targetdescriptor","group":"orchestrator"},{"label":"TriggerSuccess","slug":"module/orchestrator/triggersuccess","group":"orchestrator"},{"label":"WebhookRouteContext","slug":"module/orchestrator/webhookroutecontext","group":"orchestrator"},{"label":"ActionType","slug":"module/orchestrator/actiontype","group":"orchestrator"},{"label":"RunStatus","slug":"module/orchestrator/runstatus","group":"orchestrator"},{"label":"TransportKind","slug":"module/orchestrator/transportkind","group":"orchestrator"},{"label":"ValidationError","slug":"module/orchestrator/validationerror","group":"orchestrator"},{"label":"ValidationResult","slug":"module/orchestrator/validationresult","group":"orchestrator"},{"label":"ValidationSuccess","slug":"module/orchestrator/validationsuccess","group":"orchestrator"},{"label":"VALID_JOB_TYPES","slug":"module/orchestrator/valid-job-types","group":"orchestrator"},{"label":"createServer","slug":"module/orchestrator/createserver","group":"orchestrator"},{"label":"installSignalHandlers","slug":"module/orchestrator/installsignalhandlers","group":"orchestrator"},{"label":"isActionType","slug":"module/orchestrator/isactiontype","group":"orchestrator"},{"label":"isValid","slug":"module/orchestrator/isvalid","group":"orchestrator"},{"label":"mountRoutes","slug":"module/orchestrator/mountroutes","group":"orchestrator"},{"label":"mountWebhooks","slug":"module/orchestrator/mountwebhooks","group":"orchestrator"},{"label":"nextOccurrence","slug":"module/orchestrator/nextoccurrence","group":"orchestrator"},{"label":"parseExpr","slug":"module/orchestrator/parseexpr","group":"orchestrator"},{"label":"startServe","slug":"module/orchestrator/startserve","group":"orchestrator"},{"label":"validateJobBody","slug":"module/orchestrator/validatejobbody","group":"orchestrator"}],"deepExpand":true},{"label":"store","slug":"module/store","children":[{"label":"ProjectsRepository","slug":"module/store/projectsrepository","group":"store"},{"label":"RunsRepository","slug":"module/store/runsrepository","group":"store"},{"label":"SchedulesRepository","slug":"module/store/schedulesrepository","group":"store"},{"label":"TracesRepository","slug":"module/store/tracesrepository","group":"store"},{"label":"WriteQueue","slug":"module/store/writequeue","group":"store"},{"label":"CreateProjectInput","slug":"module/store/createprojectinput","group":"store"},{"label":"CreateRunInput","slug":"module/store/createruninput","group":"store"},{"label":"CreateScheduleInput","slug":"module/store/createscheduleinput","group":"store"},{"label":"CreateTraceInput","slug":"module/store/createtraceinput","group":"store"},{"label":"OpenStoreOptions","slug":"module/store/openstoreoptions","group":"store"},{"label":"PatchRun","slug":"module/store/patchrun","group":"store"},{"label":"PatchSchedule","slug":"module/store/patchschedule","group":"store"},{"label":"PatchTrace","slug":"module/store/patchtrace","group":"store"},{"label":"Project","slug":"module/store/project","group":"store"},{"label":"ProjectsRepo","slug":"module/store/projectsrepo","group":"store"},{"label":"Run","slug":"module/store/run","group":"store"},{"label":"RunsRepo","slug":"module/store/runsrepo","group":"store"},{"label":"RunTrace","slug":"module/store/runtrace","group":"store"},{"label":"Schedule","slug":"module/store/schedule","group":"store"},{"label":"SchedulesRepo","slug":"module/store/schedulesrepo","group":"store"},{"label":"Store","slug":"module/store/store","group":"store"},{"label":"TracesRepo","slug":"module/store/tracesrepo","group":"store"},{"label":"UpdateProjectPatch","slug":"module/store/updateprojectpatch","group":"store"},{"label":"REGISTRY_DB_NAME","slug":"module/store/registry-db-name","group":"store"},{"label":"openStore","slug":"module/store/openstore","group":"store"},{"label":"resolveRegistryPath","slug":"module/store/resolveregistrypath","group":"store"}],"deepExpand":true},{"label":"transport","slug":"module/transport","children":[{"label":"AbortError","slug":"module/transport/aborterror","group":"transport"},{"label":"HttpApiConnection","slug":"module/transport/httpapiconnection","group":"transport"},{"label":"LocalConnection","slug":"module/transport/localconnection","group":"transport"},{"label":"NetworkSshConnection","slug":"module/transport/networksshconnection","group":"transport"},{"label":"SshConnection","slug":"module/transport/sshconnection","group":"transport"},{"label":"TimeoutError","slug":"module/transport/timeouterror","group":"transport"},{"label":"ApplyOptions","slug":"module/transport/applyoptions","group":"transport"},{"label":"ApplyResult","slug":"module/transport/applyresult","group":"transport"},{"label":"BaseConnectionOptions","slug":"module/transport/baseconnectionoptions","group":"transport"},{"label":"ConfigDiff","slug":"module/transport/configdiff","group":"transport"},{"label":"Connection","slug":"module/transport/connection","group":"transport"},{"label":"ConnectionFacts","slug":"module/transport/connectionfacts","group":"transport"},{"label":"Credentials","slug":"module/transport/credentials","group":"transport"},{"label":"ExecOptions","slug":"module/transport/execoptions","group":"transport"},{"label":"ExecResult","slug":"module/transport/execresult","group":"transport"},{"label":"HealthStatus","slug":"module/transport/healthstatus","group":"transport"},{"label":"HttpApiConnectionOptions","slug":"module/transport/httpapiconnectionoptions","group":"transport"},{"label":"HttpApiRequest","slug":"module/transport/httpapirequest","group":"transport"},{"label":"HttpGrpcCapability","slug":"module/transport/httpgrpccapability","group":"transport"},{"label":"LocalConnectionOptions","slug":"module/transport/localconnectionoptions","group":"transport"},{"label":"NetworkConnectionOptions","slug":"module/transport/networkconnectionoptions","group":"transport"},{"label":"ResilienceConfig","slug":"module/transport/resilienceconfig","group":"transport"},{"label":"RetryConfig","slug":"module/transport/retryconfig","group":"transport"},{"label":"SshConnectionOptions","slug":"module/transport/sshconnectionoptions","group":"transport"},{"label":"VendorDriver","slug":"module/transport/vendordriver","group":"transport"},{"label":"ConnectionOptions","slug":"module/transport/connectionoptions","group":"transport"},{"label":"CoreExec","slug":"module/transport/coreexec","group":"transport"},{"label":"HttpAuth","slug":"module/transport/httpauth","group":"transport"},{"label":"Server","slug":"module/transport/server","group":"transport"},{"label":"DEFAULT_CONCURRENCY","slug":"module/transport/default-concurrency","group":"transport"},{"label":"DEFAULT_RETRY_CONFIG","slug":"module/transport/default-retry-config","group":"transport"},{"label":"DEFAULT_TIMEOUT_MS","slug":"module/transport/default-timeout-ms","group":"transport"},{"label":"IOS_DRIVER","slug":"module/transport/ios-driver","group":"transport"},{"label":"createConnection","slug":"module/transport/createconnection","group":"transport"},{"label":"createResilientRunner","slug":"module/transport/createresilientrunner","group":"transport"},{"label":"diffConfigs","slug":"module/transport/diffconfigs","group":"transport"},{"label":"isFatalError","slug":"module/transport/isfatalerror","group":"transport"},{"label":"normalizeConfig","slug":"module/transport/normalizeconfig","group":"transport"},{"label":"planCommit","slug":"module/transport/plancommit","group":"transport"},{"label":"resolveRetryConfig","slug":"module/transport/resolveretryconfig","group":"transport"},{"label":"verifyHostKey","slug":"module/transport/verifyhostkey","group":"transport"}],"deepExpand":true},{"label":"util/runtime","slug":"module/util-runtime","children":[{"label":"RuntimeInfo","slug":"module/util-runtime/runtimeinfo","group":"util/runtime"},{"label":"RuntimeName","slug":"module/util-runtime/runtimename","group":"util/runtime"},{"label":"detectRuntime","slug":"module/util-runtime/detectruntime","group":"util/runtime"}],"deepExpand":true},{"label":"Source Files","slug":"source"}],"currentSlug":"source/src/config/loader-ts","basePath":"/","collapsibleGroups":[]}}</script><script type="module">(function(){var map={"theme-toggle":"/_islands/theme-toggle-RQJWK6UH.js","settings":"/_islands/settings-YODNV3SD.js","code-viewer":"/_islands/code-viewer-U3WRLQLX.js","embed":"/_islands/embed-HOMSSC3V.js","playground":"/_islands/playground-KT5R4UYJ.js","tabs":"/_islands/tabs-NRSQKCSU.js","sidebar":"/_islands/sidebar-6ULZ3KUU.js","mobile-nav":"/_islands/mobile-nav-CEVIJOY5.js","toc":"/_islands/toc-OVW2UK3I.js","toc-mobile":"/_islands/toc-mobile-IGCYO5QO.js","cmdk":"/_islands/cmdk-J5HVDM6W.js","code-tabs":"/_islands/code-tabs-DXMGOVSV.js","copy-btn":"/_islands/copy-btn-RPMIR26R.js","copy-page":"/_islands/copy-page-IM7ZKESR.js"};var seen=new Set();document.querySelectorAll('[data-island]').forEach(function(el){seen.add(el.getAttribute('data-island'));});seen.forEach(function(name){var src=map[name];if(src){import(src);}});})();</script><script>(function(){function flash(h){var b=h.querySelector('[data-heading-anchor]');if(!b)return;b.setAttribute('data-copied','');window.setTimeout(function(){b.removeAttribute('data-copied');},3000);}function onClick(e){var t=e.target;if(!t||!t.closest)return;if(t.closest('a'))return;var h=t.closest('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');if(!h)return;var id=h.id;if(!id)return;var iconOnly=!!t.closest('[data-heading-anchor]');if(!iconOnly){if(location.hash.slice(1)===id){h.scrollIntoView();}else{location.hash=id;}}try{var url=location.origin+location.pathname+location.search+'#'+id;if(navigator.clipboard){navigator.clipboard.writeText(url).then(function(){flash(h);}).catch(function(){});}}catch(_){}}document.addEventListener('click',onClick);}());</script><script>(function(){var IDLE=700;var timers=new WeakMap();function onScroll(e){var el=e.target;if(el===document||el===window)el=document.documentElement;if(!el||!el.classList)return;el.classList.add('clean-scrolling');var prev=timers.get(el);if(prev)window.clearTimeout(prev);timers.set(el,window.setTimeout(function(){el.classList.remove('clean-scrolling');},IDLE));}document.addEventListener('scroll',onScroll,true);}());</script></body></html>

@@ -1,0 +1,10 @@
+- name: Failing task probe
+  hosts: localgrp
+  vars:
+    http_port: 80
+  tasks:
+    - name: Run a command that exits non-zero
+      module: shell
+      args:
+        command: "exit 1"
+        creates: /tmp/rolecall-fail-probe-done

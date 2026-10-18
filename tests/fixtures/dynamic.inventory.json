@@ -1,0 +1,7 @@
+{
+  "hosts": ["dyn1", "dyn2"],
+  "groupHosts": { "dynamic_group": ["dyn1", "dyn2"] },
+  "groupVars": { "dynamic_group": { "source": "dynamic", "env": "dyn" } },
+  "hostVars": { "dyn1": { "role": "dyn-web" } },
+  "defaults": { "managed_by": "dynamic-plugin" }
+}

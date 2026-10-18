@@ -1,0 +1,2195 @@
+<!doctype html><html lang="en" data-scrollbar="styled"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="generator" content="clean-jsdoc-theme 5.2.0" /><title>node_modules/bun-types/globals.d.ts | RoleCall</title><script>(function(){try{var d=document.documentElement;var t=localStorage.getItem('theme');if(t==='dark'){d.dataset.theme='dark'}else{d.dataset.theme='light'}var fs=localStorage.getItem('clean-font-size');if(fs==='sm'){d.style.fontSize='15px'}else if(fs==='lg'){d.style.fontSize='18px'}var ls=localStorage.getItem('clean-line-spacing');if(ls==='compact'){d.style.setProperty('--clean-line-height','1.4')}else if(ls==='relaxed'){d.style.setProperty('--clean-line-height','1.8')}}catch(_){}}());</script><link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin /><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;500;600;700&amp;family=Roboto:wght@400;500;600;700&amp;display=swap" /><link rel="stylesheet" href="/_assets/styles.mve0ywe9-ed9f7f0f.css" /></head><body><div class="flex min-h-screen flex-col bg-background text-(--clean-fg)"><header class="sticky top-0 z-30 border-b border-(--clean-border) bg-background"><div class="mx-auto flex h-16 w-full min-w-0 max-w-screen-2xl items-center gap-4 px-4"><a href="/" class="flex min-w-0 items-center pl-3 no-underline"><span class="truncate text-lg font-heading font-bold text-(--clean-fg)">RoleCall</span></a><span class="shrink-0 rounded bg-(--clean-bg-muted) px-2 py-0.5 text-xs text-muted-foreground">v0.0.0</span><div class="ml-auto flex shrink-0 items-center gap-1"><div class="flex items-center gap-1"><div data-island="cmdk" data-island-id="i1"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-muted-foreground hover:bg-accent hover:text-accent-foreground h-9 w-9" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Search" title="Search (Ctrl K)"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search" aria-hidden="true"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg></button></div></div><div class="hidden items-center gap-1 md:flex"><div data-island="theme-toggle" data-island-id="i2"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-muted-foreground hover:bg-accent hover:text-accent-foreground h-9 w-9" type="button" aria-label="Switch to dark theme" title="Toggle theme"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg></button></div><div data-island="settings" data-island-id="i3"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-muted-foreground hover:bg-accent hover:text-accent-foreground h-9 w-9" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Settings" title="Settings"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings" aria-hidden="true"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"></path><circle cx="12" cy="12" r="3"></circle></svg></button></div></div><div class="md:hidden"><div data-island="mobile-nav" data-island-id="i4"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-muted-foreground hover:bg-accent hover:text-accent-foreground h-9 w-9" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Open navigation" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panel-right" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M15 3v18"></path></svg></button></div></div></div></div></header><div class="mx-auto grid w-full max-w-screen-2xl flex-1 grid-cols-1 gap-6 px-4 py-6 md:grid-cols-[16rem_minmax(0,1fr)]"><aside class="hidden md:block"><div class="sticky overflow-y-auto [scrollbar-gutter:stable] pr-2 top-20 max-h-[calc(100vh-6rem)]"><div data-island="sidebar" data-island-id="i5"><nav aria-label="Documentation navigation" class="text-(--clean-fg)"><div class="mt-4 first:mt-0"><ul class="m-0 list-none p-0"><li class="my-0.5"><a href="/" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">Home</span></a></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/cli" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">cli</span></a><button type="button" aria-expanded="false" aria-label="cli" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/config" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">config</span></a><button type="button" aria-expanded="false" aria-label="config" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/facts" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">facts</span></a><button type="button" aria-expanded="false" aria-label="facts" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/modules" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">modules</span></a><button type="button" aria-expanded="false" aria-label="modules" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/orchestrator" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">orchestrator</span></a><button type="button" aria-expanded="false" aria-label="orchestrator" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/store" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">store</span></a><button type="button" aria-expanded="false" aria-label="store" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/transport" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">transport</span></a><button type="button" aria-expanded="false" aria-label="transport" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/util-runtime" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">util/runtime</span></a><button type="button" aria-expanded="false" aria-label="util/runtime" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><a href="/source" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">Source Files</span></a></li></ul></div></nav></div></div></aside><main class="min-w-0 px-4 md:px-8 lg:px-12"><div data-island="code-viewer" data-island-id="i0"><div class="my-4 overflow-hidden rounded-lg border border-(--clean-border) bg-(--clean-bg)"><div class="flex items-center justify-between border-b border-(--clean-border) bg-(--clean-bg-muted) px-3 py-2 text-sm"><span class="font-mono text-(--clean-fg)">node_modules/bun-types/globals.d.ts</span><span class="text-xs text-(--clean-fg-muted)">typescript</span></div><div class="h-[calc(100vh-13rem)] min-h-[24rem]"><pre class="m-0 h-full overflow-auto whitespace-pre p-4 text-sm leading-relaxed text-(--clean-fg)"><code class="language-typescript">declare module &quot;bun&quot; {
+  namespace __internal {
+    type NodeCryptoWebcryptoCryptoKey = import(&quot;crypto&quot;).webcrypto.CryptoKey;
+    type NodeCryptoWebcryptoCryptoKeyPair = import(&quot;crypto&quot;).webcrypto.CryptoKeyPair;
+
+    type LibEmptyOrNodeCryptoWebcryptoSubtleCrypto = LibDomIsLoaded extends true
+      ? {}
+      : import(&quot;crypto&quot;).webcrypto.SubtleCrypto;
+
+    type LibWorkerOrBunWorker = LibDomIsLoaded extends true ? {} : Bun.Worker;
+    type LibEmptyOrBunWebSocket = LibDomIsLoaded extends true ? {} : Bun.WebSocket;
+
+    type LibEmptyOrNodeStreamWebCompressionStream = LibDomIsLoaded extends true
+      ? {}
+      : import(&quot;node:stream/web&quot;).CompressionStream;
+    type LibEmptyOrNodeStreamWebDecompressionStream = LibDomIsLoaded extends true
+      ? {}
+      : import(&quot;node:stream/web&quot;).DecompressionStream;
+
+    type LibPerformanceOrNodePerfHooksPerformance = LibDomIsLoaded extends true
+      ? {}
+      : import(&quot;node:perf_hooks&quot;).Performance;
+    type LibEmptyOrPerformanceEntry = LibDomIsLoaded extends true ? {} : import(&quot;node:perf_hooks&quot;).PerformanceEntry;
+    type LibEmptyOrPerformanceMark = LibDomIsLoaded extends true ? {} : import(&quot;node:perf_hooks&quot;).PerformanceMark;
+    type LibEmptyOrPerformanceMeasure = LibDomIsLoaded extends true ? {} : import(&quot;node:perf_hooks&quot;).PerformanceMeasure;
+    type LibEmptyOrPerformanceObserver = LibDomIsLoaded extends true
+      ? {}
+      : import(&quot;node:perf_hooks&quot;).PerformanceObserver;
+    type LibEmptyOrPerformanceObserverEntryList = LibDomIsLoaded extends true
+      ? {}
+      : import(&quot;node:perf_hooks&quot;).PerformanceObserverEntryList;
+    type LibEmptyOrPerformanceResourceTiming = LibDomIsLoaded extends true
+      ? {}
+      : import(&quot;node:perf_hooks&quot;).PerformanceResourceTiming;
+
+    type LibEmptyOrNodeUtilTextEncoder = LibDomIsLoaded extends true ? {} : import(&quot;node:util&quot;).TextEncoder;
+    type LibEmptyOrNodeStreamWebTextEncoderStream = LibDomIsLoaded extends true
+      ? {}
+      : import(&quot;node:stream/web&quot;).TextEncoderStream;
+
+    type LibEmptyOrNodeUtilTextDecoder = LibDomIsLoaded extends true ? {} : import(&quot;node:util&quot;).TextDecoder;
+    type LibEmptyOrNodeStreamWebTextDecoderStream = LibDomIsLoaded extends true
+      ? {}
+      : import(&quot;node:stream/web&quot;).TextDecoderStream;
+
+    type LibEmptyOrNodeReadableStream&lt;T> = LibDomIsLoaded extends true
+      ? {}
+      : import(&quot;node:stream/web&quot;).ReadableStream&lt;T>;
+
+    type LibEmptyOrNodeWritableStream&lt;T> = LibDomIsLoaded extends true
+      ? {}
+      : import(&quot;node:stream/web&quot;).WritableStream&lt;T>;
+
+    type LibEmptyOrNodeMessagePort = LibDomIsLoaded extends true ? {} : import(&quot;node:worker_threads&quot;).MessagePort;
+    type LibEmptyOrBroadcastChannel = LibDomIsLoaded extends true ? {} : import(&quot;node:worker_threads&quot;).BroadcastChannel;
+    type LibEmptyOrEventSource = LibDomIsLoaded extends true ? {} : import(&quot;undici-types&quot;).EventSource;
+
+    type LibEmptyOrReadableByteStreamController = LibDomIsLoaded extends true
+      ? {}
+      : import(&quot;node:stream/web&quot;).ReadableByteStreamController;
+
+    type LibEmptyOrReadableStreamBYOBReader = LibDomIsLoaded extends true
+      ? {}
+      : import(&quot;node:stream/web&quot;).ReadableStreamBYOBReader;
+
+    type LibEmptyOrReadableStreamBYOBRequest = LibDomIsLoaded extends true
+      ? {}
+      : import(&quot;node:stream/web&quot;).ReadableStreamBYOBRequest;
+
+    /**
+     * The Node.js-flavored members of the global `Event`. The global interface
+     * picks them up only when lib.dom.d.ts is not loaded: lib.dom declares
+     * `composedPath(): EventTarget[]`, which is incompatible with the tuple
+     * type below, so when lib.dom is loaded its declarations win.
+     */
+    interface BunEvent {
+      /** This is not used in Node.js and is provided purely for completeness. */
+      readonly bubbles: boolean;
+      /** Alias for event.stopPropagation(). This is not used in Node.js and is provided purely for completeness. */
+      cancelBubble: boolean;
+      /** True if the event was created with the cancelable option */
+      readonly cancelable: boolean;
+      /** This is not used in Node.js and is provided purely for completeness. */
+      readonly composed: boolean;
+      /** Returns an array containing the current EventTarget as the only entry or empty if the event is not being dispatched. This is not used in Node.js and is provided purely for completeness. */
+      composedPath(): [EventTarget?];
+      /** Alias for event.target. */
+      readonly currentTarget: EventTarget | null;
+      /** `true` if `cancelable` is `true` and `event.preventDefault()` has been called. */
+      readonly defaultPrevented: boolean;
+      /** This is not used in Node.js and is provided purely for completeness. */
+      readonly eventPhase: number;
+      /** The `AbortSignal` &quot;abort&quot; event is emitted with `isTrusted` set to `true`. The value is `false` in all other cases. */
+      readonly isTrusted: boolean;
+      /** Sets the `defaultPrevented` property to `true` if `cancelable` is `true`. */
+      preventDefault(): void;
+      /** This is not used in Node.js and is provided purely for completeness. */
+      returnValue: boolean;
+      /** Alias for event.target. */
+      readonly srcElement: EventTarget | null;
+      /** Stops the invocation of event listeners after the current one completes. */
+      stopImmediatePropagation(): void;
+      /** This is not used in Node.js and is provided purely for completeness. */
+      stopPropagation(): void;
+      /** The `EventTarget` dispatching the event */
+      readonly target: EventTarget | null;
+      /** The millisecond timestamp when the Event object was created. */
+      readonly timeStamp: number;
+      /** The type of event, for example &quot;click&quot;, &quot;hashchange&quot;, or &quot;submit&quot;. */
+      readonly type: string;
+    }
+
+    type LibEmptyOrBunEvent = LibDomIsLoaded extends true ? {} : BunEvent;
+
+    /**
+     * The Node.js-flavored members of the global `EventTarget`, used only when
+     * lib.dom.d.ts is not loaded, same as {@link BunEvent}.
+     */
+    interface BunEventTarget {
+      /**
+       * Adds a new handler for the `type` event. Any given `listener` is added only once per `type` and per `capture` option value.
+       *
+       * If the `once` option is true, the `listener` is removed after the next time a `type` event is dispatched.
+       *
+       * The `capture` option is not used by Node.js in any functional way other than tracking registered event listeners per the `EventTarget` specification.
+       * Specifically, the `capture` option is used as part of the key when registering a `listener`.
+       * Any individual `listener` may be added once with `capture = false`, and once with `capture = true`.
+       */
+      addEventListener(
+        type: string,
+        listener: Bun.EventListener | Bun.EventListenerObject,
+        options?: Bun.AddEventListenerOptions | boolean,
+      ): void;
+      /** Dispatches a synthetic event `event` to target and returns true if either event's cancelable attribute value is false or its preventDefault() method was not invoked, and false otherwise. */
+      dispatchEvent(event: Event): boolean;
+      /** Removes the event listener in target's event listener list with the same type, callback, and options. */
+      removeEventListener(
+        type: string,
+        listener: Bun.EventListener | Bun.EventListenerObject,
+        options?: Bun.EventListenerOptions | boolean,
+      ): void;
+    }
+
+    type LibEmptyOrBunEventTarget = LibDomIsLoaded extends true ? {} : BunEventTarget;
+  }
+}
+
+interface ReadableStream&lt;R = any> extends Bun.__internal.LibEmptyOrNodeReadableStream&lt;R> {}
+declare var ReadableStream: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;ReadableStream&quot;,
+  {
+    prototype: ReadableStream;
+    new &lt;R = any>(underlyingSource?: Bun.UnderlyingSource&lt;R>, strategy?: QueuingStrategy&lt;R>): ReadableStream&lt;R>;
+    new &lt;R = any>(underlyingSource?: Bun.DirectUnderlyingSource&lt;R>, strategy?: QueuingStrategy&lt;R>): ReadableStream&lt;R>;
+  }
+>;
+
+interface WritableStream&lt;W = any> extends Bun.__internal.LibEmptyOrNodeWritableStream&lt;W> {}
+declare var WritableStream: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;WritableStream&quot;,
+  {
+    prototype: WritableStream;
+    new &lt;W = any>(underlyingSink?: Bun.UnderlyingSink&lt;W>, strategy?: QueuingStrategy&lt;W>): WritableStream&lt;W>;
+  }
+>;
+
+interface CompressionStream extends Bun.__internal.LibEmptyOrNodeStreamWebCompressionStream {}
+declare var CompressionStream: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;CompressionStream&quot;,
+  {
+    prototype: CompressionStream;
+    /**
+     * @param strategy Bun extension. Its `highWaterMark` (bytes, default 64 KiB) bounds how much
+     * output one input chunk produces per step: the largest piece a reader receives per `read()`,
+     * and how far decoding runs ahead of a slow reader. A chunk larger than that may produce up to
+     * its own size per step.
+     */
+    new (format: Bun.CompressionFormat, strategy?: { highWaterMark?: number }): CompressionStream;
+  }
+>;
+
+interface DecompressionStream extends Bun.__internal.LibEmptyOrNodeStreamWebDecompressionStream {}
+declare var DecompressionStream: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;DecompressionStream&quot;,
+  {
+    prototype: DecompressionStream;
+    /**
+     * @param strategy Bun extension. Its `highWaterMark` (bytes, default 64 KiB) bounds how much
+     * output one input chunk produces per step: the largest piece a reader receives per `read()`,
+     * and how far decoding runs ahead of a slow reader. A chunk larger than that may produce up to
+     * its own size per step.
+     */
+    new (format: Bun.CompressionFormat, strategy?: { highWaterMark?: number }): DecompressionStream;
+  }
+>;
+
+interface Worker extends Bun.__internal.LibWorkerOrBunWorker {}
+declare var Worker: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;Worker&quot;,
+  {
+    prototype: Worker;
+    new (scriptURL: string | URL, options?: Bun.WorkerOptions | undefined): Worker;
+    /**
+     * The cloned value of the `data` property passed to `new Worker()`.
+     *
+     * Bun's equivalent of `workerData` in Node.js.
+     */
+    data: any;
+  }
+>;
+
+/**
+ * A WebSocket client implementation.
+ */
+interface WebSocket extends Bun.__internal.LibEmptyOrBunWebSocket {}
+/**
+ * A WebSocket client implementation.
+ */
+declare var WebSocket: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;WebSocket&quot;,
+  {
+    prototype: WebSocket;
+
+    /**
+     * Creates a new WebSocket instance with the given URL and options.
+     *
+     * @param url The URL to connect to
+     * @param options Connection options: protocols, headers, TLS, proxy, and compression
+     *
+     * @example
+     * ```ts
+     * const ws = new WebSocket(&quot;wss://dev.local&quot;, {
+     *  protocols: [&quot;proto1&quot;, &quot;proto2&quot;],
+     *  headers: {
+     *    &quot;Cookie&quot;: &quot;session=123456&quot;,
+     *  },
+     * });
+     * ```
+     */
+    new (url: string | URL, options?: Bun.WebSocketOptions): WebSocket;
+
+    /**
+     * Creates a new WebSocket instance with the given URL and protocols.
+     *
+     * @param url The URL to connect to
+     * @param protocols One or more subprotocols to request from the server
+     *
+     * @example
+     * ```ts
+     * const ws = new WebSocket(&quot;wss://dev.local&quot;);
+     * const ws = new WebSocket(&quot;wss://dev.local&quot;, [&quot;proto1&quot;, &quot;proto2&quot;]);
+     * ```
+     */
+    new (url: string | URL, protocols?: string | string[]): WebSocket;
+
+    /**
+     * The connection is not yet open
+     */
+    readonly CONNECTING: 0;
+
+    /**
+     * The connection is open and ready to communicate
+     */
+    readonly OPEN: 1;
+
+    /**
+     * The connection is in the process of closing
+     */
+    readonly CLOSING: 2;
+
+    /**
+     * The connection is closed or couldn't be opened
+     */
+    readonly CLOSED: 3;
+  }
+>;
+
+interface Crypto {
+  readonly subtle: SubtleCrypto;
+
+  /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/Crypto/getRandomValues) */
+  getRandomValues&lt;T extends ArrayBufferView | null>(array: T): T;
+
+  /**
+   * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Crypto/randomUUID)
+   */
+  randomUUID(): `${string}-${string}-${string}-${string}-${string}`;
+
+  timingSafeEqual: typeof import(&quot;node:crypto&quot;).timingSafeEqual;
+}
+declare var Crypto: {
+  prototype: Crypto;
+  new (): Crypto;
+};
+declare var crypto: Crypto;
+
+/**
+ * An implementation of the [WHATWG Encoding Standard](https://encoding.spec.whatwg.org/) `TextEncoder` API. All
+ * instances of `TextEncoder` only support UTF-8 encoding.
+ *
+ * ```js
+ * const encoder = new TextEncoder();
+ * const uint8array = encoder.encode('this is some data');
+ * ```
+ */
+interface TextEncoder extends Bun.__internal.LibEmptyOrNodeUtilTextEncoder {
+  /**
+   * UTF-8 encodes the `src` string to the `dest` Uint8Array and returns an object
+   * containing the read Unicode code units and written UTF-8 bytes.
+   *
+   * ```js
+   * const encoder = new TextEncoder();
+   * const src = 'this is some data';
+   * const dest = new Uint8Array(10);
+   * const { read, written } = encoder.encodeInto(src, dest);
+   * ```
+   * @param src The text to encode.
+   * @param dest The array that receives the encoded bytes.
+   */
+  encodeInto(src?: string, dest?: Bun.BufferSource): import(&quot;node:util&quot;).TextEncoderEncodeIntoResult;
+}
+declare var TextEncoder: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;TextEncoder&quot;,
+  {
+    prototype: TextEncoder;
+    new (encoding?: Bun.Encoding, options?: { fatal?: boolean; ignoreBOM?: boolean }): TextEncoder;
+  }
+>;
+
+/**
+ * An implementation of the [WHATWG Encoding Standard](https://encoding.spec.whatwg.org/) `TextDecoder` API.
+ * Supports every encoding label the standard defines, except the labels of the
+ * `replacement` encoding.
+ *
+ * ```js
+ * const decoder = new TextDecoder();
+ * const text = decoder.decode(new Uint8Array([104, 105])); // &quot;hi&quot;
+ * ```
+ */
+interface TextDecoder extends Bun.__internal.LibEmptyOrNodeUtilTextDecoder {}
+declare var TextDecoder: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;TextDecoder&quot;,
+  {
+    prototype: TextDecoder;
+    new (encoding?: Bun.Encoding, options?: { fatal?: boolean; ignoreBOM?: boolean }): TextDecoder;
+  }
+>;
+
+interface Event extends Bun.__internal.LibEmptyOrBunEvent {}
+declare var Event: {
+  prototype: Event;
+  readonly NONE: 0;
+  readonly CAPTURING_PHASE: 1;
+  readonly AT_TARGET: 2;
+  readonly BUBBLING_PHASE: 3;
+  new (type: string, eventInitDict?: Bun.EventInit): Event;
+};
+
+interface EventTarget extends Bun.__internal.LibEmptyOrBunEventTarget {}
+declare var EventTarget: {
+  prototype: EventTarget;
+  new (): EventTarget;
+};
+
+interface File extends Blob {
+  readonly lastModified: number;
+  readonly name: string;
+}
+declare var File: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;File&quot;,
+  {
+    prototype: File;
+    /**
+     * Create a new [File](https://developer.mozilla.org/en-US/docs/Web/API/File)
+     *
+     * @param parts An array of strings, numbers, BufferSource, or [Blob](https://developer.mozilla.org/en-US/docs/Web/API/Blob) objects
+     * @param name The name of the file
+     * @param options Properties for the file, such as `type` and `lastModified`
+     */
+    new (
+      parts: Bun.BlobPart[],
+      name: string,
+      options?: BlobPropertyBag &amp; { lastModified?: Date | number | undefined },
+    ): File;
+  }
+>;
+
+/**
+ * A [ShadowRealm](https://github.com/tc39/proposal-shadowrealm/blob/main/explainer.md#introduction)
+ * is a distinct global environment with its own global object containing its
+ * own intrinsics and built-ins (standard objects that are not bound to global
+ * variables, like the initial value of Object.prototype).
+ *
+ * @example
+ *
+ * ```js
+ * const red = new ShadowRealm();
+ *
+ * // Realms can import modules that execute within their own environment.
+ * // When the module resolves, it captures the binding value, or creates a new
+ * // wrapped function that is connected to the callable binding.
+ * const redAdd = await red.importValue('./inside-code.js', 'add');
+ *
+ * // redAdd is a wrapped function exotic object that chains its call to the
+ * // respective imported binding.
+ * let result = redAdd(2, 3);
+ *
+ * console.assert(result === 5); // yields true
+ *
+ * // The evaluate method runs code inside the ShadowRealm without loading a
+ * // module, though it still requires CSP relaxing.
+ * globalThis.someValue = 1;
+ * red.evaluate('globalThis.someValue = 2'); // Affects only the ShadowRealm's global
+ * console.assert(globalThis.someValue === 1);
+ *
+ * // The wrapped functions can also wrap other functions the other way around.
+ * const setUniqueValue =
+ * await red.importValue('./inside-code.js', 'setUniqueValue');
+ *
+ * // setUniqueValue = (cb) => (cb(globalThis.someValue) * 2);
+ *
+ * result = setUniqueValue((x) => x ** 3);
+ *
+ * console.assert(result === 16); // yields true
+ * ```
+ */
+interface ShadowRealm {
+  /**
+   * Imports `bindingName` from the module at `specifier`, executed inside the
+   * realm, and resolves with its value. Functions come back as wrapped
+   * functions that chain their calls to the binding inside the realm.
+   *
+   * @example
+   *
+   * ```js
+   * const red = new ShadowRealm();
+   * const redAdd = await red.importValue('./inside-code.js', 'add');
+   * console.assert(redAdd(2, 3) === 5);
+   * ```
+   */
+  importValue(specifier: string, bindingName: string): Promise&lt;any>;
+  evaluate(sourceText: string): any;
+}
+
+declare var ShadowRealm: {
+  prototype: ShadowRealm;
+  new (): ShadowRealm;
+};
+
+declare function queueMicrotask(callback: (...args: any[]) => void): void;
+/**
+ * Log an error using the default exception handler
+ * @param error Error or string
+ */
+declare function reportError(error: any): void;
+
+interface Timer {
+  ref(): Timer;
+  unref(): Timer;
+  hasRef(): boolean;
+  refresh(): Timer;
+
+  [Symbol.toPrimitive](): number;
+}
+
+/**
+ * Cancel a repeating timer.
+ * @param id the timer returned by {@link setInterval}, or its numeric id
+ */
+declare function clearInterval(id?: number | Timer): void;
+/**
+ * Cancel a delayed function call.
+ * @param id the timer returned by {@link setTimeout}, or its numeric id
+ */
+declare function clearTimeout(id?: number | Timer): void;
+/**
+ * Cancel an immediate function call.
+ * @param id the immediate returned by {@link setImmediate}, or its numeric id
+ */
+declare function clearImmediate(id?: number | Timer): void;
+/**
+ * Run a function immediately after the main event loop is vacant
+ * @param handler function to call
+ */
+declare function setImmediate(handler: Bun.TimerHandler, ...arguments: any[]): Timer;
+/**
+ * Run a function every `interval` milliseconds
+ * @param handler function to call
+ * @param interval milliseconds to wait between calls
+ */
+declare function setInterval(handler: Bun.TimerHandler, interval?: number, ...arguments: any[]): Timer;
+/**
+ * Run a function after `timeout` milliseconds
+ * @param handler function to call
+ * @param timeout milliseconds to wait before the call
+ */
+declare function setTimeout(handler: Bun.TimerHandler, timeout?: number, ...arguments: any[]): Timer;
+
+declare function addEventListener&lt;K extends keyof EventMap>(
+  type: K,
+  listener: (this: object, ev: EventMap[K]) => any,
+  options?: boolean | AddEventListenerOptions,
+): void;
+declare function addEventListener(
+  type: string,
+  listener: Bun.EventListenerOrEventListenerObject,
+  options?: boolean | AddEventListenerOptions,
+): void;
+declare function removeEventListener&lt;K extends keyof EventMap>(
+  type: K,
+  listener: (this: object, ev: EventMap[K]) => any,
+  options?: boolean | Bun.EventListenerOptions,
+): void;
+declare function removeEventListener(
+  type: string,
+  listener: Bun.EventListenerOrEventListenerObject,
+  options?: boolean | Bun.EventListenerOptions,
+): void;
+
+/**
+ * An event that provides information about an error in a script or in a file.
+ */
+interface ErrorEvent extends Event {
+  readonly colno: number;
+  readonly error: any;
+  readonly filename: string;
+  readonly lineno: number;
+  readonly message: string;
+}
+
+declare var ErrorEvent: {
+  prototype: ErrorEvent;
+  new (type: string, eventInitDict?: Bun.ErrorEventInit): ErrorEvent;
+};
+
+/** A CloseEvent is sent to clients using WebSockets when the connection is closed. This is delivered to the listener indicated by the WebSocket object's onclose attribute. */
+interface CloseEvent extends Event {
+  /** Returns the WebSocket connection close code provided by the server. */
+  readonly code: number;
+  /** Returns the WebSocket connection close reason provided by the server. */
+  readonly reason: string;
+  /** Returns true if the connection closed cleanly; false otherwise. */
+  readonly wasClean: boolean;
+}
+
+declare var CloseEvent: {
+  prototype: CloseEvent;
+  new (type: string, eventInitDict?: Bun.CloseEventInit): CloseEvent;
+};
+
+interface MessageEvent&lt;T = any> extends Bun.MessageEvent&lt;T> {}
+declare var MessageEvent: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;MessageEvent&quot;,
+  {
+    prototype: MessageEvent;
+    new &lt;T>(type: string, eventInitDict?: Bun.MessageEventInit&lt;T>): MessageEvent&lt;any>;
+  }
+>;
+
+interface CustomEvent&lt;T = any> extends Event {
+  /** Any custom data the event was created with. Typically used for synthetic events. */
+  readonly detail: T;
+}
+
+declare var CustomEvent: {
+  prototype: CustomEvent;
+  new &lt;T>(type: string, eventInitDict?: Bun.CustomEventInit&lt;T>): CustomEvent&lt;T>;
+};
+
+interface EventListener {
+  (evt: Event): void;
+}
+
+interface EventListenerObject {
+  handleEvent(object: Event): void;
+}
+
+interface FetchEvent extends Event {
+  readonly request: Request;
+  readonly url: string;
+
+  waitUntil(promise: Promise&lt;any>): void;
+  respondWith(response: Response | Promise&lt;Response>): void;
+}
+
+interface EventMap {
+  fetch: FetchEvent;
+  message: MessageEvent;
+  messageerror: MessageEvent;
+  // exit: Event;
+}
+
+interface AddEventListenerOptions extends Bun.EventListenerOptions {
+  once?: boolean;
+  passive?: boolean;
+  signal?: AbortSignal;
+}
+
+/**
+ * Low-level JavaScriptCore API for accessing the native ES module loader (not a Bun API)
+ *
+ * Before using this, be aware of a few things:
+ *
+ * **Using this incorrectly will crash your application**.
+ *
+ * This API may change any time JavaScriptCore is updated.
+ *
+ * Bun may rewrite ESM import specifiers to point to bundled code, so this API
+ * can return a string like &quot;/node_modules.server.bun&quot;.
+ *
+ * Bun may inject additional imports into your code. These usually have a `bun:` prefix.
+ */
+declare var Loader: {
+  /**
+   * The ES module registry. Keys are module specifiers; values are metadata
+   * about the module.
+   *
+   * Use this to implement live reloading: delete a module specifier from this
+   * map and the next import re-transpiles and reloads the module.
+   *
+   * The keys are an implementation detail for Bun that will change between
+   * versions.
+   *
+   * - Userland modules are absolute file paths
+   * - Virtual modules have a `bun:` or `node:` prefix
+   * - JS polyfills start with `&quot;/bun-vfs/&quot;`. `&quot;buffer&quot;` is an example of a JS polyfill
+   * - If you have a `node_modules.bun` file, many modules point to that file
+   *
+   * Virtual modules and JS polyfills are embedded in Bun's binary. They don't
+   * point to anywhere in your local filesystem.
+   */
+  registry: Map&lt;
+    string,
+    {
+      key: string;
+      /**
+       * The load state of the ESM module
+       */
+      state: number;
+      fetch: Promise&lt;any>;
+      instantiate: Promise&lt;any>;
+      satisfy: Promise&lt;any>;
+      dependencies: Array&lt;(typeof Loader)[&quot;registry&quot;] extends Map&lt;any, infer V> ? V : any>;
+      /**
+       * Your application will probably crash if you mess with this.
+       */
+      module: {
+        dependenciesMap: (typeof Loader)[&quot;registry&quot;];
+      };
+      linkError?: any;
+      linkSucceeded: boolean;
+      evaluated: boolean;
+      then?: any;
+      isAsync: boolean;
+    }
+  >;
+  /**
+   * Returns the dependencies of an already-evaluated module as module specifiers
+   *
+   * The list is sorted and deduplicated.
+   *
+   * @example
+   *
+   * For this code:
+   * ```js
+   * // /foo.js
+   * import classNames from 'classnames';
+   * import React from 'react';
+   * import {createElement} from 'react';
+   * ```
+   *
+   * This would return:
+   * ```js
+   * Loader.dependencyKeysIfEvaluated(&quot;/foo.js&quot;)
+   * [&quot;bun:wrap&quot;, &quot;/path/to/node_modules/classnames/index.js&quot;, &quot;/path/to/node_modules/react/index.js&quot;]
+   * ```
+   *
+   * @param specifier - module specifier as it appears in transpiled source code
+   */
+  dependencyKeysIfEvaluated: (specifier: string) => string[];
+  /**
+   * The function JavaScriptCore internally calls when you use an import statement.
+   *
+   * This may return a path to `node_modules.server.bun` rather than the
+   * original specifier. Consider {@link Bun.resolve} or
+   * {@link ImportMeta.resolve} instead.
+   *
+   * @param specifier - module specifier as it appears in transpiled source code
+   * @param referrer - module specifier that is resolving this specifier
+   */
+  resolve: (specifier: string, referrer: string) => string;
+};
+
+interface QueuingStrategy&lt;T = any> {
+  highWaterMark?: number;
+  size?: QueuingStrategySize&lt;T>;
+}
+
+interface QueuingStrategyInit {
+  /**
+   * The high water mark for the new queuing strategy.
+   *
+   * The value is not validated ahead of time. If it is negative, NaN, or not a
+   * number, the stream constructor the strategy is passed to throws.
+   */
+  highWaterMark: number;
+}
+
+/** A built-in byte-length queuing strategy for use when constructing streams. */
+interface ByteLengthQueuingStrategy extends QueuingStrategy&lt;ArrayBufferView> {
+  readonly highWaterMark: number;
+  // changed from QueuingStrategySize&lt;BufferSource>
+  // to avoid conflict with lib.dom.d.ts
+  readonly size: QueuingStrategySize&lt;ArrayBufferView>;
+}
+
+declare var ByteLengthQueuingStrategy: {
+  prototype: ByteLengthQueuingStrategy;
+  new (init: QueuingStrategyInit): ByteLengthQueuingStrategy;
+};
+
+interface ReadableStreamDefaultController&lt;R = any> {
+  readonly desiredSize: number | null;
+  close(): void;
+  enqueue(chunk?: R): void;
+  error(e?: any): void;
+}
+
+interface ReadableStreamDirectController {
+  close(error?: Error): void;
+  /**
+   * Write a chunk directly to the destination.
+   *
+   * Returns the number of bytes written, or a **pending `Promise&lt;number>`**
+   * when the destination's internal buffer is full (backpressure). The chunk
+   * *was* accepted either way; `await`ing the result is enough:
+   *
+   * ```ts
+   * await controller.write(chunk);
+   * ```
+   *
+   * The promise resolves once the destination has drained.
+   * `await controller.flush(true)` is equivalent.
+   */
+  write(data: Bun.BufferSource | ArrayBuffer | string): number | Promise&lt;number>;
+  end(): number | Promise&lt;number>;
+  /**
+   * Flush any locally buffered data to the destination.
+   *
+   * @param wait When `true`, the returned promise resolves only once the
+   * destination has drained its own internal buffer (i.e. backpressure has
+   * cleared). Use this after {@link write} returns a `Promise`.
+   */
+  flush(wait?: boolean): number | Promise&lt;number>;
+  start(): void;
+}
+
+declare var ReadableStreamDefaultController: {
+  prototype: ReadableStreamDefaultController;
+  new (): ReadableStreamDefaultController;
+};
+
+interface ReadableStreamDefaultReader&lt;R = any> extends ReadableStreamGenericReader {
+  read(): Promise&lt;Bun.ReadableStreamDefaultReadResult&lt;R>>;
+  /**
+   * Only available in Bun. If there are multiple chunks in the queue, returns all of them at once.
+   * Returns a promise only if the data is not immediately available.
+   */
+  readMany(): Promise&lt;Bun.ReadableStreamDefaultReadManyResult&lt;R>> | Bun.ReadableStreamDefaultReadManyResult&lt;R>;
+  releaseLock(): void;
+}
+
+declare var ReadableStreamDefaultReader: {
+  prototype: ReadableStreamDefaultReader;
+  new &lt;R = any>(stream: ReadableStream&lt;R>): ReadableStreamDefaultReader&lt;R>;
+};
+
+interface ReadableStreamGenericReader {
+  readonly closed: Promise&lt;void>;
+  cancel(reason?: any): Promise&lt;void>;
+}
+
+interface ReadableStreamDefaultReadDoneResult {
+  done: true;
+  value?: undefined;
+}
+
+interface ReadableStreamDefaultReadValueResult&lt;T> {
+  done: false;
+  value: T;
+}
+
+/**
+ * A `{ readable, writable }` pair, such as a transform stream.
+ *
+ * `pipeThrough()` pipes the source stream into the pair's writable side and
+ * returns the readable side for further use. Piping locks the source stream
+ * for the duration of the pipe, preventing any other consumer from acquiring
+ * a reader.
+ */
+interface ReadableWritablePair&lt;R = any, W = any> {
+  readable: ReadableStream&lt;R>;
+  writable: WritableStream&lt;W>;
+}
+
+interface WritableStreamDefaultController {
+  error(e?: any): void;
+}
+
+declare var WritableStreamDefaultController: {
+  prototype: WritableStreamDefaultController;
+  new (): WritableStreamDefaultController;
+};
+
+/** The object returned by `WritableStream.getWriter()`. Once created, it locks the writer to the `WritableStream`, ensuring that no other streams can write to the underlying sink. */
+interface WritableStreamDefaultWriter&lt;W = any> {
+  readonly closed: Promise&lt;void>;
+  readonly desiredSize: number | null;
+  readonly ready: Promise&lt;void>;
+  abort(reason?: any): Promise&lt;void>;
+  close(): Promise&lt;void>;
+  releaseLock(): void;
+  write(chunk?: W): Promise&lt;void>;
+}
+
+declare var WritableStreamDefaultWriter: {
+  prototype: WritableStreamDefaultWriter;
+  new &lt;W = any>(stream: WritableStream&lt;W>): WritableStreamDefaultWriter&lt;W>;
+};
+
+interface TransformStream&lt;I = any, O = any> {
+  readonly readable: ReadableStream&lt;O>;
+  readonly writable: WritableStream&lt;I>;
+}
+
+declare var TransformStream: {
+  prototype: TransformStream;
+  new &lt;I = any, O = any>(
+    transformer?: Transformer&lt;I, O>,
+    writableStrategy?: QueuingStrategy&lt;I>,
+    readableStrategy?: QueuingStrategy&lt;O>,
+  ): TransformStream&lt;I, O>;
+};
+
+interface TransformStreamDefaultController&lt;O = any> {
+  readonly desiredSize: number | null;
+  enqueue(chunk?: O): void;
+  error(reason?: any): void;
+  terminate(): void;
+}
+
+declare var TransformStreamDefaultController: {
+  prototype: TransformStreamDefaultController;
+  new (): TransformStreamDefaultController;
+};
+
+/**
+ * Options that control how piping behaves under errors and closure.
+ *
+ * Piping a stream locks it for the duration of the pipe, preventing any other
+ * consumer from acquiring a reader. Errors and closures of the source and
+ * destination streams propagate as follows:
+ *
+ * An error in the source readable stream aborts the destination, unless
+ * `preventAbort` is truthy. The returned promise rejects with the source's
+ * error, or with any error that occurs while aborting the destination.
+ *
+ * An error in the destination cancels the source readable stream, unless
+ * `preventCancel` is truthy. The returned promise rejects with the
+ * destination's error, or with any error that occurs while canceling the source.
+ *
+ * When the source readable stream closes, the destination is closed, unless
+ * `preventClose` is truthy. The returned promise fulfills once this process
+ * completes, unless an error occurs while closing the destination, in which
+ * case it rejects with that error.
+ *
+ * If the destination starts out closed or closing, the source readable stream
+ * is canceled, unless `preventCancel` is true. The returned promise rejects
+ * with an error indicating piping to a closed stream failed, or with any error
+ * that occurs while canceling the source.
+ *
+ * `signal` can be set to an `AbortSignal` to abort an ongoing pipe operation
+ * with the corresponding `AbortController`. In this case, the source readable
+ * stream is canceled and the destination aborted, unless `preventCancel` or
+ * `preventAbort` is set.
+ */
+interface StreamPipeOptions {
+  preventAbort?: boolean;
+  preventCancel?: boolean;
+  preventClose?: boolean;
+  signal?: AbortSignal;
+}
+
+/** A built-in chunk-counting queuing strategy for use when constructing streams. */
+interface CountQueuingStrategy extends QueuingStrategy {
+  readonly highWaterMark: number;
+  readonly size: QueuingStrategySize;
+}
+
+declare var CountQueuingStrategy: {
+  prototype: CountQueuingStrategy;
+  new (init: QueuingStrategyInit): CountQueuingStrategy;
+};
+
+interface QueuingStrategySize&lt;T = any> {
+  (chunk?: T): number;
+}
+
+interface Transformer&lt;I = any, O = any> {
+  flush?: Bun.TransformerFlushCallback&lt;O>;
+  readableType?: undefined;
+  start?: Bun.TransformerStartCallback&lt;O>;
+  transform?: Bun.TransformerTransformCallback&lt;I, O>;
+  writableType?: undefined;
+}
+
+interface Dict&lt;T> {
+  [key: string]: T | undefined;
+}
+
+interface ReadOnlyDict&lt;T> {
+  readonly [key: string]: T | undefined;
+}
+
+interface ErrnoException extends Error {
+  errno?: number | undefined;
+  code?: string | undefined;
+  path?: string | undefined;
+  syscall?: string | undefined;
+}
+
+/**
+ * An abnormal event (called an exception) that occurs when calling a method or
+ * accessing a property of a web API
+ */
+interface DOMException extends Error {
+  readonly message: string;
+  readonly name: string;
+  readonly INDEX_SIZE_ERR: 1;
+  readonly DOMSTRING_SIZE_ERR: 2;
+  readonly HIERARCHY_REQUEST_ERR: 3;
+  readonly WRONG_DOCUMENT_ERR: 4;
+  readonly INVALID_CHARACTER_ERR: 5;
+  readonly NO_DATA_ALLOWED_ERR: 6;
+  readonly NO_MODIFICATION_ALLOWED_ERR: 7;
+  readonly NOT_FOUND_ERR: 8;
+  readonly NOT_SUPPORTED_ERR: 9;
+  readonly INUSE_ATTRIBUTE_ERR: 10;
+  readonly INVALID_STATE_ERR: 11;
+  readonly SYNTAX_ERR: 12;
+  readonly INVALID_MODIFICATION_ERR: 13;
+  readonly NAMESPACE_ERR: 14;
+  readonly INVALID_ACCESS_ERR: 15;
+  readonly VALIDATION_ERR: 16;
+  readonly TYPE_MISMATCH_ERR: 17;
+  readonly SECURITY_ERR: 18;
+  readonly NETWORK_ERR: 19;
+  readonly ABORT_ERR: 20;
+  readonly URL_MISMATCH_ERR: 21;
+  readonly QUOTA_EXCEEDED_ERR: 22;
+  readonly TIMEOUT_ERR: 23;
+  readonly INVALID_NODE_TYPE_ERR: 24;
+  readonly DATA_CLONE_ERR: 25;
+}
+declare var DOMException: {
+  prototype: DOMException;
+  new (message?: string, name?: string): DOMException;
+  readonly INDEX_SIZE_ERR: 1;
+  readonly DOMSTRING_SIZE_ERR: 2;
+  readonly HIERARCHY_REQUEST_ERR: 3;
+  readonly WRONG_DOCUMENT_ERR: 4;
+  readonly INVALID_CHARACTER_ERR: 5;
+  readonly NO_DATA_ALLOWED_ERR: 6;
+  readonly NO_MODIFICATION_ALLOWED_ERR: 7;
+  readonly NOT_FOUND_ERR: 8;
+  readonly NOT_SUPPORTED_ERR: 9;
+  readonly INUSE_ATTRIBUTE_ERR: 10;
+  readonly INVALID_STATE_ERR: 11;
+  readonly SYNTAX_ERR: 12;
+  readonly INVALID_MODIFICATION_ERR: 13;
+  readonly NAMESPACE_ERR: 14;
+  readonly INVALID_ACCESS_ERR: 15;
+  readonly VALIDATION_ERR: 16;
+  readonly TYPE_MISMATCH_ERR: 17;
+  readonly SECURITY_ERR: 18;
+  readonly NETWORK_ERR: 19;
+  readonly ABORT_ERR: 20;
+  readonly URL_MISMATCH_ERR: 21;
+  readonly QUOTA_EXCEEDED_ERR: 22;
+  readonly TIMEOUT_ERR: 23;
+  readonly INVALID_NODE_TYPE_ERR: 24;
+  readonly DATA_CLONE_ERR: 25;
+};
+
+declare function alert(message?: string): void;
+declare function confirm(message?: string): boolean;
+declare function prompt(message?: string, _default?: string): string | null;
+
+interface SubtleCrypto extends Bun.__internal.LibEmptyOrNodeCryptoWebcryptoSubtleCrypto {}
+declare var SubtleCrypto: {
+  prototype: SubtleCrypto;
+  new (): SubtleCrypto;
+};
+
+interface CryptoKey extends Bun.__internal.NodeCryptoWebcryptoCryptoKey {}
+declare var CryptoKey: {
+  prototype: CryptoKey;
+  new (): CryptoKey;
+};
+
+interface CryptoKeyPair extends Bun.__internal.NodeCryptoWebcryptoCryptoKeyPair {}
+
+interface Position {
+  lineText: string;
+  file: string;
+  namespace: string;
+  line: number;
+  column: number;
+  length: number;
+  offset: number;
+}
+
+declare class ResolveMessage {
+  readonly name: &quot;ResolveMessage&quot;;
+  readonly position: Position | null;
+  readonly code: string;
+  readonly message: string;
+  readonly referrer: string;
+  readonly specifier: string;
+  readonly importKind:
+    | &quot;entry_point&quot;
+    | &quot;stmt&quot;
+    | &quot;require&quot;
+    | &quot;import&quot;
+    | &quot;dynamic&quot;
+    | &quot;require_resolve&quot;
+    | &quot;at&quot;
+    | &quot;at_conditional&quot;
+    | &quot;url&quot;
+    | &quot;internal&quot;;
+  readonly level: &quot;error&quot; | &quot;warning&quot; | &quot;info&quot; | &quot;debug&quot; | &quot;verbose&quot;;
+
+  toString(): string;
+}
+
+declare class BuildMessage {
+  readonly name: &quot;BuildMessage&quot;;
+  readonly position: Position | null;
+  readonly message: string;
+  readonly level: &quot;error&quot; | &quot;warning&quot; | &quot;info&quot; | &quot;debug&quot; | &quot;verbose&quot;;
+}
+
+interface ErrorOptions {
+  /**
+   * The cause of the error.
+   */
+  cause?: unknown;
+}
+
+interface Error {
+  /**
+   * The cause of the error.
+   */
+  cause?: unknown;
+}
+
+interface ErrorConstructor {
+  new (message?: string, options?: ErrorOptions): Error;
+
+  /**
+   * Check if a value is an instance of Error
+   *
+   * @param value - The value to check
+   * @returns True if the value is an instance of Error, false otherwise
+   */
+  isError(value: unknown): value is Error;
+
+  /**
+   * Create .stack property on a target object
+   */
+  captureStackTrace(targetObject: object, constructorOpt?: Function): void;
+
+  /**
+   * The maximum number of stack frames to capture.
+   */
+  stackTraceLimit: number;
+}
+
+interface ArrayBufferConstructor {
+  new (byteLength: number, options: { maxByteLength?: number }): ArrayBuffer;
+}
+
+interface ArrayBuffer {
+  /**
+   * The length of the ArrayBuffer in bytes.
+   */
+  readonly byteLength: number;
+
+  /**
+   * Resize an ArrayBuffer in-place.
+   */
+  resize(byteLength: number): ArrayBuffer;
+
+  /**
+   * Returns a section of an ArrayBuffer.
+   */
+  slice(begin: number, end?: number): ArrayBuffer;
+}
+
+interface SharedArrayBuffer {
+  /**
+   * Grow the SharedArrayBuffer in-place.
+   */
+  grow(size: number): SharedArrayBuffer;
+}
+
+interface ArrayConstructor {
+  /**
+   * Create an array from an iterable or async iterable object.
+   * Values from the iterable are awaited.
+   *
+   * ```ts
+   * await Array.fromAsync([1]); // [1]
+   * await Array.fromAsync([Promise.resolve(1)]); // [1]
+   * await Array.fromAsync((async function*() { yield 1 })()); // [1]
+   * ```
+   *
+   * @param arrayLike - The iterable or async iterable to convert to an array.
+   * @returns A {@link Promise} that resolves with a new {@link Array} containing the awaited values
+   */
+  fromAsync&lt;T>(arrayLike: AsyncIterable&lt;T> | Iterable&lt;T> | ArrayLike&lt;T>): Promise&lt;Awaited&lt;T>[]>;
+
+  /**
+   * Create an array from an iterable or async iterable object.
+   * Values from the iterable are awaited. Results of the map function are also awaited.
+   *
+   * ```ts
+   * await Array.fromAsync([1]); // [1]
+   * await Array.fromAsync([Promise.resolve(1)]); // [1]
+   * await Array.fromAsync((async function*() { yield 1 })()); // [1]
+   * await Array.fromAsync([1], (n) => n + 1); // [2]
+   * await Array.fromAsync([1], (n) => Promise.resolve(n + 1)); // [2]
+   * ```
+   *
+   * @param arrayLike - The iterable or async iterable to convert to an array.
+   * @param mapFn - A mapper function that transforms each element of `arrayLike` after awaiting them.
+   * @param thisArg - The `this` to which `mapFn` is bound.
+   * @returns A {@link Promise} that resolves with a new {@link Array} containing the awaited values
+   */
+  fromAsync&lt;T, U>(
+    arrayLike: AsyncIterable&lt;T> | Iterable&lt;T> | ArrayLike&lt;T>,
+    mapFn?: (value: T, index: number) => U,
+    thisArg?: any,
+  ): Promise&lt;Awaited&lt;U>[]>;
+}
+
+interface ConsoleOptions {
+  stdout: import(&quot;stream&quot;).Writable;
+  stderr?: import(&quot;stream&quot;).Writable;
+  ignoreErrors?: boolean;
+  colorMode?: boolean | &quot;auto&quot;;
+  inspectOptions?: import(&quot;util&quot;).InspectOptions;
+  groupIndentation?: number;
+}
+
+interface Console {
+  /**
+   * Asynchronously read lines from standard input (fd 0)
+   *
+   * ```ts
+   * for await (const line of console) {
+   *   console.log(line);
+   * }
+   * ```
+   */
+  [Symbol.asyncIterator](): AsyncIterableIterator&lt;string>;
+
+  /**
+   * Write text or bytes to stdout
+   *
+   * Unlike {@link console.log}, this does no formatting and doesn't add a
+   * newline or spaces between arguments. You can pass it strings or bytes or
+   * any combination of the two.
+   *
+   * Not available in browsers.
+   *
+   * ```ts
+   * console.write(&quot;hello world!&quot;, &quot;\n&quot;); // &quot;hello world!\n&quot;
+   * ```
+   *
+   * @param data - The data to write
+   * @returns The number of bytes written
+   */
+  write(...data: Array&lt;string | ArrayBufferView | ArrayBuffer>): number;
+
+  /**
+   * Clear the console
+   */
+  clear(): void;
+
+  assert(condition?: boolean, ...data: any[]): void;
+
+  /**
+   * Increment a [count](https://www.youtube.com/watch?v=2AoxCkySv34&amp;t=22s)
+   * @param label Label for the counter
+   */
+  count(label?: string): void;
+  countReset(label?: string): void;
+  debug(...data: any[]): void;
+  dir(item?: any, options?: any): void;
+  dirxml(...data: any[]): void;
+  /**
+   * Log to stderr in your terminal
+   *
+   * Appears in red
+   *
+   * @param data something to display
+   */
+  error(...data: any[]): void;
+  /** Does nothing currently */
+  group(...data: any[]): void;
+  /** Does nothing currently */
+  groupCollapsed(...data: any[]): void;
+  /** Does nothing currently */
+  groupEnd(): void;
+  info(...data: any[]): void;
+  log(...data: any[]): void;
+  /**
+   * Try to construct a table with the columns of the properties of `tabularData` (or use `properties`) and rows of `tabularData` and log it. Falls back to
+   * logging the argument if it can't be parsed as tabular.
+   *
+   * ```js
+   * // These can't be parsed as tabular data
+   * console.table(Symbol());
+   * // Symbol()
+   *
+   * console.table(undefined);
+   * // undefined
+   *
+   * console.table([{ a: 1, b: 'Y' }, { a: 'Z', b: 2 }]);
+   * // ┌────┬─────┬─────┐
+   * // │    │  a  │  b  │
+   * // ├────┼─────┼─────┤
+   * // │  0 │  1  │ 'Y' │
+   * // │  1 │ 'Z' │  2  │
+   * // └────┴─────┴─────┘
+   *
+   * console.table([{ a: 1, b: 'Y' }, { a: 'Z', b: 2 }], ['a']);
+   * // ┌────┬─────┐
+   * // │    │  a  │
+   * // ├────┼─────┤
+   * // │ 0  │  1  │
+   * // │ 1  │ 'Z' │
+   * // └────┴─────┘
+   * ```
+   * @param properties Alternate properties for constructing the table.
+   */
+  table(tabularData?: any, properties?: string[]): void;
+  /**
+   * Begin a timer to log with {@link console.timeEnd}
+   *
+   * @param label - The label to use for the timer
+   *
+   * ```ts
+   *  console.time(&quot;how long????&quot;);
+   * for (let i = 0; i &lt; 999999; i++) {
+   *    // do stuff
+   *    let x = i * i;
+   * }
+   * console.timeEnd(&quot;how long????&quot;);
+   * ```
+   */
+  time(label?: string): void;
+  /**
+   * End a timer to log with {@link console.time}
+   *
+   * @param label - The label to use for the timer
+   *
+   * ```ts
+   *  console.time(&quot;how long????&quot;);
+   * for (let i = 0; i &lt; 999999; i++) {
+   *  // do stuff
+   *  let x = i * i;
+   * }
+   * console.timeEnd(&quot;how long????&quot;);
+   * ```
+   */
+  timeEnd(label?: string): void;
+  timeLog(label?: string, ...data: any[]): void;
+  timeStamp(label?: string): void;
+  trace(...data: any[]): void;
+  warn(...data: any[]): void;
+
+  /**
+   * Creates a new Console with one or two writable stream instances. stdout is a writable stream to print log or info output. stderr is used for warning or error output. If stderr is not provided, stdout is used for stderr.
+   */
+  // Console: {
+  //   new (options: ConsoleOptions): Console;
+  //   new (
+  //     stdout: import(&quot;stream&quot;).Writable,
+  //     stderr?: import(&quot;stream&quot;).Writable,
+  //     ignoreErrors?: boolean,
+  //   ): Console;
+  // };
+}
+
+declare var console: Console;
+
+interface ImportMetaEnv {
+  [key: string]: string | undefined;
+}
+
+interface ImportMeta {
+  /**
+   * `file://` url string for the current module.
+   *
+   * @example
+   * ```ts
+   * console.log(import.meta.url);
+   * &quot;file:///Users/me/projects/my-app/src/my-app.ts&quot;
+   * ```
+   */
+  url: string;
+  /**
+   * Absolute path to the source file
+   */
+  readonly path: string;
+  /**
+   * Absolute path to the directory containing the source file, without a
+   * trailing slash
+   */
+  readonly dir: string;
+  /**
+   * Filename of the source file
+   */
+  readonly file: string;
+  /**
+   * The environment variables of the process
+   *
+   * ```ts
+   * import.meta.env === process.env
+   * ```
+   */
+  readonly env: Bun.Env &amp; NodeJS.ProcessEnv &amp; ImportMetaEnv;
+
+  /**
+   * Resolve a module ID the same as if you imported it
+   *
+   * The `parent` argument is optional, and defaults to the current module's path.
+   *
+   * @deprecated Use `require.resolve` or `Bun.resolveSync(moduleId, path.dirname(parent))` instead
+   */
+  resolveSync(moduleId: string, parent?: string): string;
+
+  /**
+   * Load a CommonJS module within an ES Module. Bun's transpiler rewrites all
+   * calls to `require` with `import.meta.require` when transpiling ES Modules
+   * for the runtime.
+   *
+   * Warning: **This API is not stable** and may change or be removed in the
+   * future. Use at your own risk.
+   */
+  require: NodeJS.Require;
+
+  /**
+   * `true` if the current file started the process
+   *
+   * @example
+   * ```ts
+   * if (import.meta.main) {
+   *  console.log(&quot;I started the process!&quot;);
+   * }
+   * ```
+   *
+   * @example
+   * ```ts
+   * console.log(
+   *   import.meta.main === (import.meta.path === Bun.main)
+   * )
+   * ```
+   */
+  main: boolean;
+
+  /** Alias of `import.meta.dir`. Exists for Node.js compatibility */
+  dirname: string;
+
+  /** Alias of `import.meta.path`. Exists for Node.js compatibility */
+  filename: string;
+}
+
+/**
+ * NodeJS-style `require` function
+ *
+ * @param moduleId - The module ID to resolve
+ */
+declare var require: NodeJS.Require;
+
+/** Same as module.exports */
+declare var exports: any;
+
+interface NodeModule {
+  exports: any;
+}
+
+declare var module: NodeModule;
+
+/**
+ * Creates a deep clone of an object.
+ *
+ * [MDN Reference](https://developer.mozilla.org/docs/Web/API/structuredClone)
+ */
+declare function structuredClone&lt;T>(value: T, options?: Bun.StructuredSerializeOptions): T;
+
+/**
+ * Post a message to the parent thread.
+ *
+ * Only useful in a worker thread; calling this from the main thread does nothing.
+ */
+declare function postMessage(message: any, transfer?: Bun.Transferable[]): void;
+
+interface EventSourceInit {
+  withCredentials?: boolean;
+}
+
+interface PromiseConstructor {
+  /**
+   * Create a deferred promise with its `resolve` and `reject` functions exposed,
+   * so code outside the promise can settle it.
+   *
+   * @example
+   * ```ts
+   * const { promise, resolve, reject } = Promise.withResolvers();
+   *
+   * setTimeout(() => {
+   *  resolve(&quot;Hello world!&quot;);
+   * }, 1000);
+   *
+   * await promise; // &quot;Hello world!&quot;
+   * ```
+   */
+  withResolvers&lt;T>(): {
+    promise: Promise&lt;T>;
+    resolve: (value?: T | PromiseLike&lt;T>) => void;
+    reject: (reason?: any) => void;
+  };
+
+  /**
+   * Run a function and return a promise of its result. If the function throws,
+   * the returned promise rejects with the thrown error.
+   *
+   * @param fn - The function to run
+   * @param args - The arguments to pass to the function. This is similar to `setTimeout` and avoids the extra closure.
+   * @returns A promise that resolves with the function's result
+   */
+  try&lt;T, A extends any[] = []>(fn: (...args: A) => T | PromiseLike&lt;T>, ...args: A): Promise&lt;T>;
+}
+
+interface Navigator {
+  readonly userAgent: string;
+  readonly platform: &quot;MacIntel&quot; | &quot;Win32&quot; | &quot;Linux x86_64&quot;;
+  readonly hardwareConcurrency: number;
+}
+
+declare var navigator: Navigator;
+
+interface BlobPropertyBag {
+  /** Set a default &quot;type&quot;. Not yet implemented. */
+  type?: string;
+  /** Not implemented in Bun yet. */
+  // endings?: &quot;transparent&quot; | &quot;native&quot;;
+}
+
+interface WorkerOptions extends Bun.WorkerOptions {}
+
+interface Blob {
+  /**
+   * The size of this Blob in bytes
+   */
+  readonly size: number;
+
+  /**
+   * The MIME type of this Blob
+   */
+  readonly type: string;
+
+  /**
+   * Read the data from the blob as a JSON object.
+   *
+   * This first decodes the data from UTF-8, then parses it as JSON.
+   */
+  json(): Promise&lt;any>;
+
+  /**
+   * Wrap this blob in a {@link Bun.Image} pipeline. Equivalent to
+   * `new Bun.Image(this, options)` — the constructor is synchronous (the
+   * underlying read happens lazily when an Image terminal is awaited), so
+   * this works on `Bun.file()`, `Bun.s3()`, fd-backed and in-memory blobs
+   * alike:
+   *
+   * ```ts
+   * await Bun.file(&quot;photo.jpg&quot;).image().resize(400).webp().write(&quot;thumb.webp&quot;);
+   * ```
+   */
+  image(options?: Bun.Image.ConstructorOptions): Bun.Image;
+
+  /**
+   * Read the data from the blob as a {@link FormData} object.
+   *
+   * This first decodes the data from UTF-8, then parses it as a
+   * `multipart/form-data` body or an `application/x-www-form-urlencoded` body.
+   *
+   * The blob's `type` property determines the format of the body.
+   *
+   * This is a non-standard addition to the `Blob` API, to make it conform more
+   * closely to the `BodyMixin` API.
+   */
+  formData(): Promise&lt;FormData>;
+
+  /**
+   * Returns a promise that resolves to the contents of the blob as a string
+   */
+  text(): Promise&lt;string>;
+
+  /**
+   * Returns a promise that resolves to the contents of the blob as an ArrayBuffer
+   */
+  arrayBuffer(): Promise&lt;ArrayBuffer>;
+
+  /**
+   * Returns a promise that resolves to the contents of the blob as a Uint8Array (array of bytes). Equivalent to `new Uint8Array(await blob.arrayBuffer())`
+   */
+  bytes(): Promise&lt;Uint8Array&lt;ArrayBuffer>>;
+
+  /**
+   * Returns a readable stream of the blob's contents
+   */
+  stream(): ReadableStream&lt;Uint8Array&lt;ArrayBuffer>>;
+}
+
+declare var Blob: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;Blob&quot;,
+  {
+    prototype: Blob;
+    new (blobParts?: Bun.BlobPart[], options?: BlobPropertyBag): Blob;
+  }
+>;
+
+interface Uint8Array {
+  /**
+   * Convert the Uint8Array to a base64 encoded string
+   */
+  toBase64(options?: { alphabet?: &quot;base64&quot; | &quot;base64url&quot;; omitPadding?: boolean }): string;
+
+  /**
+   * Set the contents of the Uint8Array from a base64 encoded string
+   * @param base64 The base64 encoded string to decode into the array
+   * @param offset Optional starting index to begin setting the decoded bytes (default: 0)
+   */
+  setFromBase64(
+    base64: string,
+    offset?: number,
+  ): {
+    /**
+     * The number of bytes read from the base64 string
+     */
+    read: number;
+    /**
+     * The number of bytes written to the Uint8Array.
+     * Never greater than the `.byteLength` of this Uint8Array
+     */
+    written: number;
+  };
+
+  /**
+   * Convert the Uint8Array to a hex encoded string
+   */
+  toHex(): string;
+
+  /**
+   * Set the contents of the Uint8Array from a hex encoded string
+   * @param hex The hex encoded string to decode into the array. The string must have
+   * an even number of characters, contain only hexadecimal characters, and contain no whitespace.
+   */
+  setFromHex(hex: string): {
+    /**
+     * The number of bytes read from the hex string
+     */
+    read: number;
+    /**
+     * The number of bytes written to the Uint8Array.
+     * Never greater than the `.byteLength` of this Uint8Array
+     */
+    written: number;
+  };
+}
+
+interface Uint8ArrayConstructor {
+  /**
+   * Create a new Uint8Array from a base64 encoded string
+   * @param base64 The base64 encoded string to convert to a Uint8Array
+   * @param options Options for decoding the base64 string
+   * @returns A new Uint8Array containing the decoded data
+   */
+  fromBase64(
+    base64: string,
+    options?: {
+      alphabet?: &quot;base64&quot; | &quot;base64url&quot;;
+      lastChunkHandling?: &quot;loose&quot; | &quot;strict&quot; | &quot;stop-before-partial&quot;;
+    },
+  ): Uint8Array&lt;ArrayBuffer>;
+
+  /**
+   * Create a new Uint8Array from a hex encoded string
+   * @param hex The hex encoded string to convert to a Uint8Array
+   * @returns A new Uint8Array containing the decoded data
+   */
+  fromHex(hex: string): Uint8Array&lt;ArrayBuffer>;
+}
+
+interface BroadcastChannel extends Bun.__internal.LibEmptyOrBroadcastChannel {}
+declare var BroadcastChannel: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;BroadcastChannel&quot;,
+  typeof import(&quot;node:worker_threads&quot;).BroadcastChannel
+>;
+
+declare var URL: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;URL&quot;,
+  {
+    prototype: URL;
+    new (url: string | URL, base?: string | URL): URL;
+    /**
+     * Check if a URL can be parsed.
+     *
+     * @param url - The URL to check.
+     * @param base - The base URL to use.
+     */
+    canParse(url: string, base?: string): boolean;
+    /**
+     * Create a `blob:` URL for a {@link Blob}.
+     *
+     * @param object - The Blob to create a URL for.
+     */
+    createObjectURL(object: Blob): `blob:${string}`;
+    /**
+     * Revoke a `blob:` URL created with `URL.createObjectURL`.
+     *
+     * @param url - The URL to revoke.
+     */
+    revokeObjectURL(url: string): void;
+    /**
+     * Parse a string into a {@link URL}. Returns `null` if the string is not a
+     * valid URL.
+     *
+     * @param url - The URL to parse.
+     * @param base - The base URL to use.
+     */
+    parse(url: string, base?: string): URL | null;
+  }
+>;
+
+/**
+ * An **`AbortController`** cancels one or more Web requests: pass its `signal`
+ * to a request, then call `abort()`.
+ *
+ * [MDN Reference](https://developer.mozilla.org/docs/Web/API/AbortController)
+ */
+interface AbortController {
+  readonly signal: AbortSignal;
+  abort(reason?: any): void;
+}
+declare var AbortController: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;AbortController&quot;,
+  {
+    prototype: AbortController;
+    new (): AbortController;
+  }
+>;
+
+interface AbortSignal extends EventTarget {
+  readonly aborted: boolean;
+  onabort: ((this: AbortSignal, ev: Event) => any) | null;
+  readonly reason: any;
+  throwIfAborted(): void;
+}
+declare var AbortSignal: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;AbortSignal&quot;,
+  {
+    prototype: AbortSignal;
+    new (): AbortSignal;
+    /**
+     * Create an AbortSignal that aborts after a timeout
+     * @param ms The timeout in milliseconds
+     */
+    timeout(ms: number): AbortSignal;
+    /**
+     * Create an immediately-aborted AbortSignal
+     * @param reason The reason for the abort
+     */
+    abort(reason?: any): AbortSignal;
+    /**
+     * Create an AbortSignal that aborts as soon as any of the given signals aborts
+     * @param signals The signals to combine
+     */
+    any(signals: AbortSignal[]): AbortSignal;
+  }
+>;
+
+interface FormData {
+  /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/append) */
+  append(name: string, value: string | Blob): void;
+  append(name: string, value: string): void;
+  append(name: string, blobValue: Blob, filename?: string): void;
+  /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/delete) */
+  delete(name: string): void;
+  /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/get) */
+  get(name: string): Bun.FormDataEntryValue | null;
+  /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/getAll) */
+  getAll(name: string): Bun.FormDataEntryValue[];
+  /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/has) */
+  has(name: string): boolean;
+  /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/set) */
+  set(name: string, value: string | Blob): void;
+  set(name: string, value: string): void;
+  set(name: string, blobValue: Blob, filename?: string): void;
+  forEach(callbackfn: (value: Bun.FormDataEntryValue, key: string, parent: FormData) => void, thisArg?: any): void;
+  keys(): IterableIterator&lt;string>;
+  values(): IterableIterator&lt;string>;
+  entries(): IterableIterator&lt;[string, string]>;
+}
+declare var FormData: Bun.__internal.UseLibDomIfAvailable&lt;&quot;FormData&quot;, { prototype: FormData; new (): FormData }>;
+
+interface EventSource extends Bun.__internal.LibEmptyOrEventSource {}
+declare var EventSource: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;EventSource&quot;,
+  { prototype: EventSource; new (): EventSource }
+>;
+
+interface Performance extends Bun.__internal.LibPerformanceOrNodePerfHooksPerformance {}
+declare var performance: Bun.__internal.UseLibDomIfAvailable&lt;&quot;performance&quot;, Performance>;
+declare var Performance: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;Performance&quot;,
+  { new (): Performance; prototype: Performance }
+>;
+
+interface PerformanceEntry extends Bun.__internal.LibEmptyOrPerformanceEntry {}
+declare var PerformanceEntry: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;PerformanceEntry&quot;,
+  { prototype: PerformanceEntry; new (): PerformanceEntry }
+>;
+
+interface PerformanceMark extends Bun.__internal.LibEmptyOrPerformanceMark {}
+declare var PerformanceMark: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;PerformanceMark&quot;,
+  { prototype: PerformanceMark; new (): PerformanceMark }
+>;
+
+interface PerformanceMeasure extends Bun.__internal.LibEmptyOrPerformanceMeasure {}
+declare var PerformanceMeasure: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;PerformanceMeasure&quot;,
+  { prototype: PerformanceMeasure; new (): PerformanceMeasure }
+>;
+
+interface PerformanceObserver extends Bun.__internal.LibEmptyOrPerformanceObserver {}
+declare var PerformanceObserver: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;PerformanceObserver&quot;,
+  { prototype: PerformanceObserver; new (): PerformanceObserver }
+>;
+
+interface PerformanceObserverEntryList extends Bun.__internal.LibEmptyOrPerformanceObserverEntryList {}
+declare var PerformanceObserverEntryList: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;PerformanceObserverEntryList&quot;,
+  { prototype: PerformanceObserverEntryList; new (): PerformanceObserverEntryList }
+>;
+
+interface PerformanceResourceTiming extends Bun.__internal.LibEmptyOrPerformanceResourceTiming {}
+declare var PerformanceResourceTiming: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;PerformanceResourceTiming&quot;,
+  { prototype: PerformanceResourceTiming; new (): PerformanceResourceTiming }
+>;
+
+interface ReadableByteStreamController extends Bun.__internal.LibEmptyOrReadableByteStreamController {}
+declare var ReadableByteStreamController: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;ReadableByteStreamController&quot;,
+  { prototype: ReadableByteStreamController; new (): ReadableByteStreamController }
+>;
+
+interface ReadableStreamBYOBReader extends Bun.__internal.LibEmptyOrReadableStreamBYOBReader {}
+declare var ReadableStreamBYOBReader: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;ReadableStreamBYOBReader&quot;,
+  { prototype: ReadableStreamBYOBReader; new (): ReadableStreamBYOBReader }
+>;
+
+interface ReadableStreamBYOBRequest extends Bun.__internal.LibEmptyOrReadableStreamBYOBRequest {}
+declare var ReadableStreamBYOBRequest: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;ReadableStreamBYOBRequest&quot;,
+  { prototype: ReadableStreamBYOBRequest; new (): ReadableStreamBYOBRequest }
+>;
+
+interface TextDecoderStream extends Bun.__internal.LibEmptyOrNodeStreamWebTextDecoderStream {}
+declare var TextDecoderStream: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;TextDecoderStream&quot;,
+  { prototype: TextDecoderStream; new (): TextDecoderStream }
+>;
+
+interface TextEncoderStream extends Bun.__internal.LibEmptyOrNodeStreamWebTextEncoderStream {}
+declare var TextEncoderStream: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;TextEncoderStream&quot;,
+  { prototype: TextEncoderStream; new (): TextEncoderStream }
+>;
+
+interface URLSearchParams {}
+declare var URLSearchParams: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;URLSearchParams&quot;,
+  {
+    prototype: URLSearchParams;
+    new (
+      init?:
+        | URLSearchParams
+        | string
+        | Record&lt;string, string | readonly string[]>
+        | Iterable&lt;[string, string]>
+        | ReadonlyArray&lt;[string, string]>,
+    ): URLSearchParams;
+  }
+>;
+
+interface MessageChannel {
+  /**
+   * Returns the first MessagePort object.
+   *
+   * [MDN Reference](https://developer.mozilla.org/docs/Web/API/MessageChannel/port1)
+   */
+  readonly port1: MessagePort;
+  /**
+   * Returns the second MessagePort object.
+   *
+   * [MDN Reference](https://developer.mozilla.org/docs/Web/API/MessageChannel/port2)
+   */
+  readonly port2: MessagePort;
+}
+declare var MessageChannel: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;MessageChannel&quot;,
+  { prototype: MessageChannel; new (): MessageChannel }
+>;
+
+interface MessagePort extends Bun.__internal.LibEmptyOrNodeMessagePort {}
+declare var MessagePort: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;MessagePort&quot;,
+  {
+    prototype: MessagePort;
+    new (): MessagePort;
+  }
+>;
+
+//#region Fetch
+interface RequestInit extends Bun.__internal.LibOrFallbackRequestInit {}
+interface ResponseInit extends Bun.__internal.LibOrFallbackResponseInit {}
+
+interface Headers extends Bun.__internal.BunHeadersOverride {}
+declare var Headers: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;Headers&quot;,
+  {
+    prototype: Headers;
+    new (init?: Bun.HeadersInit): Headers;
+  }
+>;
+
+interface Request extends Bun.__internal.BunRequestOverride {}
+declare var Request: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;Request&quot;,
+  {
+    prototype: Request;
+    new (requestInfo: string, init?: RequestInit): Request;
+    new (requestInfo: RequestInit &amp; { url: string }): Request;
+    new (requestInfo: Request, init?: RequestInit): Request;
+  }
+>;
+
+interface Response extends Bun.__internal.BunResponseOverride {}
+declare var Response: Bun.__internal.UseLibDomIfAvailable&lt;
+  &quot;Response&quot;,
+  {
+    new (body?: Bun.BodyInit | null | undefined, init?: ResponseInit | undefined): Response;
+    /**
+     * Create a new {@link Response} with a JSON body.
+     *
+     * Syntactic sugar for:
+     * ```js
+     * new Response(JSON.stringify(body), {headers: { &quot;Content-Type&quot;: &quot;application/json&quot; }})
+     * ```
+     *
+     * @example
+     * ```ts
+     * const response = Response.json({hi: &quot;there&quot;});
+     * console.assert(
+     *   await response.text(),
+     *   `{&quot;hi&quot;:&quot;there&quot;}`
+     * );
+     * ```
+     *
+     * @param body Value to serialize with `JSON.stringify`
+     * @param init Options for the response
+     * @link https://github.com/whatwg/fetch/issues/1389
+     */
+    json(body?: any, init?: ResponseInit | number): Response;
+
+    /**
+     * Create a new {@link Response} that redirects to `url`.
+     *
+     * @param url The URL to redirect to
+     * @param status The HTTP status code to use for the redirect
+     */
+    redirect(url: string, status?: number): Response;
+
+    /**
+     * Create a new {@link Response} that redirects to `url`.
+     *
+     * @param url The URL to redirect to
+     * @param init Options for the response
+     */
+    redirect(url: string, init?: ResponseInit): Response;
+
+    /**
+     * Create a new {@link Response} that represents a network error.
+     */
+    error(): Response;
+  }
+>;
+
+/**
+ * Extends Bun.TLSOptions with extra properties that are only supported in `fetch(url, {tls: ...})`
+ */
+interface BunFetchRequestInitTLS extends Bun.TLSOptions {
+  /**
+   * Custom function to check the server identity
+   * @param hostname - The hostname of the server
+   * @param cert - The certificate of the server
+   * @returns An error if the server is unauthorized, otherwise undefined
+   */
+  checkServerIdentity?: NonNullable&lt;import(&quot;node:tls&quot;).ConnectionOptions[&quot;checkServerIdentity&quot;]>;
+}
+
+/**
+ * Extra options Bun supports in `fetch()`.
+ *
+ * These extensions are not part of `RequestInit` because they don't work
+ * when passed to `new Request()`.
+ */
+interface BunFetchRequestInit extends RequestInit {
+  /**
+   * Override the default TLS options
+   */
+  tls?: BunFetchRequestInitTLS;
+
+  /**
+   * Log the raw HTTP request and response to stdout, as a debugging aid.
+   * This API may be removed in a future version of Bun without notice.
+   * Not part of the Fetch API specification.
+   */
+  verbose?: boolean;
+
+  /**
+   * The proxy to send the request through, overriding the `http_proxy` and
+   * `HTTPS_PROXY` environment variables. Accepts a URL string, a URL instance,
+   * or an object with `url` and optional `headers`.
+   *
+   * If a `Proxy-Authorization` header is provided in `proxy.headers`, it takes
+   * precedence over credentials parsed from the proxy URL.
+   *
+   * Not part of the Fetch API specification.
+   *
+   * @example
+   * ```js
+   * // String format
+   * const response = await fetch(&quot;http://example.com&quot;, {
+   *  proxy: &quot;https://username:password@127.0.0.1:8080&quot;
+   * });
+   *
+   * // Object format with custom headers sent to the proxy
+   * const response = await fetch(&quot;http://example.com&quot;, {
+   *  proxy: {
+   *    url: &quot;https://127.0.0.1:8080&quot;,
+   *    headers: {
+   *      &quot;Proxy-Authorization&quot;: &quot;Bearer token&quot;,
+   *      &quot;X-Custom-Proxy-Header&quot;: &quot;value&quot;
+   *    }
+   *  }
+   * });
+   * ```
+   */
+  proxy?:
+    | string
+    | URL
+    | {
+        /**
+         * The proxy URL, as a string or a `URL`.
+         */
+        url: string | URL;
+        /**
+         * Custom headers to send to the proxy server.
+         * These headers are sent in the CONNECT request (for HTTPS targets)
+         * or in the proxy request (for HTTP targets).
+         */
+        headers?: Bun.HeadersInit;
+      };
+
+  /**
+   * Override the default S3 options
+   *
+   * @example
+   * ```js
+   * const response = await fetch(&quot;s3://bucket/key&quot;, {
+   *   s3: {
+   *     accessKeyId: &quot;AKIAIOSFODNN7EXAMPLE&quot;,
+   *     secretAccessKey: &quot;wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY&quot;,
+   *     region: &quot;us-east-1&quot;,
+   *   }
+   * });
+   * ```
+   */
+  s3?: Bun.S3Options;
+
+  /**
+   * Make the request over a Unix socket
+   *
+   * @example
+   * ```js
+   * const response = await fetch(&quot;http://example.com&quot;, { unix: &quot;/path/to/socket&quot; });
+   * ```
+   */
+  unix?: string;
+
+  /**
+   * Force the underlying HTTP version. `&quot;http2&quot;` advertises only `h2` in
+   * the TLS ALPN list and the request fails with `HTTP2Unsupported` if the
+   * server doesn't select it. `&quot;http3&quot;` sends the request over HTTP/3
+   * (QUIC). `&quot;http1.1&quot;` pins the request to HTTP/1.1, overriding
+   * `--experimental-http2-fetch` /
+   * `BUN_FEATURE_FLAG_EXPERIMENTAL_HTTP2_CLIENT` if set. Omit to use the
+   * default (h2 is offered iff the flag is on). `&quot;h2&quot;`, `&quot;h3&quot;` and `&quot;h1&quot;`
+   * are aliases.
+   *
+   * Requires `https`. Not part of the Fetch API specification.
+   * @experimental
+   */
+  protocol?: &quot;http2&quot; | &quot;http1.1&quot; | &quot;http3&quot; | &quot;h2&quot; | &quot;h1&quot; | &quot;h3&quot;;
+
+  /**
+   * Control automatic decompression of the response body. When `false`, the
+   * body is not decompressed and the `Content-Encoding` header is preserved.
+   * This can improve performance when you handle compressed data yourself or
+   * forward it as-is.
+   * Not part of the Fetch API specification.
+   *
+   * @default true
+   * @example
+   * ```js
+   * // Disable automatic decompression for a proxy server
+   * const response = await fetch(&quot;https://example.com/api&quot;, {
+   *   decompress: false
+   * });
+   * // response.headers.get('content-encoding') might be 'gzip' or 'br'
+   * ```
+   */
+  decompress?: boolean;
+
+  /**
+   * Automatically compress the request body before sending and set the
+   * `Content-Encoding` request header accordingly.
+   *
+   * - `true` is equivalent to `&quot;gzip&quot;`.
+   * - A string selects the encoding with its default level.
+   * - An object selects the encoding and an explicit compression `level`.
+   *
+   * Only buffered bodies (string, `ArrayBuffer`/`TypedArray`, `Blob`) are
+   * compressed; `ReadableStream` bodies are sent as-is. If the request
+   * already has a `Content-Encoding` header, the body is left unchanged.
+   * Not part of the Fetch API specification.
+   *
+   * @default false
+   * @example
+   * ```js
+   * await fetch(&quot;https://example.com/upload&quot;, {
+   *   method: &quot;POST&quot;,
+   *   body: JSON.stringify(bigPayload),
+   *   compress: &quot;gzip&quot;,
+   * });
+   * ```
+   */
+  compress?:
+    | boolean
+    | &quot;gzip&quot;
+    | &quot;deflate&quot;
+    | &quot;br&quot;
+    | &quot;zstd&quot;
+    | { encoding: &quot;gzip&quot; | &quot;deflate&quot; | &quot;br&quot; | &quot;zstd&quot;; level?: number };
+
+  /**
+   * The maximum number of redirects to follow when `redirect` is `&quot;follow&quot;`.
+   * If the response chain redirects more than this many times, the request
+   * rejects with a &quot;too many redirects&quot; error.
+   * Not part of the Fetch API specification.
+   *
+   * @default 126
+   * @example
+   * ```js
+   * const response = await fetch(&quot;https://example.com/&quot;, { maxRedirects: 3 });
+   * ```
+   */
+  maxRedirects?: number;
+
+  /**
+   * Control the socket idle timeout for this request. The timer is reset on
+   * every byte sent or received; if the connection stays idle for longer than
+   * this, the request fails with a timeout error.
+   *
+   * - A finite positive number sets the idle deadline in milliseconds,
+   *   overriding the `BUN_CONFIG_HTTP_IDLE_TIMEOUT` default (5 minutes).
+   * - `0`, `false`, or a non-finite number disables the idle timer for this
+   *   request.
+   * - `true` or an omitted value uses the default.
+   *
+   * This is not a whole-request deadline; use `AbortSignal.timeout(ms)` for
+   * that. Not part of the Fetch API specification.
+   *
+   * @example
+   * ```js
+   * // Allow a slow streaming response to stay idle for up to an hour
+   * const response = await fetch(&quot;https://example.com/llm&quot;, {
+   *   timeout: 60 * 60 * 1000,
+   * });
+   * ```
+   */
+  timeout?: number | boolean;
+}
+
+/**
+ * Send an HTTP(S) request.
+ *
+ * @param input URL string, {@link URL}, or {@link Request} object
+ * @param init Options for the request
+ *
+ * @returns A promise that resolves to the {@link Response}
+ */
+declare function fetch(input: string | URL | Request, init?: BunFetchRequestInit): Promise&lt;Response>;
+
+/**
+ * Bun's extensions of the `fetch` API
+ *
+ * @see {@link fetch} The `fetch` function itself
+ */
+declare namespace fetch {
+  /**
+   * Resolve a URL's DNS and establish a TCP connection before a request is
+   * made, to speed up the eventual `fetch`.
+   *
+   * Not part of the Fetch API specification.
+   *
+   * @param url The URL to preconnect to
+   * @param options Which stages of the connection to set up
+   */
+  export function preconnect(
+    url: string | URL,
+    options?: {
+      /** Resolve the URL's DNS */
+      dns?: boolean;
+      /** Open the TCP connection */
+      tcp?: boolean;
+      /** Establish the HTTP connection */
+      http?: boolean;
+      /** Establish the HTTPS connection */
+      https?: boolean;
+    },
+  ): void;
+}
+//#endregion
+
+interface RegExpConstructor {
+  /**
+   * Escapes any potential regex syntax characters in a string, and returns a
+   * new string that can be safely used as a literal pattern for the RegExp()
+   * constructor.
+   *
+   * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/escape)
+   *
+   * @example
+   * ```ts
+   * const re = new RegExp(RegExp.escape(&quot;foo.bar&quot;));
+   * re.test(&quot;foo.bar&quot;); // true
+   * re.test(&quot;foo!bar&quot;); // false
+   * ```
+   */
+  escape(string: string): string;
+}
+</code></pre></div></div></div></main></div><footer class="border-t border-(--clean-border) bg-background py-6 text-sm text-muted-foreground"><div class="mx-auto flex w-full max-w-screen-2xl flex-col items-start justify-between gap-2 px-4 md:flex-row md:items-center"><div class="flex items-center gap-1.5"><span>RoleCall</span><span>© 2026</span></div></div></footer></div><script type="application/json" data-island-props>{"i0":{"language":"typescript","filename":"node_modules/bun-types/globals.d.ts"},"i1":{"basePath":"/","searchIndexUrl":"/_assets/search-index.mve0ywe9-ed9f7f0f.json"},"i2":{},"i3":{},"i4":{"nav":[{"label":"Home","slug":"","order":-1},{"label":"cli","slug":"module/cli","children":[{"label":"CliError","slug":"module/cli/clierror","group":"cli"},{"label":"AgentManifestResult","slug":"module/cli/agentmanifestresult","group":"cli"},{"label":"ApplyTotals","slug":"module/cli/applytotals","group":"cli"},{"label":"DocsModuleEntry","slug":"module/cli/docsmoduleentry","group":"cli"},{"label":"DocsModulesResult","slug":"module/cli/docsmodulesresult","group":"cli"},{"label":"DocsSearchResult","slug":"module/cli/docssearchresult","group":"cli"},{"label":"FactsGatherResult","slug":"module/cli/factsgatherresult","group":"cli"},{"label":"GlobalFlags","slug":"module/cli/globalflags","group":"cli"},{"label":"InventoryListResult","slug":"module/cli/inventorylistresult","group":"cli"},{"label":"InventoryShowResult","slug":"module/cli/inventoryshowresult","group":"cli"},{"label":"OutputPlugin","slug":"module/cli/outputplugin","group":"cli"},{"label":"PlaybookRunResult","slug":"module/cli/playbookrunresult","group":"cli"},{"label":"PluginEntryView","slug":"module/cli/pluginentryview","group":"cli"},{"label":"PluginListResult","slug":"module/cli/pluginlistresult","group":"cli"},{"label":"PluginRegisterResult","slug":"module/cli/pluginregisterresult","group":"cli"},{"label":"RenderedTemplate","slug":"module/cli/renderedtemplate","group":"cli"},{"label":"RunReplayResult","slug":"module/cli/runreplayresult","group":"cli"},{"label":"TaskApplyOutcome","slug":"module/cli/taskapplyoutcome","group":"cli"},{"label":"VarsListResult","slug":"module/cli/varslistresult","group":"cli"},{"label":"VarsTraceResult","slug":"module/cli/varstraceresult","group":"cli"},{"label":"CliResult","slug":"module/cli/cliresult","group":"cli"},{"label":"getOutputPlugin","slug":"module/cli/getoutputplugin","group":"cli"},{"label":"getVersion","slug":"module/cli/getversion","group":"cli"},{"label":"listOutputPlugins","slug":"module/cli/listoutputplugins","group":"cli"},{"label":"main","slug":"module/cli/main","group":"cli"},{"label":"registerOutputPlugin","slug":"module/cli/registeroutputplugin","group":"cli"},{"label":"renderOutput","slug":"module/cli/renderoutput","group":"cli"},{"label":"runAgentCommand","slug":"module/cli/runagentcommand","group":"cli"},{"label":"runDocsCommand","slug":"module/cli/rundocscommand","group":"cli"},{"label":"runFactsCommand","slug":"module/cli/runfactscommand","group":"cli"},{"label":"runInventoryCommand","slug":"module/cli/runinventorycommand","group":"cli"},{"label":"runPlaybookCommand","slug":"module/cli/runplaybookcommand","group":"cli"},{"label":"runPluginCommand","slug":"module/cli/runplugincommand","group":"cli"},{"label":"runReplayCommand","slug":"module/cli/runreplaycommand","group":"cli"},{"label":"runVarsCommand","slug":"module/cli/runvarscommand","group":"cli"},{"label":"writeOut","slug":"module/cli/writeout","group":"cli"}],"deepExpand":true},{"label":"config","slug":"module/config","children":[{"label":"Config","slug":"module/config/config","group":"config"},{"label":"DirectoryVars","slug":"module/config/directoryvars","group":"config"},{"label":"IdempotencyWarning","slug":"module/config/idempotencywarning","group":"config"},{"label":"NormalizedInventory","slug":"module/config/normalizedinventory","group":"config"},{"label":"NormalizedPlaybook","slug":"module/config/normalizedplaybook","group":"config"},{"label":"NormalizedTask","slug":"module/config/normalizedtask","group":"config"},{"label":"ServeConfig","slug":"module/config/serveconfig","group":"config"},{"label":"TemplateRefProblem","slug":"module/config/templaterefproblem","group":"config"},{"label":"ZodError","slug":"module/config/zoderror","group":"config"},{"label":"DbBackend","slug":"module/config/dbbackend","group":"config"},{"label":"InventoryFormat","slug":"module/config/inventoryformat","group":"config"},{"label":"NormalizedPlaybookFile","slug":"module/config/normalizedplaybookfile","group":"config"},{"label":"RawInventory","slug":"module/config/rawinventory","group":"config"},{"label":"RawInventoryGroup","slug":"module/config/rawinventorygroup","group":"config"},{"label":"RawPlaybook","slug":"module/config/rawplaybook","group":"config"},{"label":"RawPlaybookFile","slug":"module/config/rawplaybookfile","group":"config"},{"label":"RawTask","slug":"module/config/rawtask","group":"config"},{"label":"ScratchStrategy","slug":"module/config/scratchstrategy","group":"config"},{"label":"TriggerSpec","slug":"module/config/triggerspec","group":"config"},{"label":"CanonicalTaskSchema","slug":"module/config/canonicaltaskschema","group":"config"},{"label":"InventoryGroupSchema","slug":"module/config/inventorygroupschema","group":"config"},{"label":"InventorySchema","slug":"module/config/inventoryschema","group":"config"},{"label":"KNOWN_NAMESPACES","slug":"module/config/known-namespaces","group":"config"},{"label":"PlaybookObject","slug":"module/config/playbookobject","group":"config"},{"label":"PlaybookSchema","slug":"module/config/playbookschema","group":"config"},{"label":"TaskSchema","slug":"module/config/taskschema","group":"config"},{"label":"TriggerSchema","slug":"module/config/triggerschema","group":"config"},{"label":"canonicalizeTask","slug":"module/config/canonicalizetask","group":"config"},{"label":"deepMerge","slug":"module/config/deepmerge","group":"config"},{"label":"detectInventoryFormat","slug":"module/config/detectinventoryformat","group":"config"},{"label":"lintPlaybookIdempotency","slug":"module/config/lintplaybookidempotency","group":"config"},{"label":"lintTemplateRefs","slug":"module/config/linttemplaterefs","group":"config"},{"label":"loadConfig","slug":"module/config/loadconfig","group":"config"},{"label":"loadInventory","slug":"module/config/loadinventory","group":"config"},{"label":"loadInventoryFile","slug":"module/config/loadinventoryfile","group":"config"},{"label":"loadPlaybook","slug":"module/config/loadplaybook","group":"config"},{"label":"loadPlaybookFile","slug":"module/config/loadplaybookfile","group":"config"},{"label":"normalizeInventory","slug":"module/config/normalizeinventory","group":"config"},{"label":"normalizePlaybook","slug":"module/config/normalizeplaybook","group":"config"},{"label":"normalizeTask","slug":"module/config/normalizetask","group":"config"},{"label":"resolveDirectoryVars","slug":"module/config/resolvedirectoryvars","group":"config"},{"label":"serializeInventory","slug":"module/config/serializeinventory","group":"config"},{"label":"serializePlaybook","slug":"module/config/serializeplaybook","group":"config"},{"label":"serializeTask","slug":"module/config/serializetask","group":"config"}],"deepExpand":true},{"label":"facts","slug":"module/facts","children":[{"label":"FactError","slug":"module/facts/facterror","group":"facts"},{"label":"FactsEngine","slug":"module/facts/factsengine","group":"facts"},{"label":"FactCache","slug":"module/facts/factcache","group":"facts"},{"label":"FactGatherer","slug":"module/facts/factgatherer","group":"facts"},{"label":"FactPlugin","slug":"module/facts/factplugin","group":"facts"},{"label":"FactsEngineOptions","slug":"module/facts/factsengineoptions","group":"facts"},{"label":"GatherOptions","slug":"module/facts/gatheroptions","group":"facts"},{"label":"ConnectionKind","slug":"module/facts/connectionkind","group":"facts"},{"label":"FactKey","slug":"module/facts/factkey","group":"facts"},{"label":"FactMap","slug":"module/facts/factmap","group":"facts"},{"label":"BUILTIN_GATHERERS","slug":"module/facts/builtin-gatherers","group":"facts"},{"label":"defaultFactsEngine","slug":"module/facts/defaultfactsengine","group":"facts"},{"label":"networkGatherer","slug":"module/facts/networkgatherer","group":"facts"},{"label":"osGatherer","slug":"module/facts/osgatherer","group":"facts"},{"label":"serviceGathererHttp","slug":"module/facts/servicegathererhttp","group":"facts"},{"label":"serviceGathererPosix","slug":"module/facts/servicegathererposix","group":"facts"},{"label":"createFactPlugin","slug":"module/facts/createfactplugin","group":"facts"},{"label":"createInMemoryFactCache","slug":"module/facts/createinmemoryfactcache","group":"facts"},{"label":"getDeclaredFactEntries","slug":"module/facts/getdeclaredfactentries","group":"facts"},{"label":"getDeclaredFactNames","slug":"module/facts/getdeclaredfactnames","group":"facts"},{"label":"getRegisteredFactPlugins","slug":"module/facts/getregisteredfactplugins","group":"facts"},{"label":"registerFactPlugin","slug":"module/facts/registerfactplugin","group":"facts"}],"deepExpand":true},{"label":"modules","slug":"module/modules","children":[{"label":"ModuleCollisionError","slug":"module/modules/modulecollisionerror","group":"modules"},{"label":"DescribeResult","slug":"module/modules/describeresult","group":"modules"},{"label":"Module","slug":"module/modules/module","group":"modules"},{"label":"ModuleContext","slug":"module/modules/modulecontext","group":"modules"},{"label":"ModuleResult","slug":"module/modules/moduleresult","group":"modules"},{"label":"ModuleSummary","slug":"module/modules/modulesummary","group":"modules"},{"label":"PluginScanEntry","slug":"module/modules/pluginscanentry","group":"modules"},{"label":"ResourceOptions","slug":"module/modules/resourceoptions","group":"modules"},{"label":"PluginType","slug":"module/modules/plugintype","group":"modules"},{"label":"ResolveResult","slug":"module/modules/resolveresult","group":"modules"},{"label":"addHostModule","slug":"module/modules/addhostmodule","group":"modules"},{"label":"blockinfileModule","slug":"module/modules/blockinfilemodule","group":"modules"},{"label":"commandModule","slug":"module/modules/commandmodule","group":"modules"},{"label":"configEditModule","slug":"module/modules/configeditmodule","group":"modules"},{"label":"copyModule","slug":"module/modules/copymodule","group":"modules"},{"label":"failModule","slug":"module/modules/failmodule","group":"modules"},{"label":"fileModule","slug":"module/modules/filemodule","group":"modules"},{"label":"getUrlModule","slug":"module/modules/geturlmodule","group":"modules"},{"label":"gitModule","slug":"module/modules/gitmodule","group":"modules"},{"label":"groupModule","slug":"module/modules/groupmodule","group":"modules"},{"label":"httpModule","slug":"module/modules/httpmodule","group":"modules"},{"label":"lineinfileModule","slug":"module/modules/lineinfilemodule","group":"modules"},{"label":"pkgModule","slug":"module/modules/pkgmodule","group":"modules"},{"label":"rawModule","slug":"module/modules/rawmodule","group":"modules"},{"label":"replaceModule","slug":"module/modules/replacemodule","group":"modules"},{"label":"scriptModule","slug":"module/modules/scriptmodule","group":"modules"},{"label":"serviceModule","slug":"module/modules/servicemodule","group":"modules"},{"label":"setFactModule","slug":"module/modules/setfactmodule","group":"modules"},{"label":"shellModule","slug":"module/modules/shellmodule","group":"modules"},{"label":"sqlModule","slug":"module/modules/sqlmodule","group":"modules"},{"label":"statModule","slug":"module/modules/statmodule","group":"modules"},{"label":"userModule","slug":"module/modules/usermodule","group":"modules"},{"label":"waitForModule","slug":"module/modules/waitformodule","group":"modules"},{"label":"buildResolutionTable","slug":"module/modules/buildresolutiontable","group":"modules"},{"label":"getModule","slug":"module/modules/getmodule","group":"modules"},{"label":"getModuleSummary","slug":"module/modules/getmodulesummary","group":"modules"},{"label":"listModules","slug":"module/modules/listmodules","group":"modules"},{"label":"loadModuleFromFile","slug":"module/modules/loadmodulefromfile","group":"modules"},{"label":"registerAllModules","slug":"module/modules/registerallmodules","group":"modules"},{"label":"registerModule","slug":"module/modules/registermodule","group":"modules"},{"label":"resolveModule","slug":"module/modules/resolvemodule","group":"modules"},{"label":"resource","slug":"module/modules/resource","group":"modules"},{"label":"scanAndRegister","slug":"module/modules/scanandregister","group":"modules"},{"label":"scanProject","slug":"module/modules/scanproject","group":"modules"},{"label":"searchModules","slug":"module/modules/searchmodules","group":"modules"},{"label":"setModuleMeta","slug":"module/modules/setmodulemeta","group":"modules"}],"deepExpand":true},{"label":"orchestrator","slug":"module/orchestrator","children":[{"label":"CronScheduler","slug":"module/orchestrator/cronscheduler","group":"orchestrator"},{"label":"Engine","slug":"module/orchestrator/engine","group":"orchestrator"},{"label":"CronSchedulerOptions","slug":"module/orchestrator/cronscheduleroptions","group":"orchestrator"},{"label":"Enqueuer","slug":"module/orchestrator/enqueuer","group":"orchestrator"},{"label":"HostOutcome","slug":"module/orchestrator/hostoutcome","group":"orchestrator"},{"label":"JobBody","slug":"module/orchestrator/jobbody","group":"orchestrator"},{"label":"ParsedCron","slug":"module/orchestrator/parsedcron","group":"orchestrator"},{"label":"PlanTask","slug":"module/orchestrator/plantask","group":"orchestrator"},{"label":"RouteContext","slug":"module/orchestrator/routecontext","group":"orchestrator"},{"label":"RunRecord","slug":"module/orchestrator/runrecord","group":"orchestrator"},{"label":"SchedulerApi","slug":"module/orchestrator/schedulerapi","group":"orchestrator"},{"label":"ServerHandle","slug":"module/orchestrator/serverhandle","group":"orchestrator"},{"label":"ServerOptions","slug":"module/orchestrator/serveroptions","group":"orchestrator"},{"label":"ShutdownOptions","slug":"module/orchestrator/shutdownoptions","group":"orchestrator"},{"label":"TargetDescriptor","slug":"module/orchestrator/targetdescriptor","group":"orchestrator"},{"label":"TriggerSuccess","slug":"module/orchestrator/triggersuccess","group":"orchestrator"},{"label":"WebhookRouteContext","slug":"module/orchestrator/webhookroutecontext","group":"orchestrator"},{"label":"ActionType","slug":"module/orchestrator/actiontype","group":"orchestrator"},{"label":"RunStatus","slug":"module/orchestrator/runstatus","group":"orchestrator"},{"label":"TransportKind","slug":"module/orchestrator/transportkind","group":"orchestrator"},{"label":"ValidationError","slug":"module/orchestrator/validationerror","group":"orchestrator"},{"label":"ValidationResult","slug":"module/orchestrator/validationresult","group":"orchestrator"},{"label":"ValidationSuccess","slug":"module/orchestrator/validationsuccess","group":"orchestrator"},{"label":"VALID_JOB_TYPES","slug":"module/orchestrator/valid-job-types","group":"orchestrator"},{"label":"createServer","slug":"module/orchestrator/createserver","group":"orchestrator"},{"label":"installSignalHandlers","slug":"module/orchestrator/installsignalhandlers","group":"orchestrator"},{"label":"isActionType","slug":"module/orchestrator/isactiontype","group":"orchestrator"},{"label":"isValid","slug":"module/orchestrator/isvalid","group":"orchestrator"},{"label":"mountRoutes","slug":"module/orchestrator/mountroutes","group":"orchestrator"},{"label":"mountWebhooks","slug":"module/orchestrator/mountwebhooks","group":"orchestrator"},{"label":"nextOccurrence","slug":"module/orchestrator/nextoccurrence","group":"orchestrator"},{"label":"parseExpr","slug":"module/orchestrator/parseexpr","group":"orchestrator"},{"label":"startServe","slug":"module/orchestrator/startserve","group":"orchestrator"},{"label":"validateJobBody","slug":"module/orchestrator/validatejobbody","group":"orchestrator"}],"deepExpand":true},{"label":"store","slug":"module/store","children":[{"label":"ProjectsRepository","slug":"module/store/projectsrepository","group":"store"},{"label":"RunsRepository","slug":"module/store/runsrepository","group":"store"},{"label":"SchedulesRepository","slug":"module/store/schedulesrepository","group":"store"},{"label":"TracesRepository","slug":"module/store/tracesrepository","group":"store"},{"label":"WriteQueue","slug":"module/store/writequeue","group":"store"},{"label":"CreateProjectInput","slug":"module/store/createprojectinput","group":"store"},{"label":"CreateRunInput","slug":"module/store/createruninput","group":"store"},{"label":"CreateScheduleInput","slug":"module/store/createscheduleinput","group":"store"},{"label":"CreateTraceInput","slug":"module/store/createtraceinput","group":"store"},{"label":"OpenStoreOptions","slug":"module/store/openstoreoptions","group":"store"},{"label":"PatchRun","slug":"module/store/patchrun","group":"store"},{"label":"PatchSchedule","slug":"module/store/patchschedule","group":"store"},{"label":"PatchTrace","slug":"module/store/patchtrace","group":"store"},{"label":"Project","slug":"module/store/project","group":"store"},{"label":"ProjectsRepo","slug":"module/store/projectsrepo","group":"store"},{"label":"Run","slug":"module/store/run","group":"store"},{"label":"RunsRepo","slug":"module/store/runsrepo","group":"store"},{"label":"RunTrace","slug":"module/store/runtrace","group":"store"},{"label":"Schedule","slug":"module/store/schedule","group":"store"},{"label":"SchedulesRepo","slug":"module/store/schedulesrepo","group":"store"},{"label":"Store","slug":"module/store/store","group":"store"},{"label":"TracesRepo","slug":"module/store/tracesrepo","group":"store"},{"label":"UpdateProjectPatch","slug":"module/store/updateprojectpatch","group":"store"},{"label":"REGISTRY_DB_NAME","slug":"module/store/registry-db-name","group":"store"},{"label":"openStore","slug":"module/store/openstore","group":"store"},{"label":"resolveRegistryPath","slug":"module/store/resolveregistrypath","group":"store"}],"deepExpand":true},{"label":"transport","slug":"module/transport","children":[{"label":"AbortError","slug":"module/transport/aborterror","group":"transport"},{"label":"HttpApiConnection","slug":"module/transport/httpapiconnection","group":"transport"},{"label":"LocalConnection","slug":"module/transport/localconnection","group":"transport"},{"label":"NetworkSshConnection","slug":"module/transport/networksshconnection","group":"transport"},{"label":"SshConnection","slug":"module/transport/sshconnection","group":"transport"},{"label":"TimeoutError","slug":"module/transport/timeouterror","group":"transport"},{"label":"ApplyOptions","slug":"module/transport/applyoptions","group":"transport"},{"label":"ApplyResult","slug":"module/transport/applyresult","group":"transport"},{"label":"BaseConnectionOptions","slug":"module/transport/baseconnectionoptions","group":"transport"},{"label":"ConfigDiff","slug":"module/transport/configdiff","group":"transport"},{"label":"Connection","slug":"module/transport/connection","group":"transport"},{"label":"ConnectionFacts","slug":"module/transport/connectionfacts","group":"transport"},{"label":"Credentials","slug":"module/transport/credentials","group":"transport"},{"label":"ExecOptions","slug":"module/transport/execoptions","group":"transport"},{"label":"ExecResult","slug":"module/transport/execresult","group":"transport"},{"label":"HealthStatus","slug":"module/transport/healthstatus","group":"transport"},{"label":"HttpApiConnectionOptions","slug":"module/transport/httpapiconnectionoptions","group":"transport"},{"label":"HttpApiRequest","slug":"module/transport/httpapirequest","group":"transport"},{"label":"HttpGrpcCapability","slug":"module/transport/httpgrpccapability","group":"transport"},{"label":"LocalConnectionOptions","slug":"module/transport/localconnectionoptions","group":"transport"},{"label":"NetworkConnectionOptions","slug":"module/transport/networkconnectionoptions","group":"transport"},{"label":"ResilienceConfig","slug":"module/transport/resilienceconfig","group":"transport"},{"label":"RetryConfig","slug":"module/transport/retryconfig","group":"transport"},{"label":"SshConnectionOptions","slug":"module/transport/sshconnectionoptions","group":"transport"},{"label":"VendorDriver","slug":"module/transport/vendordriver","group":"transport"},{"label":"ConnectionOptions","slug":"module/transport/connectionoptions","group":"transport"},{"label":"CoreExec","slug":"module/transport/coreexec","group":"transport"},{"label":"HttpAuth","slug":"module/transport/httpauth","group":"transport"},{"label":"Server","slug":"module/transport/server","group":"transport"},{"label":"DEFAULT_CONCURRENCY","slug":"module/transport/default-concurrency","group":"transport"},{"label":"DEFAULT_RETRY_CONFIG","slug":"module/transport/default-retry-config","group":"transport"},{"label":"DEFAULT_TIMEOUT_MS","slug":"module/transport/default-timeout-ms","group":"transport"},{"label":"IOS_DRIVER","slug":"module/transport/ios-driver","group":"transport"},{"label":"createConnection","slug":"module/transport/createconnection","group":"transport"},{"label":"createResilientRunner","slug":"module/transport/createresilientrunner","group":"transport"},{"label":"diffConfigs","slug":"module/transport/diffconfigs","group":"transport"},{"label":"isFatalError","slug":"module/transport/isfatalerror","group":"transport"},{"label":"normalizeConfig","slug":"module/transport/normalizeconfig","group":"transport"},{"label":"planCommit","slug":"module/transport/plancommit","group":"transport"},{"label":"resolveRetryConfig","slug":"module/transport/resolveretryconfig","group":"transport"},{"label":"verifyHostKey","slug":"module/transport/verifyhostkey","group":"transport"}],"deepExpand":true},{"label":"util/runtime","slug":"module/util-runtime","children":[{"label":"RuntimeInfo","slug":"module/util-runtime/runtimeinfo","group":"util/runtime"},{"label":"RuntimeName","slug":"module/util-runtime/runtimename","group":"util/runtime"},{"label":"detectRuntime","slug":"module/util-runtime/detectruntime","group":"util/runtime"}],"deepExpand":true},{"label":"Source Files","slug":"source"}],"currentSlug":"source/node-modules/bun-types/globals-d-ts","siteName":"RoleCall","basePath":"/","collapsibleGroups":[]},"i5":{"nav":[{"label":"Home","slug":"","order":-1},{"label":"cli","slug":"module/cli","children":[{"label":"CliError","slug":"module/cli/clierror","group":"cli"},{"label":"AgentManifestResult","slug":"module/cli/agentmanifestresult","group":"cli"},{"label":"ApplyTotals","slug":"module/cli/applytotals","group":"cli"},{"label":"DocsModuleEntry","slug":"module/cli/docsmoduleentry","group":"cli"},{"label":"DocsModulesResult","slug":"module/cli/docsmodulesresult","group":"cli"},{"label":"DocsSearchResult","slug":"module/cli/docssearchresult","group":"cli"},{"label":"FactsGatherResult","slug":"module/cli/factsgatherresult","group":"cli"},{"label":"GlobalFlags","slug":"module/cli/globalflags","group":"cli"},{"label":"InventoryListResult","slug":"module/cli/inventorylistresult","group":"cli"},{"label":"InventoryShowResult","slug":"module/cli/inventoryshowresult","group":"cli"},{"label":"OutputPlugin","slug":"module/cli/outputplugin","group":"cli"},{"label":"PlaybookRunResult","slug":"module/cli/playbookrunresult","group":"cli"},{"label":"PluginEntryView","slug":"module/cli/pluginentryview","group":"cli"},{"label":"PluginListResult","slug":"module/cli/pluginlistresult","group":"cli"},{"label":"PluginRegisterResult","slug":"module/cli/pluginregisterresult","group":"cli"},{"label":"RenderedTemplate","slug":"module/cli/renderedtemplate","group":"cli"},{"label":"RunReplayResult","slug":"module/cli/runreplayresult","group":"cli"},{"label":"TaskApplyOutcome","slug":"module/cli/taskapplyoutcome","group":"cli"},{"label":"VarsListResult","slug":"module/cli/varslistresult","group":"cli"},{"label":"VarsTraceResult","slug":"module/cli/varstraceresult","group":"cli"},{"label":"CliResult","slug":"module/cli/cliresult","group":"cli"},{"label":"getOutputPlugin","slug":"module/cli/getoutputplugin","group":"cli"},{"label":"getVersion","slug":"module/cli/getversion","group":"cli"},{"label":"listOutputPlugins","slug":"module/cli/listoutputplugins","group":"cli"},{"label":"main","slug":"module/cli/main","group":"cli"},{"label":"registerOutputPlugin","slug":"module/cli/registeroutputplugin","group":"cli"},{"label":"renderOutput","slug":"module/cli/renderoutput","group":"cli"},{"label":"runAgentCommand","slug":"module/cli/runagentcommand","group":"cli"},{"label":"runDocsCommand","slug":"module/cli/rundocscommand","group":"cli"},{"label":"runFactsCommand","slug":"module/cli/runfactscommand","group":"cli"},{"label":"runInventoryCommand","slug":"module/cli/runinventorycommand","group":"cli"},{"label":"runPlaybookCommand","slug":"module/cli/runplaybookcommand","group":"cli"},{"label":"runPluginCommand","slug":"module/cli/runplugincommand","group":"cli"},{"label":"runReplayCommand","slug":"module/cli/runreplaycommand","group":"cli"},{"label":"runVarsCommand","slug":"module/cli/runvarscommand","group":"cli"},{"label":"writeOut","slug":"module/cli/writeout","group":"cli"}],"deepExpand":true},{"label":"config","slug":"module/config","children":[{"label":"Config","slug":"module/config/config","group":"config"},{"label":"DirectoryVars","slug":"module/config/directoryvars","group":"config"},{"label":"IdempotencyWarning","slug":"module/config/idempotencywarning","group":"config"},{"label":"NormalizedInventory","slug":"module/config/normalizedinventory","group":"config"},{"label":"NormalizedPlaybook","slug":"module/config/normalizedplaybook","group":"config"},{"label":"NormalizedTask","slug":"module/config/normalizedtask","group":"config"},{"label":"ServeConfig","slug":"module/config/serveconfig","group":"config"},{"label":"TemplateRefProblem","slug":"module/config/templaterefproblem","group":"config"},{"label":"ZodError","slug":"module/config/zoderror","group":"config"},{"label":"DbBackend","slug":"module/config/dbbackend","group":"config"},{"label":"InventoryFormat","slug":"module/config/inventoryformat","group":"config"},{"label":"NormalizedPlaybookFile","slug":"module/config/normalizedplaybookfile","group":"config"},{"label":"RawInventory","slug":"module/config/rawinventory","group":"config"},{"label":"RawInventoryGroup","slug":"module/config/rawinventorygroup","group":"config"},{"label":"RawPlaybook","slug":"module/config/rawplaybook","group":"config"},{"label":"RawPlaybookFile","slug":"module/config/rawplaybookfile","group":"config"},{"label":"RawTask","slug":"module/config/rawtask","group":"config"},{"label":"ScratchStrategy","slug":"module/config/scratchstrategy","group":"config"},{"label":"TriggerSpec","slug":"module/config/triggerspec","group":"config"},{"label":"CanonicalTaskSchema","slug":"module/config/canonicaltaskschema","group":"config"},{"label":"InventoryGroupSchema","slug":"module/config/inventorygroupschema","group":"config"},{"label":"InventorySchema","slug":"module/config/inventoryschema","group":"config"},{"label":"KNOWN_NAMESPACES","slug":"module/config/known-namespaces","group":"config"},{"label":"PlaybookObject","slug":"module/config/playbookobject","group":"config"},{"label":"PlaybookSchema","slug":"module/config/playbookschema","group":"config"},{"label":"TaskSchema","slug":"module/config/taskschema","group":"config"},{"label":"TriggerSchema","slug":"module/config/triggerschema","group":"config"},{"label":"canonicalizeTask","slug":"module/config/canonicalizetask","group":"config"},{"label":"deepMerge","slug":"module/config/deepmerge","group":"config"},{"label":"detectInventoryFormat","slug":"module/config/detectinventoryformat","group":"config"},{"label":"lintPlaybookIdempotency","slug":"module/config/lintplaybookidempotency","group":"config"},{"label":"lintTemplateRefs","slug":"module/config/linttemplaterefs","group":"config"},{"label":"loadConfig","slug":"module/config/loadconfig","group":"config"},{"label":"loadInventory","slug":"module/config/loadinventory","group":"config"},{"label":"loadInventoryFile","slug":"module/config/loadinventoryfile","group":"config"},{"label":"loadPlaybook","slug":"module/config/loadplaybook","group":"config"},{"label":"loadPlaybookFile","slug":"module/config/loadplaybookfile","group":"config"},{"label":"normalizeInventory","slug":"module/config/normalizeinventory","group":"config"},{"label":"normalizePlaybook","slug":"module/config/normalizeplaybook","group":"config"},{"label":"normalizeTask","slug":"module/config/normalizetask","group":"config"},{"label":"resolveDirectoryVars","slug":"module/config/resolvedirectoryvars","group":"config"},{"label":"serializeInventory","slug":"module/config/serializeinventory","group":"config"},{"label":"serializePlaybook","slug":"module/config/serializeplaybook","group":"config"},{"label":"serializeTask","slug":"module/config/serializetask","group":"config"}],"deepExpand":true},{"label":"facts","slug":"module/facts","children":[{"label":"FactError","slug":"module/facts/facterror","group":"facts"},{"label":"FactsEngine","slug":"module/facts/factsengine","group":"facts"},{"label":"FactCache","slug":"module/facts/factcache","group":"facts"},{"label":"FactGatherer","slug":"module/facts/factgatherer","group":"facts"},{"label":"FactPlugin","slug":"module/facts/factplugin","group":"facts"},{"label":"FactsEngineOptions","slug":"module/facts/factsengineoptions","group":"facts"},{"label":"GatherOptions","slug":"module/facts/gatheroptions","group":"facts"},{"label":"ConnectionKind","slug":"module/facts/connectionkind","group":"facts"},{"label":"FactKey","slug":"module/facts/factkey","group":"facts"},{"label":"FactMap","slug":"module/facts/factmap","group":"facts"},{"label":"BUILTIN_GATHERERS","slug":"module/facts/builtin-gatherers","group":"facts"},{"label":"defaultFactsEngine","slug":"module/facts/defaultfactsengine","group":"facts"},{"label":"networkGatherer","slug":"module/facts/networkgatherer","group":"facts"},{"label":"osGatherer","slug":"module/facts/osgatherer","group":"facts"},{"label":"serviceGathererHttp","slug":"module/facts/servicegathererhttp","group":"facts"},{"label":"serviceGathererPosix","slug":"module/facts/servicegathererposix","group":"facts"},{"label":"createFactPlugin","slug":"module/facts/createfactplugin","group":"facts"},{"label":"createInMemoryFactCache","slug":"module/facts/createinmemoryfactcache","group":"facts"},{"label":"getDeclaredFactEntries","slug":"module/facts/getdeclaredfactentries","group":"facts"},{"label":"getDeclaredFactNames","slug":"module/facts/getdeclaredfactnames","group":"facts"},{"label":"getRegisteredFactPlugins","slug":"module/facts/getregisteredfactplugins","group":"facts"},{"label":"registerFactPlugin","slug":"module/facts/registerfactplugin","group":"facts"}],"deepExpand":true},{"label":"modules","slug":"module/modules","children":[{"label":"ModuleCollisionError","slug":"module/modules/modulecollisionerror","group":"modules"},{"label":"DescribeResult","slug":"module/modules/describeresult","group":"modules"},{"label":"Module","slug":"module/modules/module","group":"modules"},{"label":"ModuleContext","slug":"module/modules/modulecontext","group":"modules"},{"label":"ModuleResult","slug":"module/modules/moduleresult","group":"modules"},{"label":"ModuleSummary","slug":"module/modules/modulesummary","group":"modules"},{"label":"PluginScanEntry","slug":"module/modules/pluginscanentry","group":"modules"},{"label":"ResourceOptions","slug":"module/modules/resourceoptions","group":"modules"},{"label":"PluginType","slug":"module/modules/plugintype","group":"modules"},{"label":"ResolveResult","slug":"module/modules/resolveresult","group":"modules"},{"label":"addHostModule","slug":"module/modules/addhostmodule","group":"modules"},{"label":"blockinfileModule","slug":"module/modules/blockinfilemodule","group":"modules"},{"label":"commandModule","slug":"module/modules/commandmodule","group":"modules"},{"label":"configEditModule","slug":"module/modules/configeditmodule","group":"modules"},{"label":"copyModule","slug":"module/modules/copymodule","group":"modules"},{"label":"failModule","slug":"module/modules/failmodule","group":"modules"},{"label":"fileModule","slug":"module/modules/filemodule","group":"modules"},{"label":"getUrlModule","slug":"module/modules/geturlmodule","group":"modules"},{"label":"gitModule","slug":"module/modules/gitmodule","group":"modules"},{"label":"groupModule","slug":"module/modules/groupmodule","group":"modules"},{"label":"httpModule","slug":"module/modules/httpmodule","group":"modules"},{"label":"lineinfileModule","slug":"module/modules/lineinfilemodule","group":"modules"},{"label":"pkgModule","slug":"module/modules/pkgmodule","group":"modules"},{"label":"rawModule","slug":"module/modules/rawmodule","group":"modules"},{"label":"replaceModule","slug":"module/modules/replacemodule","group":"modules"},{"label":"scriptModule","slug":"module/modules/scriptmodule","group":"modules"},{"label":"serviceModule","slug":"module/modules/servicemodule","group":"modules"},{"label":"setFactModule","slug":"module/modules/setfactmodule","group":"modules"},{"label":"shellModule","slug":"module/modules/shellmodule","group":"modules"},{"label":"sqlModule","slug":"module/modules/sqlmodule","group":"modules"},{"label":"statModule","slug":"module/modules/statmodule","group":"modules"},{"label":"userModule","slug":"module/modules/usermodule","group":"modules"},{"label":"waitForModule","slug":"module/modules/waitformodule","group":"modules"},{"label":"buildResolutionTable","slug":"module/modules/buildresolutiontable","group":"modules"},{"label":"getModule","slug":"module/modules/getmodule","group":"modules"},{"label":"getModuleSummary","slug":"module/modules/getmodulesummary","group":"modules"},{"label":"listModules","slug":"module/modules/listmodules","group":"modules"},{"label":"loadModuleFromFile","slug":"module/modules/loadmodulefromfile","group":"modules"},{"label":"registerAllModules","slug":"module/modules/registerallmodules","group":"modules"},{"label":"registerModule","slug":"module/modules/registermodule","group":"modules"},{"label":"resolveModule","slug":"module/modules/resolvemodule","group":"modules"},{"label":"resource","slug":"module/modules/resource","group":"modules"},{"label":"scanAndRegister","slug":"module/modules/scanandregister","group":"modules"},{"label":"scanProject","slug":"module/modules/scanproject","group":"modules"},{"label":"searchModules","slug":"module/modules/searchmodules","group":"modules"},{"label":"setModuleMeta","slug":"module/modules/setmodulemeta","group":"modules"}],"deepExpand":true},{"label":"orchestrator","slug":"module/orchestrator","children":[{"label":"CronScheduler","slug":"module/orchestrator/cronscheduler","group":"orchestrator"},{"label":"Engine","slug":"module/orchestrator/engine","group":"orchestrator"},{"label":"CronSchedulerOptions","slug":"module/orchestrator/cronscheduleroptions","group":"orchestrator"},{"label":"Enqueuer","slug":"module/orchestrator/enqueuer","group":"orchestrator"},{"label":"HostOutcome","slug":"module/orchestrator/hostoutcome","group":"orchestrator"},{"label":"JobBody","slug":"module/orchestrator/jobbody","group":"orchestrator"},{"label":"ParsedCron","slug":"module/orchestrator/parsedcron","group":"orchestrator"},{"label":"PlanTask","slug":"module/orchestrator/plantask","group":"orchestrator"},{"label":"RouteContext","slug":"module/orchestrator/routecontext","group":"orchestrator"},{"label":"RunRecord","slug":"module/orchestrator/runrecord","group":"orchestrator"},{"label":"SchedulerApi","slug":"module/orchestrator/schedulerapi","group":"orchestrator"},{"label":"ServerHandle","slug":"module/orchestrator/serverhandle","group":"orchestrator"},{"label":"ServerOptions","slug":"module/orchestrator/serveroptions","group":"orchestrator"},{"label":"ShutdownOptions","slug":"module/orchestrator/shutdownoptions","group":"orchestrator"},{"label":"TargetDescriptor","slug":"module/orchestrator/targetdescriptor","group":"orchestrator"},{"label":"TriggerSuccess","slug":"module/orchestrator/triggersuccess","group":"orchestrator"},{"label":"WebhookRouteContext","slug":"module/orchestrator/webhookroutecontext","group":"orchestrator"},{"label":"ActionType","slug":"module/orchestrator/actiontype","group":"orchestrator"},{"label":"RunStatus","slug":"module/orchestrator/runstatus","group":"orchestrator"},{"label":"TransportKind","slug":"module/orchestrator/transportkind","group":"orchestrator"},{"label":"ValidationError","slug":"module/orchestrator/validationerror","group":"orchestrator"},{"label":"ValidationResult","slug":"module/orchestrator/validationresult","group":"orchestrator"},{"label":"ValidationSuccess","slug":"module/orchestrator/validationsuccess","group":"orchestrator"},{"label":"VALID_JOB_TYPES","slug":"module/orchestrator/valid-job-types","group":"orchestrator"},{"label":"createServer","slug":"module/orchestrator/createserver","group":"orchestrator"},{"label":"installSignalHandlers","slug":"module/orchestrator/installsignalhandlers","group":"orchestrator"},{"label":"isActionType","slug":"module/orchestrator/isactiontype","group":"orchestrator"},{"label":"isValid","slug":"module/orchestrator/isvalid","group":"orchestrator"},{"label":"mountRoutes","slug":"module/orchestrator/mountroutes","group":"orchestrator"},{"label":"mountWebhooks","slug":"module/orchestrator/mountwebhooks","group":"orchestrator"},{"label":"nextOccurrence","slug":"module/orchestrator/nextoccurrence","group":"orchestrator"},{"label":"parseExpr","slug":"module/orchestrator/parseexpr","group":"orchestrator"},{"label":"startServe","slug":"module/orchestrator/startserve","group":"orchestrator"},{"label":"validateJobBody","slug":"module/orchestrator/validatejobbody","group":"orchestrator"}],"deepExpand":true},{"label":"store","slug":"module/store","children":[{"label":"ProjectsRepository","slug":"module/store/projectsrepository","group":"store"},{"label":"RunsRepository","slug":"module/store/runsrepository","group":"store"},{"label":"SchedulesRepository","slug":"module/store/schedulesrepository","group":"store"},{"label":"TracesRepository","slug":"module/store/tracesrepository","group":"store"},{"label":"WriteQueue","slug":"module/store/writequeue","group":"store"},{"label":"CreateProjectInput","slug":"module/store/createprojectinput","group":"store"},{"label":"CreateRunInput","slug":"module/store/createruninput","group":"store"},{"label":"CreateScheduleInput","slug":"module/store/createscheduleinput","group":"store"},{"label":"CreateTraceInput","slug":"module/store/createtraceinput","group":"store"},{"label":"OpenStoreOptions","slug":"module/store/openstoreoptions","group":"store"},{"label":"PatchRun","slug":"module/store/patchrun","group":"store"},{"label":"PatchSchedule","slug":"module/store/patchschedule","group":"store"},{"label":"PatchTrace","slug":"module/store/patchtrace","group":"store"},{"label":"Project","slug":"module/store/project","group":"store"},{"label":"ProjectsRepo","slug":"module/store/projectsrepo","group":"store"},{"label":"Run","slug":"module/store/run","group":"store"},{"label":"RunsRepo","slug":"module/store/runsrepo","group":"store"},{"label":"RunTrace","slug":"module/store/runtrace","group":"store"},{"label":"Schedule","slug":"module/store/schedule","group":"store"},{"label":"SchedulesRepo","slug":"module/store/schedulesrepo","group":"store"},{"label":"Store","slug":"module/store/store","group":"store"},{"label":"TracesRepo","slug":"module/store/tracesrepo","group":"store"},{"label":"UpdateProjectPatch","slug":"module/store/updateprojectpatch","group":"store"},{"label":"REGISTRY_DB_NAME","slug":"module/store/registry-db-name","group":"store"},{"label":"openStore","slug":"module/store/openstore","group":"store"},{"label":"resolveRegistryPath","slug":"module/store/resolveregistrypath","group":"store"}],"deepExpand":true},{"label":"transport","slug":"module/transport","children":[{"label":"AbortError","slug":"module/transport/aborterror","group":"transport"},{"label":"HttpApiConnection","slug":"module/transport/httpapiconnection","group":"transport"},{"label":"LocalConnection","slug":"module/transport/localconnection","group":"transport"},{"label":"NetworkSshConnection","slug":"module/transport/networksshconnection","group":"transport"},{"label":"SshConnection","slug":"module/transport/sshconnection","group":"transport"},{"label":"TimeoutError","slug":"module/transport/timeouterror","group":"transport"},{"label":"ApplyOptions","slug":"module/transport/applyoptions","group":"transport"},{"label":"ApplyResult","slug":"module/transport/applyresult","group":"transport"},{"label":"BaseConnectionOptions","slug":"module/transport/baseconnectionoptions","group":"transport"},{"label":"ConfigDiff","slug":"module/transport/configdiff","group":"transport"},{"label":"Connection","slug":"module/transport/connection","group":"transport"},{"label":"ConnectionFacts","slug":"module/transport/connectionfacts","group":"transport"},{"label":"Credentials","slug":"module/transport/credentials","group":"transport"},{"label":"ExecOptions","slug":"module/transport/execoptions","group":"transport"},{"label":"ExecResult","slug":"module/transport/execresult","group":"transport"},{"label":"HealthStatus","slug":"module/transport/healthstatus","group":"transport"},{"label":"HttpApiConnectionOptions","slug":"module/transport/httpapiconnectionoptions","group":"transport"},{"label":"HttpApiRequest","slug":"module/transport/httpapirequest","group":"transport"},{"label":"HttpGrpcCapability","slug":"module/transport/httpgrpccapability","group":"transport"},{"label":"LocalConnectionOptions","slug":"module/transport/localconnectionoptions","group":"transport"},{"label":"NetworkConnectionOptions","slug":"module/transport/networkconnectionoptions","group":"transport"},{"label":"ResilienceConfig","slug":"module/transport/resilienceconfig","group":"transport"},{"label":"RetryConfig","slug":"module/transport/retryconfig","group":"transport"},{"label":"SshConnectionOptions","slug":"module/transport/sshconnectionoptions","group":"transport"},{"label":"VendorDriver","slug":"module/transport/vendordriver","group":"transport"},{"label":"ConnectionOptions","slug":"module/transport/connectionoptions","group":"transport"},{"label":"CoreExec","slug":"module/transport/coreexec","group":"transport"},{"label":"HttpAuth","slug":"module/transport/httpauth","group":"transport"},{"label":"Server","slug":"module/transport/server","group":"transport"},{"label":"DEFAULT_CONCURRENCY","slug":"module/transport/default-concurrency","group":"transport"},{"label":"DEFAULT_RETRY_CONFIG","slug":"module/transport/default-retry-config","group":"transport"},{"label":"DEFAULT_TIMEOUT_MS","slug":"module/transport/default-timeout-ms","group":"transport"},{"label":"IOS_DRIVER","slug":"module/transport/ios-driver","group":"transport"},{"label":"createConnection","slug":"module/transport/createconnection","group":"transport"},{"label":"createResilientRunner","slug":"module/transport/createresilientrunner","group":"transport"},{"label":"diffConfigs","slug":"module/transport/diffconfigs","group":"transport"},{"label":"isFatalError","slug":"module/transport/isfatalerror","group":"transport"},{"label":"normalizeConfig","slug":"module/transport/normalizeconfig","group":"transport"},{"label":"planCommit","slug":"module/transport/plancommit","group":"transport"},{"label":"resolveRetryConfig","slug":"module/transport/resolveretryconfig","group":"transport"},{"label":"verifyHostKey","slug":"module/transport/verifyhostkey","group":"transport"}],"deepExpand":true},{"label":"util/runtime","slug":"module/util-runtime","children":[{"label":"RuntimeInfo","slug":"module/util-runtime/runtimeinfo","group":"util/runtime"},{"label":"RuntimeName","slug":"module/util-runtime/runtimename","group":"util/runtime"},{"label":"detectRuntime","slug":"module/util-runtime/detectruntime","group":"util/runtime"}],"deepExpand":true},{"label":"Source Files","slug":"source"}],"currentSlug":"source/node-modules/bun-types/globals-d-ts","basePath":"/","collapsibleGroups":[]}}</script><script type="module">(function(){var map={"theme-toggle":"/_islands/theme-toggle-RQJWK6UH.js","settings":"/_islands/settings-YODNV3SD.js","code-viewer":"/_islands/code-viewer-U3WRLQLX.js","embed":"/_islands/embed-HOMSSC3V.js","playground":"/_islands/playground-KT5R4UYJ.js","tabs":"/_islands/tabs-NRSQKCSU.js","sidebar":"/_islands/sidebar-6ULZ3KUU.js","mobile-nav":"/_islands/mobile-nav-CEVIJOY5.js","toc":"/_islands/toc-OVW2UK3I.js","toc-mobile":"/_islands/toc-mobile-IGCYO5QO.js","cmdk":"/_islands/cmdk-J5HVDM6W.js","code-tabs":"/_islands/code-tabs-DXMGOVSV.js","copy-btn":"/_islands/copy-btn-RPMIR26R.js","copy-page":"/_islands/copy-page-IM7ZKESR.js"};var seen=new Set();document.querySelectorAll('[data-island]').forEach(function(el){seen.add(el.getAttribute('data-island'));});seen.forEach(function(name){var src=map[name];if(src){import(src);}});})();</script><script>(function(){function flash(h){var b=h.querySelector('[data-heading-anchor]');if(!b)return;b.setAttribute('data-copied','');window.setTimeout(function(){b.removeAttribute('data-copied');},3000);}function onClick(e){var t=e.target;if(!t||!t.closest)return;if(t.closest('a'))return;var h=t.closest('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');if(!h)return;var id=h.id;if(!id)return;var iconOnly=!!t.closest('[data-heading-anchor]');if(!iconOnly){if(location.hash.slice(1)===id){h.scrollIntoView();}else{location.hash=id;}}try{var url=location.origin+location.pathname+location.search+'#'+id;if(navigator.clipboard){navigator.clipboard.writeText(url).then(function(){flash(h);}).catch(function(){});}}catch(_){}}document.addEventListener('click',onClick);}());</script><script>(function(){var IDLE=700;var timers=new WeakMap();function onScroll(e){var el=e.target;if(el===document||el===window)el=document.documentElement;if(!el||!el.classList)return;el.classList.add('clean-scrolling');var prev=timers.get(el);if(prev)window.clearTimeout(prev);timers.set(el,window.setTimeout(function(){el.classList.remove('clean-scrolling');},IDLE));}document.addEventListener('scroll',onScroll,true);}());</script></body></html>

@@ -1,0 +1,8 @@
+- hosts: included
+  tasks:
+    - name: included alpha
+      module: ping
+      args: {}
+    - name: included beta
+      module: ping
+      args: {}

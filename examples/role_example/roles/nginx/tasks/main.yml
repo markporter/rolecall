@@ -1,0 +1,105 @@
+- name: install nginx
+  become: true
+  package:
+    name:
+      $var: vars.nginx_package_name
+    state: present
+    update_cache: true
+
+- name: write main nginx.conf
+  become: true
+  copy:
+    dest:
+      $var: vars.nginx_conf_path
+    content:
+      template_file: nginx.conf.eta
+  notify: reload nginx
+
+- name: ensure ssl directory
+  become: true
+  file:
+    path:
+      $var: vars.nginx_ssl_path
+    state: directory
+    mode: "0755"
+
+- name: generate self-signed cert
+  become: true
+  openssl_certificate:
+    path: /etc/nginx/ssl/nginx.crt
+    privatekey_path: /etc/nginx/ssl/nginx.key
+    common_name: site1.example.com
+    san:
+      - DNS:site1.example.com
+    days: 365
+    algorithm: rsa
+    key_size: 2048
+    purpose: server
+
+- name: write vhosts
+  become: true
+  copy:
+    loop:
+      $each:
+        $var: vars.nginx_vhosts
+    dest:
+      $concat:
+        - $var: vars.nginx_vhost_path
+        - "/"
+        - $var: loop.item.filename
+    content:
+      template_file: vhost.eta
+  notify: reload nginx
+
+- name: remove default vhost
+  become: true
+  file:
+    when:
+      $var: vars.nginx_remove_default_vhost
+    path:
+      $var: vars.nginx_default_vhost_path
+    state: absent
+
+- name: create docroots
+  become: true
+  file:
+    loop:
+      $each:
+        $var: vars.nginx_vhosts
+    when:
+      $var: loop.item.root
+    path:
+      $var: loop.item.root
+    state: directory
+    mode: "0755"
+
+- name: write index pages
+  become: true
+  copy:
+    loop:
+      $each:
+        $var: vars.nginx_vhosts
+    when:
+      $var: loop.item.root
+    dest:
+      $concat:
+        - $var: loop.item.root
+        - "/index.html"
+    content:
+      $template: "SITE OK for <%= loop.item.server_name %>\n"
+
+- name: validate nginx config
+  become: true
+  shell:
+    command: "nginx -t"
+    run_mode: readonly
+
+- name: enable and start nginx
+  become: true
+  service:
+    name: nginx
+    state:
+      $var: vars.nginx_service_state
+    enabled:
+      $var: vars.nginx_service_enabled
+  notify: reload nginx

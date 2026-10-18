@@ -1,0 +1,7 @@
+groups:
+  web:
+    hosts: [web1, web2]
+  web_edge:
+    hosts: [edge1]
+  db:
+    hosts: [db1]

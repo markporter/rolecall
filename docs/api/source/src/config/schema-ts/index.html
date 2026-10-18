@@ -1,0 +1,547 @@
+<!doctype html><html lang="en" data-scrollbar="styled"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="generator" content="clean-jsdoc-theme 5.2.0" /><title>src/config/schema.ts | RoleCall</title><script>(function(){try{var d=document.documentElement;var t=localStorage.getItem('theme');if(t==='dark'){d.dataset.theme='dark'}else{d.dataset.theme='light'}var fs=localStorage.getItem('clean-font-size');if(fs==='sm'){d.style.fontSize='15px'}else if(fs==='lg'){d.style.fontSize='18px'}var ls=localStorage.getItem('clean-line-spacing');if(ls==='compact'){d.style.setProperty('--clean-line-height','1.4')}else if(ls==='relaxed'){d.style.setProperty('--clean-line-height','1.8')}}catch(_){}}());</script><link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin /><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;500;600;700&amp;family=Roboto:wght@400;500;600;700&amp;display=swap" /><link rel="stylesheet" href="/_assets/styles.mve0ywe9-ed9f7f0f.css" /></head><body><div class="flex min-h-screen flex-col bg-background text-(--clean-fg)"><header class="sticky top-0 z-30 border-b border-(--clean-border) bg-background"><div class="mx-auto flex h-16 w-full min-w-0 max-w-screen-2xl items-center gap-4 px-4"><a href="/" class="flex min-w-0 items-center pl-3 no-underline"><span class="truncate text-lg font-heading font-bold text-(--clean-fg)">RoleCall</span></a><span class="shrink-0 rounded bg-(--clean-bg-muted) px-2 py-0.5 text-xs text-muted-foreground">v0.0.0</span><div class="ml-auto flex shrink-0 items-center gap-1"><div class="flex items-center gap-1"><div data-island="cmdk" data-island-id="i1"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-muted-foreground hover:bg-accent hover:text-accent-foreground h-9 w-9" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Search" title="Search (Ctrl K)"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search" aria-hidden="true"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg></button></div></div><div class="hidden items-center gap-1 md:flex"><div data-island="theme-toggle" data-island-id="i2"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-muted-foreground hover:bg-accent hover:text-accent-foreground h-9 w-9" type="button" aria-label="Switch to dark theme" title="Toggle theme"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg></button></div><div data-island="settings" data-island-id="i3"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-muted-foreground hover:bg-accent hover:text-accent-foreground h-9 w-9" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Settings" title="Settings"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings" aria-hidden="true"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"></path><circle cx="12" cy="12" r="3"></circle></svg></button></div></div><div class="md:hidden"><div data-island="mobile-nav" data-island-id="i4"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-muted-foreground hover:bg-accent hover:text-accent-foreground h-9 w-9" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Open navigation" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panel-right" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M15 3v18"></path></svg></button></div></div></div></div></header><div class="mx-auto grid w-full max-w-screen-2xl flex-1 grid-cols-1 gap-6 px-4 py-6 md:grid-cols-[16rem_minmax(0,1fr)]"><aside class="hidden md:block"><div class="sticky overflow-y-auto [scrollbar-gutter:stable] pr-2 top-20 max-h-[calc(100vh-6rem)]"><div data-island="sidebar" data-island-id="i5"><nav aria-label="Documentation navigation" class="text-(--clean-fg)"><div class="mt-4 first:mt-0"><ul class="m-0 list-none p-0"><li class="my-0.5"><a href="/" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">Home</span></a></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/cli" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">cli</span></a><button type="button" aria-expanded="false" aria-label="cli" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/config" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">config</span></a><button type="button" aria-expanded="false" aria-label="config" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/facts" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">facts</span></a><button type="button" aria-expanded="false" aria-label="facts" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/modules" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">modules</span></a><button type="button" aria-expanded="false" aria-label="modules" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/orchestrator" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">orchestrator</span></a><button type="button" aria-expanded="false" aria-label="orchestrator" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/store" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">store</span></a><button type="button" aria-expanded="false" aria-label="store" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/transport" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">transport</span></a><button type="button" aria-expanded="false" aria-label="transport" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><div class="flex items-center gap-x-1"><a href="/module/util-runtime" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">util/runtime</span></a><button type="button" aria-expanded="false" aria-label="util/runtime" class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></li><li class="my-0.5"><a href="/source" class="group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]"><span class="min-w-0 wrap-break-words">Source Files</span></a></li></ul></div></nav></div></div></aside><main class="min-w-0 px-4 md:px-8 lg:px-12"><div data-island="code-viewer" data-island-id="i0"><div class="my-4 overflow-hidden rounded-lg border border-(--clean-border) bg-(--clean-bg)"><div class="flex items-center justify-between border-b border-(--clean-border) bg-(--clean-bg-muted) px-3 py-2 text-sm"><span class="font-mono text-(--clean-fg)">src/config/schema.ts</span><span class="text-xs text-(--clean-fg-muted)">typescript</span></div><div class="h-[calc(100vh-13rem)] min-h-[24rem]"><pre class="m-0 h-full overflow-auto whitespace-pre p-4 text-sm leading-relaxed text-(--clean-fg)"><code class="language-typescript">// RoleCall config schema — Zod-validated models for playbooks / inventory.
+//
+// Playbook field-name mapping (documented for contributors):
+//   hosts  -> target hosts (string or list)
+//   tasks  -> ordered task list
+//   vars   -> play-level variables
+//   when   -> conditional guard expression
+//   loop   -> iteration over a sequence
+//   notify -> handler name(s) to flush
+//   module -> module / action name
+//   args   -> module arguments (key/value)
+//   groups -> inventory host groups
+//   roles  -> composed role dirs (tasks/defaults/vars/handlers merged into the play)
+//   handlers -> play-level handler list, lowered to `listen` tasks at load time
+//   tags   -> task/play labels selected at run time by --tags / --skip-tags
+//
+// IDEMPOTENCY IS INTRINSIC (decisions.md #1, learnings.md): there is deliberately
+// NO `idempotent` field on any task. Declarative modules auto check-compare-write;
+// side-effecting ops (shell/command, HTTP POST) always apply. Do NOT add it back —
+// the strict schemas below REJECT `idempotent` so the constraint is enforced at parse.
+
+import { z } from &quot;zod&quot;;
+
+import type { VarManifestEntry } from &quot;./var-manifest/index.js&quot;;
+import type { VarOriginMap } from &quot;./var-trace.js&quot;;
+
+// ---------------------------------------------------------------------------
+// TriggerSpec — minimal shape for the later scheduler / webhook todos.
+// ---------------------------------------------------------------------------
+/** @summary Discriminated union of scheduler/webhook trigger definitions (cron | webhook). */
+export const TriggerSchema = z.discriminatedUnion(&quot;type&quot;, [
+  z.strictObject({
+    type: z.literal(&quot;cron&quot;),
+    spec: z.string(),
+  }),
+  z.strictObject({
+    type: z.literal(&quot;webhook&quot;),
+    path: z.string().optional(),
+  }),
+]);
+/** @summary Inferred type of a validated TriggerSchema discriminated union. */
+export type TriggerSpec = z.infer&lt;typeof TriggerSchema>;
+
+// ---------------------------------------------------------------------------
+// Task — strict. `when`/`loop` are intentionally `unknown` (evaluated later by
+// the templating/executor wave). `notify` accepts a string or list and is
+// normalized to a list.
+// ---------------------------------------------------------------------------
+/** @summary Strict Zod model for a declarative task with RoleCall-compatible fields. */
+export const TaskSchema = z
+  .strictObject({
+    name: z.string(),
+    // `module` is required for a real task, but an `include_tasks` directive task
+    // carries no module of its own (it is expanded away at load time). The
+    // superRefine below enforces exactly one of {module, include_tasks}.
+    module: z.string().optional(),
+    // Module args are optional; absent => empty object downstream.
+    args: z.record(z.string(), z.unknown()).optional(),
+    when: z.unknown().optional(),
+    loop: z.unknown().optional(),
+    notify: z.union([z.string(), z.array(z.string())]).optional(),
+    // --- Load-time expansion directives (Todo 5) ---
+    // include_tasks: path(s) to a playbook file whose tasks are spliced in at this
+    // task's index. Mutually exclusive with `module` for a directive task.
+    include_tasks: z.union([z.string(), z.array(z.string())]).optional(),
+    // hosts: optional per-task target override. An imported/included task honors
+    // its own `hosts:` if present, else inherits the parent playbook `hosts`.
+    hosts: z.union([z.string(), z.array(z.string())]).optional(),
+    // --- Executor control-flow fields (Todo 12) ---
+    // register: store the task result under this name in the per-host facts map.
+    register: z.string().optional(),
+    // delegate_to: run the task against this host instead of the task's host.
+    delegate_to: z.string().optional(),
+    // run_once: execute the task a single time (on the first matched host).
+    run_once: z.boolean().optional(),
+     // listen: marks this task as a handler triggered by `notify` of the same name.
+     listen: z.string().optional(),
+      // become: escalate privileges (sudo) on the target for this task.
+      become: z.boolean().optional(),
+      // become_user: run escalated commands as this user (sudo -u &lt;user>).
+      become_user: z.string().optional(),
+      // environment: environment variables exported for the module command (task-level).
+      environment: z.record(z.string(), z.string()).optional(),
+      // no_log: suppress logging of task args / stdout / stderr.
+      no_log: z.boolean().optional(),
+      // tags: labels selected at run time by the global --tags / --skip-tags flags.
+      // Absent => inherit the play's `tags` (see canonicalizeTask + tags.ts).
+      tags: z.array(z.string()).optional(),
+      // roleDir: absolute path of the contributing role (set by the loader) so
+      // modules can resolve role-relative paths (e.g. copy `content.template_file`).
+      roleDir: z.string().optional(),
+    // --- Transaction / checkpoint grouping (Todo 26) ---
+    // tx: groups dependent tasks/plays into one transaction; on member failure the
+    // tx's applied ledger rows are reverse-walked and undone (see src/executor/tx.ts).
+    tx: z.string().optional(),
+    // checkpoint: marks the savepoint this task is applied under (Todo 26). Enables
+    // partial rollback to the last reached checkpoint rather than a full unwind.
+    checkpoint: z.string().optional(),
+  })
+  .superRefine((task, ctx) => {
+    // A directive task (`include_tasks`) needs no `module`; any other task does.
+    if (task.include_tasks === undefined &amp;&amp; task.module === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [&quot;module&quot;],
+        message:
+          &quot;module is required for a task unless include_tasks is set (directive task)&quot;,
+      });
+    }
+  });
+
+// ---------------------------------------------------------------------------
+// Task canonicalization — Ansible-style collapsed tasks.
+//
+// RoleCall accepts BOTH task shapes:
+//   explicit:  { name, module: &quot;copy&quot;, args: { src, dest } }
+//   collapsed: { name, copy: { src, dest } }   (Ansible shorthand)
+// `canonicalizeTask` rewrites the collapsed form into the explicit form before the
+// strict TaskSchema validates it; explicit tasks and `include_tasks` directives
+// pass through untouched. Malformed collapsed tasks are returned unchanged so the
+// strict schema reports the problem (e.g. an unrecognized module key).
+// ---------------------------------------------------------------------------
+/** Structural (non-module) task keys; any other single top-level key names a module. */
+const TASK_STRUCTURAL_KEYS = new Set&lt;string>([
+  &quot;name&quot;, &quot;module&quot;, &quot;args&quot;, &quot;when&quot;, &quot;loop&quot;, &quot;notify&quot;, &quot;include_tasks&quot;,
+  &quot;hosts&quot;, &quot;register&quot;, &quot;delegate_to&quot;, &quot;run_once&quot;, &quot;listen&quot;, &quot;become&quot;,
+  &quot;roleDir&quot;, &quot;tx&quot;, &quot;checkpoint&quot;, &quot;tags&quot;,
+]);
+
+function isPlainRecord(value: unknown): value is Record&lt;string, unknown> {
+  return typeof value === &quot;object&quot; &amp;&amp; value !== null &amp;&amp; !Array.isArray(value);
+}
+
+/**
+ * @summary Rewrite an Ansible-style collapsed task (`copy: { src, dest }`) into RoleCall's
+ * explicit `{ module, args }` shape. Tasks already carrying a `module` key or an
+ * `include_tasks` directive are returned unchanged.
+ * @param raw The raw task object parsed from YAML.
+ * @returns The canonical explicit task, or `raw` unchanged when no safe rewrite applies.
+ */
+export function canonicalizeTask(raw: unknown): unknown {
+  if (!isPlainRecord(raw) || typeof raw.module === &quot;string&quot;) return raw;
+  const moduleKeys = Object.keys(raw).filter((k) => !TASK_STRUCTURAL_KEYS.has(k));
+  if (moduleKeys.length !== 1) return raw;
+  const moduleName = moduleKeys[0]!;
+  const argsValue = raw[moduleName];
+  if (!isPlainRecord(argsValue)) return raw;
+  const rest = { ...raw };
+  delete (rest as Record&lt;string, unknown>)[moduleName];
+  return { ...rest, module: moduleName, args: argsValue };
+}
+
+/**
+ * @summary TaskSchema with Ansible-style collapsed-task support (see {@link canonicalizeTask}).
+ * Use this wherever raw playbook/role/handler tasks are parsed.
+ */
+export const CanonicalTaskSchema = z.preprocess(canonicalizeTask, TaskSchema);
+
+/** @summary Validated-in-YAML shape of a TaskSchema instance. */
+export type RawTask = z.infer&lt;typeof TaskSchema>;
+
+// ---------------------------------------------------------------------------
+// Playbook — strict. `hosts` accepts a string or list (normalized to list).
+//
+// A playbook FILE is a union: either a single play object OR a top-level list of
+// play objects. `normalizePlaybook` always returns a `NormalizedPlaybook[]` (a
+// single object becomes a 1-element array) so every downstream consumer iterates
+// plays uniformly.
+// ---------------------------------------------------------------------------
+/** @summary Strict Zod model for a single play (hosts plus ordered tasks). */
+export const PlaybookObject = z
+  .strictObject({
+    name: z.string().optional(),
+    hosts: z.union([z.string(), z.array(z.string())]),
+    tasks: z.array(CanonicalTaskSchema),
+    // handlers: Ansible-style play-level handler list. Each entry is task-shaped and
+    // lowered at load time (see normalizeOnePlay) into a task carrying `listen:`
+    // defaulting to the entry's `name`, so a task's `notify: &lt;name>` triggers it and
+    // the executor flushes it once at end of play via its existing listen machinery.
+    handlers: z.array(CanonicalTaskSchema).optional(),
+    // imports: paths to playbook files whose tasks are spliced into this play's
+    // task list at load time (Todo 5). Resolved relative to the project source root.
+    imports: z.array(z.string()).optional(),
+    // roles: names of roles composed into this play at load time. Each
+    // resolved role dir contributes tasks/main.yml (spliced before the play's own
+    // tasks), defaults/main.yml + vars/main.yml (merged into play.vars), and
+    // handlers/main.yml (handler tasks carrying `listen`). Resilience/error semantics
+    // mirror `imports`: unresolvable roles throw. Composition happens in loader.ts.
+    roles: z.array(z.string()).optional(),
+    vars: z.record(z.string(), z.unknown()).optional(),
+    // tags: play-wide labels inherited by every task in the play that does not declare
+    // its own `tags:` (a task with its own tags replaces these — no union). Selected by
+    // the global --tags / --skip-tags flags.
+    tags: z.array(z.string()).optional(),
+    trigger: TriggerSchema.optional(),
+    // --- Executor play-level control-flow fields (Todo 12) ---
+    // serial: process matched hosts in batches of N sequentially.
+    serial: z.number().int().positive().optional(),
+    // strategy: &quot;linear&quot; (default, task-by-task gated) or &quot;free&quot; (per-host un-gated).
+    strategy: z.enum([&quot;linear&quot;, &quot;free&quot;]).optional(),
+    // --- Transaction + checkpoint grouping (Todo 26) ---
+    // tx: when set, this play's deltas join the named transaction; a later member
+    //     failure reverse-walks the tx's ledger rows and undoes each reversible one.
+    tx: z.string().optional(),
+    // checkpoint: marks the savepoint this play applies under; partial rollback only
+    //             unwinds deltas applied after the last reached checkpoint.
+    checkpoint: z.string().optional(),
+  })
+  .superRefine((play, ctx) => {
+    const seen = new Set&lt;string>();
+    (play.handlers ?? []).forEach((handler, i) => {
+      if (seen.has(handler.name)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [&quot;handlers&quot;, i, &quot;name&quot;],
+          message: `duplicate handler name '${handler.name}'; handler names must be unique within a play`,
+        });
+      }
+      seen.add(handler.name);
+    });
+  });
+/** @summary Validated-in-YAML shape of a single PlaybookObject instance. */
+export type RawPlaybook = z.infer&lt;typeof PlaybookObject>;
+
+/**
+ * @summary Strict Zod model for a playbook file: a single play OR a top-level list of plays.
+ * Each element stays `z.strictObject`, so unknown keys (incl. `roles:`) are rejected.
+ */
+export const PlaybookSchema = z.union([
+  PlaybookObject,
+  z.array(PlaybookObject),
+]);
+/** @summary Validated-in-YAML shape of a PlaybookSchema instance (single play or list). */
+export type RawPlaybookFile = z.infer&lt;typeof PlaybookSchema>;
+
+// ---------------------------------------------------------------------------
+// Inventory — strict. groups -> { hosts: string[], vars?, children? } with an
+// optional document-root `host_vars` map. Child groups are first-class (Ansible
+// tree semantics) rather than flattened into their ancestors.
+// ---------------------------------------------------------------------------
+/** @summary Strict Zod model for an inventory host group (hosts plus optional vars and child-group names). */
+export const InventoryGroupSchema = z.strictObject({
+  hosts: z.array(z.string()),
+  vars: z.record(z.string(), z.unknown()).optional(),
+  /** Names of child groups (as Ansible expresses the group tree). */
+  children: z.array(z.string()).optional(),
+});
+/** @summary Validated-in-YAML shape of an InventoryGroupSchema instance. */
+export type RawInventoryGroup = z.infer&lt;typeof InventoryGroupSchema>;
+
+/**
+ * @summary Strict Zod model mapping named inventory groups plus optional per-host vars.
+ * `superRefine` rejects a `children` entry that names an undefined group and any
+ * cycle in the group hierarchy (a group reachable from itself), naming the path.
+ */
+export const InventorySchema = z
+  .strictObject({
+    groups: z.record(z.string(), InventoryGroupSchema),
+    /** Per-host variable maps, keyed by hostname (highest precedence layer). */
+    host_vars: z.record(z.string(), z.record(z.string(), z.unknown())).optional(),
+  })
+  .superRefine((inv, ctx) => {
+    const names = Object.keys(inv.groups);
+    const known = new Set(names);
+
+    for (const [name, group] of Object.entries(inv.groups)) {
+      for (const child of group.children ?? []) {
+        if (!known.has(child)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [&quot;groups&quot;, name, &quot;children&quot;],
+            message: `group '${name}' lists child group '${child}' which is not defined in groups`,
+          });
+        }
+      }
+    }
+
+    // Cycle detection (a group reachable from itself). WHITE=0, GRAY=1, BLACK=2.
+    const color = new Map&lt;string, number>();
+    const stack: string[] = [];
+    const visit = (name: string): void => {
+      const c = color.get(name) ?? 0;
+      if (c === 2) return;
+      if (c === 1) {
+        const idx = stack.indexOf(name);
+        const cycle = [...stack.slice(idx), name];
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [&quot;groups&quot;, name, &quot;children&quot;],
+          message: `group hierarchy cycle detected: ${cycle.join(&quot; -> &quot;)}`,
+        });
+        return;
+      }
+      color.set(name, 1);
+      stack.push(name);
+      for (const child of inv.groups[name]?.children ?? []) {
+        if (known.has(child)) visit(child);
+      }
+      stack.pop();
+      color.set(name, 2);
+    };
+    for (const name of names) visit(name);
+  });
+/** @summary Validated-in-YAML shape of an InventorySchema instance. */
+export type RawInventory = z.infer&lt;typeof InventorySchema>;
+
+// ---------------------------------------------------------------------------
+// Normalized (canonical internal) models. These are plain, serializable data
+// structures consumed by every later wave (inventory engine, executor,
+// templating). Normalization rules:
+//   - hosts: string -> [string]
+//   - notify: string -> [string]; omitted -> []
+//   - vars: omitted -> {}
+//   - group.vars: omitted -> {}
+// ---------------------------------------------------------------------------
+/** @summary Canonical, serializable form of a normalized task. */
+export interface NormalizedTask {
+  name: string;
+  module?: string;
+  args: Record&lt;string, unknown>;
+  when?: unknown;
+  loop?: unknown;
+  notify: string[];
+  /** Optional per-task target override; inherits the parent play `hosts` when absent. */
+  hosts?: string[];
+  /** Optional `include_tasks` directive (load-time expansion); absent on executed tasks. */
+  include_tasks?: string | string[];
+  register?: string;
+  delegate_to?: string;
+  run_once?: boolean;
+   listen?: string;
+    /** When true, escalate privileges (sudo) on the target for this task. */
+    become?: boolean;
+    /** When set, run escalated commands as this user (sudo -u &lt;user>). */
+    become_user?: string;
+    /** Environment variables exported for the module command (task-level). */
+    environment?: Record&lt;string, string>;
+    /** When true, suppress logging of task args / stdout / stderr. */
+    no_log?: boolean;
+    /** Labels selected at run time by the global `--tags` / `--skip-tags` flags. Absent => the task inherits its play's `tags`; present (even empty) => it replaces them (no union). */
+    tags?: string[];
+    /** Absolute path of the role directory this task was composed from (set by the loader); enables role-relative path resolution. */
+    roleDir?: string;
+    /** Transaction id grouping dependent tasks/plays for rollback (Todo 26). */
+  tx?: string;
+  /** Checkpoint id this task is applied under (Todo 26, partial rollback). */
+  checkpoint?: string;
+}
+
+/** @summary Canonical, serializable form of a normalized playbook (single play). */
+export interface NormalizedPlaybook {
+  name?: string;
+  hosts: string[];
+  tasks: NormalizedTask[];
+  /** Optional `imports` directives (load-time expansion); absent after expansion. */
+  imports?: string[];
+  /** Roles composed into this play at load time; empty once expanded away. */
+  roles?: string[];
+  vars: Record&lt;string, unknown>;
+  /** Play-wide tags inherited by every task lacking its own `tags:`; selected at run time by the global `--tags` / `--skip-tags` flags. */
+  tags?: string[];
+  trigger?: TriggerSpec;
+  serial?: number;
+  strategy?: &quot;linear&quot; | &quot;free&quot;;
+  /** Transaction id grouping dependent plays for rollback (Todo 26). */
+  tx?: string;
+  /** Checkpoint id this play applies under (Todo 26). */
+  checkpoint?: string;
+  /** Declared variable manifests collected for this play (role defaults manifests + playbook-root manifest), used by later phases for strict var validation and resolution. Absent until the loader discovers manifests. */
+  varManifests?: VarManifestEntry[];
+  /** When true (the default), `$var` references must use a known namespace (`vars.`/`facts.` by default) and resolve to a declared manifest entry (var_strict). Set false to permit undeclared references. */
+  var_strict?: boolean;
+  /** Role defaults (lowest precedence tier), kept separate from `vars` so the executor can layer it below inventory host/group vars. */
+  roleDefaults?: Record&lt;string, unknown>;
+  /** Names of roles applied to this play (post-expansion), preserved for the `play.roles` namespace (ADR 0013 §6) after `roles` is cleared. */
+  appliedRoleNames?: string[];
+  /** Origin-tagged role defaults + role vars (lowest two tiers), populated by the loader for the `vars trace` command. Purely additive: the executor ignores it. */
+  varOrigins?: VarOriginMap;
+}
+
+/** @summary A normalized playbook file: either a single play or a top-level list of plays. */
+export type NormalizedPlaybookFile = NormalizedPlaybook | NormalizedPlaybook[];
+
+/** @summary Canonical, serializable form of a normalized inventory. */
+export interface NormalizedInventory {
+  groups: Record&lt;
+    string,
+    { hosts: string[]; vars: Record&lt;string, unknown>; children?: string[] }
+  >;
+  /** Per-host var maps (highest precedence layer), keyed by hostname. Absent when the source declares none. */
+  hostVars?: Record&lt;string, Record&lt;string, unknown>>;
+}
+
+// ---------------------------------------------------------------------------
+// Normalizers: Raw (validated YAML) -> Normalized (canonical).
+// ---------------------------------------------------------------------------
+/** Normalize a validated RawTask into canonical form (string→list, omitted→defaults). */
+export function normalizeTask(raw: RawTask): NormalizedTask {
+  return {
+    name: raw.name,
+    ...(raw.module !== undefined ? { module: raw.module } : {}),
+    args: raw.args ?? {},
+    ...(raw.when !== undefined ? { when: raw.when } : {}),
+    ...(raw.loop !== undefined ? { loop: raw.loop } : {}),
+    notify:
+      raw.notify === undefined
+        ? []
+        : Array.isArray(raw.notify)
+          ? raw.notify
+          : [raw.notify],
+    ...(raw.hosts !== undefined
+      ? { hosts: Array.isArray(raw.hosts) ? raw.hosts : [raw.hosts] }
+      : {}),
+    ...(raw.include_tasks !== undefined ? { include_tasks: raw.include_tasks } : {}),
+    ...(raw.register !== undefined ? { register: raw.register } : {}),
+    ...(raw.delegate_to !== undefined ? { delegate_to: raw.delegate_to } : {}),
+    ...(raw.run_once !== undefined ? { run_once: raw.run_once } : {}),
+    ...(raw.listen !== undefined ? { listen: raw.listen } : {}),
+    ...(raw.become !== undefined ? { become: raw.become } : {}),
+    ...(raw.become_user !== undefined ? { become_user: raw.become_user } : {}),
+    ...(raw.environment !== undefined ? { environment: raw.environment } : {}),
+    ...(raw.no_log !== undefined ? { no_log: raw.no_log } : {}),
+    ...(raw.tags !== undefined ? { tags: raw.tags } : {}),
+    ...(raw.roleDir !== undefined ? { roleDir: raw.roleDir } : {}),
+    ...(raw.tx !== undefined ? { tx: raw.tx } : {}),
+    ...(raw.checkpoint !== undefined ? { checkpoint: raw.checkpoint } : {}),
+  };
+}
+
+/**
+ * Normalize a validated playbook file (single play OR top-level list of plays) into a
+ * canonical array of plays. A single object becomes a 1-element array so every downstream
+ * consumer iterates plays uniformly.
+ * @param raw Validated playbook file (single play or list of plays).
+ * @returns Canonical, serializable array of normalized plays.
+ */
+export function normalizePlaybook(raw: RawPlaybookFile): NormalizedPlaybook[] {
+  const list = Array.isArray(raw) ? raw : [raw];
+  return list.map(normalizeOnePlay);
+}
+
+/**
+ * Lower a play-level `handlers:` entry into a NormalizedTask carrying `listen`, so a
+ * task's `notify: &lt;handler-name>` triggers it through the executor's existing listen
+ * machinery. An entry's explicit `listen:` (a notify topic) is preserved; otherwise
+ * the handler's own `name` becomes the listen key.
+ * @param raw A validated handler entry (already canonicalized to a task shape).
+ * @returns The handler as a normalized task flagged with `listen`.
+ */
+function lowerPlayHandler(raw: RawTask): NormalizedTask {
+  const task = normalizeTask(raw);
+  return { ...task, listen: task.listen ?? task.name };
+}
+
+/** Normalize a single validated RawPlaybook into canonical form (hosts coerced to list). */
+function normalizeOnePlay(raw: RawPlaybook): NormalizedPlaybook {
+  const tasks = raw.tasks.map(normalizeTask);
+  for (const handler of raw.handlers ?? []) tasks.push(lowerPlayHandler(handler));
+  return {
+    ...(raw.name !== undefined ? { name: raw.name } : {}),
+    hosts: Array.isArray(raw.hosts) ? raw.hosts : [raw.hosts],
+    tasks,
+    ...(raw.imports !== undefined ? { imports: raw.imports } : {}),
+    roles: raw.roles ?? [],
+    vars: raw.vars ?? {},
+    ...(raw.tags !== undefined ? { tags: raw.tags } : {}),
+    ...(raw.trigger !== undefined ? { trigger: raw.trigger } : {}),
+    ...(raw.serial !== undefined ? { serial: raw.serial } : {}),
+    ...(raw.strategy !== undefined ? { strategy: raw.strategy } : {}),
+    ...(raw.tx !== undefined ? { tx: raw.tx } : {}),
+    ...(raw.checkpoint !== undefined ? { checkpoint: raw.checkpoint } : {}),
+  };
+}
+
+/** Normalize a validated RawInventory into grouped, vars-defaulted canonical form, preserving child-group names and per-host vars when present. */
+export function normalizeInventory(raw: RawInventory): NormalizedInventory {
+  const groups: NormalizedInventory[&quot;groups&quot;] = {};
+  for (const [name, group] of Object.entries(raw.groups)) {
+    groups[name] = {
+      hosts: group.hosts,
+      vars: group.vars ?? {},
+      ...(group.children !== undefined ? { children: group.children } : {}),
+    };
+  }
+  return {
+    groups,
+    ...(raw.host_vars !== undefined ? { hostVars: raw.host_vars } : {}),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Serializers: Normalized -> plain object (round-trip stable).
+// `serialize(normalized)` deep-equals `normalized` for any valid input.
+// ---------------------------------------------------------------------------
+/** Serialize a NormalizedTask back to a plain, round-trip-stable object. */
+export function serializeTask(task: NormalizedTask): Record&lt;string, unknown> {
+  const out: Record&lt;string, unknown> = { name: task.name };
+  if (task.module !== undefined) out.module = task.module;
+  out.args = task.args;
+  if (task.when !== undefined) out.when = task.when;
+  if (task.loop !== undefined) out.loop = task.loop;
+  out.notify = task.notify;
+  if (task.hosts !== undefined) out.hosts = task.hosts;
+  if (task.include_tasks !== undefined) out.include_tasks = task.include_tasks;
+  if (task.become !== undefined) out.become = task.become;
+  if (task.tags !== undefined) out.tags = task.tags;
+  if (task.tx !== undefined) out.tx = task.tx;
+  if (task.checkpoint !== undefined) out.checkpoint = task.checkpoint;
+  return out;
+}
+
+/** Serialize a NormalizedPlaybook back to a plain, round-trip-stable object. */
+export function serializePlaybook(
+  playbook: NormalizedPlaybook,
+): Record&lt;string, unknown> {
+  const out: Record&lt;string, unknown> = {
+    ...(playbook.name !== undefined ? { name: playbook.name } : {}),
+    hosts: playbook.hosts,
+    tasks: playbook.tasks.map(serializeTask),
+    vars: playbook.vars,
+  };
+  if (playbook.imports !== undefined) out.imports = playbook.imports;
+  if (playbook.roles !== undefined) out.roles = playbook.roles;
+  if (playbook.appliedRoleNames !== undefined) out.appliedRoleNames = playbook.appliedRoleNames;
+  if (playbook.tags !== undefined) out.tags = playbook.tags;
+  if (playbook.trigger !== undefined) out.trigger = playbook.trigger;
+  return out;
+}
+
+/** Serialize a NormalizedInventory back to a plain, round-trip-stable object. */
+export function serializeInventory(
+  inventory: NormalizedInventory,
+): Record&lt;string, unknown> {
+  const groups: Record&lt;string, unknown> = {};
+  for (const [name, group] of Object.entries(inventory.groups)) {
+    groups[name] = {
+      hosts: group.hosts,
+      vars: group.vars,
+      ...(group.children !== undefined ? { children: group.children } : {}),
+    };
+  }
+  return {
+    groups,
+    ...(inventory.hostVars !== undefined ? { host_vars: inventory.hostVars } : {}),
+  };
+}
+</code></pre></div></div></div></main></div><footer class="border-t border-(--clean-border) bg-background py-6 text-sm text-muted-foreground"><div class="mx-auto flex w-full max-w-screen-2xl flex-col items-start justify-between gap-2 px-4 md:flex-row md:items-center"><div class="flex items-center gap-1.5"><span>RoleCall</span><span>© 2026</span></div></div></footer></div><script type="application/json" data-island-props>{"i0":{"language":"typescript","filename":"src/config/schema.ts"},"i1":{"basePath":"/","searchIndexUrl":"/_assets/search-index.mve0ywe9-ed9f7f0f.json"},"i2":{},"i3":{},"i4":{"nav":[{"label":"Home","slug":"","order":-1},{"label":"cli","slug":"module/cli","children":[{"label":"CliError","slug":"module/cli/clierror","group":"cli"},{"label":"AgentManifestResult","slug":"module/cli/agentmanifestresult","group":"cli"},{"label":"ApplyTotals","slug":"module/cli/applytotals","group":"cli"},{"label":"DocsModuleEntry","slug":"module/cli/docsmoduleentry","group":"cli"},{"label":"DocsModulesResult","slug":"module/cli/docsmodulesresult","group":"cli"},{"label":"DocsSearchResult","slug":"module/cli/docssearchresult","group":"cli"},{"label":"FactsGatherResult","slug":"module/cli/factsgatherresult","group":"cli"},{"label":"GlobalFlags","slug":"module/cli/globalflags","group":"cli"},{"label":"InventoryListResult","slug":"module/cli/inventorylistresult","group":"cli"},{"label":"InventoryShowResult","slug":"module/cli/inventoryshowresult","group":"cli"},{"label":"OutputPlugin","slug":"module/cli/outputplugin","group":"cli"},{"label":"PlaybookRunResult","slug":"module/cli/playbookrunresult","group":"cli"},{"label":"PluginEntryView","slug":"module/cli/pluginentryview","group":"cli"},{"label":"PluginListResult","slug":"module/cli/pluginlistresult","group":"cli"},{"label":"PluginRegisterResult","slug":"module/cli/pluginregisterresult","group":"cli"},{"label":"RenderedTemplate","slug":"module/cli/renderedtemplate","group":"cli"},{"label":"RunReplayResult","slug":"module/cli/runreplayresult","group":"cli"},{"label":"TaskApplyOutcome","slug":"module/cli/taskapplyoutcome","group":"cli"},{"label":"VarsListResult","slug":"module/cli/varslistresult","group":"cli"},{"label":"VarsTraceResult","slug":"module/cli/varstraceresult","group":"cli"},{"label":"CliResult","slug":"module/cli/cliresult","group":"cli"},{"label":"getOutputPlugin","slug":"module/cli/getoutputplugin","group":"cli"},{"label":"getVersion","slug":"module/cli/getversion","group":"cli"},{"label":"listOutputPlugins","slug":"module/cli/listoutputplugins","group":"cli"},{"label":"main","slug":"module/cli/main","group":"cli"},{"label":"registerOutputPlugin","slug":"module/cli/registeroutputplugin","group":"cli"},{"label":"renderOutput","slug":"module/cli/renderoutput","group":"cli"},{"label":"runAgentCommand","slug":"module/cli/runagentcommand","group":"cli"},{"label":"runDocsCommand","slug":"module/cli/rundocscommand","group":"cli"},{"label":"runFactsCommand","slug":"module/cli/runfactscommand","group":"cli"},{"label":"runInventoryCommand","slug":"module/cli/runinventorycommand","group":"cli"},{"label":"runPlaybookCommand","slug":"module/cli/runplaybookcommand","group":"cli"},{"label":"runPluginCommand","slug":"module/cli/runplugincommand","group":"cli"},{"label":"runReplayCommand","slug":"module/cli/runreplaycommand","group":"cli"},{"label":"runVarsCommand","slug":"module/cli/runvarscommand","group":"cli"},{"label":"writeOut","slug":"module/cli/writeout","group":"cli"}],"deepExpand":true},{"label":"config","slug":"module/config","children":[{"label":"Config","slug":"module/config/config","group":"config"},{"label":"DirectoryVars","slug":"module/config/directoryvars","group":"config"},{"label":"IdempotencyWarning","slug":"module/config/idempotencywarning","group":"config"},{"label":"NormalizedInventory","slug":"module/config/normalizedinventory","group":"config"},{"label":"NormalizedPlaybook","slug":"module/config/normalizedplaybook","group":"config"},{"label":"NormalizedTask","slug":"module/config/normalizedtask","group":"config"},{"label":"ServeConfig","slug":"module/config/serveconfig","group":"config"},{"label":"TemplateRefProblem","slug":"module/config/templaterefproblem","group":"config"},{"label":"ZodError","slug":"module/config/zoderror","group":"config"},{"label":"DbBackend","slug":"module/config/dbbackend","group":"config"},{"label":"InventoryFormat","slug":"module/config/inventoryformat","group":"config"},{"label":"NormalizedPlaybookFile","slug":"module/config/normalizedplaybookfile","group":"config"},{"label":"RawInventory","slug":"module/config/rawinventory","group":"config"},{"label":"RawInventoryGroup","slug":"module/config/rawinventorygroup","group":"config"},{"label":"RawPlaybook","slug":"module/config/rawplaybook","group":"config"},{"label":"RawPlaybookFile","slug":"module/config/rawplaybookfile","group":"config"},{"label":"RawTask","slug":"module/config/rawtask","group":"config"},{"label":"ScratchStrategy","slug":"module/config/scratchstrategy","group":"config"},{"label":"TriggerSpec","slug":"module/config/triggerspec","group":"config"},{"label":"CanonicalTaskSchema","slug":"module/config/canonicaltaskschema","group":"config"},{"label":"InventoryGroupSchema","slug":"module/config/inventorygroupschema","group":"config"},{"label":"InventorySchema","slug":"module/config/inventoryschema","group":"config"},{"label":"KNOWN_NAMESPACES","slug":"module/config/known-namespaces","group":"config"},{"label":"PlaybookObject","slug":"module/config/playbookobject","group":"config"},{"label":"PlaybookSchema","slug":"module/config/playbookschema","group":"config"},{"label":"TaskSchema","slug":"module/config/taskschema","group":"config"},{"label":"TriggerSchema","slug":"module/config/triggerschema","group":"config"},{"label":"canonicalizeTask","slug":"module/config/canonicalizetask","group":"config"},{"label":"deepMerge","slug":"module/config/deepmerge","group":"config"},{"label":"detectInventoryFormat","slug":"module/config/detectinventoryformat","group":"config"},{"label":"lintPlaybookIdempotency","slug":"module/config/lintplaybookidempotency","group":"config"},{"label":"lintTemplateRefs","slug":"module/config/linttemplaterefs","group":"config"},{"label":"loadConfig","slug":"module/config/loadconfig","group":"config"},{"label":"loadInventory","slug":"module/config/loadinventory","group":"config"},{"label":"loadInventoryFile","slug":"module/config/loadinventoryfile","group":"config"},{"label":"loadPlaybook","slug":"module/config/loadplaybook","group":"config"},{"label":"loadPlaybookFile","slug":"module/config/loadplaybookfile","group":"config"},{"label":"normalizeInventory","slug":"module/config/normalizeinventory","group":"config"},{"label":"normalizePlaybook","slug":"module/config/normalizeplaybook","group":"config"},{"label":"normalizeTask","slug":"module/config/normalizetask","group":"config"},{"label":"resolveDirectoryVars","slug":"module/config/resolvedirectoryvars","group":"config"},{"label":"serializeInventory","slug":"module/config/serializeinventory","group":"config"},{"label":"serializePlaybook","slug":"module/config/serializeplaybook","group":"config"},{"label":"serializeTask","slug":"module/config/serializetask","group":"config"}],"deepExpand":true},{"label":"facts","slug":"module/facts","children":[{"label":"FactError","slug":"module/facts/facterror","group":"facts"},{"label":"FactsEngine","slug":"module/facts/factsengine","group":"facts"},{"label":"FactCache","slug":"module/facts/factcache","group":"facts"},{"label":"FactGatherer","slug":"module/facts/factgatherer","group":"facts"},{"label":"FactPlugin","slug":"module/facts/factplugin","group":"facts"},{"label":"FactsEngineOptions","slug":"module/facts/factsengineoptions","group":"facts"},{"label":"GatherOptions","slug":"module/facts/gatheroptions","group":"facts"},{"label":"ConnectionKind","slug":"module/facts/connectionkind","group":"facts"},{"label":"FactKey","slug":"module/facts/factkey","group":"facts"},{"label":"FactMap","slug":"module/facts/factmap","group":"facts"},{"label":"BUILTIN_GATHERERS","slug":"module/facts/builtin-gatherers","group":"facts"},{"label":"defaultFactsEngine","slug":"module/facts/defaultfactsengine","group":"facts"},{"label":"networkGatherer","slug":"module/facts/networkgatherer","group":"facts"},{"label":"osGatherer","slug":"module/facts/osgatherer","group":"facts"},{"label":"serviceGathererHttp","slug":"module/facts/servicegathererhttp","group":"facts"},{"label":"serviceGathererPosix","slug":"module/facts/servicegathererposix","group":"facts"},{"label":"createFactPlugin","slug":"module/facts/createfactplugin","group":"facts"},{"label":"createInMemoryFactCache","slug":"module/facts/createinmemoryfactcache","group":"facts"},{"label":"getDeclaredFactEntries","slug":"module/facts/getdeclaredfactentries","group":"facts"},{"label":"getDeclaredFactNames","slug":"module/facts/getdeclaredfactnames","group":"facts"},{"label":"getRegisteredFactPlugins","slug":"module/facts/getregisteredfactplugins","group":"facts"},{"label":"registerFactPlugin","slug":"module/facts/registerfactplugin","group":"facts"}],"deepExpand":true},{"label":"modules","slug":"module/modules","children":[{"label":"ModuleCollisionError","slug":"module/modules/modulecollisionerror","group":"modules"},{"label":"DescribeResult","slug":"module/modules/describeresult","group":"modules"},{"label":"Module","slug":"module/modules/module","group":"modules"},{"label":"ModuleContext","slug":"module/modules/modulecontext","group":"modules"},{"label":"ModuleResult","slug":"module/modules/moduleresult","group":"modules"},{"label":"ModuleSummary","slug":"module/modules/modulesummary","group":"modules"},{"label":"PluginScanEntry","slug":"module/modules/pluginscanentry","group":"modules"},{"label":"ResourceOptions","slug":"module/modules/resourceoptions","group":"modules"},{"label":"PluginType","slug":"module/modules/plugintype","group":"modules"},{"label":"ResolveResult","slug":"module/modules/resolveresult","group":"modules"},{"label":"addHostModule","slug":"module/modules/addhostmodule","group":"modules"},{"label":"blockinfileModule","slug":"module/modules/blockinfilemodule","group":"modules"},{"label":"commandModule","slug":"module/modules/commandmodule","group":"modules"},{"label":"configEditModule","slug":"module/modules/configeditmodule","group":"modules"},{"label":"copyModule","slug":"module/modules/copymodule","group":"modules"},{"label":"failModule","slug":"module/modules/failmodule","group":"modules"},{"label":"fileModule","slug":"module/modules/filemodule","group":"modules"},{"label":"getUrlModule","slug":"module/modules/geturlmodule","group":"modules"},{"label":"gitModule","slug":"module/modules/gitmodule","group":"modules"},{"label":"groupModule","slug":"module/modules/groupmodule","group":"modules"},{"label":"httpModule","slug":"module/modules/httpmodule","group":"modules"},{"label":"lineinfileModule","slug":"module/modules/lineinfilemodule","group":"modules"},{"label":"pkgModule","slug":"module/modules/pkgmodule","group":"modules"},{"label":"rawModule","slug":"module/modules/rawmodule","group":"modules"},{"label":"replaceModule","slug":"module/modules/replacemodule","group":"modules"},{"label":"scriptModule","slug":"module/modules/scriptmodule","group":"modules"},{"label":"serviceModule","slug":"module/modules/servicemodule","group":"modules"},{"label":"setFactModule","slug":"module/modules/setfactmodule","group":"modules"},{"label":"shellModule","slug":"module/modules/shellmodule","group":"modules"},{"label":"sqlModule","slug":"module/modules/sqlmodule","group":"modules"},{"label":"statModule","slug":"module/modules/statmodule","group":"modules"},{"label":"userModule","slug":"module/modules/usermodule","group":"modules"},{"label":"waitForModule","slug":"module/modules/waitformodule","group":"modules"},{"label":"buildResolutionTable","slug":"module/modules/buildresolutiontable","group":"modules"},{"label":"getModule","slug":"module/modules/getmodule","group":"modules"},{"label":"getModuleSummary","slug":"module/modules/getmodulesummary","group":"modules"},{"label":"listModules","slug":"module/modules/listmodules","group":"modules"},{"label":"loadModuleFromFile","slug":"module/modules/loadmodulefromfile","group":"modules"},{"label":"registerAllModules","slug":"module/modules/registerallmodules","group":"modules"},{"label":"registerModule","slug":"module/modules/registermodule","group":"modules"},{"label":"resolveModule","slug":"module/modules/resolvemodule","group":"modules"},{"label":"resource","slug":"module/modules/resource","group":"modules"},{"label":"scanAndRegister","slug":"module/modules/scanandregister","group":"modules"},{"label":"scanProject","slug":"module/modules/scanproject","group":"modules"},{"label":"searchModules","slug":"module/modules/searchmodules","group":"modules"},{"label":"setModuleMeta","slug":"module/modules/setmodulemeta","group":"modules"}],"deepExpand":true},{"label":"orchestrator","slug":"module/orchestrator","children":[{"label":"CronScheduler","slug":"module/orchestrator/cronscheduler","group":"orchestrator"},{"label":"Engine","slug":"module/orchestrator/engine","group":"orchestrator"},{"label":"CronSchedulerOptions","slug":"module/orchestrator/cronscheduleroptions","group":"orchestrator"},{"label":"Enqueuer","slug":"module/orchestrator/enqueuer","group":"orchestrator"},{"label":"HostOutcome","slug":"module/orchestrator/hostoutcome","group":"orchestrator"},{"label":"JobBody","slug":"module/orchestrator/jobbody","group":"orchestrator"},{"label":"ParsedCron","slug":"module/orchestrator/parsedcron","group":"orchestrator"},{"label":"PlanTask","slug":"module/orchestrator/plantask","group":"orchestrator"},{"label":"RouteContext","slug":"module/orchestrator/routecontext","group":"orchestrator"},{"label":"RunRecord","slug":"module/orchestrator/runrecord","group":"orchestrator"},{"label":"SchedulerApi","slug":"module/orchestrator/schedulerapi","group":"orchestrator"},{"label":"ServerHandle","slug":"module/orchestrator/serverhandle","group":"orchestrator"},{"label":"ServerOptions","slug":"module/orchestrator/serveroptions","group":"orchestrator"},{"label":"ShutdownOptions","slug":"module/orchestrator/shutdownoptions","group":"orchestrator"},{"label":"TargetDescriptor","slug":"module/orchestrator/targetdescriptor","group":"orchestrator"},{"label":"TriggerSuccess","slug":"module/orchestrator/triggersuccess","group":"orchestrator"},{"label":"WebhookRouteContext","slug":"module/orchestrator/webhookroutecontext","group":"orchestrator"},{"label":"ActionType","slug":"module/orchestrator/actiontype","group":"orchestrator"},{"label":"RunStatus","slug":"module/orchestrator/runstatus","group":"orchestrator"},{"label":"TransportKind","slug":"module/orchestrator/transportkind","group":"orchestrator"},{"label":"ValidationError","slug":"module/orchestrator/validationerror","group":"orchestrator"},{"label":"ValidationResult","slug":"module/orchestrator/validationresult","group":"orchestrator"},{"label":"ValidationSuccess","slug":"module/orchestrator/validationsuccess","group":"orchestrator"},{"label":"VALID_JOB_TYPES","slug":"module/orchestrator/valid-job-types","group":"orchestrator"},{"label":"createServer","slug":"module/orchestrator/createserver","group":"orchestrator"},{"label":"installSignalHandlers","slug":"module/orchestrator/installsignalhandlers","group":"orchestrator"},{"label":"isActionType","slug":"module/orchestrator/isactiontype","group":"orchestrator"},{"label":"isValid","slug":"module/orchestrator/isvalid","group":"orchestrator"},{"label":"mountRoutes","slug":"module/orchestrator/mountroutes","group":"orchestrator"},{"label":"mountWebhooks","slug":"module/orchestrator/mountwebhooks","group":"orchestrator"},{"label":"nextOccurrence","slug":"module/orchestrator/nextoccurrence","group":"orchestrator"},{"label":"parseExpr","slug":"module/orchestrator/parseexpr","group":"orchestrator"},{"label":"startServe","slug":"module/orchestrator/startserve","group":"orchestrator"},{"label":"validateJobBody","slug":"module/orchestrator/validatejobbody","group":"orchestrator"}],"deepExpand":true},{"label":"store","slug":"module/store","children":[{"label":"ProjectsRepository","slug":"module/store/projectsrepository","group":"store"},{"label":"RunsRepository","slug":"module/store/runsrepository","group":"store"},{"label":"SchedulesRepository","slug":"module/store/schedulesrepository","group":"store"},{"label":"TracesRepository","slug":"module/store/tracesrepository","group":"store"},{"label":"WriteQueue","slug":"module/store/writequeue","group":"store"},{"label":"CreateProjectInput","slug":"module/store/createprojectinput","group":"store"},{"label":"CreateRunInput","slug":"module/store/createruninput","group":"store"},{"label":"CreateScheduleInput","slug":"module/store/createscheduleinput","group":"store"},{"label":"CreateTraceInput","slug":"module/store/createtraceinput","group":"store"},{"label":"OpenStoreOptions","slug":"module/store/openstoreoptions","group":"store"},{"label":"PatchRun","slug":"module/store/patchrun","group":"store"},{"label":"PatchSchedule","slug":"module/store/patchschedule","group":"store"},{"label":"PatchTrace","slug":"module/store/patchtrace","group":"store"},{"label":"Project","slug":"module/store/project","group":"store"},{"label":"ProjectsRepo","slug":"module/store/projectsrepo","group":"store"},{"label":"Run","slug":"module/store/run","group":"store"},{"label":"RunsRepo","slug":"module/store/runsrepo","group":"store"},{"label":"RunTrace","slug":"module/store/runtrace","group":"store"},{"label":"Schedule","slug":"module/store/schedule","group":"store"},{"label":"SchedulesRepo","slug":"module/store/schedulesrepo","group":"store"},{"label":"Store","slug":"module/store/store","group":"store"},{"label":"TracesRepo","slug":"module/store/tracesrepo","group":"store"},{"label":"UpdateProjectPatch","slug":"module/store/updateprojectpatch","group":"store"},{"label":"REGISTRY_DB_NAME","slug":"module/store/registry-db-name","group":"store"},{"label":"openStore","slug":"module/store/openstore","group":"store"},{"label":"resolveRegistryPath","slug":"module/store/resolveregistrypath","group":"store"}],"deepExpand":true},{"label":"transport","slug":"module/transport","children":[{"label":"AbortError","slug":"module/transport/aborterror","group":"transport"},{"label":"HttpApiConnection","slug":"module/transport/httpapiconnection","group":"transport"},{"label":"LocalConnection","slug":"module/transport/localconnection","group":"transport"},{"label":"NetworkSshConnection","slug":"module/transport/networksshconnection","group":"transport"},{"label":"SshConnection","slug":"module/transport/sshconnection","group":"transport"},{"label":"TimeoutError","slug":"module/transport/timeouterror","group":"transport"},{"label":"ApplyOptions","slug":"module/transport/applyoptions","group":"transport"},{"label":"ApplyResult","slug":"module/transport/applyresult","group":"transport"},{"label":"BaseConnectionOptions","slug":"module/transport/baseconnectionoptions","group":"transport"},{"label":"ConfigDiff","slug":"module/transport/configdiff","group":"transport"},{"label":"Connection","slug":"module/transport/connection","group":"transport"},{"label":"ConnectionFacts","slug":"module/transport/connectionfacts","group":"transport"},{"label":"Credentials","slug":"module/transport/credentials","group":"transport"},{"label":"ExecOptions","slug":"module/transport/execoptions","group":"transport"},{"label":"ExecResult","slug":"module/transport/execresult","group":"transport"},{"label":"HealthStatus","slug":"module/transport/healthstatus","group":"transport"},{"label":"HttpApiConnectionOptions","slug":"module/transport/httpapiconnectionoptions","group":"transport"},{"label":"HttpApiRequest","slug":"module/transport/httpapirequest","group":"transport"},{"label":"HttpGrpcCapability","slug":"module/transport/httpgrpccapability","group":"transport"},{"label":"LocalConnectionOptions","slug":"module/transport/localconnectionoptions","group":"transport"},{"label":"NetworkConnectionOptions","slug":"module/transport/networkconnectionoptions","group":"transport"},{"label":"ResilienceConfig","slug":"module/transport/resilienceconfig","group":"transport"},{"label":"RetryConfig","slug":"module/transport/retryconfig","group":"transport"},{"label":"SshConnectionOptions","slug":"module/transport/sshconnectionoptions","group":"transport"},{"label":"VendorDriver","slug":"module/transport/vendordriver","group":"transport"},{"label":"ConnectionOptions","slug":"module/transport/connectionoptions","group":"transport"},{"label":"CoreExec","slug":"module/transport/coreexec","group":"transport"},{"label":"HttpAuth","slug":"module/transport/httpauth","group":"transport"},{"label":"Server","slug":"module/transport/server","group":"transport"},{"label":"DEFAULT_CONCURRENCY","slug":"module/transport/default-concurrency","group":"transport"},{"label":"DEFAULT_RETRY_CONFIG","slug":"module/transport/default-retry-config","group":"transport"},{"label":"DEFAULT_TIMEOUT_MS","slug":"module/transport/default-timeout-ms","group":"transport"},{"label":"IOS_DRIVER","slug":"module/transport/ios-driver","group":"transport"},{"label":"createConnection","slug":"module/transport/createconnection","group":"transport"},{"label":"createResilientRunner","slug":"module/transport/createresilientrunner","group":"transport"},{"label":"diffConfigs","slug":"module/transport/diffconfigs","group":"transport"},{"label":"isFatalError","slug":"module/transport/isfatalerror","group":"transport"},{"label":"normalizeConfig","slug":"module/transport/normalizeconfig","group":"transport"},{"label":"planCommit","slug":"module/transport/plancommit","group":"transport"},{"label":"resolveRetryConfig","slug":"module/transport/resolveretryconfig","group":"transport"},{"label":"verifyHostKey","slug":"module/transport/verifyhostkey","group":"transport"}],"deepExpand":true},{"label":"util/runtime","slug":"module/util-runtime","children":[{"label":"RuntimeInfo","slug":"module/util-runtime/runtimeinfo","group":"util/runtime"},{"label":"RuntimeName","slug":"module/util-runtime/runtimename","group":"util/runtime"},{"label":"detectRuntime","slug":"module/util-runtime/detectruntime","group":"util/runtime"}],"deepExpand":true},{"label":"Source Files","slug":"source"}],"currentSlug":"source/src/config/schema-ts","siteName":"RoleCall","basePath":"/","collapsibleGroups":[]},"i5":{"nav":[{"label":"Home","slug":"","order":-1},{"label":"cli","slug":"module/cli","children":[{"label":"CliError","slug":"module/cli/clierror","group":"cli"},{"label":"AgentManifestResult","slug":"module/cli/agentmanifestresult","group":"cli"},{"label":"ApplyTotals","slug":"module/cli/applytotals","group":"cli"},{"label":"DocsModuleEntry","slug":"module/cli/docsmoduleentry","group":"cli"},{"label":"DocsModulesResult","slug":"module/cli/docsmodulesresult","group":"cli"},{"label":"DocsSearchResult","slug":"module/cli/docssearchresult","group":"cli"},{"label":"FactsGatherResult","slug":"module/cli/factsgatherresult","group":"cli"},{"label":"GlobalFlags","slug":"module/cli/globalflags","group":"cli"},{"label":"InventoryListResult","slug":"module/cli/inventorylistresult","group":"cli"},{"label":"InventoryShowResult","slug":"module/cli/inventoryshowresult","group":"cli"},{"label":"OutputPlugin","slug":"module/cli/outputplugin","group":"cli"},{"label":"PlaybookRunResult","slug":"module/cli/playbookrunresult","group":"cli"},{"label":"PluginEntryView","slug":"module/cli/pluginentryview","group":"cli"},{"label":"PluginListResult","slug":"module/cli/pluginlistresult","group":"cli"},{"label":"PluginRegisterResult","slug":"module/cli/pluginregisterresult","group":"cli"},{"label":"RenderedTemplate","slug":"module/cli/renderedtemplate","group":"cli"},{"label":"RunReplayResult","slug":"module/cli/runreplayresult","group":"cli"},{"label":"TaskApplyOutcome","slug":"module/cli/taskapplyoutcome","group":"cli"},{"label":"VarsListResult","slug":"module/cli/varslistresult","group":"cli"},{"label":"VarsTraceResult","slug":"module/cli/varstraceresult","group":"cli"},{"label":"CliResult","slug":"module/cli/cliresult","group":"cli"},{"label":"getOutputPlugin","slug":"module/cli/getoutputplugin","group":"cli"},{"label":"getVersion","slug":"module/cli/getversion","group":"cli"},{"label":"listOutputPlugins","slug":"module/cli/listoutputplugins","group":"cli"},{"label":"main","slug":"module/cli/main","group":"cli"},{"label":"registerOutputPlugin","slug":"module/cli/registeroutputplugin","group":"cli"},{"label":"renderOutput","slug":"module/cli/renderoutput","group":"cli"},{"label":"runAgentCommand","slug":"module/cli/runagentcommand","group":"cli"},{"label":"runDocsCommand","slug":"module/cli/rundocscommand","group":"cli"},{"label":"runFactsCommand","slug":"module/cli/runfactscommand","group":"cli"},{"label":"runInventoryCommand","slug":"module/cli/runinventorycommand","group":"cli"},{"label":"runPlaybookCommand","slug":"module/cli/runplaybookcommand","group":"cli"},{"label":"runPluginCommand","slug":"module/cli/runplugincommand","group":"cli"},{"label":"runReplayCommand","slug":"module/cli/runreplaycommand","group":"cli"},{"label":"runVarsCommand","slug":"module/cli/runvarscommand","group":"cli"},{"label":"writeOut","slug":"module/cli/writeout","group":"cli"}],"deepExpand":true},{"label":"config","slug":"module/config","children":[{"label":"Config","slug":"module/config/config","group":"config"},{"label":"DirectoryVars","slug":"module/config/directoryvars","group":"config"},{"label":"IdempotencyWarning","slug":"module/config/idempotencywarning","group":"config"},{"label":"NormalizedInventory","slug":"module/config/normalizedinventory","group":"config"},{"label":"NormalizedPlaybook","slug":"module/config/normalizedplaybook","group":"config"},{"label":"NormalizedTask","slug":"module/config/normalizedtask","group":"config"},{"label":"ServeConfig","slug":"module/config/serveconfig","group":"config"},{"label":"TemplateRefProblem","slug":"module/config/templaterefproblem","group":"config"},{"label":"ZodError","slug":"module/config/zoderror","group":"config"},{"label":"DbBackend","slug":"module/config/dbbackend","group":"config"},{"label":"InventoryFormat","slug":"module/config/inventoryformat","group":"config"},{"label":"NormalizedPlaybookFile","slug":"module/config/normalizedplaybookfile","group":"config"},{"label":"RawInventory","slug":"module/config/rawinventory","group":"config"},{"label":"RawInventoryGroup","slug":"module/config/rawinventorygroup","group":"config"},{"label":"RawPlaybook","slug":"module/config/rawplaybook","group":"config"},{"label":"RawPlaybookFile","slug":"module/config/rawplaybookfile","group":"config"},{"label":"RawTask","slug":"module/config/rawtask","group":"config"},{"label":"ScratchStrategy","slug":"module/config/scratchstrategy","group":"config"},{"label":"TriggerSpec","slug":"module/config/triggerspec","group":"config"},{"label":"CanonicalTaskSchema","slug":"module/config/canonicaltaskschema","group":"config"},{"label":"InventoryGroupSchema","slug":"module/config/inventorygroupschema","group":"config"},{"label":"InventorySchema","slug":"module/config/inventoryschema","group":"config"},{"label":"KNOWN_NAMESPACES","slug":"module/config/known-namespaces","group":"config"},{"label":"PlaybookObject","slug":"module/config/playbookobject","group":"config"},{"label":"PlaybookSchema","slug":"module/config/playbookschema","group":"config"},{"label":"TaskSchema","slug":"module/config/taskschema","group":"config"},{"label":"TriggerSchema","slug":"module/config/triggerschema","group":"config"},{"label":"canonicalizeTask","slug":"module/config/canonicalizetask","group":"config"},{"label":"deepMerge","slug":"module/config/deepmerge","group":"config"},{"label":"detectInventoryFormat","slug":"module/config/detectinventoryformat","group":"config"},{"label":"lintPlaybookIdempotency","slug":"module/config/lintplaybookidempotency","group":"config"},{"label":"lintTemplateRefs","slug":"module/config/linttemplaterefs","group":"config"},{"label":"loadConfig","slug":"module/config/loadconfig","group":"config"},{"label":"loadInventory","slug":"module/config/loadinventory","group":"config"},{"label":"loadInventoryFile","slug":"module/config/loadinventoryfile","group":"config"},{"label":"loadPlaybook","slug":"module/config/loadplaybook","group":"config"},{"label":"loadPlaybookFile","slug":"module/config/loadplaybookfile","group":"config"},{"label":"normalizeInventory","slug":"module/config/normalizeinventory","group":"config"},{"label":"normalizePlaybook","slug":"module/config/normalizeplaybook","group":"config"},{"label":"normalizeTask","slug":"module/config/normalizetask","group":"config"},{"label":"resolveDirectoryVars","slug":"module/config/resolvedirectoryvars","group":"config"},{"label":"serializeInventory","slug":"module/config/serializeinventory","group":"config"},{"label":"serializePlaybook","slug":"module/config/serializeplaybook","group":"config"},{"label":"serializeTask","slug":"module/config/serializetask","group":"config"}],"deepExpand":true},{"label":"facts","slug":"module/facts","children":[{"label":"FactError","slug":"module/facts/facterror","group":"facts"},{"label":"FactsEngine","slug":"module/facts/factsengine","group":"facts"},{"label":"FactCache","slug":"module/facts/factcache","group":"facts"},{"label":"FactGatherer","slug":"module/facts/factgatherer","group":"facts"},{"label":"FactPlugin","slug":"module/facts/factplugin","group":"facts"},{"label":"FactsEngineOptions","slug":"module/facts/factsengineoptions","group":"facts"},{"label":"GatherOptions","slug":"module/facts/gatheroptions","group":"facts"},{"label":"ConnectionKind","slug":"module/facts/connectionkind","group":"facts"},{"label":"FactKey","slug":"module/facts/factkey","group":"facts"},{"label":"FactMap","slug":"module/facts/factmap","group":"facts"},{"label":"BUILTIN_GATHERERS","slug":"module/facts/builtin-gatherers","group":"facts"},{"label":"defaultFactsEngine","slug":"module/facts/defaultfactsengine","group":"facts"},{"label":"networkGatherer","slug":"module/facts/networkgatherer","group":"facts"},{"label":"osGatherer","slug":"module/facts/osgatherer","group":"facts"},{"label":"serviceGathererHttp","slug":"module/facts/servicegathererhttp","group":"facts"},{"label":"serviceGathererPosix","slug":"module/facts/servicegathererposix","group":"facts"},{"label":"createFactPlugin","slug":"module/facts/createfactplugin","group":"facts"},{"label":"createInMemoryFactCache","slug":"module/facts/createinmemoryfactcache","group":"facts"},{"label":"getDeclaredFactEntries","slug":"module/facts/getdeclaredfactentries","group":"facts"},{"label":"getDeclaredFactNames","slug":"module/facts/getdeclaredfactnames","group":"facts"},{"label":"getRegisteredFactPlugins","slug":"module/facts/getregisteredfactplugins","group":"facts"},{"label":"registerFactPlugin","slug":"module/facts/registerfactplugin","group":"facts"}],"deepExpand":true},{"label":"modules","slug":"module/modules","children":[{"label":"ModuleCollisionError","slug":"module/modules/modulecollisionerror","group":"modules"},{"label":"DescribeResult","slug":"module/modules/describeresult","group":"modules"},{"label":"Module","slug":"module/modules/module","group":"modules"},{"label":"ModuleContext","slug":"module/modules/modulecontext","group":"modules"},{"label":"ModuleResult","slug":"module/modules/moduleresult","group":"modules"},{"label":"ModuleSummary","slug":"module/modules/modulesummary","group":"modules"},{"label":"PluginScanEntry","slug":"module/modules/pluginscanentry","group":"modules"},{"label":"ResourceOptions","slug":"module/modules/resourceoptions","group":"modules"},{"label":"PluginType","slug":"module/modules/plugintype","group":"modules"},{"label":"ResolveResult","slug":"module/modules/resolveresult","group":"modules"},{"label":"addHostModule","slug":"module/modules/addhostmodule","group":"modules"},{"label":"blockinfileModule","slug":"module/modules/blockinfilemodule","group":"modules"},{"label":"commandModule","slug":"module/modules/commandmodule","group":"modules"},{"label":"configEditModule","slug":"module/modules/configeditmodule","group":"modules"},{"label":"copyModule","slug":"module/modules/copymodule","group":"modules"},{"label":"failModule","slug":"module/modules/failmodule","group":"modules"},{"label":"fileModule","slug":"module/modules/filemodule","group":"modules"},{"label":"getUrlModule","slug":"module/modules/geturlmodule","group":"modules"},{"label":"gitModule","slug":"module/modules/gitmodule","group":"modules"},{"label":"groupModule","slug":"module/modules/groupmodule","group":"modules"},{"label":"httpModule","slug":"module/modules/httpmodule","group":"modules"},{"label":"lineinfileModule","slug":"module/modules/lineinfilemodule","group":"modules"},{"label":"pkgModule","slug":"module/modules/pkgmodule","group":"modules"},{"label":"rawModule","slug":"module/modules/rawmodule","group":"modules"},{"label":"replaceModule","slug":"module/modules/replacemodule","group":"modules"},{"label":"scriptModule","slug":"module/modules/scriptmodule","group":"modules"},{"label":"serviceModule","slug":"module/modules/servicemodule","group":"modules"},{"label":"setFactModule","slug":"module/modules/setfactmodule","group":"modules"},{"label":"shellModule","slug":"module/modules/shellmodule","group":"modules"},{"label":"sqlModule","slug":"module/modules/sqlmodule","group":"modules"},{"label":"statModule","slug":"module/modules/statmodule","group":"modules"},{"label":"userModule","slug":"module/modules/usermodule","group":"modules"},{"label":"waitForModule","slug":"module/modules/waitformodule","group":"modules"},{"label":"buildResolutionTable","slug":"module/modules/buildresolutiontable","group":"modules"},{"label":"getModule","slug":"module/modules/getmodule","group":"modules"},{"label":"getModuleSummary","slug":"module/modules/getmodulesummary","group":"modules"},{"label":"listModules","slug":"module/modules/listmodules","group":"modules"},{"label":"loadModuleFromFile","slug":"module/modules/loadmodulefromfile","group":"modules"},{"label":"registerAllModules","slug":"module/modules/registerallmodules","group":"modules"},{"label":"registerModule","slug":"module/modules/registermodule","group":"modules"},{"label":"resolveModule","slug":"module/modules/resolvemodule","group":"modules"},{"label":"resource","slug":"module/modules/resource","group":"modules"},{"label":"scanAndRegister","slug":"module/modules/scanandregister","group":"modules"},{"label":"scanProject","slug":"module/modules/scanproject","group":"modules"},{"label":"searchModules","slug":"module/modules/searchmodules","group":"modules"},{"label":"setModuleMeta","slug":"module/modules/setmodulemeta","group":"modules"}],"deepExpand":true},{"label":"orchestrator","slug":"module/orchestrator","children":[{"label":"CronScheduler","slug":"module/orchestrator/cronscheduler","group":"orchestrator"},{"label":"Engine","slug":"module/orchestrator/engine","group":"orchestrator"},{"label":"CronSchedulerOptions","slug":"module/orchestrator/cronscheduleroptions","group":"orchestrator"},{"label":"Enqueuer","slug":"module/orchestrator/enqueuer","group":"orchestrator"},{"label":"HostOutcome","slug":"module/orchestrator/hostoutcome","group":"orchestrator"},{"label":"JobBody","slug":"module/orchestrator/jobbody","group":"orchestrator"},{"label":"ParsedCron","slug":"module/orchestrator/parsedcron","group":"orchestrator"},{"label":"PlanTask","slug":"module/orchestrator/plantask","group":"orchestrator"},{"label":"RouteContext","slug":"module/orchestrator/routecontext","group":"orchestrator"},{"label":"RunRecord","slug":"module/orchestrator/runrecord","group":"orchestrator"},{"label":"SchedulerApi","slug":"module/orchestrator/schedulerapi","group":"orchestrator"},{"label":"ServerHandle","slug":"module/orchestrator/serverhandle","group":"orchestrator"},{"label":"ServerOptions","slug":"module/orchestrator/serveroptions","group":"orchestrator"},{"label":"ShutdownOptions","slug":"module/orchestrator/shutdownoptions","group":"orchestrator"},{"label":"TargetDescriptor","slug":"module/orchestrator/targetdescriptor","group":"orchestrator"},{"label":"TriggerSuccess","slug":"module/orchestrator/triggersuccess","group":"orchestrator"},{"label":"WebhookRouteContext","slug":"module/orchestrator/webhookroutecontext","group":"orchestrator"},{"label":"ActionType","slug":"module/orchestrator/actiontype","group":"orchestrator"},{"label":"RunStatus","slug":"module/orchestrator/runstatus","group":"orchestrator"},{"label":"TransportKind","slug":"module/orchestrator/transportkind","group":"orchestrator"},{"label":"ValidationError","slug":"module/orchestrator/validationerror","group":"orchestrator"},{"label":"ValidationResult","slug":"module/orchestrator/validationresult","group":"orchestrator"},{"label":"ValidationSuccess","slug":"module/orchestrator/validationsuccess","group":"orchestrator"},{"label":"VALID_JOB_TYPES","slug":"module/orchestrator/valid-job-types","group":"orchestrator"},{"label":"createServer","slug":"module/orchestrator/createserver","group":"orchestrator"},{"label":"installSignalHandlers","slug":"module/orchestrator/installsignalhandlers","group":"orchestrator"},{"label":"isActionType","slug":"module/orchestrator/isactiontype","group":"orchestrator"},{"label":"isValid","slug":"module/orchestrator/isvalid","group":"orchestrator"},{"label":"mountRoutes","slug":"module/orchestrator/mountroutes","group":"orchestrator"},{"label":"mountWebhooks","slug":"module/orchestrator/mountwebhooks","group":"orchestrator"},{"label":"nextOccurrence","slug":"module/orchestrator/nextoccurrence","group":"orchestrator"},{"label":"parseExpr","slug":"module/orchestrator/parseexpr","group":"orchestrator"},{"label":"startServe","slug":"module/orchestrator/startserve","group":"orchestrator"},{"label":"validateJobBody","slug":"module/orchestrator/validatejobbody","group":"orchestrator"}],"deepExpand":true},{"label":"store","slug":"module/store","children":[{"label":"ProjectsRepository","slug":"module/store/projectsrepository","group":"store"},{"label":"RunsRepository","slug":"module/store/runsrepository","group":"store"},{"label":"SchedulesRepository","slug":"module/store/schedulesrepository","group":"store"},{"label":"TracesRepository","slug":"module/store/tracesrepository","group":"store"},{"label":"WriteQueue","slug":"module/store/writequeue","group":"store"},{"label":"CreateProjectInput","slug":"module/store/createprojectinput","group":"store"},{"label":"CreateRunInput","slug":"module/store/createruninput","group":"store"},{"label":"CreateScheduleInput","slug":"module/store/createscheduleinput","group":"store"},{"label":"CreateTraceInput","slug":"module/store/createtraceinput","group":"store"},{"label":"OpenStoreOptions","slug":"module/store/openstoreoptions","group":"store"},{"label":"PatchRun","slug":"module/store/patchrun","group":"store"},{"label":"PatchSchedule","slug":"module/store/patchschedule","group":"store"},{"label":"PatchTrace","slug":"module/store/patchtrace","group":"store"},{"label":"Project","slug":"module/store/project","group":"store"},{"label":"ProjectsRepo","slug":"module/store/projectsrepo","group":"store"},{"label":"Run","slug":"module/store/run","group":"store"},{"label":"RunsRepo","slug":"module/store/runsrepo","group":"store"},{"label":"RunTrace","slug":"module/store/runtrace","group":"store"},{"label":"Schedule","slug":"module/store/schedule","group":"store"},{"label":"SchedulesRepo","slug":"module/store/schedulesrepo","group":"store"},{"label":"Store","slug":"module/store/store","group":"store"},{"label":"TracesRepo","slug":"module/store/tracesrepo","group":"store"},{"label":"UpdateProjectPatch","slug":"module/store/updateprojectpatch","group":"store"},{"label":"REGISTRY_DB_NAME","slug":"module/store/registry-db-name","group":"store"},{"label":"openStore","slug":"module/store/openstore","group":"store"},{"label":"resolveRegistryPath","slug":"module/store/resolveregistrypath","group":"store"}],"deepExpand":true},{"label":"transport","slug":"module/transport","children":[{"label":"AbortError","slug":"module/transport/aborterror","group":"transport"},{"label":"HttpApiConnection","slug":"module/transport/httpapiconnection","group":"transport"},{"label":"LocalConnection","slug":"module/transport/localconnection","group":"transport"},{"label":"NetworkSshConnection","slug":"module/transport/networksshconnection","group":"transport"},{"label":"SshConnection","slug":"module/transport/sshconnection","group":"transport"},{"label":"TimeoutError","slug":"module/transport/timeouterror","group":"transport"},{"label":"ApplyOptions","slug":"module/transport/applyoptions","group":"transport"},{"label":"ApplyResult","slug":"module/transport/applyresult","group":"transport"},{"label":"BaseConnectionOptions","slug":"module/transport/baseconnectionoptions","group":"transport"},{"label":"ConfigDiff","slug":"module/transport/configdiff","group":"transport"},{"label":"Connection","slug":"module/transport/connection","group":"transport"},{"label":"ConnectionFacts","slug":"module/transport/connectionfacts","group":"transport"},{"label":"Credentials","slug":"module/transport/credentials","group":"transport"},{"label":"ExecOptions","slug":"module/transport/execoptions","group":"transport"},{"label":"ExecResult","slug":"module/transport/execresult","group":"transport"},{"label":"HealthStatus","slug":"module/transport/healthstatus","group":"transport"},{"label":"HttpApiConnectionOptions","slug":"module/transport/httpapiconnectionoptions","group":"transport"},{"label":"HttpApiRequest","slug":"module/transport/httpapirequest","group":"transport"},{"label":"HttpGrpcCapability","slug":"module/transport/httpgrpccapability","group":"transport"},{"label":"LocalConnectionOptions","slug":"module/transport/localconnectionoptions","group":"transport"},{"label":"NetworkConnectionOptions","slug":"module/transport/networkconnectionoptions","group":"transport"},{"label":"ResilienceConfig","slug":"module/transport/resilienceconfig","group":"transport"},{"label":"RetryConfig","slug":"module/transport/retryconfig","group":"transport"},{"label":"SshConnectionOptions","slug":"module/transport/sshconnectionoptions","group":"transport"},{"label":"VendorDriver","slug":"module/transport/vendordriver","group":"transport"},{"label":"ConnectionOptions","slug":"module/transport/connectionoptions","group":"transport"},{"label":"CoreExec","slug":"module/transport/coreexec","group":"transport"},{"label":"HttpAuth","slug":"module/transport/httpauth","group":"transport"},{"label":"Server","slug":"module/transport/server","group":"transport"},{"label":"DEFAULT_CONCURRENCY","slug":"module/transport/default-concurrency","group":"transport"},{"label":"DEFAULT_RETRY_CONFIG","slug":"module/transport/default-retry-config","group":"transport"},{"label":"DEFAULT_TIMEOUT_MS","slug":"module/transport/default-timeout-ms","group":"transport"},{"label":"IOS_DRIVER","slug":"module/transport/ios-driver","group":"transport"},{"label":"createConnection","slug":"module/transport/createconnection","group":"transport"},{"label":"createResilientRunner","slug":"module/transport/createresilientrunner","group":"transport"},{"label":"diffConfigs","slug":"module/transport/diffconfigs","group":"transport"},{"label":"isFatalError","slug":"module/transport/isfatalerror","group":"transport"},{"label":"normalizeConfig","slug":"module/transport/normalizeconfig","group":"transport"},{"label":"planCommit","slug":"module/transport/plancommit","group":"transport"},{"label":"resolveRetryConfig","slug":"module/transport/resolveretryconfig","group":"transport"},{"label":"verifyHostKey","slug":"module/transport/verifyhostkey","group":"transport"}],"deepExpand":true},{"label":"util/runtime","slug":"module/util-runtime","children":[{"label":"RuntimeInfo","slug":"module/util-runtime/runtimeinfo","group":"util/runtime"},{"label":"RuntimeName","slug":"module/util-runtime/runtimename","group":"util/runtime"},{"label":"detectRuntime","slug":"module/util-runtime/detectruntime","group":"util/runtime"}],"deepExpand":true},{"label":"Source Files","slug":"source"}],"currentSlug":"source/src/config/schema-ts","basePath":"/","collapsibleGroups":[]}}</script><script type="module">(function(){var map={"theme-toggle":"/_islands/theme-toggle-RQJWK6UH.js","settings":"/_islands/settings-YODNV3SD.js","code-viewer":"/_islands/code-viewer-U3WRLQLX.js","embed":"/_islands/embed-HOMSSC3V.js","playground":"/_islands/playground-KT5R4UYJ.js","tabs":"/_islands/tabs-NRSQKCSU.js","sidebar":"/_islands/sidebar-6ULZ3KUU.js","mobile-nav":"/_islands/mobile-nav-CEVIJOY5.js","toc":"/_islands/toc-OVW2UK3I.js","toc-mobile":"/_islands/toc-mobile-IGCYO5QO.js","cmdk":"/_islands/cmdk-J5HVDM6W.js","code-tabs":"/_islands/code-tabs-DXMGOVSV.js","copy-btn":"/_islands/copy-btn-RPMIR26R.js","copy-page":"/_islands/copy-page-IM7ZKESR.js"};var seen=new Set();document.querySelectorAll('[data-island]').forEach(function(el){seen.add(el.getAttribute('data-island'));});seen.forEach(function(name){var src=map[name];if(src){import(src);}});})();</script><script>(function(){function flash(h){var b=h.querySelector('[data-heading-anchor]');if(!b)return;b.setAttribute('data-copied','');window.setTimeout(function(){b.removeAttribute('data-copied');},3000);}function onClick(e){var t=e.target;if(!t||!t.closest)return;if(t.closest('a'))return;var h=t.closest('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');if(!h)return;var id=h.id;if(!id)return;var iconOnly=!!t.closest('[data-heading-anchor]');if(!iconOnly){if(location.hash.slice(1)===id){h.scrollIntoView();}else{location.hash=id;}}try{var url=location.origin+location.pathname+location.search+'#'+id;if(navigator.clipboard){navigator.clipboard.writeText(url).then(function(){flash(h);}).catch(function(){});}}catch(_){}}document.addEventListener('click',onClick);}());</script><script>(function(){var IDLE=700;var timers=new WeakMap();function onScroll(e){var el=e.target;if(el===document||el===window)el=document.documentElement;if(!el||!el.classList)return;el.classList.add('clean-scrolling');var prev=timers.get(el);if(prev)window.clearTimeout(prev);timers.set(el,window.setTimeout(function(){el.classList.remove('clean-scrolling');},IDLE));}document.addEventListener('scroll',onScroll,true);}());</script></body></html>

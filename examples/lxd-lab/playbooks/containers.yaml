@@ -1,0 +1,99 @@
+  # Provision the lxdbr0 bridge and launch db/nginx/app containers on lxdhost.
+- name: Create LXD bridge and launch workloads
+  hosts: lxdhost
+  tasks:
+    - name: Create the lxdbr0 bridge with fixed subnet (idempotent)
+      shell:
+        run_mode: always
+        cmd: >-
+          sudo lxc network show lxdbr0 >/dev/null 2>&1 || sudo lxc network create lxdbr0 ipv4.address=10.200.100.1/24 ipv4.nat=true ipv6.address=none
+
+    - name: Attach lxdbr0 to the default profile (idempotent)
+      shell:
+        run_mode: always
+        cmd: >-
+          sudo lxc profile show default | grep -q 'eth0:' || sudo lxc profile device add default eth0 nic nictype=bridged parent=lxdbr0
+
+    - name: Ensure default profile has a root disk (idempotent)
+      shell:
+        run_mode: always
+        cmd: >-
+          sudo lxc profile show default | grep -q 'root:' || sudo lxc profile device add default root disk pool=default path=/
+
+    - name: Write shared cloud-init user-data (rolecall user + ssh key)
+      copy:
+        dest: /tmp/cloud-init.yaml
+        content: |
+          #cloud-config
+          users:
+            - name: rolecall
+              sudo: ALL=(ALL) NOPASSWD:ALL
+              ssh_authorized_keys:
+                - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHhTiU3BL2fNTlUe7l0kgUA5c6sEV3cNwDPqQUsu2M47 rolecall-lab
+          package_update: true
+
+    - name: Write db network-config (static IP .2)
+      copy:
+        dest: /tmp/net-db.yaml
+        content: |
+          version: 2
+          ethernets:
+            eth0:
+              addresses: ["10.200.100.2/24"]
+              gateway4: 10.200.100.1
+              nameservers:
+                addresses: [10.200.100.1]
+
+    - name: Write nginx network-config (static IP .3)
+      copy:
+        dest: /tmp/net-nginx.yaml
+        content: |
+          version: 2
+          ethernets:
+            eth0:
+              addresses: ["10.200.100.3/24"]
+              gateway4: 10.200.100.1
+              nameservers:
+                addresses: [10.200.100.1]
+
+    - name: Write app network-config (static IP .4)
+      copy:
+        dest: /tmp/net-app.yaml
+        content: |
+          version: 2
+          ethernets:
+            eth0:
+              addresses: ["10.200.100.4/24"]
+              gateway4: 10.200.100.1
+              nameservers:
+                addresses: [10.200.100.1]
+
+    - name: Launch the postgres container (db)
+      shell:
+        run_mode: always
+        timeout_ms: 300000
+        cmd:
+          $concat:
+            - "sudo lxc list db | grep -q RUNNING || sudo lxc launch "
+            - $var: vars.image_map.alma8
+            - " db --config user.user-data=\"$(cat /tmp/cloud-init.yaml)\" --config user.network-config=\"$(cat /tmp/net-db.yaml)\""
+
+    - name: Launch the nginx container
+      shell:
+        run_mode: always
+        timeout_ms: 300000
+        cmd:
+          $concat:
+            - "sudo lxc list nginx | grep -q RUNNING || sudo lxc launch "
+            - $var: vars.image_map.ubuntu24
+            - " nginx --config user.user-data=\"$(cat /tmp/cloud-init.yaml)\" --config user.network-config=\"$(cat /tmp/net-nginx.yaml)\""
+
+    - name: Launch the app container
+      shell:
+        run_mode: always
+        timeout_ms: 300000
+        cmd:
+          $concat:
+            - "sudo lxc list app | grep -q RUNNING || sudo lxc launch "
+            - $var: vars.image_map.ubuntu24
+            - " app --config user.user-data=\"$(cat /tmp/cloud-init.yaml)\" --config user.network-config=\"$(cat /tmp/net-app.yaml)\""

@@ -1,0 +1,17 @@
+# Variable manifest for the nginx-baseline playbook.
+#
+# nginx_port / nginx_worker_processes are supplied by inventory (group_vars/web.yaml and
+# host_vars/web1.yaml). They are declared here so var_strict validates the references in
+# playbooks/site.yaml. Defaults mirror the inventory values for documentation/UI purposes.
+- name: nginx_port
+  kind: var
+  source: declared
+  description: Listen port for the baseline vhost (group_vars/web.yaml).
+  type: number
+  default: 80
+- name: nginx_worker_processes
+  kind: var
+  source: declared
+  description: Worker processes override (host_vars/web1.yaml).
+  type: number
+  default: 4
