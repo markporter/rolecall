@@ -2,21 +2,11 @@
 title: Install
 ---
 
-RoleCall is dual-runtime config management and orchestration. This page covers how to get the tool onto a host where you can actually run it, then points at the two usual routes people take: straight from source while contributing, or as a published package from npm.
+RoleCall is dual-runtime config management and orchestration. This page covers how to get the tool onto a host where you can actually run it, then points at the two usual routes people take: the published npm package for normal use, or a source checkout while contributing.
 
 ## Requirements
 
 Two runtimes, two channels. For the **npm install** the requirement is Node.js 22.19.0 or newer, and no Bun is needed. For compiled binaries and for running from a source checkout you want [Bun](https://bun.sh) 1.4.2 or newer. The engines floor exists because p-retry 8 requires Node 22, `node:sqlite` (used by the Node SQLite PAL) is unflagged since 22.13, and Node 20 is end-of-life.
-
-## Installing for local development
-
-If you are contributing or want to run RoleCall straight out of a checkout, install dependencies from the lockfile:
-
-```sh
-bun install          # installs deps from bun.lock (--frozen-lockfile in CI)
-```
-
-That fills `node_modules` and leaves you able to invoke the CLI directly from `src/cli/index.ts` through the `bin/rolecall.js` shim described next. In CI the same effect comes from `bun install --frozen-lockfile`, which refuses to rewrite the lockfile instead of trusting it.
 
 ## Installing the published package
 
@@ -33,7 +23,17 @@ npx rolecall --help
 bun add rolecall
 ```
 
-What npm ships is a Node bundle (`lib/cli.js`) built by `bun run build:js` (`node scripts/build-js.mjs`); `prepack` runs that build automatically so the baked version always matches the release. Either install route makes the `rolecall` command reachable wherever you call it. Head over to [Quickstart](/guide/quickstart) for what to type after installation finishes.
+What npm ships is a Node bundle (`lib/cli.js`) built by `bun run build:js` (`node scripts/build-js.mjs`); `prepack` runs that build automatically so the baked version always matches the release. Either install route makes the `rolecall` command reachable wherever you call it. Head over to [Quickstart](/guide/quickstart) for what to type after installation finishes. The other channels, including standalone binaries attached to each GitHub Release, are covered in [Ways to run RoleCall](/deployment/ways-to-run).
+
+## Installing for local development
+
+If you are contributing or want to run RoleCall straight out of a checkout, install dependencies from the lockfile:
+
+```sh
+bun install          # installs deps from bun.lock (--frozen-lockfile in CI)
+```
+
+That fills `node_modules` and leaves you able to invoke the CLI directly from `src/cli/index.ts` through the `bin/rolecall.js` shim described next. In CI the same effect comes from `bun install --frozen-lockfile`, which refuses to rewrite the lockfile instead of trusting it.
 
 ## Running from source
 
