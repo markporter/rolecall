@@ -30,7 +30,13 @@ function daemonReachable(bin: string): boolean {
     return false;
   }
 }
-const runtime: "docker" | null = daemonReachable("docker") ? "docker" : null;
+// The containerized sshd path is OPT-IN: set ROLECALL_SSH_INTEGRATION=docker to
+// run against a real container. By default the suite uses the reusable in-process
+// createSshSim() simulator so it stays deterministic everywhere — GitHub's ubuntu
+// runners ship a reachable docker daemon, which previously auto-selected the
+// container path and failed host-key verification there.
+const runtime: "docker" | null =
+  process.env.ROLECALL_SSH_INTEGRATION === "docker" && daemonReachable("docker") ? "docker" : null;
 
 const scriptPath = join(import.meta.dir, "..", "..", "scripts", "ssh-sim.sh");
 const canDocker = runtime !== null && existsSync(scriptPath);

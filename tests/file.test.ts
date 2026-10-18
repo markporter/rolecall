@@ -7,7 +7,7 @@
 // contract (all six members) without any casting.
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, statSync, readlinkSync, writeFileSync, readFileSync, existsSync } from "node:fs";
+import { mkdtempSync, rmSync, statSync, chmodSync, readlinkSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Connection, ExecResult } from "../src/transport/connection";
@@ -129,6 +129,11 @@ describe("file module", () => {
   test("applies mode to a directory and then stays idempotent", async () => {
     const p = join(workdir, "mode-dir");
     await run({ path: p, state: "directory" });
+    // Normalize to a known mode first: mkdir inherits the runner's umask, so the
+    // freshly created mode varies by environment (0755 under a 022 umask, 0700
+    // under 077). Starting from an explicit 0700 guarantees the 0755 apply below
+    // is a real change on every runner.
+    chmodSync(p, 0o700);
 
     const applied = await run({ path: p, state: "directory", mode: "0755" });
     expect(applied.changed).toBe(true);
