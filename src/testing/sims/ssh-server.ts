@@ -143,6 +143,11 @@ export async function createSshSim(opts: SshSimOptions = {}): Promise<SshSimHand
           });
         });
         client.on("close", () => {});
+        // The test client tears the connection down at teardown; ssh2's server
+        // side can emit a late protocol error (e.g. KEY_EXCHANGE_FAILED) while
+        // unwinding. Swallow it on the per-connection object so it never becomes
+        // an unhandled error that fails the whole `bun test` run.
+        client.on("error", () => {});
       },
     );
     server = srv;
