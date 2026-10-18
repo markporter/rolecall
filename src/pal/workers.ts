@@ -108,7 +108,7 @@ class NodeThreadsDispatcher implements JobDispatcher {
     const readySignals: Promise<void>[] = [];
     for (let i = 0; i < this.count; i++) {
       const worker = new Worker(
-        `data:text/javascript;base64,${Buffer.from(BOOTSTRAP_SRC).toString("base64")}`,
+        new URL(`data:text/javascript;base64,${Buffer.from(BOOTSTRAP_SRC).toString("base64")}`),
       );
       this.#created += 1;
       this.#workers.push(worker);
