@@ -1,0 +1,11 @@
+- name: includer
+  hosts: web
+  tasks:
+    - name: before
+      module: ping
+      args: {}
+    - name: include directive
+      include_tasks: tasks.include.yaml
+    - name: after
+      module: ping
+      args: {}

@@ -1,0 +1,13 @@
+- name: Tagged demo
+  hosts: all
+  tasks:
+    - name: tagged task
+      module: debug
+      args:
+        msg: tagged
+      tags:
+        - web
+    - name: untagged task
+      module: debug
+      args:
+        msg: untagged

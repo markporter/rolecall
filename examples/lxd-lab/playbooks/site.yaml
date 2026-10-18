@@ -1,0 +1,434 @@
+  # Full lab provisioning in one run: bootstrap + launch containers on lxdhost,
+  # then configure each target. RoleCall has no include mechanism, so all tasks are
+  # inlined here in order; non-lxdhost tasks are guarded so they skip `targets`.
+- name: Provision the LXD test environment end-to-end
+  hosts:
+    - lxdhost
+    - targets
+  tasks:
+    - name: Install the lxd snap
+      shell:
+        cmd: sudo snap install lxd
+        creates: /snap/bin/lxd
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "lxdhost"
+    - name: Add current user to the lxd group
+      shell:
+        run_mode: always
+        cmd: sudo usermod -aG lxd $USER || true
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "lxdhost"
+    - name: Verify LXD is installed
+      shell:
+        run_mode: always
+        cmd: sudo lxd --version
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "lxdhost"
+    - name: Write the LXD preseed (dir pool + lxdbr0 bridge)
+      copy:
+        dest: /tmp/lxd-preseed.yaml
+        content: |
+          storage_pools:
+            - name: default
+              driver: dir
+          networks:
+            - name: lxdbr0
+              type: bridge
+              config:
+                ipv4.address: 10.200.100.1/24
+                ipv4.nat: "true"
+                ipv6.address: none
+          profiles:
+            - name: default
+              devices:
+                eth0:
+                  name: eth0
+                  nictype: bridged
+                  parent: lxdbr0
+                  type: nic
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "lxdhost"
+    - name: Apply the preseed once (idempotent)
+      shell:
+        run_mode: always
+        cmd: sudo lxc network show lxdbr0 >/dev/null 2>&1 || sudo lxc init --preseed /tmp/lxd-preseed.yaml
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "lxdhost"
+    - name: Write shared cloud-init user-data (rolecall user + ssh key)
+      copy:
+        dest: /tmp/cloud-init.yaml
+        content: |
+          #cloud-config
+          users:
+            - name: rolecall
+              sudo: ALL=(ALL) NOPASSWD:ALL
+              ssh_authorized_keys:
+                - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHhTiU3BL2fNTlUe7l0kgUA5c6sEV3cNwDPqQUsu2M47 rolecall-lab
+          package_update: true
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "lxdhost"
+    - name: Write db network-config (static IP .2)
+      copy:
+        dest: /tmp/net-db.yaml
+        content: |
+          version: 2
+          ethernets:
+            eth0:
+              addresses: ["10.200.100.2/24"]
+              gateway4: 10.200.100.1
+              nameservers:
+                addresses: [10.200.100.1]
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "lxdhost"
+    - name: Write nginx network-config (static IP .3)
+      copy:
+        dest: /tmp/net-nginx.yaml
+        content: |
+          version: 2
+          ethernets:
+            eth0:
+              addresses: ["10.200.100.3/24"]
+              gateway4: 10.200.100.1
+              nameservers:
+                addresses: [10.200.100.1]
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "lxdhost"
+    - name: Write app network-config (static IP .4)
+      copy:
+        dest: /tmp/net-app.yaml
+        content: |
+          version: 2
+          ethernets:
+            eth0:
+              addresses: ["10.200.100.4/24"]
+              gateway4: 10.200.100.1
+              nameservers:
+                addresses: [10.200.100.1]
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "lxdhost"
+    - name: Launch the postgres container (db)
+      shell:
+        run_mode: always
+        cmd:
+          $concat:
+            - "sudo lxc list db | grep -q RUNNING || sudo lxc launch "
+            - $var: vars.image_map.alma8
+            - " db --config user.user-data=\"$(cat /tmp/cloud-init.yaml)\" --config user.network-config=\"$(cat /tmp/net-db.yaml)\""
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "lxdhost"
+    - name: Launch the nginx container
+      shell:
+        run_mode: always
+        cmd:
+          $concat:
+            - "sudo lxc list nginx | grep -q RUNNING || sudo lxc launch "
+            - $var: vars.image_map.ubuntu24
+            - " nginx --config user.user-data=\"$(cat /tmp/cloud-init.yaml)\" --config user.network-config=\"$(cat /tmp/net-nginx.yaml)\""
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "lxdhost"
+    - name: Launch the app container
+      shell:
+        run_mode: always
+        cmd:
+          $concat:
+            - "sudo lxc list app | grep -q RUNNING || sudo lxc launch "
+            - $var: vars.image_map.ubuntu24
+            - " app --config user.user-data=\"$(cat /tmp/cloud-init.yaml)\" --config user.network-config=\"$(cat /tmp/net-app.yaml)\""
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "lxdhost"
+    - name: Enable the postgresql:16 AppStream stream
+      shell:
+        run_mode: always
+        cmd: sudo dnf module enable -y postgresql:16
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "db"
+    - name: Install postgresql-server
+      shell:
+        cmd: sudo dnf install -y postgresql-server
+        creates: /usr/bin/psql
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "db"
+    - name: Initialize the PostgreSQL data directory
+      shell:
+        run_mode: always
+        cmd: sudo test -d /var/lib/pgsql/data/base || sudo postgresql-setup --initdb
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "db"
+    - name: Allow remote connections (listen_addresses = '*')
+      config_edit:
+        path: /var/lib/pgsql/data/postgresql.conf
+        format: ini
+        key: listen_addresses
+        value: '''*'''
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "db"
+      become: true
+    - name: Permit lab-subnet connections in pg_hba.conf
+      blockinfile:
+        path: /var/lib/pgsql/data/pg_hba.conf
+        insertafter: EOF
+        block: |
+          # RoleCall-managed: allow the lab subnet over md5
+          host all all 10.200.100.0/24 md5
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "db"
+      become: true
+    - name: Start and enable PostgreSQL
+      service:
+        name: postgresql
+        state: started
+        enabled: true
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "db"
+    - name: Create the appuser database role
+      shell:
+        run_mode: always
+        cmd:
+          $concat:
+            - "sudo -u postgres psql -tc \"SELECT 1 FROM pg_roles WHERE rolname='appuser'\" | grep -q 1 || sudo -u postgres psql -c \"CREATE ROLE appuser LOGIN PASSWORD '"
+            - $var: vars.app_db_password
+            - "';\""
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "db"
+    - name: Create the appdb database owned by appuser
+      shell:
+        run_mode: always
+        cmd: sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='appdb'" | grep -q 1 || sudo -u postgres psql -c "CREATE DATABASE appdb OWNER appuser;"
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "db"
+    - name: Install nginx
+      shell:
+        cmd: sudo apt-get update && sudo apt-get install -y nginx
+        creates: /usr/sbin/nginx
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "nginx"
+    - name: Remove the default nginx site
+      shell:
+        run_mode: always
+        cmd: sudo rm -f /etc/nginx/sites-enabled/default
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "nginx"
+    - name: Write the app reverse-proxy site
+      copy:
+        dest: /etc/nginx/sites-enabled/app.conf
+        content: |
+          server {
+              listen 80;
+              server_name _;
+              location / {
+                  proxy_pass http://10.200.100.4:3000;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+              }
+          }
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "nginx"
+      become: true
+    - name: Validate the nginx configuration
+      shell:
+        run_mode: always
+        cmd: sudo nginx -t
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "nginx"
+    - name: Start and enable nginx
+      service:
+        name: nginx
+        state: started
+        enabled: true
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "nginx"
+    - name: Reload nginx to activate the reverse-proxy site
+      shell:
+        run_mode: always
+        cmd: sudo systemctl reload nginx || sudo systemctl restart nginx
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "nginx"
+    - name: Install nodejs and npm
+      shell:
+        cmd: sudo apt-get update && sudo apt-get install -y nodejs npm
+        creates: /usr/bin/node
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "app"
+    - name: Ensure the application directory exists
+      shell:
+        run_mode: always
+        cmd: sudo mkdir -p /opt/rolecall-app
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "app"
+    - name: Install the pg database driver for the app
+      shell:
+        cmd: sudo npm install pg --prefix /opt/rolecall-app
+        creates: /opt/rolecall-app/node_modules/pg
+        timeout_ms: 300000
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "app"
+    - name: Deploy the sample application code
+      copy:
+        dest: /opt/rolecall-app/app.js
+        content: |-
+          // Sample application served behind the nginx reverse proxy on the `app` host.
+          //
+          // Runs on port 3000 and talks to PostgreSQL using process env vars (PGHOST /
+          // PGDATABASE / PGUSER / PGPASSWORD). The bundled `pg` driver is optional: if it
+          // cannot be required we log a diagnostic and still serve `/health`, so the app
+          // stays reachable for the proxy smoke-test even without a working database.
+          //
+          // Deployed by configure.yaml onto /opt/rolecall-app/app.js via the RoleCall `file` module.
+
+          const http = require('http');
+
+          const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
+
+          // Optional native-ish driver; degrade gracefully when absent (apt nodejs does
+          // not ship `pg`). A missing require() must never crash the process at load time.
+          let pg;
+          try {
+            // eslint-disable-next-line global-require
+            pg = require('pg');
+          } catch (err) {
+            console.error('[app] pg driver unavailable:', err.message);
+            pg = null;
+          }
+
+          const dbConfig = {
+            host: process.env.PGHOST || '10.200.100.2',
+            port: Number(process.env.PGPORT) || 5432,
+            database: process.env.PGDATABASE || 'appdb',
+            username: process.env.PGUSER || 'appuser',
+            password: process.env.PGPASSWORD || '',
+          };
+
+          async function fetchRow() {
+            if (!pg) {
+              return { ok: false, error: 'pg driver not installed', pg: null };
+            }
+            const client = new pg.Client(dbConfig);
+            try {
+              await client.connect();
+              const res = await client.query('SELECT now() AS current_time, $1::text AS connected_as', [
+                dbConfig.username,
+              ]);
+              return { ok: true, pg: res.rows[0] };
+            } catch (err) {
+              return { ok: false, error: String(err.message), pg: null };
+            } finally {
+              await client.end().catch(() => undefined);
+            }
+          }
+
+          const server = http.createServer(async (req, res) => {
+            const send = (status, obj) => {
+              const body = JSON.stringify(obj);
+              res.writeHead(status, { 'Content-Type': 'application/json' });
+              res.end(body);
+            };
+
+            if (req.url === '/health') {
+              return send(200, { ok: true });
+            }
+
+            if (req.url === '/' || req.url.startsWith('/api')) {
+              const result = await fetchRow();
+              return send(result.ok ? 200 : 503, result);
+            }
+
+            send(404, { ok: false, error: 'not found' });
+          });
+
+          server.listen(PORT, () => {
+            console.log(`[app] listening on port ${PORT}`);
+          });
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "app"
+      become: true
+    - name: Install the rolecall-app systemd unit
+      copy:
+        dest: /etc/systemd/system/rolecall-app.service
+        content:
+          $concat:
+            - "[Unit]\n    Description=Rolecall LXD lab Node app\n    After=network.target\n[Service]\n    Type=simple\n    WorkingDirectory=/opt/rolecall-app\n    ExecStart=/usr/bin/node /opt/rolecall-app/app.js\n    Environment=PGHOST=10.200.100.2\n    Environment=PGDATABASE=appdb\n    Environment=PGUSER=appuser\n    Environment=PGPASSWORD="
+            - $var: vars.app_db_password
+            - "\nRestart=on-failure\nRestartSec=3\n[Install]\n    WantedBy=multi-user.target\n"
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "app"
+      become: true
+    - name: Reload systemd after installing the unit
+      shell:
+        run_mode: always
+        cmd: sudo systemctl daemon-reload
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "app"
+    - name: Start and enable rolecall-app
+      service:
+        name: rolecall-app
+        state: started
+        enabled: true
+      when:
+        $eq:
+          - $var: vars.rolecall_role
+          - "app"
+      become: true

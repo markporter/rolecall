@@ -1,0 +1,26 @@
+- hosts: [web]
+  roles: [nginx]
+  vars:
+    nginx_server_tokens: "off"
+    nginx_remove_default_vhost: true
+    nginx_extra_http_options: |
+      gzip on;
+      gzip_types text/plain text/css application/json application/javascript;
+    nginx_vhosts:
+      - listen: "443 ssl"
+        server_name: "site1.example.com"
+        root: "/var/www/site1"
+        index: "index.html index.htm"
+        ssl_certificate: "/etc/nginx/ssl/nginx.crt"
+        ssl_certificate_key: "/etc/nginx/ssl/nginx.key"
+        filename: "site1.conf"
+      - listen: "80"
+        server_name: "site2.example.com"
+        proxy_pass: "http://127.0.0.1:8080"
+        filename: "site2.conf"
+  tasks:
+    - name: verify config on target
+      become: true
+      shell:
+        command: "nginx -t"
+        run_mode: readonly

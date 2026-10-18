@@ -1,0 +1,28 @@
+- name: Configure web servers
+  hosts: web
+  vars:
+    http_port: 80
+  tasks:
+    - name: Install nginx
+      module: apt
+      args:
+        name: nginx
+        state: present
+    - name: Start nginx
+      module: service
+      args:
+        name: nginx
+        state: started
+      notify: restart nginx
+    - name: Write config
+      module: copy
+      args:
+        src: nginx.conf
+        dest: /etc/nginx/nginx.conf
+      when: rolecall_os_family == "Debian"
+      loop:
+        - a
+        - b
+  trigger:
+    type: cron
+    spec: "0 2 * * *"

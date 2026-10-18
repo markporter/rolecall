@@ -1,0 +1,40 @@
+.omo
+.codegraph
+.opencode
+
+# --- Runtime dependencies (Bun / Node) ---
+node_modules/
+
+# --- Build output ---
+dist/
+lib/
+*.tsbuildinfo
+
+# --- Logs ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Test coverage ---
+coverage/
+
+# --- Temp / scratch ---
+tmp/
+temp/
+
+# --- Caches ---
+.cache/
+# VitePress generated output (keep config.ts / theme / public as source & tracked)
+.vitepress/cache/
+**/.vitepress/cache/
+.vitepress/temp/
+.DS_Store
+
+# --- Persistence DBs (store persistence added later) ---
+*.db
+*.sqlite
+*.sqlite3
+.sisyphus/
+.local/

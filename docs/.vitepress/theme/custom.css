@@ -1,0 +1,46 @@
+/*
+ * Brand palette: indigo #4C6EF5 is the brand (vp-c-brand-*); brass is accent
+ * only (--rc-accent), used sparingly — never a second brand color.
+ * Both :root (light) and .dark override the VitePress brand variables.
+ */
+
+:root {
+  --vp-c-brand-1: #3b5bdb;
+  --vp-c-brand-2: #4c6ef5;
+  --vp-c-brand-3: #364fc7;
+  --vp-c-brand-soft: rgba(76, 110, 245, 0.14);
+
+  --rc-accent: #d9822b;
+  /* Ink over the brass fill (AA on both brass values). */
+  --rc-on-accent: #1b1b1f;
+}
+
+.dark {
+  --vp-c-brand-1: #748ffc;
+  --vp-c-brand-2: #91a7ff;
+  --vp-c-brand-3: #4c6ef5;
+  --vp-c-brand-soft: rgba(116, 143, 252, 0.16);
+
+  --rc-accent: #f2a65a;
+  --rc-on-accent: #1b1b1f;
+}
+
+.VPHomeHero .VPButton.alt {
+  border-color: var(--rc-accent);
+}
+
+.VPHomeHero .VPButton.alt:hover {
+  background-color: var(--rc-accent);
+  border-color: var(--rc-accent);
+  color: var(--rc-on-accent);
+}
+
+/*
+ * Navbar wordmark: the logo image (light/dark pair) carries the brand, so the
+ * text title rendered beside it is hidden here. CSS-only — the browser tab
+ * <title> stays "RoleCall" (never blanked). DOM confirmed:
+ * .VPNavBarTitle > a.title > img.VPImage.logo + span (unclassed text span).
+ */
+.VPNavBarTitle a > span {
+  display: none;
+}

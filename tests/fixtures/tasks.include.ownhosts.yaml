@@ -1,0 +1,9 @@
+- hosts: included
+  tasks:
+    - name: inherited
+      module: ping
+      args: {}
+    - name: own
+      module: ping
+      args: {}
+      hosts: db

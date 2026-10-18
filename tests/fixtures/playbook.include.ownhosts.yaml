@@ -1,0 +1,5 @@
+- name: ownhosts
+  hosts: web
+  tasks:
+    - name: keep directive
+      include_tasks: tasks.include.ownhosts.yaml

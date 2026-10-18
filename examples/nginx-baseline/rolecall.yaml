@@ -1,0 +1,4 @@
+# RoleCall project manifest for the nginx-baseline example.
+# RoleCall's executor applies tasks live over SSH/local transports, so `rolecall playbook run` converges state.
+name: nginx-baseline
+description: Minimal RoleCall project showing project plugins, a local role, and inventory.

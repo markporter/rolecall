@@ -1,0 +1,7 @@
+- hosts: web
+  imports:
+    - circular.a.yaml
+  tasks:
+    - name: b
+      module: ping
+      args: {}

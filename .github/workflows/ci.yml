@@ -1,0 +1,198 @@
+name: CI
+
+# Dual-runtime, multi-OS pipeline for RoleCall.
+#
+#   * job "unit"     : Bun-native assertion suite (`bun test`) + type-check,
+#                      run across Linux/macOS/Windows with ROLECALL_RUNTIME forced to
+#                      both "bun" and "node" to exercise every code branch.
+#   * job "native"   : Builds ONE native binary per OS using the Node-invoked
+#                      builder (`node scripts/build-bin.mjs`), smoke-tests it,
+#                      and validates cross-runtime compatibility by importing
+#                      product source and running it under BOTH `bun` and `node`.
+#   * job "node-package-smoke" : Builds the Node-target JS bundle (`bun run
+#                      build:js`), packs it with `npm pack`, then proves the
+#                      published tarball installs and runs on a machine with Node
+#                      and NO Bun on PATH. This is the acceptance gate that `npx
+#                      rolecall` works for npm consumers. Beyond the CLI subset it
+#                      also does a store-backed `--trace` / `run replay` round-trip,
+#                      proving the durable SQLite store works on Node.
+#
+# The project's tests import `bun:test`, which is Bun-native; there are no
+# Node-compatible test files vendored in the repo (adding one would require a
+# dependency we do not ship). To still prove the Node runtime through its own
+# harness, the "native" job runs a small `node --test` probe against the pure-JS
+# runtime-detection module. See README "Testing" for the rationale.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: bun test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+          - os: macos-latest
+          - os: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+
+      - name: Setup Bun
+        uses: actions/setup-bun@v2
+        with:
+          bun-version: ">=1.4.2"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type-check (tsc --noEmit)
+        run: bunx tsc --noEmit
+
+      # Primary assertion suite — Bun-native bun:test runner.
+      - name: Test (default runtime)
+        run: bun test
+
+      # Force each PAL/detect branch explicitly while keeping the bun:test runner.
+      - name: Test (force ROLECALL_RUNTIME=bun)
+        run: ROLECALL_RUNTIME=bun bun test
+
+      - name: Test (force ROLECALL_RUNTIME=node)
+        run: ROLECALL_RUNTIME=node bun test
+
+  native:
+    name: native build + dual-runtime parity (${{ matrix.hostTarget }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            hostTarget: linux-x64-musl
+          - os: macos-latest
+            hostTarget: darwin-arm64-musl
+          - os: windows-latest
+            hostTarget: windows-x64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+
+      - name: Setup Bun
+        uses: actions/setup-bun@v2
+        with:
+          bun-version: ">=1.4.2"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # Build the host-target native binary via the Node entry point. On a
+      # matching OS this compiles+smoke-tests cleanly; non-host targets requested
+      # additionally get produced as distribution artifacts.
+      - name: Build native binary (host target)
+        run: node scripts/build-bin.mjs --target ${{ matrix.hostTarget }}
+
+      - name: Smoke-test produced binary
+        shell: bash
+        run: |
+          BIN="dist/bin/rolecall-${{ matrix.hostTarget }}"
+          if [ ! -x "$BIN" ]; then
+            echo "expected binary missing: $BIN" >&2; exit 1
+          fi
+          echo "\$ $BIN --version"; "$BIN" --version || exit 1
+          echo "\$ ROLECALL_RUNTIME=node $BIN --version"; ROLECALL_RUNTIME=node "$BIN" --version || exit 1
+          echo "\$ ROLECALL_RUNTIME=bun $BIN --version"; ROLECALL_RUNTIME=bun "$BIN" --version || exit 1
+
+      # --- Cross-runtime parity via Node's own --test harness -------------------
+      # Exercises the pure-JS runtime detection directly under Node for BOTH
+      # override values, proving product source transpiles & runs on Node too.
+      - name: Dual-runtime parity (node --test)
+        shell: bash
+        run: |
+          cat > ./_node_parity.test.mjs <<'EOF'
+          import { test } from "node:test";
+          import assert from "node:assert/strict";
+          for (const force of ["bun", "node"]) {
+            test(`detectRuntime honors ROLECALL_RUNTIME=${force} under Node`, async () => {
+              process.env.ROLECALL_RUNTIME = force;
+              const mod = await import("./src/util/runtime.ts");
+              assert.equal(mod.detectRuntime().name, force);
+            });
+          }
+          EOF
+          node --test ./_node_parity.test.mjs
+          rm -f ./_node_parity.test.mjs
+
+  # Acceptance gate that `npx rolecall` works on a machine with Node and no Bun:
+  # build the Node-target JS bundle, pack it, then install and run the published
+  # tarball with Bun removed from PATH. Packaging is OS-independent, so it runs on
+  # a single Linux runner; the 3-OS "unit" matrix already covers cross-platform.
+  node-package-smoke:
+    name: npm package smoke (Node, no Bun)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+
+      - name: Setup Bun
+        uses: actions/setup-bun@v2
+        with:
+          bun-version: ">=1.4.2"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # Bundle as a Node-target, packages-external artifact at lib/cli.js.
+      - name: Build Node package bundle
+        run: bun run build:js
+
+      # `prepack` re-runs build:js; `--pack-destination` requires the dir to exist.
+      - name: Pack npm tarball
+        run: mkdir -p /tmp/pkg && npm pack --pack-destination /tmp/pkg
+
+      # Install the tarball with Bun stripped from PATH and run it like a real user.
+      - name: Smoke-test packed CLI (Node only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$(dirname "$(command -v node)"):/usr/bin:/bin"
+          if command -v bun >/dev/null 2>&1; then echo "bun must not be on PATH" >&2; exit 1; fi
+          TMP="$(mktemp -d)"
+          npm install -g --prefix "$TMP" /tmp/pkg/rolecall-*.tgz
+          "$TMP/bin/rolecall" --help >/dev/null
+          "$TMP/bin/rolecall" --version
+          "$TMP/bin/rolecall" inventory show tests/fixtures/inventory.valid.yaml
+          "$TMP/bin/rolecall" playbook run tests/fixtures/playbook.cli-nul.yaml --inventory tests/fixtures/inventory.local.yaml
+
+          # Store-backed round-trip: --trace persists an execution ledger into the
+          # durable store, then `run replay <id>` reads it back. Proves the SQLite
+          # store (node:sqlite via the PAL) works on Node.
+          TRACE_OUT="$("$TMP/bin/rolecall" -o human_summary --trace playbook run tests/fixtures/playbook.cli-nul.yaml --inventory tests/fixtures/inventory.local.yaml)"
+          printf '%s\n' "$TRACE_OUT" | tail -n 3
+          RUN_ID="$(printf '%s\n' "$TRACE_OUT" | sed -n 's/.*replay: rolecall run replay \([0-9a-fA-F-]\{36\}\).*/\1/p' | head -n1)"
+          if [ -z "$RUN_ID" ]; then echo "failed to capture trace run id from playbook run output" >&2; exit 1; fi
+          "$TMP/bin/rolecall" run replay "$RUN_ID"

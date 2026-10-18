@@ -1,0 +1,12 @@
+server {
+    listen <%= item.listen %>;
+<% if (nginx_listen_ipv6 && item.listen) { %>    listen [::]:<%= item.listen %>;
+<% } %>    server_name <%= item.server_name %>;
+<% if (item.root) { %>    root <%= item.root %>;
+    index <%= item.index || 'index.html index.htm' %>;
+<% } %><% if (item.ssl_certificate) { %>    ssl_certificate <%= item.ssl_certificate %>;
+    ssl_certificate_key <%= item.ssl_certificate_key %>;
+<% } %><% if (item.proxy_pass) { %>    location / {
+        proxy_pass <%= item.proxy_pass %>;
+    }
+<% } %>}

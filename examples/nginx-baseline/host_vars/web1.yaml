@@ -1,0 +1,4 @@
+role: primary
+# Host-scoped override rendered into the vhost config via `$template:` (e.g.
+# `<%= vars.nginx_worker_processes %>` in playbooks/site.yaml).
+nginx_worker_processes: 4

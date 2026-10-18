@@ -1,0 +1,9 @@
+  # Tear down the workloads on lxdhost. Deletion is guarded/removing so re-running
+  # against an already-clean host is a harmless no-op (never a blanket delete).
+- name: Delete the lab containers
+  hosts: lxdhost
+  tasks:
+      - name: Force-delete the db, nginx and app containers
+        shell:
+          cmd: sudo lxc delete -f db nginx app || true
+          removes: /root/.local/share/lxd/storage-pools/default/containers

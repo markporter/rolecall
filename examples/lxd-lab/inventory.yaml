@@ -1,0 +1,63 @@
+# LXD lab inventory.
+#
+#   lxdhost : the local box that runs LXD. RoleCall itself executes here, so every
+#             `lxc` command is a plain local invocation (rolecall_connection: local).
+#   targets : the three provisioned containers, reached over SSH on their static
+#             bridge IPs (per-host rolecall_host defined below in each <name> group). Their
+#             user `rolecall` shares the Ed25519 key named below.
+#
+# Shared variables (bridge subnet/gw, image_map, app_db_password, SSH params) live
+# INLINE in the `all` group below, because RoleCall's inventory engine does NOT auto-load
+# Ansible-style group_vars/*.yaml directories. Any var not defined inline or per-host
+# would resolve to undefined at render time. The `all` group has hosts: [] so it never
+# selects a host itself but its vars merge into every resolved host (see
+# src/inventory/engine.ts resolveHostVars). This replaces the former
+# examples/lxd-lab/group_vars/all.yaml, which RoleCall ignored. Only the per-group
+# transport choice (rolecall_connection) stays inline on each specific group.
+groups:
+  all:
+    hosts: []
+    vars:
+      bridge_subnet: 10.200.100.0/24
+      bridge_gw: 10.200.100.1
+      image_map:
+        alma8: images:almalinux/8/cloud
+        ubuntu24: ubuntu:cc6b6e557372
+      app_db_password: RolecallLabP@ssw0rd
+      rolecall_ssh_user: rolecall
+      rolecall_ssh_port: 22
+      rolecall_ssh_private_key_file: ~/.ssh/rolecall_lab_ed25519
+  lxdhost:
+    hosts:
+      - localhost
+    vars:
+      rolecall_connection: local
+      rolecall_role: lxdhost
+  targets:
+    hosts:
+      - db
+      - nginx
+      - app
+    vars:
+      rolecall_connection: ssh
+  db:
+    hosts: [db]
+    vars:
+      rolecall_host: 10.200.100.2
+      rolecall_os_family: RedHat
+      rolecall_distro: almalinux8
+      rolecall_role: db
+  nginx:
+    hosts: [nginx]
+    vars:
+      rolecall_host: 10.200.100.3
+      rolecall_os_family: Debian
+      rolecall_distro: ubuntu24
+      rolecall_role: nginx
+  app:
+    hosts: [app]
+    vars:
+      rolecall_host: 10.200.100.4
+      rolecall_os_family: Debian
+      rolecall_distro: ubuntu24
+      rolecall_role: app

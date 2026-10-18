@@ -1,0 +1,23 @@
+{
+  "entryPoints": [
+    "src/cli/index.ts",
+    "src/modules/index.ts",
+    "src/orchestrator/index.ts",
+    "src/store/index.ts",
+    "src/config/index.ts",
+    "src/transport/index.ts",
+    "src/facts/index.ts",
+    "src/util/runtime.ts"
+  ],
+  "plugin": ["@clean-jsdoc-theme/typedoc"],
+  "outputs": [{ "name": "clean-jsdoc-theme", "path": "docs/api" }],
+  "cleanJsdocTheme": {
+    "siteName": "RoleCall",
+    "siteUrl": "https://rolecall.example.com",
+    "llmsTxt": { "api": "index" }
+  },
+  "name": "rolecall",
+  "includeVersion": true,
+  "hideGenerator": true,
+  "tsconfig": "tsconfig.json"
+}

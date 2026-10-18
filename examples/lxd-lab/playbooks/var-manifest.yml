@@ -1,0 +1,27 @@
+# Variable manifest for the lxd-lab playbooks.
+#
+# rolecall_role / image_map / app_db_password are supplied by the inventory `all` group (and
+# per-group overrides). They are declared here so var_strict validates the references used
+# across playbooks/site.yaml, configure.yaml, and containers.yaml.
+- name: rolecall_role
+  kind: var
+  source: declared
+  description: Logical role of the host (lxdhost / db / nginx / app).
+  type: string
+- name: image_map.alma8
+  kind: var
+  source: declared
+  description: LXD image alias used to provision AlmaLinux 8 containers.
+  type: string
+  default: images:almalinux/8/cloud
+- name: image_map.ubuntu24
+  kind: var
+  source: declared
+  description: LXD image alias used to provision Ubuntu 24.04 containers.
+  type: string
+  default: ubuntu:cc6b6e557372
+- name: app_db_password
+  kind: var
+  source: declared
+  description: Application database password (lab credential).
+  type: string

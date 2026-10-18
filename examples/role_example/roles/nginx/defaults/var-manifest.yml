@@ -1,0 +1,133 @@
+# Variable manifest for the `nginx` role.
+#
+# Every var the role reads (defaults/main.yml plus template usage) is declared here so
+# var_strict can validate references and surface documentation/UI metadata. Defaults seed
+# the role-defaults precedence tier; playbook `vars:` and inventory layers override them.
+- name: nginx_package_name
+  kind: var
+  source: declared
+  description: System package providing the nginx binary.
+  type: string
+  default: nginx
+- name: nginx_service_state
+  kind: var
+  source: declared
+  description: Desired systemd service state for nginx.
+  type: string
+  default: started
+- name: nginx_service_enabled
+  kind: var
+  source: declared
+  description: Whether nginx starts on boot.
+  type: boolean
+  default: true
+- name: nginx_user
+  kind: var
+  source: declared
+  description: User nginx worker processes run as.
+  type: string
+  default: www-data
+- name: nginx_worker_processes
+  kind: var
+  source: declared
+  description: "Worker process count (nginx.conf `worker_processes`)."
+  type: string
+  default: auto
+- name: nginx_worker_connections
+  kind: var
+  source: declared
+  description: Per-worker connection ceiling.
+  type: string
+  default: "1024"
+- name: nginx_sendfile
+  kind: var
+  source: declared
+  description: "`sendfile` directive toggle."
+  type: string
+  default: "on"
+- name: nginx_keepalive_timeout
+  kind: var
+  source: declared
+  description: Keep-alive timeout in seconds.
+  type: string
+  default: "65"
+- name: nginx_client_max_body_size
+  kind: var
+  source: declared
+  description: Maximum client request body size.
+  type: string
+  default: "64m"
+- name: nginx_server_tokens
+  kind: var
+  source: declared
+  description: Whether the nginx version is advertised in responses.
+  type: string
+  default: "on"
+- name: nginx_listen_ipv6
+  kind: var
+  source: declared
+  description: Emit an [::] listen stanza for IPv6.
+  type: boolean
+  default: true
+- name: nginx_remove_default_vhost
+  kind: var
+  source: declared
+  description: Remove the default site symlink in sites-enabled.
+  type: boolean
+  default: false
+- name: nginx_extra_http_options
+  kind: var
+  source: declared
+  description: Raw directives appended inside the http{} block.
+  type: string
+  default: ""
+- name: nginx_upstreams
+  kind: var
+  source: declared
+  description: Upstream server list rendered into nginx.conf.
+  type:
+    array:
+      of: string
+  default: []
+- name: nginx_vhosts
+  kind: var
+  source: declared
+  description: Virtual host definitions rendered from the vhost template.
+  type:
+    array:
+      of:
+        object:
+          props:
+            listen: { type: string }
+            server_name: { type: string }
+            root: { type: string }
+            index: { type: string }
+            ssl_certificate: { type: string }
+            ssl_certificate_key: { type: string }
+            proxy_pass: { type: string }
+            filename: { type: string }
+  default: []
+- name: nginx_conf_path
+  kind: var
+  source: declared
+  description: Path to the main nginx.conf.
+  type: string
+  default: /etc/nginx/nginx.conf
+- name: nginx_vhost_path
+  kind: var
+  source: declared
+  description: Directory scanned for vhost configs (include directive).
+  type: string
+  default: /etc/nginx/conf.d
+- name: nginx_default_vhost_path
+  kind: var
+  source: declared
+  description: Path of the default vhost symlink removed when requested.
+  type: string
+  default: /etc/nginx/sites-enabled/default
+- name: nginx_ssl_path
+  kind: var
+  source: declared
+  description: Directory holding TLS certificates/keys.
+  type: string
+  default: /etc/nginx/ssl
