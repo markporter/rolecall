@@ -12,12 +12,18 @@
 //   (e) plugin list --output json -> registered plugins
 //   (f) unknown command / subcommand / output plugin -> non-zero exit, no trace
 import { expect, test, mock, spyOn } from "bun:test";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const binPath = join(here, "..", "bin", "rolecall.js");
 const fixtures = join(here, "fixtures");
+const pkgVersion = (
+  JSON.parse(readFileSync(join(here, "..", "package.json"), "utf8")) as {
+    version: string;
+  }
+).version;
 
 interface RunResult {
   code: number;
@@ -42,7 +48,7 @@ async function runRolecall(args: string[]): Promise<RunResult> {
 test("--version prints package.json version and exits 0", async () => {
   const r = await runRolecall(["--version"]);
   expect(r.code).toBe(0);
-  expect(r.stdout.trim()).toBe("rolecall 0.0.0");
+  expect(r.stdout.trim()).toBe(`rolecall ${pkgVersion}`);
 });
 
 test("--help lists subcommands and exits 0", async () => {

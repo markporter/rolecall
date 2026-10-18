@@ -1,0 +1,58 @@
+name: docs
+
+# Deploy the VitePress user guide to GitHub Pages on every push to main.
+#
+# The site is built with `--base=/rolecall/` so it works under the
+# markporter.github.io/rolecall subpath. When a custom domain is attached later,
+# change BASE below to `/` (see .local/domain-shortlist.md and ADR 0005).
+#
+# One-time setup: repo Settings → Pages → Source = "GitHub Actions".
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write      # deploy the Pages artifact
+  id-token: write   # OIDC for the Pages deployment
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ">=1.4.2"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build guide (VitePress)
+        env:
+          BASE: /rolecall/
+        run: bunx vitepress build docs/guide --base "$BASE"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/guide/.vitepress/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
