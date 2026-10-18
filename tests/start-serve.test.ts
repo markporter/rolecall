@@ -12,9 +12,11 @@
 import { describe, it, expect } from "bun:test";
 import { spawn } from "node:child_process";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const rootDir = "/home/mark/local_code/rolecall";
-const exe = typeof Bun !== "undefined" && typeof Bun.exe === "function" ? Bun.exe() : "bun";
+const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const exe =
+  typeof Bun !== "undefined" && typeof Bun.exe === "function" ? Bun.exe() : process.execPath;
 
 async function sleep(ms: number): Promise<void> { await new Promise((r) => setTimeout(r, ms)); }
 
