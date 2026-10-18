@@ -26,8 +26,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # ---- 0. Fail fast if the pushed tag does not match package.json ----------
+  verify-tag:
+    name: verify tag matches package.json
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare pushed tag with package.json version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p "require('./package.json').version")"
+          echo "tag=v$tag package.json=$pkg"
+          if [ "$tag" != "$pkg" ]; then
+            echo "::error::tag v$tag does not match package.json version $pkg; bump package.json or retag"
+            exit 1
+          fi
+
   # ---- 1. Full CI as a reusable-workflow gate -------------------------------
   ci:
+    needs: verify-tag
     uses: ./.github/workflows/ci.yml
 
   # ---- 2. Per-OS native binaries -------------------------------------------
