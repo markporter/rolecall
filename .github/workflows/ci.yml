@@ -47,7 +47,10 @@ jobs:
         include:
           - os: ubuntu-latest
           - os: macos-latest
-          - os: windows-latest
+          # Windows is intentionally excluded from the unit matrix: the module
+          # suite runs real POSIX shell commands (sh -c, stat, chmod) and there
+          # is no Windows module surface yet. The native job still builds and
+          # smoke-tests the Windows binary.
     steps:
       - uses: actions/checkout@v4
 

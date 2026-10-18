@@ -113,7 +113,10 @@ async function applyAttrs(
   const wantsGroup = typeof opts.group === "string" && opts.group.length > 0;
   if (!wantsMode && !wantsOwner && !wantsGroup) return false;
 
-  const st = await conn.exec(`${sudo}stat -c '%a %U %G' ${shQuote(opts.path)}`);
+  // GNU stat (`-c`) on Linux, BSD stat (`-f`) on macOS/BSD. Both emit "<octal> <user> <group>".
+  const st = await conn.exec(
+    `${sudo}stat -c '%a %U %G' ${shQuote(opts.path)} 2>/dev/null || ${sudo}stat -f '%Lp %Su %Sg' ${shQuote(opts.path)}`,
+  );
   if (st.exitCode !== 0) return false;
   const parts = st.stdout.trim().split(/\s+/);
   const curA = parts[0] ?? "";
