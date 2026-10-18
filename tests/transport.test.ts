@@ -197,6 +197,10 @@ beforeAll(async () => {
   server = new Server(
     { hostKeys: [hostKey], algorithms: { serverHostKey: ["ssh-rsa"] } },
     (client) => {
+      // The client tears the connection down at test end; ssh2's server side can
+      // emit a late protocol error (e.g. KEY_EXCHANGE_FAILED) while unwinding.
+      // Swallow it on the per-connection object so it never becomes an unhandled error.
+      client.on("error", () => {});
       client.on("authentication", (ctx) => {
         if (ctx.method === "password" && ctx.password === "pw") ctx.accept();
         else if (ctx.method === "none") ctx.accept();
