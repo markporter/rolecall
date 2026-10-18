@@ -1,7 +1,29 @@
 {
   "name": "rolecall",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "RoleCall — config management & orchestration CLI. Runs on Node >=22.19 and Bun >=1.4.2.",
+  "license": "MIT",
+  "author": "Mark Porter",
+  "homepage": "https://markporter.github.io/rolecall",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/markporter/rolecall.git"
+  },
+  "bugs": {
+    "url": "https://github.com/markporter/rolecall/issues"
+  },
+  "keywords": [
+    "ansible",
+    "orchestration",
+    "config-management",
+    "infrastructure-as-code",
+    "cli",
+    "devops",
+    "automation",
+    "yaml",
+    "bun",
+    "nodejs"
+  ],
   "type": "module",
   "bin": {
     "rolecall": "lib/cli.js"
