@@ -2,8 +2,6 @@
 title: Deployment (systemd)
 ---
 
-On Linux hosts, run `rolecall --serve` under systemd so it restarts automatically.
-
 On Linux hosts, run `rolecall --serve` under systemd so it restarts automatically and survives reboots. Start from an installed native binary placed somewhere stable like `/opt/rolecall/dist/bin/rolecall-linux-x64-musl`, then point the unit's `ExecStart` at it with the `--serve` flag appended. A minimal unit looks like this:
 
 ```ini
