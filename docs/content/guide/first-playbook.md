@@ -2,7 +2,7 @@
 title: First Playbook
 ---
 
-Writing a playbook means describing state declaratively: who the targets are, and what each one should look like. This guide walks through the smallest valid playbook RoleCall will accept — a YAML **list of plays** with a single entry — then shows how `rolecall playbook run` turns it into a plan without touching a single remote host. Everything below reflects the live schema and the actual CLI output captured from `bin/rolecall.js`.
+Writing a playbook means describing state declaratively: who the targets are, and what each one should look like. This guide walks through the smallest valid playbook RoleCall will accept — a YAML **list of plays** with a single entry — then shows how `rolecall playbook run` turns it into a plan without touching a single remote host. Everything below reflects the live schema and output captured from the live CLI.
 
 ## An inventory defines your targets
 

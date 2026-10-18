@@ -6,13 +6,13 @@ This page gets you from zero to a working RoleCall invocation quickly. It walks 
 
 ## Confirm the CLI is alive
 
-From a fresh checkout, help prints immediately:
+With RoleCall installed, help prints immediately:
 
 ```sh
-bun bin/rolecall.js --help
+rolecall --help
 ```
 
-You should see the global flag list followed by the subcommands (`playbook`, `facts`, `inventory`, `plugin`). If you installed RoleCall onto your `PATH` with `npm i -g rolecall` or `bun add rolecall`, the same help shows under plain `rolecall --help`. A quick `rolecall --version` reports the current package version.
+You should see the global flag list followed by the subcommands (`playbook`, `facts`, `inventory`, `plugin`). If you have not installed RoleCall yet, `npx rolecall --help` runs the same thing without a global install. A quick `rolecall --version` reports the current package version.
 
 ## Apply a playbook
 

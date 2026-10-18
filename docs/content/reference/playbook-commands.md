@@ -9,7 +9,7 @@ Today there is exactly one working action, `run`, reached as `rolecall playbook 
 `playbook run` first loads and validates the file against the strict schema in `src/config/schema.ts`, then resolves an optional inventory; with no resolvable hosts there is simply nothing to apply.
 
 ```sh
-bun bin/rolecall.js playbook run playbook.yaml
+rolecall playbook run playbook.yaml
 ```
 
 emits structured markers including resolved `Hosts`, the task list, an end-of-run `Summary`\n(`ok`/`changed`/`failed`/`skipped`), and a trailing note. Supplying `--inventory` narrows resolution\nto those targets; running against `tests/fixtures/inventory.valid.yaml` yields six host-task pairs.\nBe aware these counters reflect real convergence after applying tasks over SSH or local transports,\nnot a structural dry-run preview.

@@ -30,7 +30,7 @@ export default defineConfig({
       { text: 'Reference', link: '/reference/command-reference' },
       { text: 'Concepts', link: '/concepts/playbooks' },
       { text: 'Best Practices', link: '/best-practices/' },
-      { text: 'Deployment', link: '/deployment/systemd' },
+      { text: 'Deployment', link: '/deployment/ways-to-run' },
       { text: 'Contributing', link: '/contributing/' },
     ],
 
@@ -76,6 +76,7 @@ export default defineConfig({
         { text: 'Secrets', link: '/best-practices/secrets' },
       ],
       '/deployment/': [
+        { text: 'Ways to Run', link: '/deployment/ways-to-run' },
         { text: 'systemd', link: '/deployment/systemd' },
         { text: 'Native Binaries', link: '/deployment/native-binaries' },
         { text: 'Windows Service', link: '/deployment/windows-service' },
