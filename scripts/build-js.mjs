@@ -2,7 +2,7 @@
 // scripts/build-js.mjs — build the Node-loadable ESM CLI bundle shipped on npm.
 // ---------------------------------------------------------------------------
 // WHY THIS EXISTS: the published package must run on a Node-only machine via
-// `npx rolecall` / `npm i -g rolecall`. That requires (a) regenerating the
+// `npx @rolecall/cli` / `npm i -g @rolecall/cli`. That requires (a) regenerating the
 // embedded docs corpus, which the bundle inlines, (b) bundling the build-only
 // Node entry (scripts/cli-node-entry.mjs) with a node shebang, and (c) passing
 // the Node-safety guard (scripts/verify-node-bundle.mjs). We drive the three
@@ -24,8 +24,46 @@ const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 // file, not the cwd, so we hand it the fully-resolved lib/cli.js.
 const OUT_FILE = resolve(ROOT, "lib", "cli.js");
 
-function bunExe() {
-  return process.env.BIN_BUN || process.env.BIN_BIN_PATH || "bun";
+// Version fetched via `npx` when there is no local Bun. Keep in step with
+// package.json `engines.bun`; pinning keeps publish builds reproducible.
+const FALLBACK_BUN = "1.4.4";
+
+let bunCmd;
+
+/**
+ * Resolve how to invoke Bun: explicit env override, then PATH, then the
+ * published `bun` npm package. The npm route is what lets `npm publish` run on
+ * a Node-only machine, and it keeps a single bundler so the emitted bundle does
+ * not depend on how Bun was obtained.
+ */
+function bunCommand() {
+  if (bunCmd) return bunCmd;
+
+  const explicit = process.env.BIN_BUN || process.env.BIN_BIN_PATH;
+  if (explicit) return (bunCmd = { exe: explicit, prefix: [] });
+
+  const probe = spawnSync("bun", ["--version"], { stdio: "ignore" });
+  if (!probe.error && probe.status === 0) return (bunCmd = { exe: "bun", prefix: [] });
+
+  if (process.platform === "win32") {
+    console.error(
+      "build:js FAILED — Bun was not found on PATH.\n" +
+        "  Install Bun (https://bun.sh) or set BIN_BUN to a bun executable.\n" +
+        "  (The automatic `npx bun` fallback is POSIX-only.)",
+    );
+    process.exit(1);
+  }
+
+  console.log(
+    `bun not found on PATH — using \`npx bun@${FALLBACK_BUN}\` for this build\n` +
+      "  (one-time download; set BIN_BUN to reuse a local install)",
+  );
+  return (bunCmd = { exe: "npx", prefix: ["--yes", `bun@${FALLBACK_BUN}`] });
+}
+
+function runBun(args, label) {
+  const { exe, prefix } = bunCommand();
+  run(exe, [...prefix, ...args], label);
 }
 
 function run(exe, args, label) {
@@ -44,7 +82,7 @@ function run(exe, args, label) {
 
 // 1. Embedded docs MUST be regenerated before bundling — src/docs/embedded-content.ts
 //    is inlined into the bundle, so a stale corpus would ship stale prose.
-run(bunExe(), ["scripts/embed-docs.ts"], "regenerate embedded docs");
+runBun(["scripts/embed-docs.ts"], "regenerate embedded docs");
 
 // 2. Bundle the Node entry to lib/cli.js. --packages=external keeps third-party
 //    packages as runtime imports (they must be real dependencies), and the
@@ -56,8 +94,7 @@ run(bunExe(), ["scripts/embed-docs.ts"], "regenerate embedded docs");
 //    outfile, writing cli.js next to the entry instead of into lib/. We use
 //    `--sourcemap=inline`, the only mode that keeps the map embedded while
 //    honoring the exact `--outfile=.../lib/cli.js` target.
-run(
-  bunExe(),
+runBun(
   [
     "build",
     "scripts/cli-node-entry.mjs",
