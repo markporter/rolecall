@@ -260,6 +260,12 @@ export interface ExecOptions {
   tags?: string[];
   /** Exclusion tag filter (mirrors the global `--skip-tags` flag): tasks carrying any listed tag are dropped; wins over {@link tags}. */
   skipTags?: string[];
+  /** Global `--check`: observe-and-report only. Check-capable modules never converge; unsupported modules are skipped. */
+  check?: boolean;
+  /** Global `--diff`: attach an observed-vs-desired diff to each checkable module result. */
+  diff?: boolean;
+  /** Global `--force`: bypass idempotency skips and force convergence (passed to modules as `force`). */
+  force?: boolean;
 }
 
 export interface IterationOutcome {

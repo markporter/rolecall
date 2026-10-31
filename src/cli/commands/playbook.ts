@@ -175,6 +175,9 @@ export async function runPlaybookCommand(
       inventoryPath: flags.inventory,
       ...(flags.limit !== undefined ? { limit: flags.limit } : {}),
       ...(flags.forks !== undefined ? { forks: flags.forks } : {}),
+      force: flags.force,
+      check: flags.check,
+      diff: flags.diff,
       ...(tags !== undefined ? { tags } : {}),
       ...(skipTags !== undefined ? { skipTags } : {}),
       ...(Object.keys(directoryVars).length > 0 ? { resolveOptions: directoryVars } : {}),
@@ -203,6 +206,10 @@ export async function runPlaybookCommand(
   if (result) {
     for (const h of Object.keys(result.hosts)) {
       for (const o of result.hosts[h]!) {
+        const iterMsg = o.iterations
+          .map((i) => i.msg)
+          .filter((m): m is string => typeof m === "string" && m.length > 0)
+          .join("; ");
         outcomes.push({
           host: o.host,
           task: o.task,
@@ -212,7 +219,7 @@ export async function runPlaybookCommand(
           skipped: o.skipped,
           iterations: o.iterations.length,
           iterationData: o.iterations.map((i) => i.data),
-          msg: o.msg,
+          msg: o.msg ?? (iterMsg || undefined),
         });
         const content = contentByTask.get(o.task);
         if (content) {
@@ -227,7 +234,9 @@ export async function runPlaybookCommand(
 
   const applied = result !== null;
   let note = applied
-    ? "real apply via declarative executor + copy (remote SHA-256 compare); identical second run reports changed=false with zero write commands (idempotency)"
+    ? flags.check
+      ? "check mode: observed target state only; check-capable modules report would-change without converging, unsupported modules are skipped"
+      : "real apply via declarative executor + copy (remote SHA-256 compare); identical second run reports changed=false with zero write commands (idempotency)"
     : "no inventory / no matched hosts — nothing executed; pass --inventory to target remote hosts";
   if (traceStore && traceRunId && flags.trace) {
     note += `\n[trace] ledger persisted for run ${traceRunId} (replay: rolecall run replay ${traceRunId})`;
@@ -244,7 +253,7 @@ export async function runPlaybookCommand(
     command: "playbook run",
     playbook: file,
     inventory: flags.inventory,
-    mode: applied ? "applied" : "dry-run",
+    mode: applied && !flags.check ? "applied" : "dry-run",
     flags: { limit: flags.limit, force: flags.force, check: flags.check, diff: flags.diff, forks: flags.forks, ...(tags !== undefined ? { tags } : {}), ...(skipTags !== undefined ? { skipTags } : {}) },
     resolvedHosts,
     tasks: playbook.flatMap((p) =>

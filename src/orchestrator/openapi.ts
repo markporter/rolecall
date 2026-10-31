@@ -84,8 +84,7 @@ export function buildOpenApi(): OpenApiDocument {
       title: "RoleCall Orchestrator API",
       version: "0.1.0",
       description:
-        // TODO(ROLECALL-PLACEHOLDER): REST surface scaffolded (not yet implemented): scheduler/cron/webhooks/RBAC
-        "REST surface served by `rolecall --serve`. Executor, transport, and structured templating are implemented; scheduler / cron / webhooks / SPA UI route registry and RBAC remain scaffolded (\"not yet implemented\"). See individual descriptions for honest caveats.",
+        "REST surface served by `rolecall --serve`. Executor, transport, structured templating, run dispatch, cron scheduling, and webhooks are implemented. Serve-side dispatch uses a simplified per-target runner rather than the full CLI executor; the SPA UI is static-`--ui-dist`-only and RBAC is a single optional Bearer token. See individual descriptions for honest caveats.",
     },
     servers: [{ url: "/", description: "Local orchestrator HTTP server" }],
     paths,

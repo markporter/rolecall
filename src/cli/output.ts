@@ -117,6 +117,16 @@ function formatHuman(data: CliResult): string {
           lines.push(
             `  [${tag}] ${o.host} :: ${o.task} (${o.module}) -> ${o.msg ?? "-"}`,
           );
+          for (const iter of o.iterationData ?? []) {
+            const diff = iter?.["diff"];
+            const patch =
+              diff && typeof diff === "object" && "patch" in diff
+                ? (diff as { patch?: unknown }).patch
+                : undefined;
+            if (typeof patch === "string" && patch.length > 0) {
+              for (const ln of patch.split("\n")) lines.push(`      ${ln}`);
+            }
+          }
         }
       }
       if (data.rendered && data.rendered.length > 0) {

@@ -177,12 +177,16 @@ export class Engine {
     this.#trace({ runId, host: desc.name, taskName, phase: "start", status: "running", startedAt });
     try {
       let outcome: Outcome;
-      switch (desc.kind) {
-        case "ssh": outcome = await this.#execSsh(desc, a); break;
-        case "local": outcome = await this.#execLocal(desc, a); break;
-        case "http": outcome = await this.#execHttp(desc, a); break;
-        case "network": outcome = await this.#execNetwork(desc, a); break;
-        default: outcome = { host: desc.name, ok: false, changed: false, summary: `unknown transport kind '${String((desc as { kind?: string }).kind)}'` };
+      if (body.check) {
+        outcome = this.#execCheck(desc, a, body);
+      } else {
+        switch (desc.kind) {
+          case "ssh": outcome = await this.#execSsh(desc, a); break;
+          case "local": outcome = await this.#execLocal(desc, a); break;
+          case "http": outcome = await this.#execHttp(desc, a); break;
+          case "network": outcome = await this.#execNetwork(desc, a); break;
+          default: outcome = { host: desc.name, ok: false, changed: false, summary: `unknown transport kind '${String((desc as { kind?: string }).kind)}'` };
+        }
       }
       this.#trace({
         runId,
@@ -250,6 +254,56 @@ export class Engine {
     if (typeof args.command === "string") return args.command;
     if (typeof args.message === "string") return `echo ${args.message}`;
     return typeof args.text === "string" ? `echo ${args.text}` : "true";
+  }
+
+  /**
+   * Check/dry-run path: never mutates target state. Network targets compute a real
+   * candidate-vs-running diff; other transports report the command/request that
+   * would have been issued. Idempotent ping/check-style modules report no change.
+   */
+  #execCheck(
+    desc: TargetDescriptor,
+    a: { module: string; args: Record<string, unknown>; config?: string; force: boolean },
+    body: JobBody,
+  ): Outcome {
+    if (desc.kind === "network") {
+      const dev = desc.device as NetworkDeviceSimHandle | undefined;
+      const cfg = String(a.config ?? a.args.config ?? "");
+      if (!dev) return { host: desc.name, ok: false, changed: false, summary: "no device handle" };
+      const diff = dev.diff(cfg);
+      return {
+        host: desc.name,
+        ok: true,
+        changed: diff.changed,
+        summary: diff.changed ? "would change (check)" : "no change (check)",
+        detail: body.diff ? { check: true, diff } : { check: true },
+      };
+    }
+    if (this.#isPing(a.module)) {
+      return { host: desc.name, ok: true, changed: false, summary: "no change (check)", detail: { check: true } };
+    }
+    if (desc.kind === "http") {
+      const route = String(a.args.route ?? "GET /").trim();
+      const [rawMethod = "GET", rawPath = "/"] = route.split(" ");
+      const method = rawMethod.toUpperCase();
+      const path = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
+      const mutates = ["POST", "PATCH", "PUT", "DELETE"].includes(method);
+      return {
+        host: desc.name,
+        ok: true,
+        changed: mutates,
+        summary: `would send: ${method} ${path}`,
+        detail: { check: true, method, path },
+      };
+    }
+    const command = this.#commandFor(a.args);
+    return {
+      host: desc.name,
+      ok: true,
+      changed: true,
+      summary: `would run: ${command}`,
+      detail: { check: true, command },
+    };
   }
 
   async #execSsh(desc: TargetDescriptor, a: { module: string; args: Record<string, unknown>; force: boolean }): Promise<Outcome> {

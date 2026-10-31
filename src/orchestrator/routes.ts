@@ -126,8 +126,7 @@ export const ROUTE_DEFINITIONS: RouteDefinition[] = [
     path: "/status",
     summary: "Orchestrator status",
     group: "liveness",
-    // TODO(ROLECALL-PLACEHOLDER): Wave-0 scaffold executor — no real remote state (status counts are local only)
-    description: "Aggregated status: engine run counts plus best-effort project count. The executor is Wave-0 scaffold, so counts reflect the local run map only.",
+    description: "Aggregated status: engine run counts plus best-effort project count. Counts reflect the orchestrator's in-memory run map (runs are also persisted to the store).",
     responses: { "200": { description: "Aggregate status object." } },
     apply: (api, ctx) => {
       api.get("/status", async (_req, res): Promise<void> => {
@@ -153,9 +152,8 @@ export const ROUTE_DEFINITIONS: RouteDefinition[] = [
     path: "/run",
     summary: "Dispatch a run",
     group: "run dispatch",
-    // TODO(ROLECALL-PLACEHOLDER): Wave-0 scaffold executor — no real remote state (dispatches to local run map only)
-    description: "Enqueues playbook|adhoc|nonIdempotent work via the engine. Wave-0 scaffold: plans/dispatches into the local run map only, it does not perform real remote state.",
-    requestBody: { content: { "application/json": { schema: { type: "object", properties: { type: { type: "string", enum: ["playbook", "adhoc", "nonIdempotent"] } }, required: ["type"] }, example: { type: "playbook", playbookRef: "site.yaml", hosts: ["web1.example.com"] } } } },
+    description: "Enqueues playbook|adhoc|nonIdempotent work via the engine. Runs execute over real transports (SSH/local/HTTP/network simulator) with the server's simplified per-target runner, not the full CLI playbook executor, so roles, phases, when/loop, handlers, and tx/checkpoint do not apply to server runs. Set check=true for an observe-only run that never mutates target state.",
+    requestBody: { content: { "application/json": { schema: { type: "object", properties: { type: { type: "string", enum: ["playbook", "adhoc", "nonIdempotent"] }, check: { type: "boolean" }, diff: { type: "boolean" }, force: { type: "boolean" } }, required: ["type"] }, example: { type: "playbook", playbookRef: "site.yaml", hosts: ["web1.example.com"], check: false, diff: false } } } },
     responses: { "202": { description: "Run queued." }, "400": { description: "Body missing or invalid 'type'." } },
     apply: (api, ctx) => {
       api.post("/run", (req, res): void => {
