@@ -72,6 +72,11 @@ import { partedModule } from "./parted";
 import { filesystemModule } from "./filesystem";
 import { lvolModule } from "./lvol";
 import { lvgModule } from "./lvg";
+import { groupByModule } from "./group_by";
+import { getentModule } from "./getent";
+import { pipModule } from "./pip";
+import { snapModule } from "./snap";
+import { firewalldModule } from "./firewalld";
 
 /**
  * Register all built-in modules with the executor registry (idempotent — safe to
@@ -245,6 +250,22 @@ export function registerAllModules(): void {
   registerModule(lvgModule);
   if ((lvgModule as Module & { meta?: ModuleSummary }).meta)
     setModuleMeta(lvgModule.name, (lvgModule as Module & { meta?: ModuleSummary }).meta!);
+  // Ansible-parity fill (Wave 8): group_by/getent/pip/snap/firewalld.
+  registerModule(groupByModule);
+  if ((groupByModule as Module & { meta?: ModuleSummary }).meta)
+    setModuleMeta(groupByModule.name, (groupByModule as Module & { meta?: ModuleSummary }).meta!);
+  registerModule(getentModule);
+  if ((getentModule as Module & { meta?: ModuleSummary }).meta)
+    setModuleMeta(getentModule.name, (getentModule as Module & { meta?: ModuleSummary }).meta!);
+  registerModule(pipModule);
+  if ((pipModule as Module & { meta?: ModuleSummary }).meta)
+    setModuleMeta(pipModule.name, (pipModule as Module & { meta?: ModuleSummary }).meta!);
+  registerModule(snapModule);
+  if ((snapModule as Module & { meta?: ModuleSummary }).meta)
+    setModuleMeta(snapModule.name, (snapModule as Module & { meta?: ModuleSummary }).meta!);
+  registerModule(firewalldModule);
+  if ((firewalldModule as Module & { meta?: ModuleSummary }).meta)
+    setModuleMeta(firewalldModule.name, (firewalldModule as Module & { meta?: ModuleSummary }).meta!);
 }
 export {
   httpModule,
@@ -308,4 +329,9 @@ export {
   filesystemModule,
   lvolModule,
   lvgModule,
+  groupByModule,
+  getentModule,
+  pipModule,
+  snapModule,
+  firewalldModule,
 };
