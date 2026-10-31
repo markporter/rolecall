@@ -52,6 +52,7 @@ are present in code but do **not** apply real remote state.
 | Per-step profiling | ✅ | `--profile` |
 | Transaction + checkpoint (rollback / resume) | ✅ | todo 26; `--resume <id>:<checkpoint>` |
 | Executor (real remote execution) | ✅ | drives describe/converge live over a real Connection; proven by sim integration test |
+| Global `--check` / `--diff` / `--force` | ✅ | every shipped builtin supports check mode via a `check` method or `supportsCheck: true`; custom modules without either are skipped. No module converges under `--check`; `--diff` attaches observed-vs-desired patches; `--force` bypasses idempotency |
 
 ## Idempotency & modules
 
@@ -79,9 +80,12 @@ are present in code but do **not** apply real remote state.
 | Feature | Status | Notes |
 |---|---|---|
 | Express orchestrator boot | ✅ | `--serve` |
-| Route registry (scheduler / cron / webhooks / SPA UI) | 🟡 | accepts work but does not run it |
+| Run dispatch over real transports | ✅ | `POST /run` drives SSH/local/HTTP/network simulator |
+| Cron scheduler | ✅ | `CronScheduler` arms durable schedules and fires them through the engine |
+| Webhooks | ✅ | `POST /webhook` + `POST /api/run`, optional single-token Bearer guard |
+| Serve-side executor parity | 🟡 | simplified per-target runner, not `runPlaybook`; no roles/phases/`when`/`loop`/handlers/tx |
 | SQLite store | ✅ | trace + state |
-| SPA UI | 🟡 | scaffold; served but not a dependency of the default dist |
+| SPA UI | 🟡 | scaffold; only static `--ui-dist` serving, no built SPA |
 
 ## Distribution
 

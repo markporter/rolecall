@@ -103,11 +103,15 @@ for this reason. Run plain `bun run build` inside `docs/` (that script is
 
 ## Honest status boundaries
 
-Server mode partially exists today: the route registry in
-`src/orchestrator/routes.ts` mounts real endpoints, but scheduler, cron triggers,
-webhooks, and the SPA UI are scaffolded ("not yet implemented"). Document those as
-deferred. Executor, idempotency, templating, transport, modules/plugin SDK, and
-facts-collection remain Wave 0 scaffold too. Never assert these apply remote state.
+Server mode is implemented: `src/orchestrator/routes.ts` mounts real endpoints, run
+dispatch executes over real transports, and the cron scheduler plus webhooks are wired.
+Two things stay partial: server dispatch uses a simplified per-target runner rather than
+the full CLI `runPlaybook` executor, and the SPA UI is static-`--ui-dist`-only. The
+executor, idempotency, transport, facts-collection, structured templating, cron, and
+webhooks are implemented; Jinja `{{ }}` rendering, the SPA UI, serve-side executor
+parity, the plugin-SDK authoring surface, Http/gRPC, and Postgres remain scaffolded or
+partial. Document those boundaries honestly; never assert a scaffolded item applies
+remote state.
 
 ## See also
 

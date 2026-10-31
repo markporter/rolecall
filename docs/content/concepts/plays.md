@@ -16,7 +16,7 @@ A play is the unit of *targeting* — it answers "which hosts?" and "in what ord
 - `gather_facts` (optional) — accepted for Ansible compatibility and preserved on round-trip; RoleCall always gathers facts lazily, so it does not change behavior.
 - `tasks` (required) — the ordered list of task entries.
 - `handlers` (optional) — a list of task-shaped handler entries, lowered at load time into `listen` tasks that run only when a task `notify`s them by name. See [Tasks](./tasks.md#handlers).
-- `trigger` (optional) — a schedule / cron / webhook descriptor (the scheduler that consumes it is scaffolded today).
+- `trigger` (optional) — a schedule / cron / webhook descriptor, preserved on round-trip. The orchestrator's cron scheduler consumes schedules created through `/schedules`; a play-level `trigger:` is not auto-registered today. See [Serve Command](/reference/serve-command).
 - `serial` / `strategy` (optional, play-level) — see below.
 
 ## Hosts and inventory

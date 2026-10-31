@@ -74,8 +74,9 @@ Runtime support matrix (verify against `src/pal/` before claiming more):
 Subcommand reality (from the HELP string):
 
 - `playbook run <file>` parses and resolves the inventory, then applies tasks live
-   over SSH or local transports rather than merely printing a plan. Scheduled jobs,
-   cron, webhooks, the SPA UI, and literal Jinja `{{ }}` templating remain scaffolded.
+   over SSH or local transports rather than merely printing a plan. The orchestrator
+   cron scheduler and HTTP webhooks are implemented; the SPA UI and literal Jinja
+   `{{ }}` templating remain scaffolded.
    The Plugin SDK now ships `plugin register`/`list` (module plugins persist and
    auto-load at startup); the richer SDK authoring/test harness is still partial.
    At startup it also scans project-local plugins under `plugins/<type>/<namespace>/`
@@ -110,8 +111,11 @@ Global flags (parsed once by `parseArgs`):
 - `-o/--output human|json` selects the output plugin (default `human`).
 - `--limit <hosts>` restricts targets to one pattern.
 - `--inventory <file>` sets the inventory source (native `groups:` YAML or Ansible INI/`all:`-rooted YAML, auto-detected).
-- `--force`, `--check`, `--diff` are accepted and honored during live application
-   over SSH/local transports (they influence real convergence, not placeholders).
+- `--force` bypasses idempotency skips (passed to modules as `force`).
+   `--check` is a global dry-run: every shipped builtin supports it (a `check`
+   method or `supportsCheck: true`) and observes/reports would-change without
+   converging; custom modules without either are skipped rather than run. `--diff` attaches an
+   observed-vs-desired patch to checkable results.
 - `--forks <N>` concurrency fan-out, must be a number.
 - `--tags <list>` / `--skip-tags <list>` (comma-separated) select/skip tasks by tag on
    `playbook run`; a task's own tags replace play tags, and tag-filtered tasks report
@@ -129,14 +133,19 @@ rolecall --serve --ui-dist ./build       # serve static UI dir (env ROLECALL_UI_
 ```
 
 With no UI dist set, `GET /` returns a zero-build health JSON object instead of
-serving pages. Routing works off the route registry, so scheduler triggers, cron,
-webhooks, and the SPA UI remain scaffolded ("not yet implemented"): plan/trigger
-endpoints accept work but do not run it today.
+serving pages. The server implements run dispatch, project/schedule CRUD, a cron
+scheduler (`CronScheduler`) that fires armed schedules through the engine, and
+Bearer-gated webhooks (`POST /webhook`, `POST /api/run`). Dispatch executes over real
+transports (SSH/local/HTTP/network simulator), but the server still uses its own
+simplified per-target runner rather than the CLI playbook executor, so roles, play
+phases, `when`/`loop`, handlers, and tx/checkpoint do not apply to server runs yet.
+The SPA itself is not built: `--ui-dist` only serves a static directory.
 
 Honest status note: the genuinely-scaffold subsystems are templating (Jinja `{{ }}`
-kept literal), Http transport (gRPC capability deferred), the orchestrator
-scheduler/cron/webhooks/UI, and the richer Plugin SDK authoring surface. The executor,
-the SSH/Local/Network transports, `facts gather`, `vars list`/`trace`, and `plugin
+kept literal), the SPA UI, serve-side executor parity (the server runner is a simplified
+per-target path, not `runPlaybook`), Http transport (gRPC capability deferred), and the
+richer Plugin SDK authoring surface. The executor, the SSH/Local/Network transports, the
+cron scheduler and webhooks, `facts gather`, `vars list`/`trace`, and `plugin
 list`/`register` (module-plugin persistence + auto-load) are implemented; never claim any
 scaffolded item above applies real remote state. The Node-runtime PAL is implemented
 for the surfaces listed in the matrix above (sqlite/crypto/dns/spawn/file/http/
@@ -215,13 +224,15 @@ execution, transport, and facts collection now apply real state. Where a doc sti
 labels an area as scaffold while `src/` implements it, trust `src/` and update the
 doc accordingly.
 
-**Subsystem honesty.** Templating (Jinja `{{ }}` literals preserved verbatim),
-Http transport (gRPC capability deferred), the richer Plugin SDK authoring surface
-(module/plugin `register` persistence + auto-load are implemented — see ADR 0016),
-and the orchestrator scheduler/cron/webhooks/UI are scaffolded and must not be
-asserted as functional.
-The executor, the SSH/Local/Network network transports, and facts-collection are
-implemented and applied live; do not describe them as pending. The durable store
+**Subsystem honesty.** Templating (Jinja `{{ }}` literals preserved verbatim), the
+SPA UI (only static `--ui-dist` serving exists), serve-side executor parity (server
+dispatch uses a simplified per-target runner, not `runPlaybook`), Http transport (gRPC
+capability deferred), and the richer Plugin SDK authoring surface (module/plugin
+`register` persistence + auto-load are implemented — see ADR 0016) are scaffolded or
+partial and must not be asserted as functional.
+The executor, the SSH/Local/Network network transports, facts-collection, the cron
+scheduler, and webhooks are implemented and applied live; do not describe them as
+pending. The durable store
 is dual-runtime (PAL SqliteDb seam, drizzle-orm removed — ADR 0019); Postgres
 remains record-only/deferred.
 

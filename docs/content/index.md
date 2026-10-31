@@ -35,8 +35,8 @@ features:
 This user guide covers getting started, command reference, core concepts, best
 practices, deployment, and how to contribute.
 
-> Some surfaces behind these topics remain scaffolded (`[deferred]`) — scheduler / cron /
-> webhooks / SPA UI, the richer Plugin SDK authoring surface, and literal <code v-pre>{{ }}</code>
-> rendering — while execution,
-> transport, and facts-collection apply real state. Remaining scaffolds are marked plainly
-> instead of describing unimplemented behavior.
+> Some surfaces behind these topics remain scaffolded (`[deferred]`) — the SPA UI,
+> serve-side executor parity, the richer Plugin SDK authoring surface, and literal
+> <code v-pre>{{ }}</code> rendering — while execution, transport, facts-collection, the
+> orchestrator cron scheduler, and webhooks apply real state. Remaining scaffolds are
+> marked plainly instead of describing unimplemented behavior.

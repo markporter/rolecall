@@ -4,7 +4,10 @@
 1. CLI parses flags → `parseArgs`.
 2. Playbook + inventory normalized via Zod (`src/config`).
 3. Inventory resolved → hosts + per-host vars.
-4. Resolved hosts drive tasks through the executor over a real `Connection` per target (ssh/local/\n   network, chosen via `rolecall_connection`); compute-only flags (`--check`/`--diff`/`--force`)\n   shape real convergence rather than merely printing a plan.
+4. Resolved hosts drive tasks through the executor over a real `Connection` per target
+   (ssh/local/network, chosen via `rolecall_connection`). `--check` observes and reports
+   would-change without converging (unsupported modules are skipped), `--diff` attaches an
+   observed-vs-desired patch, and `--force` bypasses idempotency skips.
 5. Traces are recorded per step during application; replay/resume/profiling read them back from store.
 
 ## `--serve`

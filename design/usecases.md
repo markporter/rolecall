@@ -10,9 +10,10 @@
 layers. RoleCall now also executes live: `playbook run` applies state over SSH/local transports and
 `facts gather` gathers targeted/cached facts per host. Use cases below describe what the
 design *targets*; items not marked 🟢 remain roadmap or target capabilities.
-(Per `AGENTS.md`: scheduler/cron/webhooks/UI, the plugin SDK authoring surface, literal
-Jinja rendering, and the Postgres backend stay genuinely scaffolded; the durable store
-runs on both runtimes over the PAL SqliteDb seam — ADR 0019.)
+(Per `AGENTS.md`: the SPA UI, serve-side executor parity, the plugin SDK authoring
+surface, literal Jinja rendering, and the Postgres backend stay genuinely scaffolded;
+the orchestrator cron scheduler and webhooks are implemented, and the durable store runs
+on both runtimes over the PAL SqliteDb seam — ADR 0019.)
 
 ## Why these use cases
 
@@ -120,7 +121,8 @@ decision, not a bolt-on.
 - **Status:** 🟢 Shipped as a *validation / planning gate* (binary, one-shot CLI,
   `--check` / `--diff`, JSON output all exist today) AND as a *live applier* —
   `playbook run` drives tasks over SSH/local transports through its built connection.
-  Gated pieces here remain scheduled/webhook-driven automation and the git-backed project source.
+  Scheduled and webhook-driven automation exist in `--serve`; the remaining gated piece
+  here is the git-backed project source.
 - **Angle:** "Drop one binary in the pipeline. Gate merges on `rolecall playbook run
   --check -o json`; apply on merge. No venv, no agent, no drift."
 

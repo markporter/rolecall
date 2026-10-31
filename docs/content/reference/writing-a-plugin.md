@@ -121,6 +121,23 @@ export const myModule: Module = {
 | `data` | `Record<string,unknown>?` | Optional structured output (surfaced to later tasks via `reg`). |
 | `stdout` / `stderr` | `string?` | Captured stream output, when relevant. |
 
+### Check mode (`--check` / `--diff`)
+
+The executor supports a global dry-run. A module participates in one of two ways:
+
+- **Expose a `check(args, ctx)` method** returning `{ current, inDesired }` (the
+  `resource()` helper does this automatically). The executor calls it instead of
+  `run` under `--check`, reports `changed: !inDesired`, and attaches an
+  observed-vs-desired patch when `--diff` is set.
+- **Set `supportsCheck: true`** on the module object and honor the injected
+  `_check` / `check` args in `run`, returning `data.wouldChange` or `data.dryRun`
+  when a change would be needed.
+
+Every shipped builtin participates in check mode. Custom modules that do neither
+are **skipped** under `--check` with `check mode not supported by module '<name>'`
+rather than risking a mutation. The
+global `--force` flag is passed to modules as `force: true` (and `_force: true`).
+
 ## `ModuleContext` — what you get per invocation
 
 ```ts

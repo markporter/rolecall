@@ -12,8 +12,9 @@
   VitePress, and the OpenAPI module, keeping `/docs.json` in sync.
 - **Source of truth is `src/`**: if `README.md`'s status banner conflicts with actual
   `src/`, trust `src/` and document what it really does.
-- **Honesty**: never claim Wave-0 scaffold (executor/transport/idempotency-real/
-  templating-real/plugin-SDK/facts/scheduler/UI) as functional.
+- **Honesty**: never claim a scaffold/partial area (Jinja templating, SPA UI,
+  serve-side executor parity, plugin-SDK authoring, Http/gRPC) as functional; executor,
+  transport, idempotency, facts, cron scheduler, and webhooks are implemented.
 
 ## For agents
 

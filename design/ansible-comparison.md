@@ -103,8 +103,9 @@ Ordered by leverage against Ansible's documented complaints.
     `profile_tasks` callbacks). A concrete design is now on the table (see §7):
     a structured **RunTrace** in SQLite (per run/host/task/phase, with per-phase
     timings) that doubles as a profiler, plus replay + failure-locality snapshot.
-    Status: **Designed (not yet implemented)** — rides on the existing SQLite store
-    (todo 19) and diff engine (todo 13); only the trace schema + surfacing are new.
+    Status: **Implemented** — the RunTrace ledger, `--trace`/`--profile`, `run replay`,
+    and `/runs/:id/trace` + `/runs/:id/profile` ship; secret masking still depends on
+    the deferred vault design.
 
  4. **Language/templating boundary (study rec #2).** RoleCall still *mixes* YAML
     config + templating, so the "blurred boundary" problem persists. Two concrete
@@ -114,14 +115,14 @@ Ordered by leverage against Ansible's documented complaints.
       leaves the scalar-string layer entirely, so YAML only quotes ordinary data.
     - **Typed `when`/`loop`** as structured predicates instead of Jinja strings,
       plus **template error location** (line/col in source template).
-    Status: **Designed (not yet implemented)** — both depend on the Wave 2
-    templating work, which is still planned, not built (`src/template/` does not
-    exist yet; `args`/`when`/`loop` are currently `z.unknown()` in the schema).
+    Status: **Implemented** — `src/templating/refs.ts` ships `$var` / `$concat` /
+    `$call` / `$if` / `$each` / `$template` plus typed `when`/`loop`; only Jinja
+    `{{ }}` rendering remains literal.
 
  5. **Resumability / rollback across tasks.** Ansible has no native rollback; RoleCall
     gets device-side atomic commit + revert timer *for switches*, but no general
     cross-task checkpoint/rollback. The agent-mode "resumable task IDs" is a hook
-     — extend to a general executor resume/undo. Status: **Designed (see §8)** — a
+     — extend to a general executor resume/undo. Status: **Implemented (see §8)** — a
     transaction-ID + checkpoint model for dependent plays, best-effort rollback, and
     resume, riding on the todo 25 ledger.
 
@@ -149,13 +150,14 @@ Ordered by leverage against Ansible's documented complaints.
     but the *coverage + discoverability* gaps remain. Design a two-layer fix (see §9): a
     batteries-included module picklist that displaces shell, and a `rolecall/module` idempotency
     helper lib that makes custom idempotent modules ~5 lines; plus `rolecall modules search` + a
-    lint guard on unguarded shell.     Status: **Designed (see §9)**.
+    lint guard on unguarded shell.     Status: **Implemented (see §9)**.
 
  10. **LLM-agent ergonomics (clientless MCP over REST).** Making RoleCall usable by external LLM
     agents without a separate MCP server: reuse the orchestrator REST (todo 18) as a
     self-describing, discoverable tool surface (`GET /mcp` manifest generated from the Zod
     schema) so a minimal LLM skill is the whole integration. Pushes the AI harness outside
-    RoleCall (lower risk, vendor-neutral). Status: **Designed (see §10)**.
+    RoleCall (lower risk, vendor-neutral). Status: **Implemented (see §10)** for the
+    clientless REST surface; the MCP protocol server is proposed in ADR 0020.
 
 ---
 
@@ -216,9 +218,8 @@ guard the plan already wants. Scope helper imports to trusted, project-local mod
 - Residual YAML *scalar* quoting remains for literal values (e.g. `"Debian"`), but
   those are plain data, not template expressions — the layered collision is gone.
   The programmatic TS path removes even that residual quoting.
-- Depends on Wave 2 templating (eta/vento + LiquidJS) which is **planned, not yet
-  built** (`src/template/` absent; `src/config/schema.ts` currently types
-  `args`/`when`/`loop` as `z.unknown()`).
+- The structured renderer (`src/templating/refs.ts`, `src/templating/fast.ts`) and typed
+  `when`/`loop` are implemented; Jinja `{{ }}` stays literal by design (ADR 0008).
 
 ---
 
@@ -298,8 +299,9 @@ every applied delta row carries `tx_id` + `checkpoint_id`.
   and listed in a pending-rollback report. Checkpoint placement is the author's
   responsibility (like SQL `SAVEPOINT`).
 
-Status: **Designed (not yet built)** — rides on the todo 25 ledger + todo 13 device commit
-+ intrinsic idempotency.
+Status: **Implemented** — `src/executor/tx.ts` implements tx/checkpoint with ledger-backed
+rollback, `--resume <run_id>:<checkpoint>`, and best-effort undo, riding on the RunTrace
+ledger + intrinsic idempotency.
 
 ---
 
@@ -348,8 +350,9 @@ Two concrete designs:
   make idempotent the path of least resistance, make non-idempotent shell require an explicit
   guard.
 
-Status: **Designed (not yet built)** — depends on todo 15 SDK + todo 13 diff engine +
-todo 25 ledger.
+Status: **Implemented** — the batteries-included module picklist, the `rolecall/module`
+idempotency helper, `rolecall modules search`/`lint`, and the module-plugin SDK ship;
+the richer SDK authoring/test harness remains partial.
 
 ---
 
@@ -388,9 +391,10 @@ shipping a separate MCP server, and keep the LLM harness outside RoleCall.
   tx-wrap via todo 26, audit via todo 19) are documented as guidance, not RoleCall code. This
   drops the highest-risk embedded-LLM item and matches the plan's "Must NOT have" guardrails.
 
-Status: **Designed (not yet built)** — depends on todo 3 (schema), todo 5/13 (check/diff),
-todo 8 (typed errors), todo 18/21 (REST), todo 19 (store/audit), todo 24 (structured refs),
-todo 25 (trace + masking), todo 26 (tx/checkpoint), todo 27 (module helper + search).
+Status: **Implemented** for the clientless REST surface — `GET /mcp`, `rolecall agent
+manifest`, and the tool routes derive from the Zod-driven `TOOL_DEFS` registry. A real
+MCP protocol server (JSON-RPC 2.0 over stdio + streamable HTTP) is proposed but not built
+(ADR 0020). Trace secret masking still depends on the deferred vault design.
 
 ---
 

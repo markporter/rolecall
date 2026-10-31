@@ -14,9 +14,9 @@ They come directly from `GLOBAL_OPTS` in `src/cli/index.ts`, which passes them t
 | `--extra-vars` | `-e <kv>` | Runtime vars as space-separated `key=value` pairs; applied as the highest precedence layer over play and inventory vars. | none |
 | `--tags` | `<list>` | Run only tasks carrying any listed tag (comma-separated, whitespace-trimmed). Untagged tasks are skipped. | none |
 | `--skip-tags` | `<list>` | Exclude tasks carrying any listed tag (comma-separated, whitespace-trimmed); wins over `--tags` on conflict. | none |
-| `--force` | none | Accepted, compute-only (executor pending). | off |
-| `--check` | none | Accepted, compute-only. | off |
-| `--diff` | none | Accepted, compute-only. | off |
+| `--force` | none | Bypass idempotency skips and force convergence (passed to modules as `force`). | off |
+| `--check` | none | Global dry-run: check-capable modules observe and report would-change without converging; custom modules without check support are skipped. Every shipped builtin supports check mode. | off |
+| `--diff` | none | Attach an observed-vs-desired patch to each checkable module result (human output prints it; JSON carries it in `iterationData[].diff`). | off |
 | `--forks` | `<N>` | Concurrency fan-out; must resolve to a finite number or RoleCall exits 2. | unset |
 | `--help` | `-h` | Print usage and exit 0. | n/a |
 | `--version` | `-v` | Print `rolecall <version>`. | n/a |

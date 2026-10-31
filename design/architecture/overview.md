@@ -31,7 +31,9 @@
    the executor.
 
 ## Honesty note
-Per `AGENTS.md`, templating (Jinja `{{ }}` kept literal), Http transport (gRPC deferred), plugin SDK,
-and scheduler/cron/webhooks/UI are genuinely scaffolded and must never be asserted as functional.
-The executor, SSH/Local/Network transports, and facts-collection ARE implemented: `playbook run`
-applies state over SSH/local transports. Never claim any scaffolded item above applies real remote state.
+Per `AGENTS.md`, templating (Jinja `{{ }}` kept literal), Http transport (gRPC deferred), the plugin
+SDK authoring surface, the SPA UI (static `--ui-dist` serving only), and serve-side executor parity
+(simplified per-target runner, not `runPlaybook`) are scaffolded or partial and must never be asserted
+as fully functional. The executor, SSH/Local/Network transports, facts-collection, the cron scheduler,
+and webhooks ARE implemented: `playbook run` applies state over SSH/local transports, and server run
+dispatch executes over real transports. Never claim a scaffolded item above applies real remote state.
