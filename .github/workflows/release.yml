@@ -111,13 +111,20 @@ jobs:
           files: dist/bin/*
           fail_on_unmatched_files: true
 
-  # ---- 4. npm publish via Trusted Publishing (OIDC) ------------------------
+  # ---- 4. npm STAGED publish via Trusted Publishing (OIDC) ----------------
   #
   # No stored credential: GitHub signs an OIDC token from the job's
   # `id-token: write` permission and the npm CLI exchanges it for a short-lived
-  # publish credential, because `release.yml` is registered as a trusted
-  # publisher for the `@rolecall/cli` package (see .local/RELEASING.md). The same OIDC
-  # identity signs the provenance attestation, so `--provenance` is not needed.
+  # credential, because `release.yml` is registered as a trusted publisher for
+  # `@rolecall/cli` with stage-only permission (see .local/RELEASING.md). The same
+  # OIDC identity signs the provenance attestation, so `--provenance` is not needed.
+  #
+  # Staging is deliberate: the version lands in a staging area and stays
+  # uninstallable until a maintainer approves it with 2FA
+  # (`npm stage list @rolecall/cli` -> `npm stage approve <id> --otp ...`, or the
+  # npmjs.com UI). A compromised workflow therefore cannot ship a release on its
+  # own. Consequence: a re-run before approval re-stages the same version and
+  # fails on the duplicate — approve or `npm stage reject` first.
   #
   # Preflight keeps two no-op releases green:
   #   * package not on the registry  -> first publish must be manual (2FA)
@@ -137,14 +144,14 @@ jobs:
             echo "::notice::${name} is not on the registry yet — the first publish is manual (see .local/RELEASING.md)"
             echo "should_publish=false" >> "$GITHUB_OUTPUT"
           elif npm view "${name}@${version}" version >/dev/null 2>&1; then
-            echo "::notice::${name}@${version} is already published — nothing to publish"
+            echo "::notice::${name}@${version} is already published — nothing to stage"
             echo "should_publish=false" >> "$GITHUB_OUTPUT"
           else
             echo "should_publish=true" >> "$GITHUB_OUTPUT"
           fi
 
   npm:
-    name: npm publish
+    name: npm stage
     needs: [ci, npm-preflight]
     if: needs.npm-preflight.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
@@ -180,6 +187,6 @@ jobs:
         run: bun install --frozen-lockfile
 
       # The Node bundle (lib/cli.js) is built by `prepack` (npm run build:js),
-      # which runs as part of `npm publish` and shells out to Bun.
-      - name: Publish to npm (OIDC trusted publishing)
-        run: npm publish --access public
+      # which runs as part of the stage step and shells out to Bun.
+      - name: Stage release on npm (OIDC trusted publishing)
+        run: npm stage publish --access public
