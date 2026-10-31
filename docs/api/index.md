@@ -214,6 +214,16 @@ ROLECALL_RUNTIME=node bun test    # force Node PAL branch (green — runner is B
 
 The assertion suite imports `bun:test`, which is Bun-native and unavailable under plain Node without an extra transpiling loader we deliberately do not vendor. To still exercise the **Node runtime through its own harness**, CI runs a small `node --test` probe against the pure-JS runtime-detection module (`src/util/runtime.ts`), verifying `ROLECALL_RUNTIME` overrides work on both runtimes, plus a `node-package-smoke` job that installs the packed npm tarball with no Bun on PATH and drives the CLI end to end. See `.github/workflows/ci.yml`.
 
+## Releasing
+
+Releases are tag-driven: bump `package.json`, commit, then push a matching `vX.Y.Z` tag. `.github/workflows/release.yml` verifies the tag, runs CI, builds the native binaries, generates release notes from Conventional Commits via [`cliff.toml`](cliff.toml) (`git-cliff`), attaches the binaries, and stages the npm package.
+
+Preview the latest tag's notes locally:
+
+```sh
+GITHUB_REPO=markporter/rolecall npx git-cliff@2.14.2 --latest --strip header
+```
+
 ## Security & packaging notes
 
 These inherited constraints affect how dependencies are installed and packaged:
