@@ -139,8 +139,7 @@ const TOOL_DEFS: readonly ToolDef[] = [
   {
     name: "facts.gather",
     description:
-      // TODO(ROLECALL-PLACEHOLDER): Wave-0 scaffold — facts.gather does not perform real fact gathering
-      "Resolve the target hosts an inventory WOULD gather facts from. Returns the matched host list (actual fact gathering is Wave-0 scaffold). Body is an inline inventory (validated by InventorySchema) plus an optional limit.",
+      "Resolve the target hosts and per-host vars an inventory selects. This REST tool only resolves targets; it does not gather facts. Use `rolecall facts gather` for targeted/cached fact collection. Body is an inline inventory (validated by InventorySchema) plus an optional limit.",
     schema: FactsGatherInputSchema,
     rest: {
       method: "POST",
@@ -154,8 +153,7 @@ const TOOL_DEFS: readonly ToolDef[] = [
   {
     name: "playbook.run",
     description:
-      // TODO(ROLECALL-PLACEHOLDER): Wave-0 scaffold executor — no real remote state (dispatches to local run map only)
-      "Enqueue a playbook|adhoc|nonIdempotent run. Wave-0 scaffold: plans/dispatches into the local run map only, it does not perform real remote state. Returns a stable runId for later status/replay.",
+      "Enqueue a playbook|adhoc|nonIdempotent run. Runs execute over real transports (SSH/local/HTTP/network simulator) with the server's simplified per-target runner, not the full CLI executor. Set check=true for an observe-only run (no target mutation). Returns a stable runId for later status/replay.",
     schema: PlaybookRunInputSchema,
     rest: {
       method: "POST",
@@ -173,7 +171,7 @@ const TOOL_DEFS: readonly ToolDef[] = [
   {
     name: "playbook.diff",
     description:
-      "Dry-run / --check a playbook. Maps to POST /run with check=true (and diff=true); returns a stable runId for later replay. No remote state is changed.",
+      "Dry-run / --check a playbook. Maps to POST /run with check=true (and diff=true); the server runner never mutates target state in check mode and returns would-change outcomes (with a candidate-vs-running diff for network targets). Returns a stable runId for later replay.",
     schema: PlaybookRunInputSchema,
     rest: {
       method: "POST",

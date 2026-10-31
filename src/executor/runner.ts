@@ -6,10 +6,11 @@ import type { Connection } from "../transport/connection";
 import type { NormalizedTask } from "../config/schema";
 import type { InventorySnapshot, ResolvedInventory } from "../inventory/engine";
 import { basename } from "node:path";
-import { type ModuleContext } from "./module";
+import { type ModuleContext, type ModuleResult } from "./module";
 import { resolveModule } from "../modules/resolver";
-import { applyIdempotent, type IdempotencyOptions } from "../idempotency";
+import { applyIdempotent, type CheckableModule, type IdempotencyOptions } from "../idempotency";
 import { randomUUID } from "node:crypto";
+import { createTwoFilesPatch } from "diff";
 import type { RunTrace } from "../store/types";
 import {
   type ExecOptions,
@@ -31,6 +32,74 @@ import { findHandlers, HandlerCollector } from "./handlers";
 
 function isPlainObject(x: unknown): x is Record<string, unknown> {
   return typeof x === "object" && x !== null && !Array.isArray(x);
+}
+
+/**
+ * Modules whose `run` only observes target state (or mutates executor-local run
+ * state such as facts/registers) and is therefore safe to execute under `--check`.
+ * Check-capable modules are detected automatically via a `check` method or the
+ * explicit {@link import("./module").Module.supportsCheck} flag.
+ */
+const CHECK_MODE_READ_ONLY = new Set([
+  "add_host",
+  "assert",
+  "debug",
+  "fail",
+  "find",
+  "getent",
+  "group_by",
+  "group_info",
+  "json_query",
+  "meta",
+  "pause",
+  "service_facts",
+  "set_fact",
+  "set_reg",
+  "set_stats",
+  "slurp",
+  "stat",
+  "user_info",
+]);
+
+/** A structured observed-vs-desired diff attached when `--diff` is set. */
+interface DiffSummary {
+  before: unknown;
+  after: unknown;
+  /** Unified patch text when both snapshots serialize to text. */
+  patch?: string;
+}
+
+function asDiffText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (value === undefined) return "";
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+}
+
+/** Build a unified diff between observed and desired state. */
+function makeDiff(before: unknown, after: unknown): DiffSummary {
+  const b = asDiffText(before);
+  const a = asDiffText(after);
+  if (b === a) return { before, after };
+  return { before, after, patch: createTwoFilesPatch("current", "desired", b, a).trimEnd() };
+}
+
+/** Copy of rendered args without executor-internal control keys, for diff snapshots. */
+function publicArgs(args: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...args };
+  delete out["_check"];
+  delete out["check"];
+  delete out["_diff"];
+  delete out["_force"];
+  return out;
+}
+
+/** True when a module can run safely under global check mode. */
+function supportsCheck(mod: { name: string; supportsCheck?: boolean }): boolean {
+  return typeof (mod as CheckableModule).check === "function" || mod.supportsCheck === true || CHECK_MODE_READ_ONLY.has(mod.name);
 }
 
 export interface RunState {
@@ -284,6 +353,17 @@ export async function runTaskOnHost(
       continue;
     }
     const args = renderArgs(task.args, vars, {});
+    const checkMode = state.options.check === true;
+    const diffMode = state.options.diff === true;
+    if (state.options.force === true) {
+      args["force"] = true;
+      args["_force"] = true;
+    }
+    if (checkMode) {
+      args["_check"] = true;
+      args["check"] = true;
+    }
+    if (diffMode) args["_diff"] = true;
     const resolved = resolveModule(task.module ?? "");
     const iterStart = performance.now();
     const iterStartedAt = Date.now();
@@ -351,13 +431,71 @@ export async function runTaskOnHost(
         },
       };
       try {
-        const res = state.idempotency?.cache
-          ? await applyIdempotent(mod, args, moduleCtx, {
-              cache: state.idempotency.cache,
-              force: force || state.idempotency.force === true,
-              rolecallManagedOnly: state.idempotency.rolecallManagedOnly,
-            })
-          : await mod.run(moduleCtx);
+        const runModule = (): Promise<ModuleResult> =>
+          state.idempotency?.cache
+            ? applyIdempotent(mod, args, moduleCtx, {
+                cache: state.idempotency.cache,
+                force: force || state.idempotency.force === true || state.options.force === true,
+                rolecallManagedOnly: state.idempotency.rolecallManagedOnly,
+              })
+            : mod.run(moduleCtx);
+        const checkFn = (mod as CheckableModule).check;
+        const canCheck = supportsCheck(mod);
+        let observed: { current: unknown; inDesired: boolean } | undefined;
+        if ((checkMode || diffMode) && typeof checkFn === "function") {
+          try {
+            observed = await checkFn.call(mod, args, moduleCtx);
+          } catch (err) {
+            if (checkMode) throw err;
+          }
+        }
+
+        let res: ModuleResult;
+        if (checkMode && !canCheck) {
+          iter.skipped = true;
+          outcome.skipped = true;
+          res = {
+            changed: false,
+            skipped: true,
+            msg: `skipped: check mode not supported by module '${mod.name}'`,
+            data: { check: true, supported: false },
+          };
+        } else if (checkMode) {
+          if (observed) {
+            res = {
+              changed: !observed.inDesired,
+              msg: observed.inDesired
+                ? "ok: already in desired state (check)"
+                : "would change (check)",
+              data: {
+                check: true,
+                inDesired: observed.inDesired,
+                current: observed.current,
+                ...(diffMode ? { diff: makeDiff(observed.current, publicArgs(args)) } : {}),
+              },
+            };
+          } else {
+            res = await runModule();
+            const wouldChange =
+              !res.failed &&
+              (res.data?.["wouldChange"] === true || res.data?.["dryRun"] === true);
+            if (wouldChange) res = { ...res, changed: true, skipped: false };
+          }
+        } else {
+          res = await runModule();
+          if (diffMode && observed && typeof checkFn === "function") {
+            let after: { current: unknown; inDesired: boolean } | undefined;
+            try {
+              after = await checkFn.call(mod, args, moduleCtx);
+            } catch {
+              // Post-observe is best-effort; keep the pre-observed diff when it fails.
+            }
+            res = {
+              ...res,
+              data: { ...(res.data ?? {}), diff: makeDiff(observed.current, after ? after.current : publicArgs(args)) },
+            };
+          }
+        }
         iter.changed = res.changed;
         iter.failed = Boolean(res.failed);
         iter.stdout = res.stdout;

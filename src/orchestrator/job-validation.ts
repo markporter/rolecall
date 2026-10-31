@@ -25,6 +25,8 @@ export const RunJobSchema = z
     inventoryPath: z.string().optional(),
     limit: z.string().optional(),
     force: z.boolean().optional(),
+    check: z.boolean().optional(),
+    diff: z.boolean().optional(),
   })
   .superRefine((v, ctx) => {
     if (v.type === "adhoc" && !v.module) {
@@ -125,6 +127,8 @@ export function validateJobBody(input: unknown, forcedType?: ActionType): Valida
   if (isNonEmptyString(raw.config)) value.config = raw.config;
   if (typeof raw.limit === "string") value.limit = raw.limit;
   if (typeof raw.force === "boolean") value.force = raw.force;
+  if (typeof raw.check === "boolean") value.check = raw.check;
+  if (typeof raw.diff === "boolean") value.diff = raw.diff;
   if (isNonEmptyString(raw.playbookPath)) value.playbookPath = raw.playbookPath;
   if (isNonEmptyString(raw.inventoryPath)) value.inventoryPath = raw.inventoryPath;
   if (isObjectRecord(raw.args)) value.args = raw.args;

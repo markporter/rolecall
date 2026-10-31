@@ -81,6 +81,14 @@ export interface Module {
   readonly facts?: readonly VarManifestEntry[];
   /** Optional gatherer that produces this module's {@link facts} over a connection. */
   readonly factGatherer?: FactGatherer;
+  /**
+   * Declares that `run` honors the global check-mode passthrough (`_check`/`check`)
+   * and never mutates target state when it is set. Modules exposing a `check`
+   * method are treated as supporting check mode automatically; modules that are
+   * inherently read-only may also set this. Unsupported modules are skipped in
+   * `--check` rather than run.
+   */
+  readonly supportsCheck?: boolean;
 }
 
 /**

@@ -74,6 +74,10 @@ export interface JobBody {
   args?: Record<string, unknown>;
   /** Fire-and-forget: always apply even if already in desired state. */
   force?: boolean;
+  /** Observe-and-report only: never mutate target state. */
+  check?: boolean;
+  /** Attach an observed-vs-desired diff to check-mode outcomes. */
+  diff?: boolean;
   /** Load playbook from this YAML file path (reuses src/config loaders verbatim). */
   playbookPath?: string;
   /** Load inventory from this YAML file path (reuses src/config loaders verbatim). */
