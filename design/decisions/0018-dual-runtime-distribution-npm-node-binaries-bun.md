@@ -14,7 +14,7 @@
 
 RoleCall started Bun-first: `bun build --compile` binaries, `bun:sqlite` for the
 durable store, and a PAL whose Node branch was a stub set that threw on use. That
-blocked the most common install path — `npm i -g rolecall` on a plain Node machine —
+blocked the most common install path — `npm i -g @rolecall/cli` on a plain Node machine —
 and made the npm registry page promise a package that could not run without Bun.
 
 The Node-runtime PAL is now implemented across its surfaces
@@ -30,7 +30,7 @@ it possible, and the honest defer list that remains.
 ### 1. Two distribution channels, one codebase
 
 - **npm channel = Node.js.** The published package targets Node >= 22.19.0 with no
-  Bun installed: `npx rolecall` / `npm i -g rolecall`. The published bin is
+  Bun installed: `npx @rolecall/cli` / `npm i -g @rolecall/cli`. The published bin is
   `lib/cli.js`; package.json `files` is `["lib", "README.md"]` (raw `src/` no longer
   ships; `dist/` stays reserved for release binaries). The tarball is 3 files,
   ~732 kB packed / ~2.8 MB unpacked (inline sourcemap).
@@ -106,7 +106,7 @@ existing `unit` and `native` jobs are unchanged.
 ## Consequences
 
 **Positive**
-- `npm i -g rolecall` works on a stock Node >= 22.19 machine; the registry package
+- `npm i -g @rolecall/cli` works on a stock Node >= 22.19 machine; the registry package
   finally matches its own advertisement.
 - The Bun-native paths (binaries, source checkout, store, serve) are unchanged.
 - The PAL barrel stays simple: both implementation sets load under both runtimes.

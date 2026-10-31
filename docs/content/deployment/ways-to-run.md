@@ -11,14 +11,14 @@ RoleCall reaches your hosts through four channels. Pick whichever fits the machi
 The npm package runs on Node.js 22.19.0 or newer, and no Bun installation is required:
 
 ```sh
-npm i -g rolecall
+npm i -g @rolecall/cli
 rolecall --help
 ```
 
 For a one-off without installing anything globally:
 
 ```sh
-npx rolecall --help
+npx @rolecall/cli --help
 ```
 
 What npm ships is a Node bundle (`lib/cli.js`), so the full feature surface works on a plain Node machine. See [Install](/guide/install) for the engines floor and packaging details.

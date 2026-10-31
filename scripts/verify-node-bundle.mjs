@@ -15,7 +15,7 @@
 //      that would auto-run or crash under Node.
 //
 // It also asserts the bundle starts with a `#!/usr/bin/env node` shebang so
-// `npx rolecall` / the installed bin can execute it directly.
+// `npx @rolecall/cli` / the installed bin can execute it directly.
 //
 // Run by scripts/build-js.mjs immediately after bundling. Exits 1 with a clear
 // per-violation message on any failure.

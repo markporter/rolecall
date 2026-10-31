@@ -33,13 +33,13 @@ server (`rolecall --serve`).
 
 ```sh
 # Global CLI on PATH — works on a machine with Node >= 22.19.0 and no Bun
-npm i -g rolecall
+npm i -g @rolecall/cli
 
 # Or, if you live in the Bun ecosystem
-bun add rolecall
+bun add @rolecall/cli
 
 # One-off usage
-npx rolecall --help
+npx @rolecall/cli --help
 ```
 
 The npm package ships a Node bundle (`lib/cli.js`) built by `bun run build:js`
@@ -215,7 +215,7 @@ interactive terminal window appears. For non-Windows hosts, prefer systemd
 ## Node.js support
 
 RoleCall ships two distribution channels from one codebase. The **npm channel is
-Node.js**: `npm i -g rolecall` (or `npx rolecall`) works on a machine with Node
+Node.js**: `npm i -g @rolecall/cli` (or `npx @rolecall/cli`) works on a machine with Node
 >= 22.19.0 and no Bun installed. The published bin is `lib/cli.js`, a
 `bun build --target=node --packages=external` bundle produced by `bun run build:js`
 (`node scripts/build-js.mjs`, run automatically by `prepack`). **Bun remains the

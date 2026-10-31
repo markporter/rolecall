@@ -18,11 +18,13 @@ Markdown so agents can read it directly. For user-facing how-to/reference, read 
 RoleCall is a dual-runtime config-management and orchestration CLI (`rolecall playbook run ...`)
 and orchestrator server (`rolecall --serve`). Two distribution channels, one codebase:
 
-- **npm = Node.js.** `npx rolecall` / `npm i -g rolecall` works on a machine with
+- **npm = Node.js.** `npx @rolecall/cli` / `npm i -g @rolecall/cli` works on a machine with
   Node >=22.19.0 and no Bun. The published bin is `lib/cli.js`, a
   `bun build --target=node --packages=external` bundle produced by `bun run build:js`
   (`node scripts/build-js.mjs`); `prepack` runs it automatically so the baked version
-  matches the release.
+  matches the release. If no `bun` is on PATH, `build:js` fetches the pinned
+  `bun@1.4.4` via `npx` (POSIX-only), so `npm publish` still works on a Node-only
+  machine; set `BIN_BUN` to force a specific binary.
 - **Bun = batteries included.** Compiled binaries (existing `scripts/build-bin.mjs`
   pipeline) and source-checkout dev (`bun bin/rolecall.js` still works, byte-identical;
   `bun run dev` unchanged). Bun's remaining value is binaries, dev ergonomics, and
