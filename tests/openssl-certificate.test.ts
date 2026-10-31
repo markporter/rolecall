@@ -99,6 +99,80 @@ describe("buildCertPlan — CA-signed", () => {
     expect(plan.commands).toHaveLength(1);
     expect(plan.commands[0].replace(/'/g, "")).toContain("x509 -req -in /tmp/site.csr");
   });
+
+  test("reuses an existing private key with req -new -key", () => {
+    const plan = buildCertPlan(base, true);
+    expect(plan.commands).toHaveLength(2);
+    const req = plan.commands[0].replace(/'/g, "");
+    expect(req).toContain("openssl req -new -key /etc/nginx/ssl/site.key");
+    expect(req).not.toContain("-newkey");
+    expect(req).not.toContain("-keyout");
+  });
+
+  test("generates a new key with -newkey when no key exists", () => {
+    const plan = buildCertPlan(base, false);
+    expect(plan.commands[0].replace(/'/g, "")).toContain("req -newkey");
+  });
+
+  test("writes the CSR to csr_path and defaults it to <path>.csr", () => {
+    const custom = buildCertPlan({ ...base, csr_path: "/etc/nginx/ssl/custom.csr" });
+    expect(custom.commands[0].replace(/'/g, "")).toContain("/etc/nginx/ssl/custom.csr");
+    const fallback = buildCertPlan(base);
+    expect(fallback.commands[0].replace(/'/g, "")).toContain("/etc/nginx/ssl/site.crt.csr");
+  });
+
+  test("signs a CSR that already exists at csr_path without regenerating it", () => {
+    const plan = buildCertPlan({ ...base, csr_path: "/etc/nginx/ssl/custom.csr" }, true, true);
+    expect(plan.commands).toHaveLength(1);
+    expect(plan.commands[0].replace(/'/g, "")).toContain("x509 -req -in /etc/nginx/ssl/custom.csr");
+  });
+});
+
+describe("buildCertPlan — digest", () => {
+  test("defaults to sha256", () => {
+    expect(buildCertPlan({ path: "c", privatekey_path: "k" }).commands[0]).toContain("-sha256");
+  });
+
+  test("digest sha384 applies to self-signed and CA paths", () => {
+    const self = buildCertPlan({ path: "c", privatekey_path: "k", common_name: "x", digest: "sha384" });
+    expect(self.commands[0].replace(/'/g, "")).toContain("-sha384");
+
+    const ca = buildCertPlan({
+      path: "c",
+      privatekey_path: "k",
+      common_name: "x",
+      ca_cert: "/ca.crt",
+      ca_key: "/ca.key",
+      digest: "sha384",
+    });
+    expect(ca.commands[0].replace(/'/g, "")).toContain("-sha384");
+    const sign = ca.commands[1].replace(/'/g, "");
+    expect(sign).toContain("x509 -req");
+    expect(sign).toContain("-sha384");
+  });
+});
+
+describe("buildCertPlan — subject_alt_name alias", () => {
+  test("feeds SANs when san is absent", () => {
+    const plan = buildCertPlan({
+      path: "c",
+      privatekey_path: "k",
+      subject_alt_name: ["DNS:alias.example.com", "IP:10.0.0.9"],
+    });
+    expect(plan.commands[0].replace(/'/g, "")).toContain("subjectAltName=DNS:alias.example.com,IP:10.0.0.9");
+  });
+
+  test("san wins when both are set", () => {
+    const plan = buildCertPlan({
+      path: "c",
+      privatekey_path: "k",
+      san: ["DNS:preferred.example.com"],
+      subject_alt_name: ["DNS:alias.example.com"],
+    });
+    const c = plan.commands[0].replace(/'/g, "");
+    expect(c).toContain("subjectAltName=DNS:preferred.example.com");
+    expect(c).not.toContain("alias.example.com");
+  });
 });
 
 describe("buildCertPlan — key algorithms", () => {
