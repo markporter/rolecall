@@ -1,5 +1,7 @@
-// Built-in module: `json_query` — Ansible `json_query` alternate (JSON-pointer lookup).
+// Built-in module: `json_query` — Ansible `json_query` parity via JMESPath,
+// with JSON-pointer fallback for backward compatibility.
 
+import { search as jmespathSearch } from "jmespath";
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
 import type { ModuleSummary } from "../search";
 
@@ -23,7 +25,12 @@ function resolve(obj: unknown, q: string): unknown {
   return cur;
 }
 
-/** @summary Look up a value by JSON pointer (Ansible `json_query` alternate). @param ctx ModuleContext carrying `data` (a var ref/value) and `query` (JSON pointer). @returns ModuleResult with the resolved value in `data.json_query`. */
+function queryValue(obj: unknown, q: string): unknown {
+  if (q.trim().startsWith("/")) return resolve(obj, q);
+  return jmespathSearch(obj, q);
+}
+
+/** @summary Look up a value with JMESPath (Ansible `json_query` parity); `/`-rooted queries keep the legacy JSON-pointer behavior. @param ctx ModuleContext carrying `data` (a var ref/value) and `query` (JMESPath or JSON pointer). @returns ModuleResult with the resolved value in `data.json_query`; parse/eval errors fail with a `json_query:` message instead of throwing. */
 export const jsonQueryModule: Module = {
   name: "json_query",
   async run(ctx: ModuleContext): Promise<ModuleResult> {
@@ -31,7 +38,13 @@ export const jsonQueryModule: Module = {
     const query = typeof a["query"] === "string" ? String(a["query"]) : "";
     if (!query) return { changed: false, failed: true, msg: "json_query: 'query' required" };
     const data = a["data"];
-    const result = resolve(data, query);
+    let result: unknown;
+    try {
+      result = queryValue(data, query);
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      return { changed: false, failed: true, msg: `json_query: ${detail}` };
+    }
     return { changed: false, skipped: false, msg: `json_query: ${query}`, data: { json_query: result } };
   },
 };
@@ -39,18 +52,34 @@ export const jsonQueryModule: Module = {
 /** Search metadata for the `json_query` module. */
 export const meta: ModuleSummary = {
   name: "json_query",
-  description: "Resolve a JSON-pointer (/a/b/0 or $.a.b[0]) path against `data` (Ansible `json_query` alternate). Result in `data.json_query`.",
+  description:
+    "Query `data` with JMESPath (Ansible `json_query` parity); `/`-rooted queries use the legacy JSON-pointer resolver. Result in `data.json_query`.",
   source: "builtin",
   args: {
     data: { type: "any", required: true, description: "Value (or $var ref) to query." },
-    query: { type: "string", required: true, description: "JSON-pointer path, e.g. /items/0/name or $.items[0].name." },
+    query: {
+      type: "string",
+      required: true,
+      description:
+        "JMESPath expression, e.g. users[?age > `30`].name or length(items); a leading `/` selects a JSON pointer such as /items/0/name.",
+    },
   },
   examples: [
     `- json_query:
-    data: $var
-    query: /users/0/name`,
+    data:
+      $var: users
+    query: users[?age > \`30\`].name`,
+    `- json_query:
+    data:
+      $var: response
+    query: items[0].name`,
+    `- json_query:
+    data:
+      $var: response
+    query: /items/0/name`,
   ],
-  notes: "≠ Ansible `json_query`: RoleCall does not embed JMESPath; this resolves JSON-pointer paths. For richer transforms use `$call` in `set_fact`.",
+  notes:
+    "JMESPath is evaluated in-process via the `jmespath` package (Ansible parity). Queries starting with `/` remain JSON-pointer lookups for backward compatibility; parse/eval errors fail with a `json_query:` message.",
 };
 
 (jsonQueryModule as Module & { meta: ModuleSummary }).meta = meta;
