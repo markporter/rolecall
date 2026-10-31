@@ -9,8 +9,10 @@
 // escalation follows the same convention as the other builtins: every command is
 // prefixed with `${sudo}` when `ctx.become` is set — user/group operations are
 // inherently privileged on Linux/Unix hosts. Args are single-quoted via shQuote so
-// spaces/special characters survive remotely. Passwords (when provided) are applied
-// through `chpasswd`, which accepts a cleartext `name:password` line.
+// spaces/special characters survive remotely. Cleartext passwords (when provided) are
+// applied through `chpasswd`, which accepts a `name:password` line; an already-crypted
+// `password_hash` is applied verbatim via `usermod -p` after reading the current shadow
+// entry so a matching hash stays a no-op.
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
 import type { ModuleSummary } from "../search";
@@ -42,6 +44,8 @@ export interface UserArgs {
   system?: boolean;
   /** Cleartext password applied via `chpasswd` only when provided. */
   password?: string;
+  /** Already-crypted password (e.g. `$6$...`) applied verbatim via `usermod -p`. Exclusive with `password`. */
+  password_hash?: string;
   /** Remove the account's home directory and mail spool on deletion (`userdel -r`). */
   remove?: boolean;
 }
@@ -85,6 +89,29 @@ async function lookupUser(
   }
   const idres = await conn.exec(`${sudo}id -u ${shQuote(name)}`);
   return { found: idres.exitCode === 0 };
+}
+
+/**
+ * Read the account's password hash from `/etc/shadow` via `getent shadow <name>`
+ * (field 2). Returns `undefined` when the lookup fails or yields no hash — for
+ * example on a non-root connection — so callers treat the current value as unknown
+ * and apply the desired hash.
+ * @param conn Active connection (Local or Ssh).
+ * @param sudo Empty string, or `"sudo "` when privilege escalation is requested.
+ * @param name Login name to look up.
+ * @returns The current password hash, or `undefined` when unknown.
+ */
+async function readShadowHash(
+  conn: NonNullable<ModuleContext["connection"]>,
+  sudo: string,
+  name: string,
+): Promise<string | undefined> {
+  const res = await conn.exec(`${sudo}getent shadow ${shQuote(name)}`);
+  if (res.exitCode !== 0) return undefined;
+  const raw = res.stdout.split("\n")[0] ?? "";
+  if (raw.trim().length === 0) return undefined;
+  const hash = raw.split(":")[1];
+  return hash !== undefined && hash.length > 0 ? hash : undefined;
 }
 
 /** Parse the comma/space separated supplementary groups reported by `groups <name>`. */
@@ -186,6 +213,11 @@ export const meta: ModuleSummary = {
     },
     system: { type: "boolean", required: false, description: "Create a system account." },
     password: { type: "string", required: false, description: "Cleartext password applied via chpasswd when provided." },
+    password_hash: {
+      type: "string",
+      required: false,
+      description: "Already-crypted password (e.g. $6$...) applied verbatim via usermod -p. Exclusive with password.",
+    },
     remove: { type: "boolean", required: false, description: "Delete home dir + mail spool on removal (userdel -r)." },
   },
   examples: [
@@ -200,7 +232,7 @@ export const meta: ModuleSummary = {
     remove: true`,
   ],
   notes:
-    "≠ Ansible `user`: imperative getent-based implementation using useradd/usermod/userdel/chpasswd over Local/Ssh. Passwords are sent in cleartext via chpasswd (no hashing); no login-history validation, no encrypted-password (`password_hash`) support, and no OpenSSH/LDAP account backends.",
+    "≠ Ansible `user`: imperative getent-based implementation using useradd/usermod/userdel/chpasswd over Local/Ssh. `password` is sent in cleartext via chpasswd (no hashing); `password_hash` applies an already-crypted value verbatim via usermod -p (compared against the current shadow entry so a matching hash is a no-op). No login-history validation and no OpenSSH/LDAP account backends.",
 };
 
 /** @summary Ensure or remove a local/unix account named `name`, reconciling identity attributes idempotently. Probes `/etc/passwd` before acting so re-runs are no-ops; applies `sudo` on every command when `ctx.become` is set. @param ctx ModuleContext carrying UserArgs and connection. @returns ModuleResult with data.name/state populated; failed:true carries the reason in msg on validation/command errors. */
@@ -220,6 +252,12 @@ export const userModule: Module = {
         failed: true,
         msg: `user: 'state' must be one of ${VALID_STATES.join(" | ")}`,
       };
+    }
+
+    const hasPassword = typeof args.password === "string" && args.password.length > 0;
+    const hasPasswordHash = typeof args.password_hash === "string" && args.password_hash.length > 0;
+    if (state === "present" && hasPassword && hasPasswordHash) {
+      return { changed: false, failed: true, msg: "user: use only one of password / password_hash" };
     }
 
     const conn = ctx.connection;
@@ -318,6 +356,26 @@ export const userModule: Module = {
           changed = true;
           data.groupSynced = true;
         }
+      }
+    }
+
+    const desiredHash =
+      typeof args.password_hash === "string" && args.password_hash.length > 0 ? args.password_hash : undefined;
+    if (desiredHash !== undefined) {
+      const currentHash = await readShadowHash(conn, sudo, name);
+      if (currentHash !== desiredHash) {
+        const res = await conn.exec(`${sudo}usermod -p ${shQuote(desiredHash)} ${shQuote(name)}`);
+        if (res.exitCode !== 0) {
+          return {
+            changed: false,
+            failed: true,
+            stderr: res.stderr || "",
+            msg: `user: failed to set password hash for ${name}: ${res.stderr.trim() || `exit ${res.exitCode}`}`,
+            data,
+          };
+        }
+        changed = true;
+        data.passwordChanged = true;
       }
     }
 

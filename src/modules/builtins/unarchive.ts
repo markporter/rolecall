@@ -4,7 +4,7 @@ import type { Module, ModuleContext, ModuleResult } from "../../executor/module"
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
-/** @summary Extract an archive on the target (Ansible `unarchive` alternate). Reads `src` on the target and extracts into `dest`; skips when `creates` already exists. @param ctx ModuleContext carrying `src`, `dest`, `creates`, `remote_src`, `check`. @returns ModuleResult; `skipped` when guarded. */
+/** @summary Extract an archive on the target (Ansible `unarchive` alternate). Reads `src` on the target and extracts into `dest`; skips when `creates` already exists. @param ctx ModuleContext carrying `src`, `dest`, `creates`, `keep_newer`, `remote_src`, `check`. @returns ModuleResult; `skipped` when guarded. */
 export const unarchiveModule: Module = {
   name: "unarchive",
   async run(ctx: ModuleContext): Promise<ModuleResult> {
@@ -13,6 +13,7 @@ export const unarchiveModule: Module = {
     const dest = typeof a["dest"] === "string" ? String(a["dest"]) : "";
     if (!src || !dest) return { changed: false, failed: true, msg: "unarchive: 'src' and 'dest' are required" };
     const creates = typeof a["creates"] === "string" ? String(a["creates"]) : "";
+    const keepNewer = Boolean(a["keep_newer"]);
     const check = Boolean(a["check"] ?? a["_check"]);
 
     if (creates) {
@@ -22,8 +23,8 @@ export const unarchiveModule: Module = {
 
     const isZip = /\.zip$/i.test(src);
     const extract = isZip
-      ? `unzip -o ${shQuote(src)} -d ${shQuote(dest)}`
-      : `mkdir -p ${shQuote(dest)} && tar -xf ${shQuote(src)} -C ${shQuote(dest)}`;
+      ? `unzip ${keepNewer ? "-n " : ""}-o ${shQuote(src)} -d ${shQuote(dest)}`
+      : `mkdir -p ${shQuote(dest)} && tar ${keepNewer ? "--keep-newer-files " : ""}-xf ${shQuote(src)} -C ${shQuote(dest)}`;
     const cmd = ctx.become ? `sudo sh -c ${shQuote(extract)}` : extract;
     if (check) return { changed: true, skipped: true, msg: `unarchive: would extract ${src} (dry run)` };
     const res = await ctx.connection.exec(cmd);
@@ -41,6 +42,7 @@ export const meta: ModuleSummary = {
     src: { type: "string", required: true, description: "Remote archive path to extract." },
     dest: { type: "string", required: true, description: "Remote directory to extract into." },
     creates: { type: "string", required: false, description: "Skip the task if this path exists." },
+    keep_newer: { type: "boolean", required: false, description: "Preserve files newer than the archive (tar `--keep-newer-files`; zip `-n`)." },
   },
   examples: [
     `- unarchive:
@@ -48,7 +50,7 @@ export const meta: ModuleSummary = {
     dest: /opt/app
     creates: /opt/app/.installed`,
   ],
-  notes: "≠ Ansible `unarchive`: `remote_src` is always true (RoleCall extracts on the target); no `keep_newer`/per-file diff — re-running re-extracts unless `creates` guards it.",
+  notes: "≠ Ansible `unarchive`: `remote_src` is always true (RoleCall extracts on the target); no per-file diff — re-running re-extracts unless `creates` guards it. `keep_newer` maps to tar `--keep-newer-files`; for zip it uses `-n` (never overwrite), the closest available option — note that `-n` takes precedence over the default `-o` overwrite.",
 };
 
 (unarchiveModule as Module & { meta: ModuleSummary }).meta = meta;

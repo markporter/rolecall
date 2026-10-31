@@ -9,7 +9,7 @@ export const tempfileModule: Module = {
   name: "tempfile",
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const path = typeof ctx.args["path"] === "string" ? String(ctx.args["path"]) : "/tmp";
-    const prefix = typeof ctx.args["prefix"] === "string" ? String(ctx.args["prefix"]) : "ansible";
+    const prefix = typeof ctx.args["prefix"] === "string" ? String(ctx.args["prefix"]) : "rolecall";
     const suffix = typeof ctx.args["suffix"] === "string" ? String(ctx.args["suffix"]) : "";
     const state = typeof ctx.args["state"] === "string" ? String(ctx.args["state"]) : "file";
     const cmd = state === "directory"
@@ -29,7 +29,7 @@ export const meta: ModuleSummary = {
   source: "builtin",
   args: {
     path: { type: "string", required: false, description: "Directory to create in (default /tmp)." },
-    prefix: { type: "string", required: false, description: "Filename prefix." },
+    prefix: { type: "string", required: false, description: "Filename prefix (default 'rolecall')." },
     suffix: { type: "string", required: false, description: "Filename suffix." },
     state: { type: "file | directory", required: false, description: "Create a file or directory (default file)." },
   },
@@ -40,7 +40,7 @@ export const meta: ModuleSummary = {
     state: directory
   register: tmp`,
   ],
-  notes: "≠ Ansible `tempfile`: always creates a new node (`changed: true`); RoleCall does not yet track/clean it up automatically.",
+  notes: "≠ Ansible `tempfile`: the default filename prefix is `rolecall`; always creates a new node (`changed: true`); RoleCall does not yet track/clean it up automatically.",
 };
 
 (tempfileModule as Module & { meta: ModuleSummary }).meta = meta;

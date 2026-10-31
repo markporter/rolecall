@@ -30,9 +30,14 @@ export const meta: ModuleSummary = {
     },
     state: { type: "present | absent", required: false, description: "Desired state (default present)." },
     insertafter: {
-      type: "EOF | START",
+      type: "string",
       required: false,
-      description: "Insert location when absent (default EOF).",
+      description: "Insert position when absent: `EOF` to append, or a regex string to insert after the last matching line. Default EOF.",
+    },
+    insertbefore: {
+      type: "string",
+      required: false,
+      description: "Insert position when absent: `BOF`/`START` to prepend, or a regex string to insert before the last matching line. Mutually exclusive with `insertafter`.",
     },
     backup: {
       type: "boolean",
@@ -56,7 +61,7 @@ export const meta: ModuleSummary = {
     state: present`,
   ],
   notes:
-    "≠ Ansible `lineinfile`: `insertafter` accepts `EOF` or `START` only (no arbitrary regex anchor yet). Uses `$var` refs, not Jinja `{{ }}`.",
+    "≠ Ansible `lineinfile`: `insertafter` accepts `EOF` or a regex string; `insertbefore` accepts `BOF`/`START` or a regex string. Regex anchors insert relative to the LAST matching line, falling back to EOF. Uses `$var` refs, not Jinja `{{ }}`.",
 };
 
 interface LineArgs {
@@ -68,8 +73,10 @@ interface LineArgs {
   regexp?: string;
   /** Desired state: "present" (default) or "absent". */
   state?: "present" | "absent";
-  /** Insert location when absent: "EOF" (default) or "START". */
-  insertafter?: "EOF" | "START";
+  /** Insert after `"EOF"` or the last line matching a regex string. */
+  insertafter?: string;
+  /** Insert before `"BOF"`/`"START"` or the last line matching a regex string. */
+  insertbefore?: string;
   /** Rotate a timestamped `.bak` (preserving attributes via `cp -p`) before writing. */
   backup?: unknown;
   /** Validation command run against the file after writing; `%s` is replaced with the path. The task fails if it exits non-zero. */
@@ -83,6 +90,7 @@ export const lineinfileModule: Module & CheckableModule = resource({
     const a = args as unknown as LineArgs;
     const path = String(a.path ?? "");
     if (!path) return { current: null, inDesired: false };
+    if (hasBothAnchors(a)) return { current: null, inDesired: false };
     const current = await readRemoteFile(ctx.connection, path, Boolean(ctx.become));
     if (current === null) {
       return { current: null, inDesired: (a.state ?? "present") === "absent" };
@@ -104,6 +112,9 @@ export const lineinfileModule: Module & CheckableModule = resource({
     const path = String(a.path ?? "");
     if (!path) {
       return { changed: false, failed: true, msg: "lineinfile: 'path' is required" };
+    }
+    if (hasBothAnchors(a)) {
+      return { changed: false, failed: true, msg: "lineinfile: use only one of insertafter / insertbefore" };
     }
     const conn = ctx.connection;
     const bec = Boolean(ctx.become);
@@ -142,8 +153,16 @@ export const lineinfileModule: Module & CheckableModule = resource({
     const matchIdx = re ? lines.findIndex((l) => re.test(l)) : -1;
     if (matchIdx >= 0) {
       lines[matchIdx] = line;
-    } else if (a.insertafter === "START") {
+    } else if (a.insertbefore === "BOF" || a.insertbefore === "START") {
       lines.unshift(line);
+    } else if (a.insertbefore) {
+      const beforeIdx = lastMatchIndex(lines, new RegExp(a.insertbefore));
+      if (beforeIdx >= 0) lines.splice(beforeIdx, 0, line);
+      else lines.push(line);
+    } else if (a.insertafter && a.insertafter !== "EOF") {
+      const afterIdx = lastMatchIndex(lines, new RegExp(a.insertafter));
+      if (afterIdx >= 0) lines.splice(afterIdx + 1, 0, line);
+      else lines.push(line);
     } else {
       lines.push(line);
     }
@@ -154,3 +173,14 @@ export const lineinfileModule: Module & CheckableModule = resource({
 });
 
 (lineinfileModule as Module & CheckableModule & { meta: ModuleSummary }).meta = meta;
+
+function hasBothAnchors(a: LineArgs): boolean {
+  return Boolean(a.insertafter) && Boolean(a.insertbefore);
+}
+
+function lastMatchIndex(lines: string[], re: RegExp): number {
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    if (re.test(lines[i]!)) return i;
+  }
+  return -1;
+}

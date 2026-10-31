@@ -28,6 +28,11 @@ export const meta: ModuleSummary = {
       description: "Marker template; {mark} becomes BEGIN <id> / END <id>. Default '# RoleCall BLOCK {mark}'.",
     },
     marker_id: { type: "string", required: false, description: "Id used inside the markers. Default 'block'." },
+    ansible_marker: {
+      type: "boolean",
+      required: false,
+      description: "Use Ansible's `# BEGIN/END ANSIBLE MANAGED BLOCK` markers instead of RoleCall's. Defaults to false.",
+    },
     state: { type: "present | absent", required: false, description: "Desired state (default present)." },
     insertafter: {
       type: "EOF | START",
@@ -66,7 +71,7 @@ export const meta: ModuleSummary = {
     state: present`,
   ],
   notes:
-    "≠ Ansible `blockinfile`: the marker default is `# RoleCall BLOCK {mark}` (not `# BEGIN/END ANSIBLE MANAGED BLOCK`). Uses `$var` refs, not Jinja `{{ }}`.",
+    "≠ Ansible `blockinfile`: the default marker is `# RoleCall BLOCK {mark}` (not `# BEGIN/END ANSIBLE MANAGED BLOCK`); set `ansible_marker: true` to opt into the Ansible markers. Multiple blocks in one file need explicit `marker` templates instead of `ansible_marker` (which ignores `marker`/`marker_id`). Uses `$var` refs, not Jinja `{{ }}`.",
 };
 
 interface BlockArgs {
@@ -78,6 +83,8 @@ interface BlockArgs {
   marker?: string;
   /** Id used inside the markers. Default "block". */
   marker_id?: string;
+  /** Use Ansible's `# BEGIN/END ANSIBLE MANAGED BLOCK` markers (ignores `marker`/`marker_id`). Default false. */
+  ansible_marker?: boolean;
   /** Desired state: "present" (default) or "absent". */
   state?: "present" | "absent";
   /** Where to insert when absent: "EOF" (default) or "START". */
@@ -89,6 +96,12 @@ interface BlockArgs {
 }
 
 function markers(a: BlockArgs): { begin: string; end: string } {
+  if (a.ansible_marker === true) {
+    return {
+      begin: "# BEGIN ANSIBLE MANAGED BLOCK",
+      end: "# END ANSIBLE MANAGED BLOCK",
+    };
+  }
   const marker = String(a.marker ?? "# RoleCall BLOCK {mark}");
   const id = String(a.marker_id ?? "block");
   return {

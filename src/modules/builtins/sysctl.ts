@@ -4,7 +4,7 @@ import type { Module, ModuleContext, ModuleResult } from "../../executor/module"
 import type { ModuleSummary } from "../search";
 import { shQuote, wrapCommand } from "./fs";
 
-/** @summary Set or remove a kernel parameter (Ansible `sysctl` alternate). Reads the live value from /proc/sys, applies via `sysctl -w`, and persists to /etc/sysctl.d when it differs. @param ctx ModuleContext carrying `name`, `value`, `state`, `sysctl_set`, `reload`. @returns ModuleResult; `skipped` when unchanged. */
+/** @summary Set or remove a kernel parameter (Ansible `sysctl` alternate). Reads the live value from /proc/sys, applies via `sysctl -w`, persists to `sysctl_file` when `sysctl_set` is true, and reloads via `sysctl --system` when `reload` is true. @param ctx ModuleContext carrying `name`, `value`, `state`, `sysctl_set`, `reload`, `ignoreerrors`, `sysctl_file`. @returns ModuleResult; `skipped` when unchanged. */
 export const sysctlModule: Module = {
   name: "sysctl",
   async run(ctx: ModuleContext): Promise<ModuleResult> {
@@ -24,7 +24,10 @@ export const sysctlModule: Module = {
 
     if (state === "absent") {
       if (!current) return { changed: false, skipped: true, msg: `sysctl: ${name} not set` };
-      const rm = `sed -i.bak "/^${name.replace(/\./g, "\\.")}=/d" ${sysctlFile} 2>/dev/null; sysctl -w ${name}=`;
+      const clearLive = `sysctl -w ${name}=`;
+      const rm = persist
+        ? `sed -i.bak "/^${name.replace(/\./g, "\\.")}=/d" ${sysctlFile} 2>/dev/null; ${clearLive}`
+        : clearLive;
       const run = wrapCommand(rm, { become: Boolean(ctx.become), becomeUser: ctx.become_user, environment: ctx.environment });
       const res = await ctx.connection.exec(run);
       if (res.exitCode !== 0 && !ignoreerrors) return { changed: false, failed: true, msg: `sysctl: failed: ${res.stderr}` };
@@ -63,14 +66,16 @@ export const meta: ModuleSummary = {
     value: { type: "string", required: false, description: "Value to set (required when state=present)." },
     state: { type: "present | absent", required: false, description: "present (default) or absent." },
     sysctl_file: { type: "string", required: false, description: "Persisted-file path for the setting (default /etc/sysctl.d/99-rolecall.conf)." },
-    ignoreerrors: { type: "boolean", required: false, description: "Continue (do not fail the task) when `sysctl` returns a non-zero exit." },
+    sysctl_set: { type: "boolean", required: false, description: "Persist the setting to `sysctl_file` (default true)." },
+    reload: { type: "boolean", required: false, description: "Run `sysctl --system` after a change (default true)." },
+    ignoreerrors: { type: "boolean", required: false, description: "Continue (do not fail the task) when `sysctl` returns a non-zero exit (default false)." },
   },
   examples: [
     `- sysctl:
     name: net.ipv4.ip_forward
     value: "1"`,
   ],
-  notes: "≠ Ansible `sysctl`: persists to a single default file (override with `sysctl_file`); `ignoreerrors` continues past non-zero `sysctl` exits.",
+  notes: "≠ Ansible `sysctl`: persistence goes to `sysctl_file` (default /etc/sysctl.d/99-rolecall.conf, overridable per key); `sysctl_set: false` skips the persistence write, `reload: false` skips `sysctl --system`, and `ignoreerrors: true` continues past non-zero `sysctl` exits.",
 };
 
 (sysctlModule as Module & { meta: ModuleSummary }).meta = meta;

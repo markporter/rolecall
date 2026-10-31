@@ -130,6 +130,50 @@ test("password applies once via chpasswd and marks changed", async () => {
   expect(h.calls.some((c) => c.includes("chpasswd"))).toBe(true);
 });
 
+// --- password_hash applied only when the shadow hash differs ----------------
+test("password_hash applies via usermod -p when the shadow hash differs", async () => {
+  const line = passwdLine("bob", 1001, 1001, "/home/bob", "/bin/bash");
+  const desired = "$6$rounds=5000$abc$deadbeef";
+  const router: Router = (cmd) => {
+    if (cmd.startsWith("getent passwd")) return { exitCode: 0, stdout: line, stderr: "" };
+    if (cmd.startsWith("getent shadow")) return { exitCode: 0, stdout: "bob:oldhash:19000:0:99999:7:::", stderr: "" };
+    if (cmd.startsWith("id -u")) return { exitCode: 0, stdout: "1001", stderr: "" };
+    if (cmd.startsWith("usermod")) return { exitCode: 0, stdout: "", stderr: "" };
+    throw new Error(`unexpected command: ${cmd}`);
+  };
+  const h = harness({ name: "bob", password_hash: desired }, { router });
+  const res = await userModule.run(h.ctx);
+  expect(res.changed).toBe(true);
+  expect(res.data?.passwordChanged).toBe(true);
+  const mod = h.calls.find((c) => c.startsWith("usermod"));
+  expect(mod).toBe(`usermod -p '${desired}' 'bob'`);
+});
+
+test("password_hash is a no-op when the shadow hash already matches", async () => {
+  const line = passwdLine("bob", 1001, 1001, "/home/bob", "/bin/bash");
+  const desired = "$6$rounds=5000$abc$deadbeef";
+  const router: Router = (cmd) => {
+    if (cmd.startsWith("getent passwd")) return { exitCode: 0, stdout: line, stderr: "" };
+    if (cmd.startsWith("getent shadow")) return { exitCode: 0, stdout: `bob:${desired}:19000:0:99999:7:::`, stderr: "" };
+    if (cmd.startsWith("id -u")) return { exitCode: 0, stdout: "1001", stderr: "" };
+    throw new Error(`unexpected command: ${cmd}`);
+  };
+  const h = harness({ name: "bob", password_hash: desired }, { router });
+  const res = await userModule.run(h.ctx);
+  expect(res.changed).toBe(false);
+  expect(res.data?.passwordChanged).toBe(undefined);
+  expect(h.calls.some((c) => c.startsWith("usermod"))).toBe(false);
+});
+
+test("password and password_hash together fail without touching the host", async () => {
+  const h = harness({ name: "bob", password: "s3cret", password_hash: "$6$abc$deadbeef" }, { router: absentRouter });
+  const res = await userModule.run(h.ctx);
+  expect(res.changed).toBe(false);
+  expect(res.failed).toBe(true);
+  expect(String(res.msg)).toContain("use only one of password / password_hash");
+  expect(h.calls.length).toBe(0);
+});
+
 // --- privilege escalation ---------------------------------------------------
 test("become prefixes every privileged command with sudo", async () => {
   const h = harness({ name: "svc" }, { become: true, router: absentRouter });

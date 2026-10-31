@@ -17,7 +17,7 @@ import type { ModuleSummary } from "../search";
 
 const MODULE_NAME = "yum_repository";
 
-/** @summary Arguments for the `yum_repository` module. @property name Repo id / `[<name>]` section (required). @property description Human-readable `name=` line (defaults to the repo id). @property baseurl/baseurl… Repository URL fields. @property gpgcheck Enable GPG signature check (default false). @property repo_gpgcheck Enable GPG check for metadata (written only when set). @property enabled Enable the repo (default true). @property gpgkey GPG key URL(s). @property file Repo file basename under /etc/yum.repos.d (default = name; `.repo` appended when missing). @property state `present` (default) or `absent`. */
+/** @summary Arguments for the `yum_repository` module. @property name Repo id / `[<name>]` section (required). @property description Human-readable `name=` line (defaults to the repo id). @property baseurl/baseurl… Repository URL fields. @property gpgcheck Enable GPG signature check (default false). @property repo_gpgcheck Enable GPG check for metadata (written only when set). @property enabled Enable the repo (default true). @property gpgkey GPG key URL(s). @property cost Relative cost/priority (written only when set). @property priority Repo priority (written only when set). @property exclude Packages to exclude (written only when set). @property includepkgs Packages to include (written only when set). @property sslcacert CA certificate bundle (written only when set). @property sslverify Verify the repo TLS certificate (written only when set). @property file Repo file basename under /etc/yum.repos.d (default = name; `.repo` appended when missing). @property state `present` (default) or `absent`. */
 export interface YumRepositoryArgs {
   /** Repo id, written as the `[<name>]` section header. Required. */
   name: string;
@@ -37,6 +37,18 @@ export interface YumRepositoryArgs {
   enabled?: boolean;
   /** URL of the GPG key used to verify packages (written only when supplied). */
   gpgkey?: string;
+  /** Relative cost/priority for the repository (written only when supplied). */
+  cost?: number;
+  /** Repo priority (lower wins; written only when supplied). */
+  priority?: number;
+  /** Space-separated package-name globs to exclude (written only when supplied). */
+  exclude?: string;
+  /** Space-separated package-name globs to include (written only when supplied). */
+  includepkgs?: string;
+  /** Path/URL of the CA certificate bundle (written only when supplied). */
+  sslcacert?: string;
+  /** Verify the repository TLS certificate, written as `sslverify=1`/`sslverify=0` (written only when supplied). */
+  sslverify?: boolean;
   /** Repo file basename under `/etc/yum.repos.d` (default = `name`; `.repo` appended when missing). */
   file?: string;
   /** `present` (default) ensures the section; `absent` removes it. */
@@ -80,6 +92,12 @@ export const meta: ModuleSummary = {
     repo_gpgcheck: { type: "boolean", required: false, description: "Enable GPG check of metadata (written only when set)." },
     enabled: { type: "boolean", required: false, description: "Enable the repo (default true)." },
     gpgkey: { type: "string", required: false, description: "GPG key URL used to verify packages." },
+    cost: { type: "number", required: false, description: "Relative cost/priority (written only when set)." },
+    priority: { type: "number", required: false, description: "Repo priority, lower wins (written only when set)." },
+    exclude: { type: "string", required: false, description: "Space-separated package-name globs to exclude (written only when set)." },
+    includepkgs: { type: "string", required: false, description: "Space-separated package-name globs to include (written only when set)." },
+    sslcacert: { type: "string", required: false, description: "Path/URL of the CA certificate bundle (written only when set)." },
+    sslverify: { type: "boolean", required: false, description: "Verify the repo TLS certificate; written as sslverify=1/sslverify=0 (written only when set)." },
     file: { type: "string", required: false, description: "Repo filename without extension (default = name)." },
     state: { type: "present | absent", required: false, description: "Desired state (default present)." },
   },
@@ -98,7 +116,7 @@ export const meta: ModuleSummary = {
     gpgkey: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-9`,
   ],
   notes:
-    "≠ Ansible `yum_repository`: only the base INI fields are written (no `cost`/`priority`/`exclude`/`includepkgs`/`sslcacert`/`sslverify`, no `gpgkey` auto-import — add a `shell` task to import keys). `description` defaults to the repo id, `enabled` to true, and `gpgcheck` to false. Uses `$var` refs, not Jinja `{{ }}`.",
+    "≠ Ansible `yum_repository`: `gpgkey` is written to the section but not imported — add a `shell` task to import keys (Ansible also does not import it). `description` defaults to the repo id, `enabled` to true, and `gpgcheck` to false. Uses `$var` refs, not Jinja `{{ }}`.",
 };
 
 /** Normalize a repo file basename to end in `.repo`. */
@@ -168,6 +186,12 @@ function desiredBody(a: YumRepositoryArgs): string[] {
   if (a.repo_gpgcheck !== undefined) body.push(`repo_gpgcheck=${a.repo_gpgcheck ? "1" : "0"}`);
   body.push(`enabled=${a.enabled === false ? "0" : "1"}`);
   if (typeof a.gpgkey === "string") body.push(`gpgkey=${a.gpgkey}`);
+  if (typeof a.cost === "number") body.push(`cost=${a.cost}`);
+  if (typeof a.priority === "number") body.push(`priority=${a.priority}`);
+  if (typeof a.exclude === "string") body.push(`exclude=${a.exclude}`);
+  if (typeof a.includepkgs === "string") body.push(`includepkgs=${a.includepkgs}`);
+  if (typeof a.sslcacert === "string") body.push(`sslcacert=${a.sslcacert}`);
+  if (typeof a.sslverify === "boolean") body.push(`sslverify=${a.sslverify ? "1" : "0"}`);
   return body;
 }
 

@@ -89,6 +89,7 @@ class MemFs implements Connection {
       return ok();
     }
     if (/^apt-get update$/.test(cmd)) return ok();
+    if (/^chmod \S+ '[^']*'$/.test(cmd)) return ok();
     throw new Error(`MemFs: unexpected command: ${cmd}`);
   }
 }
@@ -240,6 +241,15 @@ describe("apt_repository module", () => {
     expect(conn.calls.some((c) => c === "apt-get update")).toBe(true);
   });
 
+  test("mode chmods the written source list file", async () => {
+    const conn = new MemFs();
+    const res = await aptRepositoryModule.run(
+      ctxWith(conn, { repo: line, filename: "nginx.list", mode: "0644" }),
+    );
+    expect(res.changed).toBe(true);
+    expect(conn.calls.some((c) => c === "chmod 0644 '/etc/apt/sources.list.d/nginx.list'")).toBe(true);
+  });
+
   test("check mode reports wouldChange without writing", async () => {
     const conn = new MemFs();
     const res = await aptRepositoryModule.run(
@@ -317,6 +327,48 @@ describe("yum_repository module", () => {
     expect(content).toContain("gpgcheck=1");
     expect(content).toContain("repo_gpgcheck=1");
     expect(content).toContain("gpgkey=https://example/key");
+  });
+
+  test("writes optional cost/priority/exclude/includepkgs/sslcacert/sslverify in order", async () => {
+    const conn = new MemFs();
+    await yumRepositoryModule.run(
+      ctxWith(conn, {
+        ...args,
+        cost: 500,
+        priority: 10,
+        exclude: "php* httpd*",
+        includepkgs: "nginx*",
+        sslcacert: "/etc/pki/ca.crt",
+        sslverify: true,
+      }),
+    );
+    const content = conn.files.get(base)!;
+    expect(content).toContain("cost=500");
+    expect(content).toContain("priority=10");
+    expect(content).toContain("exclude=php* httpd*");
+    expect(content).toContain("includepkgs=nginx*");
+    expect(content).toContain("sslcacert=/etc/pki/ca.crt");
+    expect(content).toContain("sslverify=1");
+    const order = ["cost=500", "priority=10", "exclude=php*", "includepkgs=nginx*", "sslcacert=/etc/pki/ca.crt", "sslverify=1"];
+    const indexes = order.map((k) => content.indexOf(k));
+    expect(indexes.every((i) => i >= 0)).toBe(true);
+    expect([...indexes].sort((x, y) => x - y)).toEqual(indexes);
+  });
+
+  test("sslverify false writes sslverify=0", async () => {
+    const conn = new MemFs();
+    await yumRepositoryModule.run(ctxWith(conn, { ...args, sslverify: false }));
+    expect(conn.files.get(base)!).toContain("sslverify=0");
+  });
+
+  test("optional fields are idempotent on re-run", async () => {
+    const conn = new MemFs();
+    const extended = { ...args, cost: 500, priority: 10, exclude: "php*", includepkgs: "nginx*", sslcacert: "/etc/pki/ca.crt", sslverify: false };
+    const first = await yumRepositoryModule.run(ctxWith(conn, extended));
+    expect(first.changed).toBe(true);
+    const second = await yumRepositoryModule.run(ctxWith(conn, extended));
+    expect(second.changed).toBe(false);
+    expect(second.data?.idempotent ?? second.skipped).toBeTruthy();
   });
 
   test("check mode reports wouldChange without writing", async () => {
