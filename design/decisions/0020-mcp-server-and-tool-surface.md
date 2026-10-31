@@ -19,11 +19,10 @@ over JSON-RPC 2.0 natively, with progress notifications and streaming built in. 
 clientless surface still works, but every MCP-native harness needs bespoke glue that
 RoleCall could ship once, itself: a skill file, manifest polling, hand-rolled REST
 calls. And the catalog is incomplete for real agent workflows: there are no authoring
-tools at all, and the run tools ride the scaffolded orchestrator path. `POST /run` in
-`src/orchestrator/routes.ts` and the `playbook.run` / `facts.gather` descriptions in
-`src/orchestrator/mcp.ts` carry `TODO(ROLECALL-PLACEHOLDER): Wave-0 scaffold` markers
-stating they dispatch into the local run map only and do not perform real remote state.
-This ADR proposes a real MCP protocol server as an additional adapter over the same
+tools at all, and the run tools ride the orchestrator's simplified per-target runner.
+`POST /run` in `src/orchestrator/routes.ts` executes over real transports but does not
+call `runPlaybook`, and `facts.gather` in `src/orchestrator/mcp.ts` resolves targets
+only. This ADR proposes a real MCP protocol server as an additional adapter over the same
 registry, with a tool catalog covering authoring and run/debug, executing through the
 same executor pipeline the CLI uses.
 
@@ -98,10 +97,10 @@ The run/debug tools MUST invoke the same executor pipeline the CLI uses:
 (`src/inventory/engine.ts`) → `runPlaybook`/`runTask` (`src/executor/engine.ts`) →
 `defaultFactsEngine.gatherFacts` (`src/facts/engine.ts`), with modules registered via
 `registerAllModules()` (`src/modules/builtins/index.ts`) plus `scanAndRegister()`
-(`src/modules/resolver.ts`). They must NOT use the orchestrator's scaffolded HTTP run
-path: `POST /run` in `src/orchestrator/routes.ts` and the `playbook.run` description in
-`src/orchestrator/mcp.ts` carry `TODO(ROLECALL-PLACEHOLDER): Wave-0 scaffold` markers
-("dispatches into the local run map only, it does not perform real remote state").
+(`src/modules/resolver.ts`). They must NOT use the orchestrator's simplified HTTP run
+path: `POST /run` in `src/orchestrator/routes.ts` and `playbook.run` in
+`src/orchestrator/mcp.ts` drive the per-target `#executeOne` runner rather than
+`runPlaybook`, so they do not provide roles/phases/`when`/`loop`/handlers/tx semantics.
 
 In `--serve`/HTTP MCP mode, execution follows ADR 0017's fork-per-run design: fork
 `rolecall playbook run … -o json` and parse the ndjson event stream. The stdio server is

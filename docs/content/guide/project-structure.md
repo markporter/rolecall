@@ -9,9 +9,11 @@ your own modules, and reusable roles live. It mirrors an Ansible project but is
 JS/TS-first.
 
 > **Status note:** RoleCall's executor is live — `rolecall playbook run` applies state over SSH/local
-> transports against resolved targets. The layout
-> below is the target shape; tooling that drives it is being built behind the seams
-> described in `design/decisions/0014-project-and-plugin-architecture.md` (and `design/decisions/0015-collections-and-install-commands.md` for distribution).
+> transports against resolved targets, and local `plugins/` plus local `roles/` are
+> scanned and resolved at run time. The layout below is otherwise the target shape:
+> `rolecall collections install` and `rolecall --create-project` are planned behind the
+> seams described in `design/decisions/0014-project-and-plugin-architecture.md` (and
+> `design/decisions/0015-collections-and-install-commands.md` for distribution).
 
 ## A minimal project
 

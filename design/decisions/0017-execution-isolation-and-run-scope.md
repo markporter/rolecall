@@ -29,9 +29,12 @@ run, exit. `rolecall --serve` (`src/orchestrator/**`) is different. It is a
 long-lived process, and when it starts running playbooks, concurrent runs inside
 one process would race and leak one project's resolution into another. The
 orchestrator's `Engine` (`src/orchestrator/engine.ts`) today uses its own
-simplified `#executeOne` path and does not call `runPlaybook`, and the
-scheduler/cron/webhooks are still scaffolded, so the race is latent. That is
-good news: the fix can land before serve ever wires up playbook execution.
+simplified `#executeOne` path and does not call `runPlaybook`, so the race is
+latent. **Update:** the scheduler/cron/webhooks described as scaffolded here are now
+implemented and fire through `Engine.enqueue`, but dispatch still uses the simplified
+`#executeOne` path; the race is still latent because serve mode does not yet call
+`runPlaybook`. That is good news: the fix can land before serve ever wires up full
+playbook execution.
 
 One subsystem is already safe for multi-process use. The Store sets
 `journal_mode=WAL`, `synchronous=NORMAL`, and `busy_timeout=5000`

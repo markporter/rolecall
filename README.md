@@ -18,8 +18,11 @@ server (`rolecall --serve`).
 > (INI + `all:`-rooted YAML) directly by auto-detecting the format, and
 > `--tags`/`--skip-tags` plus play-level `handlers:`/`tags:` cover
 > Ansible-style selection and notifications. Transport + the executor are implemented,
-> on Node.js (>=22.19, via npm) as well as Bun. Still scaffolded (do not treat as
-> functional): scheduler / cron / webhooks / SPA UI route registry, the richer Plugin SDK
+> on Node.js (>=22.19, via npm) as well as Bun. The orchestrator boots a real HTTP
+> server with run dispatch over real transports, project/schedule CRUD, a working cron
+> scheduler, and Bearer-gated webhooks; serve-side dispatch still uses a simplified
+> per-target runner rather than the full CLI executor. Still scaffolded (do not treat as
+> functional): the SPA UI (only static `--ui-dist` serving), the richer Plugin SDK
 > authoring surface, the full Jinja `{{ }}` renderer (only structured references
 > `$var`/`$concat`/`$call`/`$if`/`$each`/`$template` + typed `when`/`loop` exist), the
 > Postgres backend (record-only), and RBAC / Vault / WinRM target capabilities.
@@ -306,8 +309,8 @@ src/
   facts/        targeted/cached fact gathering — implemented
   modules/      JS/TS module SDK — modules + plugin register implemented; plugin SDK authoring partial
   store/        SQLite project/run/schedule persistence — implemented
-  orchestrator/ Express server implemented; scheduler/cron/webhooks/SPA scaffold
-  ui/           pluggable served SPA — scaffold
+  orchestrator/ Express server, run dispatch, cron scheduler, webhooks implemented; serve-side executor parity + SPA UI partial
+  ui/           pluggable served SPA — scaffold (static --ui-dist serving only)
   util/         runtime detection (detectRuntime) — implemented
 test/           smoke test
 tests/          runtime detection test
