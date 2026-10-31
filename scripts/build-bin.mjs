@@ -37,6 +37,9 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const PKG = JSON.parse(readFileSync(resolve(ROOT, "package.json"), "utf8"));
 const NAME = PKG.name || "rolecall";
+// Binaries are named after the command they ship, not the registry name: a scoped
+// package (@rolecall/cli) would otherwise emit dist/bin/@rolecall/cli-<target>.
+const BIN_NAME = Object.keys(PKG.bin || {})[0] || NAME.replace(/^@[^/]+\//, "");
 const VERSION = String(PKG.version || "0.0.0");
 
 const ENTRY = resolve(ROOT, "scripts/cli-native-entry.mjs");
@@ -126,7 +129,7 @@ function parseArgs(argv) {
 
 function compile({ target, outdir }) {
   const exe = bunExe();
-  const outFile = resolve(outdir, `${NAME}-${target}`);
+  const outFile = resolve(outdir, `${BIN_NAME}-${target}`);
   mkdirSync(outdir, { recursive: true });
 
   const args = ["build", "--compile", "--banner", bannerCode(), "--outfile", outFile, ENTRY];
@@ -150,8 +153,8 @@ function smokeTest(binaryPath) {
   // not a script requiring the runtime). Verify it prints a valid version line.
   const res = spawnSync(binaryPath, ["--version"], { stdio: "pipe" });
   const stdout = (res.stdout || "").toString();
-  const line = stdout.split("\n").find((l) => l.toLowerCase().startsWith("rolecall")) || "";
-  return { ok: res.status === 0 && line.startsWith("rolecall"), code: res.status, output: stdout.trim(), versionLine: line };
+  const line = stdout.split("\n").find((l) => l.toLowerCase().startsWith(BIN_NAME)) || "";
+  return { ok: res.status === 0 && line.startsWith(BIN_NAME), code: res.status, output: stdout.trim(), versionLine: line };
 }
 
 function main() {
