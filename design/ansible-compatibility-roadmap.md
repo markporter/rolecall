@@ -43,6 +43,10 @@ Each item below lists: **gap**, **plan** (files to touch), **effort**
    `defaults` (now implemented), and an **ADR 0014/0015 layout refinement**: a role separates `defaults/`
   (lowest), `group_vars/`/`host_vars/` (group/host precedence), and optional `vars/`
   (above play vars), so the precedence model is unambiguous.
+- **Status:** Implemented — `roles?: string[]` is on `PlaybookObject`
+  (`src/config/schema.ts`), and `src/config/loader.ts` composes each named role into the
+  play at load time (tasks + handlers spliced in, defaults/vars merged, and each task
+  tagged with its `roleDir` so role-relative `templates/` resolve).
 
 ### P2. `handlers:` play-level sugar  *(gap: play `handlers:` — U)*
 - **Plan:** accept a top-level `handlers:` array on `PlaybookObject` and lower each
@@ -60,6 +64,10 @@ Each item below lists: **gap**, **plan** (files to touch), **effort**
 - **Plan:** add `become_user?: string`, `become_method?: string` to `TaskSchema`;
   thread into the transport sudo invocation (`src/transport/*`).
 - **Effort:** M. **Tension:** none (just richer privilege escalation).
+- **Status:** Partially implemented — `become_user?: string` is in
+  `src/config/schema.ts` and threaded through module execution
+  (`src/executor/runner.ts` → `src/modules/builtins/fs.ts` wraps commands as
+  `sudo -u <user>`); `become_method` is **not** implemented.
 
 ### P4. `gather_facts` — lazy/on-demand targeted gathering  *(gap: play `gather_facts` — P)*
 - **Plan (D2):** RoleCall's native model is **lazy, on-demand, targeted + cached** fact
@@ -81,6 +89,10 @@ Each item below lists: **gap**, **plan** (files to touch), **effort**
   `host_vars/<host>.yml` from the project root and feeds
   `ResolveOptions.groupVars` / `hostVars` (`src/inventory/engine.ts`).
 - **Effort:** M. **Tension:** none.
+- **Status:** Implemented — `src/config/loader.ts` (`resolveDirectoryVars`)
+  discovers and parses `group_vars/*.yaml` / `host_vars/*.yaml` next to the inventory
+  file (group/host name taken from the file name), feeding the engine's group/host var
+  precedence; a missing directory is graceful and yields no vars.
 
 ### P6. Ansible inventory consumption  *(gap: inventory INI/YAML — U)*
 - **Plan:** accept Ansible INI (`[group]`, `[group:children]`, `[group:vars]`) and
@@ -118,7 +130,7 @@ Builtins already present (M): `service`/`systemd`, `lineinfile`, `blockinfile`,
 - **Plan:** new `src/modules/builtins/package.ts`, dispatch by `facts.os_family`,
   idempotent (check installed vs desired). 
 - **Effort:** M. **Tension:** none.
-- **Status:** Implemented — `package.ts` dispatches by `facts.os_family` (apt/yum/dnf/apk) and is idempotent (installed vs desired `state`).
+- **Status:** Implemented — `package.ts` probes `which` for apt-get/dnf/yum/apk/pacman/zypper (first match wins; `manager` overrides detection) and is idempotent (installed vs desired `state`). Also supports `hold` (apt `apt-mark` / zypper `addlock`), `allow_downgrade` (apt), and a real apt `cache_valid_time` age check.
 
 ### P8. `file` module  *(state: directory/touch/link/absent/present — P)*
 - **Plan:** new `file.ts` covering the common `state` values; idempotent via diff.
@@ -163,6 +175,7 @@ Builtins already present (M): `service`/`systemd`, `lineinfile`, `blockinfile`,
   `apt_repository` / `yum_repository`. Prioritize by Ansible usage frequency; each
   is a small idempotent builtin. **Effort:** M each.
 - **Status:** all implemented — `stat` (`stat.ts`), `get_url` (`get_url.ts` — download to host with sha256 verify), `replace` (`replace.ts` — in-file text substitution), `unarchive` (`unarchive.ts`), `cron` (`cron.ts` — `#Ansible: <name>`-marked crontab entries: present/absent/disabled, `special_time`, user crontab or `/etc/cron.d` drop-in), `apt_repository` (`apt_repository.ts` — `sources.list.d` line management, `validate_certs`/`update_cache`), and `yum_repository` (`yum_repository.ts` — `/etc/yum.repos.d` INI section management). Each is `resource()`-backed (describe/converge, `check` dry-run) over the SSH/local transport.
+- **Parity deltas closed:** `stat` (`follow`, `checksum`/`get_checksum`, `mtime_epoch`), `find` (`size`, `age`/`age_stamp`, `contains`, `file_type: link`), `archive` (`remove`, `exclude_path`, `force_archive` mtime skip), `unarchive` (`keep_newer`), `assemble` (`delimiter`), `cron` (`backup`, `env`, `insertafter`/`insertbefore`, `cron_file` `mode`), `apt_repository` (`mode`), `yum_repository` (`cost`, `priority`, `exclude`, `includepkgs`, `sslcacert`, `sslverify`). `wait_for` gained `search_regex` and `state` (`started`/`present`/`stopped`/`absent`/`drained`). `mount` gained `boot`/`dump`/`passno`; `hostname` gained `use`; `ufw` gained `default`; `sysctl` documented `reload`/`sysctl_set`.
 
 ---
 
