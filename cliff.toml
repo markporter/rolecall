@@ -1,0 +1,60 @@
+# git-cliff configuration for RoleCall release notes.
+# https://git-cliff.org/docs/configuration
+#
+# Release notes are generated from Conventional Commits in the annotated tag
+# range. Locally preview the latest tag's notes with:
+#
+#   GITHUB_REPO=markporter/rolecall npx git-cliff@2.14.2 --latest --strip header
+#
+# CI runs the same command through orhun/git-cliff-action in release.yml.
+
+[changelog]
+header = ""
+body = """
+{% if version %}\
+## {{ version | trim_start_matches(pat="v") }} - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+## Unreleased
+{% endif %}\
+{% for entry in commits | commit_groups(groups=commit_parsers_groups) %}
+### {{ entry.group | striptags | trim | upper_first }}
+{% for commit in entry.commits %}- {% if commit.scope and entry.group != "Modules" %}**{{ commit.scope }}:** {% endif %}{% if commit.breaking %}**BREAKING:** {% endif %}{{ commit.message | upper_first }}{% if remote.github.owner %} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}/commit/{{ commit.id }})){% endif %}
+{% endfor %}
+{% endfor %}\
+{% if previous.version %}\
+**Full Changelog**: https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}/compare/{{ previous.version }}...{{ version }}
+{% endif %}\
+"""
+trim = true
+render_always = true
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+split_commits = false
+protect_breaking_commits = true
+filter_commits = false
+tag_pattern = "v[0-9]*"
+topo_order = false
+topo_order_commits = true
+sort_commits = "newest"
+
+commit_parsers = [
+  # Keep the large module surface in its own section, then group the rest.
+  { message = "^(feat|fix|perf|refactor)\\(modules\\)", group = "Modules" },
+  { message = "^feat", group = "Features" },
+  { message = "^fix", group = "Fixes" },
+  { message = "^perf", group = "Performance" },
+  { message = "^refactor", group = "Refactoring" },
+  { message = "^docs", group = "Documentation" },
+  { message = "^test", group = "Testing" },
+  { message = "^build", group = "Build" },
+  { message = "^ci", group = "CI" },
+  { message = "^style", group = "Styling" },
+  { message = "^revert", group = "Reverts" },
+  { message = "^release", skip = true },
+  { message = "^chore\\(release\\)", skip = true },
+  { message = "^chore\\(deps", skip = true },
+  { message = "^chore", group = "Chores" },
+  { message = ".*", group = "Other" },
+]
