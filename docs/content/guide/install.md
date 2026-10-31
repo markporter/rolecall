@@ -14,13 +14,13 @@ The npm package runs on Node.js, so a machine with Node >= 22.19.0 and no Bun is
 
 ```sh
 # Global CLI available on PATH
-npm i -g rolecall
+npm i -g @rolecall/cli
 
 # Or run it without installing
-npx rolecall --help
+npx @rolecall/cli --help
 
 # Or, project-local, if you live inside the Bun ecosystem
-bun add rolecall
+bun add @rolecall/cli
 ```
 
 What npm ships is a Node bundle (`lib/cli.js`) built by `bun run build:js` (`node scripts/build-js.mjs`); `prepack` runs that build automatically so the baked version always matches the release. Either install route makes the `rolecall` command reachable wherever you call it. Head over to [Quickstart](/guide/quickstart) for what to type after installation finishes. The other channels, including standalone binaries attached to each GitHub Release, are covered in [Ways to run RoleCall](/deployment/ways-to-run).

@@ -12,7 +12,7 @@ With RoleCall installed, help prints immediately:
 rolecall --help
 ```
 
-You should see the global flag list followed by the subcommands (`playbook`, `facts`, `inventory`, `plugin`). If you have not installed RoleCall yet, `npx rolecall --help` runs the same thing without a global install. A quick `rolecall --version` reports the current package version.
+You should see the global flag list followed by the subcommands (`playbook`, `facts`, `inventory`, `plugin`). If you have not installed RoleCall yet, `npx @rolecall/cli --help` runs the same thing without a global install. A quick `rolecall --version` reports the current package version.
 
 ## Apply a playbook
 
