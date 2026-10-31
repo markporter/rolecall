@@ -146,17 +146,19 @@ the migration guide so humans and the converter share one reference.
 
 Legend: **M** 1:1 · **U** upgrade · **P** partial/manual · **X** unsupported by design
 
+> Matrix refreshed 2026-10-18 against src/ (src wins over prose).
+
 | Ansible construct | RoleCall equivalent | Class | Notes |
 |---|---|---|---|
 | Play `hosts` | `hosts` | M | string or list |
-| Play `roles:` | `roles:` (decision #3) | U→M | native once #3 lands; today rejected by `strictObject` |
+| Play `roles:` | `roles:` (decision #3) | M | native: composed at load time from `roles/<name>` (tasks/handlers spliced, defaults/vars merged) by `src/config/loader.ts`; `roles?:` is on `PlaybookObject` (`src/config/schema.ts`) |
 | Play `tasks:` | `tasks:` | M | |
 | Play `vars:` | `vars:` | M | |
-| Play `handlers:` | `listen:` task + `notify` | U | handler block → task with `listen:` |
-| Play `gather_facts` | explicit `rolecall facts gather` | P | no implicit auto-gather |
+| Play `handlers:` | `listen:` task + `notify` | M | play-level `handlers:` block accepted and lowered to tasks carrying `listen:` (defaulting to the handler name); flushed at end of play (`src/config/schema.ts`) |
+| Play `gather_facts` | explicit `rolecall facts gather` | P | no implicit auto-gather; field still absent from the schema (lazy facts default) |
 | Play `serial:` | `serial:` | M | |
 | Play `strategy: free` | `strategy: free` | M | |
-| Play `tags:` | — | X | by design |
+| Play `tags:` | `tags:` + `--tags` / `--skip-tags` | M | task `tags:` replace play `tags:` (no union); `--tags`/`--skip-tags` filter the expanded task list (`src/config/schema.ts`) |
 | Play `vars_files` / `vars_prompt` | — | P | load via helpers/module; document |
 | Play `pre_task` / `post_task` | ordered tasks / `tx` | P | |
 | `import_playbook` | `imports:` | M | |
@@ -171,25 +173,26 @@ Legend: **M** 1:1 · **U** upgrade · **P** partial/manual · **X** unsupported 
 | Task `delegate_to:` | `delegate_to:` | M | |
 | Task `run_once:` | `run_once:` | M | |
 | Task `become:` | `become:` | M | |
-| Task `become_user` / `become_method` | — | P | only `become: true` → sudo |
+| Task `become_user` | `become_user` | M | threaded through module execution as `sudo -u <user>` (`src/executor/runner.ts`, `src/modules/builtins/fs.ts`) |
+| Task `become_method` | — | P | only `become: true` → sudo; escalation method not selectable |
 | Task `connection:` | — | P | transport chosen by target |
 | Task `ignore_errors:` | — | X | RoleCall fails host; use `tx`/guard |
 | Task `changed_when` / `failed_when` | — | X | intrinsic idempotency |
 | `block` / `rescue` / `always` | `tx` / `checkpoint` | P | rollback intent |
-| `set_fact` | `register:` | U | |
+| `set_fact` | `set_fact` module + `register:` | M | `set_fact` builtin sets host facts; `register:` captures a task's result |
 | `debug` / `assert` | `debug` / `assert` | M | |
 | `service` / `systemd` | `service` | M | |
 | `lineinfile` / `blockinfile` | `lineinfile` / `blockinfile` | M | |
 | `command` / `shell` | `shell` | M | guard recommended |
 | `http` / `uri` | `http` | U | |
 | `sql` | `sql` | M | |
-| `apt` / `yum` / `dnf` | — | P | package module gap (planned) |
-| `copy` / `template` / `file` | `copy` / `http` + `$template` | M | `copy` supersedes `config_write` + `template` |
-| `user` / `group` | — | P | gap; document |
-| Inventory INI/YAML | `groups:` map | U | format differs; `:children`, glob, precedence close |
-| `group_vars/` / `host_vars/` dirs | engine supports via options | P | loader planned (see `design/ansible-compatibility-roadmap.md`) |
-| `extra_vars` (`-e`) | — | X | play `vars` only |
-| `ansible_*` magic vars | `facts.*` namespace | U | `inventory_hostname` → `host` alias |
+| `apt` / `yum` / `dnf` | `package` | U | `package` builtin dispatches by `facts.os_family` (apt/yum/dnf/apk); idempotent installed-vs-desired |
+| `copy` / `template` / `file` | `copy` / `file` | M | `template` folded into `copy` (literal checksum-compare + on-host eta/jinja via `content`); `file` covers `state` values |
+| `user` / `group` | `user` / `group` | M | idempotent create/remove/update via system commands |
+| Inventory INI/YAML | consumed directly | M | loader auto-detects Ansible INI / `all:`-rooted YAML and normalizes to native `children` + `host_vars` (`src/inventory/ansible.ts`, `src/config/loader.ts`) |
+| `group_vars/` / `host_vars/` dirs | discovered next to inventory | M | `resolveDirectoryVars` reads `group_vars/*.yaml` / `host_vars/*.yaml` (`src/config/loader.ts`) |
+| `extra_vars` (`-e`) | `--extra-vars` / `-e` | M | highest precedence layer, above play/inventory vars (`src/cli/parse-extra-vars.ts`) |
+| `ansible_*` magic vars | `facts.*` namespace | P | `facts.*` provides facts (e.g. `os_family`); no `ansible_*` aliases or `inventory_hostname` alias exist in `src/` — manual remap |
 | `ansible-vault` | Vault/secret engine (target cap.) | P | |
 
 ## Consequences
