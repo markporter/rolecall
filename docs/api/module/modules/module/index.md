@@ -12,6 +12,7 @@ description: A pluggable unit of work. Registered by name; resolved at dispatch 
 	factGatherer?: FactGatherer;
 	facts?: readonly VarManifestEntry[];
 	name: string;
+	supportsCheck?: boolean;
 	run(ctx: ModuleContext): Promise<ModuleResult>;
 }"
 />
@@ -39,6 +40,12 @@ Typed fact schemas this module can produce. When present, the module is auto-reg
 <MemberHeading id="name" depth="3" name="name" sig="name: string" />
 
 <MemberMeta badges="readonly" sourceHref="/source/src/executor/module-ts/#L74" sourceLabel="module.ts:74" />
+
+<MemberHeading id="supportscheck" depth="3" name="supportsCheck" sig="supportsCheck: boolean" />
+
+<MemberMeta badges="readonly" sourceHref="/source/src/executor/module-ts/#L91" sourceLabel="module.ts:91" />
+
+Declares that `run` honors the global check-mode passthrough (`_check`/`check`) and never mutates target state when it is set. Modules exposing a `check` method are treated as supporting check mode automatically; modules that are inherently read-only may also set this. Unsupported modules are skipped in `--check` rather than run.
 
 ## Methods
 

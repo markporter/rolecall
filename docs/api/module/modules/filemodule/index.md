@@ -6,9 +6,9 @@ longname: module:modules.fileModule
 
 # fileModule
 
-<Signature code="fileModule: Module" />
+<Signature code="fileModule: Module & CheckableModule" />
 
-<SourceLink href="/source/src/modules/builtins/file-ts/#L145" label="file.ts:145" />
+<SourceLink href="/source/src/modules/builtins/file-ts/#L146" label="file.ts:146" />
 
 **Returns**
 

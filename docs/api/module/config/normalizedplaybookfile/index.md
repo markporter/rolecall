@@ -8,4 +8,4 @@ longname: module:config.NormalizedPlaybookFile
 
 <Signature code="NormalizedPlaybookFile = NormalizedPlaybook | NormalizedPlaybook[]" />
 
-<SourceLink href="/source/src/config/schema-ts/#L403" label="schema.ts:403" />
+<SourceLink href="/source/src/config/schema-ts/#L427" label="schema.ts:427" />

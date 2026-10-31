@@ -9,7 +9,7 @@ description: Failed validation explains exactly what was wrong (message never le
 
 <Signature code="ValidationError = { error: string; ok: false }" />
 
-<SourceLink href="/source/src/orchestrator/job-validation-ts/#L70" label="job-validation.ts:70" />
+<SourceLink href="/source/src/orchestrator/job-validation-ts/#L72" label="job-validation.ts:72" />
 
 Failed validation explains exactly what was wrong (message never leaks secrets).
 

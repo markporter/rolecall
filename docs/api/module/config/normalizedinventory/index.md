@@ -13,7 +13,7 @@ longname: module:config.NormalizedInventory
 }"
 />
 
-<SourceLink href="/source/src/config/schema-ts/#L406" label="schema.ts:406" />
+<SourceLink href="/source/src/config/schema-ts/#L430" label="schema.ts:430" />
 
 ---
 
@@ -21,10 +21,10 @@ longname: module:config.NormalizedInventory
 
 <MemberHeading id="groups" depth="3" name="groups" sig="groups: Record<string, { children?: string[]; hosts: string[]; vars: Record<string, unknown> }>" />
 
-<MemberMeta sourceHref="/source/src/config/schema-ts/#L407" sourceLabel="schema.ts:407" />
+<MemberMeta sourceHref="/source/src/config/schema-ts/#L431" sourceLabel="schema.ts:431" />
 
 <MemberHeading id="hostvars" depth="3" name="hostVars" sig="hostVars: Record<string, Record<string, unknown>>" />
 
-<MemberMeta sourceHref="/source/src/config/schema-ts/#L412" sourceLabel="schema.ts:412" />
+<MemberMeta sourceHref="/source/src/config/schema-ts/#L436" sourceLabel="schema.ts:436" />
 
 Per-host var maps (highest precedence layer), keyed by hostname. Absent when the source declares none.

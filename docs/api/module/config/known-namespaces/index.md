@@ -9,7 +9,7 @@ description: The 9 reserved, fully-qualified namespaces of the TemplateVars map 
 
 <Signature code="KNOWN_NAMESPACES: Set<string>" />
 
-<SourceLink href="/source/src/config/loader-ts/#L125" label="loader.ts:125" />
+<SourceLink href="/source/src/config/loader-ts/#L132" label="loader.ts:132" />
 
 The 9 reserved, fully-qualified namespaces of the `TemplateVars` map (ADR 0013).
 

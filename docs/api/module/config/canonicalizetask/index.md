@@ -8,7 +8,7 @@ longname: module:config.canonicalizeTask
 
 <Signature code="canonicalizeTask(raw: unknown): unknown" />
 
-<SourceLink href="/source/src/config/schema-ts/#L141" label="schema.ts:141" />
+<SourceLink href="/source/src/config/schema-ts/#L144" label="schema.ts:144" />
 
 **Parameters**
 

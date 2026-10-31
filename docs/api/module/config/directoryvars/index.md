@@ -14,7 +14,7 @@ description: Parsed group_vars/ + host_vars/ contribution discovered next to an 
 }"
 />
 
-<SourceLink href="/source/src/config/loader-ts/#L811" label="loader.ts:811" />
+<SourceLink href="/source/src/config/loader-ts/#L933" label="loader.ts:933" />
 
 Parsed `group_vars/` + `host_vars/` contribution discovered next to an inventory file.
 
@@ -24,12 +24,12 @@ Parsed `group_vars/` + `host_vars/` contribution discovered next to an inventory
 
 <MemberHeading id="groupvarsbygroup" depth="3" name="groupVarsByGroup" sig="groupVarsByGroup: Record<string, Record<string, unknown>>" />
 
-<MemberMeta sourceHref="/source/src/config/loader-ts/#L813" sourceLabel="loader.ts:813" />
+<MemberMeta sourceHref="/source/src/config/loader-ts/#L935" sourceLabel="loader.ts:935" />
 
 group name -> var map (file `group_vars/<group>.yaml` becomes group `<group>`).
 
 <MemberHeading id="hostvarsbyhost" depth="3" name="hostVarsByHost" sig="hostVarsByHost: Record<string, Record<string, unknown>>" />
 
-<MemberMeta sourceHref="/source/src/config/loader-ts/#L815" sourceLabel="loader.ts:815" />
+<MemberMeta sourceHref="/source/src/config/loader-ts/#L937" sourceLabel="loader.ts:937" />
 
 host name -> var map (file `host_vars/<host>.yaml` becomes host `<host>`).

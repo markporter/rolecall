@@ -9,7 +9,7 @@ description: "Sorted list of registered module names (deterministic ordering). W
 
 <Signature code="listModules(options?: ListModulesOptions): string[]" />
 
-<SourceLink href="/source/src/executor/module-ts/#L161" label="module.ts:161" />
+<SourceLink href="/source/src/executor/module-ts/#L169" label="module.ts:169" />
 
 Sorted list of registered module names (deterministic ordering). With ListModulesOptions.specifiers, each relative user module specifier (e.g. `"./mod.ts"`) is resolved to its absolute import location under the source root via ProjectSource.resolveImportablePath; bare names pass through unchanged. This is how the VFS reaches user modules (`module: ./path`), not just playbooks/inventory. Backward-compatible: called with no arguments it returns exactly `[...registry.keys()].sort()` — identical to before.
 

@@ -16,7 +16,7 @@ description: Stable JSON envelope returned by every run-trigger endpoint on succ
 }"
 />
 
-<SourceLink href="/source/src/orchestrator/types-ts/#L111" label="types.ts:111" />
+<SourceLink href="/source/src/orchestrator/types-ts/#L115" label="types.ts:115" />
 
 Stable JSON envelope returned by every run-trigger endpoint on success.
 
@@ -26,16 +26,16 @@ Stable JSON envelope returned by every run-trigger endpoint on success.
 
 <MemberHeading id="runid" depth="3" name="runId" sig="runId: string" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L112" sourceLabel="types.ts:112" />
+<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L116" sourceLabel="types.ts:116" />
 
 <MemberHeading id="self" depth="3" name="self" sig="self: string" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L115" sourceLabel="types.ts:115" />
+<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L119" sourceLabel="types.ts:119" />
 
 <MemberHeading id="status" depth="3" name="status" sig="status: 'queued'" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L113" sourceLabel="types.ts:113" />
+<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L117" sourceLabel="types.ts:117" />
 
 <MemberHeading id="type" depth="3" name="type" sig="type: ActionType" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L114" sourceLabel="types.ts:114" />
+<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L118" sourceLabel="types.ts:118" />

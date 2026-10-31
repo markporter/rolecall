@@ -20,7 +20,7 @@ description: Durable-ish run record kept in-memory keyed by runId (+ persisted t
 }"
 />
 
-<SourceLink href="/source/src/orchestrator/types-ts/#L93" label="types.ts:93" />
+<SourceLink href="/source/src/orchestrator/types-ts/#L97" label="types.ts:97" />
 
 Durable-ish run record kept in-memory keyed by runId (+ persisted to store).
 
@@ -30,32 +30,32 @@ Durable-ish run record kept in-memory keyed by runId (+ persisted to store).
 
 <MemberHeading id="dispatchcount" depth="3" name="dispatchCount" sig="dispatchCount: number" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L101" sourceLabel="types.ts:101" />
+<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L105" sourceLabel="types.ts:105" />
 
 <MemberHeading id="error" depth="3" name="error" sig="error: string" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L100" sourceLabel="types.ts:100" />
+<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L104" sourceLabel="types.ts:104" />
 
 <MemberHeading id="finishedat" depth="3" name="finishedAt" sig="finishedAt: number" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L98" sourceLabel="types.ts:98" />
+<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L102" sourceLabel="types.ts:102" />
 
 <MemberHeading id="id" depth="3" name="id" sig="id: string" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L94" sourceLabel="types.ts:94" />
+<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L98" sourceLabel="types.ts:98" />
 
 <MemberHeading id="jobtype" depth="3" name="jobType" sig="jobType: ActionType" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L95" sourceLabel="types.ts:95" />
+<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L99" sourceLabel="types.ts:99" />
 
 <MemberHeading id="outcomes" depth="3" name="outcomes" sig="outcomes: HostOutcome[]" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L99" sourceLabel="types.ts:99" />
+<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L103" sourceLabel="types.ts:103" />
 
 <MemberHeading id="startedat" depth="3" name="startedAt" sig="startedAt: number" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L97" sourceLabel="types.ts:97" />
+<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L101" sourceLabel="types.ts:101" />
 
 <MemberHeading id="status" depth="3" name="status" sig="status: RunStatus" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L96" sourceLabel="types.ts:96" />
+<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L100" sourceLabel="types.ts:100" />

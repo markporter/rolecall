@@ -6,9 +6,9 @@ longname: module:modules.serviceModule
 
 # serviceModule
 
-<Signature code="serviceModule: Module" />
+<Signature code="serviceModule: Module & CheckableModule" />
 
-<SourceLink href="/source/src/modules/builtins/service-ts/#L27" label="service.ts:27" />
+<SourceLink href="/source/src/modules/builtins/service-ts/#L28" label="service.ts:28" />
 
 **Returns**
 

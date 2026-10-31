@@ -9,7 +9,7 @@ description: Successful validation carries the coerced body + resolved kind.
 
 <Signature code="ValidationSuccess = { ok: true; type: ActionType; value: JobBody }" />
 
-<SourceLink href="/source/src/orchestrator/job-validation-ts/#L68" label="job-validation.ts:68" />
+<SourceLink href="/source/src/orchestrator/job-validation-ts/#L70" label="job-validation.ts:70" />
 
 Successful validation carries the coerced body + resolved kind.
 

@@ -6,9 +6,9 @@ longname: module:modules.userModule
 
 # userModule
 
-<Signature code="userModule: Module" />
+<Signature code="userModule: Module & CheckableModule" />
 
-<SourceLink href="/source/src/modules/builtins/user-ts/#L239" label="user.ts:239" />
+<SourceLink href="/source/src/modules/builtins/user-ts/#L240" label="user.ts:240" />
 
 **Returns**
 

@@ -14,7 +14,7 @@ description: Read a playbook YAML file, expand imports / include_tasks at load t
 ): Promise<NormalizedPlaybook[]>"
 />
 
-<SourceLink href="/source/src/config/loader-ts/#L730" label="loader.ts:730" />
+<SourceLink href="/source/src/config/loader-ts/#L852" label="loader.ts:852" />
 
 **Modifiers:** `async`
 

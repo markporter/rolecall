@@ -9,17 +9,17 @@ description: Normalize a validated RawTask into canonical form (string→list, o
 
 <Signature
   code="normalizeTask(
-	raw: { args?: Record<string, unknown>; become?: boolean; become_user?: string; checkpoint?: string; delegate_to?: string; environment?: Record<string, string>; hosts?: string | string[]; include_tasks?: string | string[]; listen?: string; loop?: unknown; module?: string; name: string; no_log?: boolean; notify?: string | string[]; register?: string; roleDir?: string; run_once?: boolean; tags?: string[]; tx?: string; when?: unknown },
+	raw: { args?: Record<string, unknown>; become?: boolean; become_user?: string; checkpoint?: string; connection?: 'ssh' | 'local' | 'network'; delegate_to?: string; environment?: Record<string, string>; hosts?: string | string[]; include_tasks?: string | string[]; listen?: string; loop?: unknown; module?: string; name: string; no_log?: boolean; notify?: string | string[]; register?: string; roleDir?: string; run_once?: boolean; tags?: string[]; tx?: string; when?: unknown },
 ): NormalizedTask"
 />
 
-<SourceLink href="/source/src/config/schema-ts/#L419" label="schema.ts:419" />
+<SourceLink href="/source/src/config/schema-ts/#L443" label="schema.ts:443" />
 
 Normalize a validated RawTask into canonical form (string→list, omitted→defaults).
 
 **Parameters**
 
-- `raw` ({ args?: Record\<string, unknown>; become?: boolean; become_user?: string; checkpoint?: string; [delegate_to](/module/config/normalizedtask#delegateto)?: string; environment?: Record\<string, string>; hosts?: string | string\[]; [include_tasks](/module/config/normalizedtask#includetasks)?: string | string\[]; [listen](/module/config/normalizedtask#listen)?: string; loop?: unknown; module?: string; name: string; no_log?: boolean; [notify](/module/config/normalizedtask#notify)?: string | string\[]; [register](/module/config/normalizedtask#register)?: string; roleDir?: string; [run_once](/module/config/normalizedtask#runonce)?: boolean; tags?: string\[]; tx?: string; [when](/module/config/normalizedtask#when)?: unknown })
+- `raw` ({ args?: Record\<string, unknown>; become?: boolean; become_user?: string; checkpoint?: string; connection?: "ssh" | "local" | "network"; [delegate_to](/module/config/normalizedtask#delegateto)?: string; environment?: Record\<string, string>; hosts?: string | string\[]; [include_tasks](/module/config/normalizedtask#includetasks)?: string | string\[]; [listen](/module/config/normalizedtask#listen)?: string; loop?: unknown; module?: string; name: string; no_log?: boolean; [notify](/module/config/normalizedtask#notify)?: string | string\[]; [register](/module/config/normalizedtask#register)?: string; roleDir?: string; [run_once](/module/config/normalizedtask#runonce)?: boolean; tags?: string\[]; tx?: string; [when](/module/config/normalizedtask#when)?: unknown })
 
 **Properties**
 
@@ -27,6 +27,7 @@ Normalize a validated RawTask into canonical form (string→list, omitted→defa
 - `become` (boolean, optional)
 - `become_user` (string, optional)
 - `checkpoint` (string, optional)
+- `connection` ("ssh" | "local" | "network", optional)
 - `delegate_to` (string, optional)
 - `environment` (Record\<string, string>, optional)
 - `hosts` (string | string\[], optional)

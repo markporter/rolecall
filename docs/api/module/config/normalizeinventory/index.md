@@ -13,7 +13,7 @@ description: Normalize a validated RawInventory into grouped, vars-defaulted can
 ): NormalizedInventory"
 />
 
-<SourceLink href="/source/src/config/schema-ts/#L496" label="schema.ts:496" />
+<SourceLink href="/source/src/config/schema-ts/#L529" label="schema.ts:529" />
 
 Normalize a validated RawInventory into grouped, vars-defaulted canonical form, preserving child-group names and per-host vars when present.
 

@@ -10,7 +10,9 @@ description: Body of POST /run. Enough to resolve targets + execute against sims
 <Signature
   code="interface JobBody {
 	args?: Record<string, unknown>;
+	check?: boolean;
 	config?: string;
+	diff?: boolean;
 	force?: boolean;
 	hosts?: string[];
 	inventory?: NormalizedInventory;
@@ -39,11 +41,23 @@ Body of POST /run. Enough to resolve targets + execute against sims.
 
 Generic module arguments forwarded per-target.
 
+<MemberHeading id="check" depth="3" name="check" sig="check: boolean" />
+
+<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L78" sourceLabel="types.ts:78" />
+
+Observe-and-report only: never mutate target state.
+
 <MemberHeading id="config" depth="3" name="config" sig="config: string" />
 
 <MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L72" sourceLabel="types.ts:72" />
 
 Desired state pushed by set_config-style modules (esp. network).
+
+<MemberHeading id="diff" depth="3" name="diff" sig="diff: boolean" />
+
+<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L80" sourceLabel="types.ts:80" />
+
+Attach an observed-vs-desired diff to check-mode outcomes.
 
 <MemberHeading id="force" depth="3" name="force" sig="force: boolean" />
 
@@ -65,7 +79,7 @@ Inline parsed inventory (alternative to inventory/inventoryPath).
 
 <MemberHeading id="inventorypath" depth="3" name="inventoryPath" sig="inventoryPath: string" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L80" sourceLabel="types.ts:80" />
+<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L84" sourceLabel="types.ts:84" />
 
 Load inventory from this YAML file path (reuses src/config loaders verbatim).
 
@@ -87,7 +101,7 @@ Inline normalized playbook (alternative to playbook/playbookPath): one play or a
 
 <MemberHeading id="playbookpath" depth="3" name="playbookPath" sig="playbookPath: string" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L78" sourceLabel="types.ts:78" />
+<MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L82" sourceLabel="types.ts:82" />
 
 Load playbook from this YAML file path (reuses src/config loaders verbatim).
 
