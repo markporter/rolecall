@@ -1,12 +1,19 @@
 // Built-in module: `timezone` — Ansible `timezone` alternate (set system timezone).
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
 /** @summary Set the system timezone (Ansible `timezone` alternate). @param ctx ModuleContext carrying `name`. @returns ModuleResult; `skipped` when unchanged. */
-export const timezoneModule: Module = {
+export const timezoneModule: Module & CheckableModule = {
   name: "timezone",
+  async check(args, ctx) {
+    const name = typeof args["name"] === "string" ? String(args["name"]) : "";
+    const cur = await ctx.connection.exec(`timedatectl show --property=Timezone --value 2>/dev/null || cat /etc/timezone 2>/dev/null`);
+    const current = (cur.stdout ?? "").trim();
+    return { current, inDesired: current === name };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const name = typeof ctx.args["name"] === "string" ? String(ctx.args["name"]) : "";
     if (!name) return { changed: false, failed: true, msg: "timezone: 'name' is required" };

@@ -1,6 +1,7 @@
 // Built-in module: `lvol` — Ansible `lvol` alternate (LVM logical volume).
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
@@ -153,8 +154,23 @@ export function buildLvolPlan(args: Record<string, unknown>, currentBytes?: numb
 }
 
 /** @summary Create, resize, or remove an LVM logical volume with thin provisioning and guarded shrink (Ansible `lvol` alternate). @param ctx ModuleContext carrying `vg`, `lv`, `size`, `state`, `thin`, `thinpool`, `resizefs`, `shrink`, `force`, `opts`. @returns ModuleResult; `skipped` when unchanged or already absent. */
-export const lvolModule: Module = {
+export const lvolModule: Module & CheckableModule = {
   name: "lvol",
+  async check(args, ctx) {
+    const vg = str(args["vg"]);
+    const lv = str(args["lv"]);
+    if (!vg || !lv) return { current: null, inDesired: false };
+    const path = `${vg}/${lv}`;
+    const exists = (await ctx.connection.exec(`lvs ${shQuote(path)} >/dev/null 2>&1`)).exitCode === 0;
+    let currentBytes: number | undefined;
+    if (exists) {
+      const probe = await ctx.connection.exec(`lvs --noheadings -o lv_size --units b --nosuffix ${shQuote(path)}`);
+      currentBytes = probe.exitCode === 0 ? parseLvsBytes(probe.stdout) : Number.NaN;
+    }
+    const plan = buildLvolPlan(args, currentBytes);
+    if (plan.error) throw new Error(plan.error);
+    return { current: { exists, currentBytes }, inDesired: plan.noop };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args;
     const vg = str(a["vg"]);

@@ -1,12 +1,30 @@
 // Built-in module: `iptables` — Ansible `iptables` alternate (manage a rule).
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
 /** @summary Manage an iptables rule (Ansible `iptables` alternate). Builds a -C/-A/-I/-D rule from chain/table/protocol/port/jump. @param ctx ModuleContext carrying `chain`, `table`, `protocol`, `destination_port`, `jump`, `state`, `action`, `comment`. @returns ModuleResult; `skipped` when present/absent already matches. */
-export const iptablesModule: Module = {
+export const iptablesModule: Module & CheckableModule = {
   name: "iptables",
+  async check(args, ctx) {
+    const a = args;
+    const chain = typeof a["chain"] === "string" ? String(a["chain"]) : "INPUT";
+    const table = typeof a["table"] === "string" ? String(a["table"]) : "filter";
+    const proto = typeof a["protocol"] === "string" ? String(a["protocol"]) : "";
+    const dport = typeof a["destination_port"] === "string" ? String(a["destination_port"]) : "";
+    const jump = typeof a["jump"] === "string" ? String(a["jump"]) : "ACCEPT";
+    const state = (typeof a["state"] === "string" ? String(a["state"]) : "present") as "present" | "absent";
+    const comment = typeof a["comment"] === "string" ? String(a["comment"]) : "";
+    let match = "";
+    if (proto) match += ` -p ${proto}`;
+    if (dport) match += ` --dport ${dport}`;
+    if (comment) match += ` -m comment --comment ${shQuote(comment)}`;
+    const rule = `-t ${table} ${chain}${match} -j ${jump}`;
+    const present = (await ctx.connection.exec(`iptables -C ${rule}`)).exitCode === 0;
+    return { current: { present }, inDesired: state === "present" ? present : !present };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args;
     const chain = typeof a["chain"] === "string" ? String(a["chain"]) : "INPUT";

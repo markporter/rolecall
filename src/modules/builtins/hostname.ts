@@ -1,6 +1,7 @@
 // Built-in module: `hostname` — Ansible `hostname` alternate (set the system hostname).
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
@@ -8,8 +9,14 @@ const HOSTNAME_USE = ["systemd", "network", "non-os"] as const;
 type HostnameUse = (typeof HOSTNAME_USE)[number];
 
 /** @summary Set the target hostname (Ansible `hostname` alternate). `use` selects how it is persisted: `systemd` (`hostnamectl set-hostname`), `network` (`/etc/sysconfig/network`), `non-os` (runtime `hostname` only), or auto (systemd when `hostnamectl` exists, else `hostname` + `/etc/hostname`). @param ctx ModuleContext carrying `name` and optional `use`. @returns ModuleResult; `skipped` when unchanged. */
-export const hostnameModule: Module = {
+export const hostnameModule: Module & CheckableModule = {
   name: "hostname",
+  async check(args, ctx) {
+    const name = typeof args["name"] === "string" ? String(args["name"]) : "";
+    const cur = await ctx.connection.exec(`hostname 2>/dev/null || cat /etc/hostname 2>/dev/null`);
+    const current = (cur.stdout ?? "").trim().split("\n")[0] ?? "";
+    return { current, inDesired: current === name };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const name = typeof ctx.args["name"] === "string" ? String(ctx.args["name"]) : "";
     if (!name) return { changed: false, failed: true, msg: "hostname: 'name' is required" };

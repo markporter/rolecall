@@ -1,12 +1,24 @@
 // Built-in module: `pam_limits` — Ansible `pam_limits` alternate (manage limits.conf).
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote, wrapCommand } from "./fs";
 
 /** @summary Manage an /etc/security/limits.conf entry (Ansible `pam_limits` alternate). @param ctx ModuleContext carrying `domain`, `type`, `item`, `value`, `dest`, `state`. @returns ModuleResult; `skipped` when already in desired state. */
-export const pamLimitsModule: Module = {
+export const pamLimitsModule: Module & CheckableModule = {
   name: "pam_limits",
+  async check(args, ctx) {
+    const domain = typeof args["domain"] === "string" ? String(args["domain"]) : "";
+    const type = typeof args["type"] === "string" ? String(args["type"]) : "";
+    const item = typeof args["item"] === "string" ? String(args["item"]) : "";
+    const value = typeof args["value"] === "string" ? String(args["value"]) : "";
+    const dest = typeof args["dest"] === "string" ? String(args["dest"]) : "/etc/security/limits.conf";
+    const state = (typeof args["state"] === "string" ? String(args["state"]) : "present") as "present" | "absent";
+    const line = `${domain} ${type} ${item} ${value}`;
+    const present = (await ctx.connection.exec(`grep -qxF ${shQuote(line)} ${shQuote(dest)} 2>/dev/null`)).exitCode === 0;
+    return { current: { present }, inDesired: state === "present" ? present : !present };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args;
     const domain = typeof a["domain"] === "string" ? String(a["domain"]) : "";

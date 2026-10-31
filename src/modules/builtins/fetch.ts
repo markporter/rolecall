@@ -10,6 +10,7 @@ import { shQuote } from "./fs";
 /** @summary Pull a file from the target to the control node (Ansible `fetch` alternate). Reads the remote file base64-encoded, writes it locally, and skips when the local copy already matches. @param ctx ModuleContext carrying `src` (remote path), `dest` (local dir), `flat`, `fail_on_missing`, `check`/`_check`. @returns ModuleResult with the local `dest` and `checksum` in `data`. */
 export const fetchModule: Module = {
   name: "fetch",
+  supportsCheck: true,
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const src = String(ctx.args["src"] ?? "");
     if (!src) return { changed: false, failed: true, msg: "fetch: 'src' (remote path) is required" };

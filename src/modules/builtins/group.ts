@@ -75,6 +75,7 @@ export const meta: ModuleSummary = {
 /** @summary Ensure or remove a local/unix group named `name`, reconciling GID idempotently. Probes `/etc/group` before acting so re-runs are no-ops; applies `sudo` on every command when `ctx.become` is set. @param ctx ModuleContext carrying GroupArgs and connection. @returns ModuleResult with data.name/state; failed:true carries the reason in msg on validation/command errors. */
 export const groupModule: Module = {
   name: "group",
+  supportsCheck: true,
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const args = ctx.args as unknown as GroupArgs;
     const name = String(args.name ?? "");

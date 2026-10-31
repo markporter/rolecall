@@ -17,6 +17,7 @@ function isWaitState(value: string): value is WaitState {
 /** @summary Poll until a port/path condition holds (Ansible `wait_for` alternate). `state` selects `started`/`present` (port open or path exists), `stopped`/`absent` (port closed or path gone), or `drained` (no established connections on `port`). `search_regex` additionally requires path contents or socket output to match. Reports `changed: false` once the condition holds; fails if not met within `timeout`. @param ctx ModuleContext carrying `port`/`host` or `path`, plus optional `state`/`search_regex` and `timeout`/`delay` (seconds). @returns ModuleResult; `failed` if the timeout elapses or the args are invalid. */
 export const waitForModule: Module = {
   name: "wait_for",
+  supportsCheck: true,
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const args = ctx.args as Record<string, unknown>;
     const port = Number(args["port"] ?? 0);

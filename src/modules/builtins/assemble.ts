@@ -2,12 +2,35 @@
 
 import { join } from "node:path";
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
 /** @summary Concatenate files from a remote directory into one file (Ansible `assemble` alternate). Reads each matching file on the target and writes the concatenation to `dest`, optionally joined by `delimiter`. @param ctx ModuleContext carrying `src` (remote dir), `dest`, `regexp`, `delimiter`, `remote_src`. @returns ModuleResult with the assembled count in `data`. */
-export const assembleModule: Module = {
+export const assembleModule: Module & CheckableModule = {
   name: "assemble",
+  async check(args, ctx) {
+    const src = typeof args["src"] === "string" ? String(args["src"]) : "";
+    const dest = typeof args["dest"] === "string" ? String(args["dest"]) : "";
+    const regexp = typeof args["regexp"] === "string" ? String(args["regexp"]) : "";
+    const delimiter = typeof args["delimiter"] === "string" ? String(args["delimiter"]) : "";
+    const list = await ctx.connection.exec(`ls -1 ${shQuote(src)}`);
+    if (list.exitCode !== 0) return { current: null, inDesired: false };
+    let files = list.stdout.split("\n").map((s) => s.trim()).filter(Boolean).sort();
+    if (regexp) {
+      const re = new RegExp(regexp);
+      files = files.filter((f) => re.test(f));
+    }
+    const parts: string[] = [];
+    for (const f of files) {
+      const r = await ctx.connection.exec(`cat ${shQuote(join(src, f))}`);
+      if (r.exitCode === 0) parts.push(r.stdout);
+    }
+    const out = parts.join(delimiter);
+    const cur = await ctx.connection.exec(`cat ${shQuote(dest)} 2>/dev/null`);
+    const existing = cur.stdout ?? "";
+    return { current: existing, inDesired: cur.exitCode === 0 && existing === `${out}\n` };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const src = typeof ctx.args["src"] === "string" ? String(ctx.args["src"]) : "";
     const dest = typeof ctx.args["dest"] === "string" ? String(ctx.args["dest"]) : "";

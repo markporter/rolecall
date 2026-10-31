@@ -1,12 +1,17 @@
 // Built-in module: `tempfile` — Ansible `tempfile` alternate (create a temp file/dir on the target).
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
 /** @summary Create a temp file or directory on the target (Ansible `tempfile` alternate). Returns the path in `data.path`; reports `changed: true` (a new temp node was created). @param ctx ModuleContext carrying `path`, `prefix`, `suffix`, `state`. @returns ModuleResult with the temp path in `data`. */
-export const tempfileModule: Module = {
+export const tempfileModule: Module & CheckableModule = {
   name: "tempfile",
+  async check() {
+    // A temp node is always newly created; dry-run reports would-change.
+    return { current: null, inDesired: false };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const path = typeof ctx.args["path"] === "string" ? String(ctx.args["path"]) : "/tmp";
     const prefix = typeof ctx.args["prefix"] === "string" ? String(ctx.args["prefix"]) : "rolecall";

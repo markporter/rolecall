@@ -1,12 +1,22 @@
 // Built-in module: `sysctl` — Ansible `sysctl` alternate (set a kernel parameter).
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote, wrapCommand } from "./fs";
 
 /** @summary Set or remove a kernel parameter (Ansible `sysctl` alternate). Reads the live value from /proc/sys, applies via `sysctl -w`, persists to `sysctl_file` when `sysctl_set` is true, and reloads via `sysctl --system` when `reload` is true. @param ctx ModuleContext carrying `name`, `value`, `state`, `sysctl_set`, `reload`, `ignoreerrors`, `sysctl_file`. @returns ModuleResult; `skipped` when unchanged. */
-export const sysctlModule: Module = {
+export const sysctlModule: Module & CheckableModule = {
   name: "sysctl",
+  async check(args, ctx) {
+    const name = typeof args["name"] === "string" ? String(args["name"]) : "";
+    const state = (typeof args["state"] === "string" ? String(args["state"]) : "present") as "present" | "absent";
+    const value = typeof args["value"] === "string" ? String(args["value"]) : "";
+    const procPath = `/proc/sys/${name.replace(/\./g, "/")}`;
+    const cur = await ctx.connection.exec(`cat ${shQuote(procPath)} 2>/dev/null`);
+    const current = (cur.stdout ?? "").trim();
+    return { current, inDesired: state === "absent" ? current.length === 0 : current === value };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args;
     const name = typeof a["name"] === "string" ? String(a["name"]) : "";

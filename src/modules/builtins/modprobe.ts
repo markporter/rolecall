@@ -1,12 +1,19 @@
 // Built-in module: `modprobe` — Ansible `modprobe` alternate (load/unload a kernel module).
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
 /** @summary Load or unload a kernel module (Ansible `modprobe` alternate). Loads via `modprobe` and persists to /etc/modules-load.d. @param ctx ModuleContext carrying `name`, `state`, `params`, `persistent`. @returns ModuleResult; `skipped` when already in desired state. */
-export const modprobeModule: Module = {
+export const modprobeModule: Module & CheckableModule = {
   name: "modprobe",
+  async check(args, ctx) {
+    const name = typeof args["name"] === "string" ? String(args["name"]) : "";
+    const state = (typeof args["state"] === "string" ? String(args["state"]) : "present") as "present" | "absent";
+    const loaded = (await ctx.connection.exec(`lsmod | awk '{print $1}' | grep -x ${shQuote(name)}`)).exitCode === 0;
+    return { current: { loaded }, inDesired: state === "present" ? loaded : !loaded };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args;
     const name = typeof a["name"] === "string" ? String(a["name"]) : "";

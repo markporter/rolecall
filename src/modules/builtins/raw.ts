@@ -7,6 +7,7 @@ import { commandModule } from "./command";
 /** @summary Run a command with minimal processing (Ansible `raw` alternate). RoleCall's transport is already shell-based (no Python assumption), so `raw` is an alias of `command`. @param ctx ModuleContext (see `command`). @returns ModuleResult from `command`. */
 export const rawModule: Module = {
   name: "raw",
+  supportsCheck: true,
   run: commandModule.run,
 };
 

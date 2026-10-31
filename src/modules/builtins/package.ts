@@ -13,6 +13,7 @@
 // builtins: every command is prefixed with `${sudo}` when `become` is requested.
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 
 /** Supported package managers and their probe/install/remove verbs. */
@@ -247,8 +248,41 @@ function buildLocalInstall(manager: PkgManager, src: string): string {
 }
 
 /** @summary Detect (or use an explicit `manager`) the target package manager and apply `state` for `name` idempotently. Probes presence first so re-runs are no-ops; reconciles `hold` for apt/zypper and `allow_downgrade`/`cache_valid_time` for apt, rejecting unsupported managers with an actionable error. @param ctx ModuleContext carrying args (name/state/version/manager/hold/allow_downgrade/update_cache/cache_valid_time/src) and connection. @returns ModuleResult with data.manager/name/state populated. */
-export const pkgModule: Module = {
+export const pkgModule: Module & CheckableModule = {
   name: "package",
+  async check(args, ctx) {
+    const a = args as unknown as PackageArgs;
+    const name = String(a.name ?? "");
+    const state = (a.state ?? "present") as "present" | "absent";
+    const conn = ctx.connection;
+    const sudo = ctx.become ? "sudo " : "";
+    const probes: Array<[string, PkgManager]> = [
+      ["apt-get", "apt"],
+      ["dnf", "dnf"],
+      ["yum", "yum"],
+      ["apk", "apk"],
+      ["pacman", "pacman"],
+      ["zypper", "zypper"],
+    ];
+    let manager: PkgManager | null = null;
+    const requested = a.manager;
+    if (requested !== undefined) {
+      if (!MANAGERS.includes(requested)) return { current: null, inDesired: false };
+      if ((await conn.exec(`${sudo}which ${PM_BIN[requested]}`)).exitCode !== 0) return { current: null, inDesired: false };
+      manager = requested;
+    } else {
+      for (const [bin, m] of probes) {
+        if ((await conn.exec(`${sudo}which ${bin}`)).exitCode === 0) { manager = m; break; }
+      }
+    }
+    if (!manager) return { current: null, inDesired: false };
+    const installed = await isInstalled(conn, sudo, manager, name);
+    let inDesired = state === "present" ? installed : !installed;
+    if (inDesired && a.hold !== undefined && (manager === "apt" || manager === "zypper")) {
+      inDesired = (await isHeld(conn, sudo, manager, name)) === a.hold;
+    }
+    return { current: { manager, installed }, inDesired };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const args = ctx.args as unknown as PackageArgs;
     const name = String(args.name ?? "");

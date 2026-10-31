@@ -15,6 +15,7 @@
 // entry so a matching hash stays a no-op.
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
@@ -236,8 +237,37 @@ export const meta: ModuleSummary = {
 };
 
 /** @summary Ensure or remove a local/unix account named `name`, reconciling identity attributes idempotently. Probes `/etc/passwd` before acting so re-runs are no-ops; applies `sudo` on every command when `ctx.become` is set. @param ctx ModuleContext carrying UserArgs and connection. @returns ModuleResult with data.name/state populated; failed:true carries the reason in msg on validation/command errors. */
-export const userModule: Module = {
+export const userModule: Module & CheckableModule = {
   name: "user",
+  async check(args, ctx) {
+    const a = args as unknown as UserArgs;
+    const name = String(a.name ?? "");
+    const state = (a.state ?? "present") as "present" | "absent";
+    const conn = ctx.connection;
+    const sudo = ctx.become ? "sudo " : "";
+    const { found, entry } = await lookupUser(conn, sudo, name);
+    if (state === "absent") return { current: { found }, inDesired: !found };
+    if (!found) return { current: { found }, inDesired: false };
+    let inDesired = buildReconcile({ ...a, groups: undefined }, entry!).length === 0;
+    if (inDesired && typeof a.groups === "string" && a.groups.length > 0) {
+      const curGroupsRaw = await conn.exec(`${sudo}groups ${shQuote(name)}`);
+      if (curGroupsRaw.exitCode === 0) {
+        const desired = a.groups.split(",").map((g) => g.trim()).filter((g) => g.length > 0);
+        const current = parseGroups(curGroupsRaw.stdout);
+        const hasAll = desired.every((g) => current.includes(g));
+        const hasExtra = current.some((g) => !new Set(desired).has(g));
+        inDesired = a.append === true ? hasAll : hasAll && !hasExtra;
+      }
+    }
+    if (inDesired && typeof a.password_hash === "string" && a.password_hash.length > 0) {
+      inDesired = (await readShadowHash(conn, sudo, name)) === a.password_hash;
+    }
+    if (inDesired && typeof a.password === "string" && a.password.length > 0) {
+      // Cleartext passwords are always re-applied (no readback comparison).
+      inDesired = false;
+    }
+    return { current: entry, inDesired };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const args = ctx.args as unknown as UserArgs;
     const name = String(args.name ?? "");

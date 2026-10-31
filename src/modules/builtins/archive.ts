@@ -1,12 +1,26 @@
 // Built-in module: `archive` — Ansible `archive` alternate (bundle files on the target).
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
 /** @summary Bundle files on the target into an archive (Ansible `archive` alternate). @param ctx ModuleContext carrying `path` (dest archive), `format`, `src` (list of files/dirs), `exclude_path`, `remove`, `force_archive`. @returns ModuleResult with the archive path in `data`; `skipped` when the destination is already at least as new as every source. */
-export const archiveModule: Module = {
+export const archiveModule: Module & CheckableModule = {
   name: "archive",
+  async check(args, ctx) {
+    const path = typeof args["path"] === "string" ? String(args["path"]) : "";
+    const forceArchive = Boolean(args["force_archive"]);
+    const srcList = Array.isArray(args["src"]) ? (args["src"] as unknown[]).map(String) : typeof args["src"] === "string" ? [String(args["src"])] : [];
+    if (forceArchive || srcList.length === 0) return { current: null, inDesired: false };
+    const statRes = await ctx.connection.exec(`stat -c %Y ${shQuote(path)}`);
+    if (statRes.exitCode !== 0) return { current: null, inDesired: false };
+    const archiveMtime = Number.parseInt(statRes.stdout.trim(), 10);
+    const srcFind = await ctx.connection.exec(`find ${srcList.map(shQuote).join(" ")} -printf '%T@\\n' | sort -n | tail -1`);
+    const newestSource = Number.parseFloat(srcFind.stdout.trim());
+    const inDesired = srcFind.exitCode === 0 && Number.isFinite(archiveMtime) && Number.isFinite(newestSource) && archiveMtime >= newestSource;
+    return { current: { archiveMtime, newestSource }, inDesired };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args;
     const path = typeof a["path"] === "string" ? String(a["path"]) : "";

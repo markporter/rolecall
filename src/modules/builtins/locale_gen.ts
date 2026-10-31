@@ -1,12 +1,20 @@
 // Built-in module: `locale_gen` — Ansible `locale_gen` alternate (enable a locale).
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
 /** @summary Enable or disable a locale (Ansible `locale_gen` alternate). @param ctx ModuleContext carrying `name`, `state`. @returns ModuleResult; `skipped` when already in desired state. */
-export const localeGenModule: Module = {
+export const localeGenModule: Module & CheckableModule = {
   name: "locale_gen",
+  async check(args, ctx) {
+    const name = typeof args["name"] === "string" ? String(args["name"]) : "";
+    const state = (typeof args["state"] === "string" ? String(args["state"]) : "present") as "present" | "absent";
+    const active = (await ctx.connection.exec(`locale -a 2>/dev/null | grep -x ${shQuote(name.replace(/\./g, "").replace(/utf8/i, "UTF-8"))}`)).exitCode === 0;
+    const hasEntry = (await ctx.connection.exec(`grep -qxE '[^#]*${name}' /etc/locale.gen 2>/dev/null`)).exitCode === 0;
+    return { current: { active, hasEntry }, inDesired: state === "present" ? active && hasEntry : !active && !hasEntry };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args;
     const name = typeof a["name"] === "string" ? String(a["name"]) : "";

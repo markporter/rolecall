@@ -85,6 +85,7 @@ function buildWriteScript(destB64: string, payloadB64: string, opts: { backup: b
 /** @summary Replace text inside a file on the managed host, writing only on change. @param ctx ModuleContext (connection, args, become). @returns ModuleResult with changed/skipped/failed and data. */
 export const replaceModule: Module = {
   name: MODULE_NAME,
+  supportsCheck: true,
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const args = ctx.args as unknown as ReplaceArgs;
     const path = String(args.path ?? "");

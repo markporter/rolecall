@@ -11,6 +11,7 @@
 // single-quoted via shQuote to survive spaces/special characters remotely.
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
@@ -142,8 +143,40 @@ async function applyAttrs(
 }
 
 /** @summary Apply the requested filesystem state at `path` idempotently over the connection's shell. Probes existence before acting so re-runs are no-ops; applies mode/owner/group conditionally. @param ctx ModuleContext carrying FileArgs and connection. @returns ModuleResult with data.path/state populated. */
-export const fileModule: Module = {
+export const fileModule: Module & CheckableModule = {
   name: "file",
+  async check(args, ctx) {
+    const a = args as unknown as FileArgs;
+    const path = String(a.path ?? "");
+    const state = String(a.state ?? "") as FileState;
+    const conn = ctx.connection;
+    const sudo = ctx.become ? "sudo " : "";
+    const existsNow = await exists(conn, sudo, path);
+    let kindOk = false;
+    let current: Record<string, unknown> = { exists: existsNow, state };
+    if (state === "absent") kindOk = !existsNow;
+    else if (state === "directory") kindOk = await dirExists(conn, sudo, path);
+    else if (state === "file") kindOk = await isRegularFile(conn, sudo, path);
+    else if (state === "touch") kindOk = existsNow;
+    else if (state === "link") {
+      const src = String(a.src ?? "");
+      kindOk = (await conn.exec(`[ -L ${shQuote(path)} ] && [ "$(readlink ${shQuote(path)})" = ${shQuote(src)} ]`)).exitCode === 0;
+    }
+    if (kindOk && ["directory", "file", "touch", "link"].includes(state)) {
+      const wants = Boolean(a.mode || a.owner || a.group);
+      if (wants) {
+        const st = await conn.exec(`${sudo}stat -c '%a %U %G' ${shQuote(path)} 2>/dev/null || ${sudo}stat -f '%Lp %Su %Sg' ${shQuote(path)}`);
+        if (st.exitCode === 0) {
+          const [curA = "", curU = "", curG = ""] = st.stdout.trim().split(/\s+/);
+          current = { ...current, mode: curA, owner: curU, group: curG };
+          if (a.mode && curA !== a.mode && Number.parseInt(curA, 8) !== Number.parseInt(a.mode, 8)) kindOk = false;
+          if (a.owner && curU !== a.owner) kindOk = false;
+          if (a.group && curG !== a.group) kindOk = false;
+        }
+      }
+    }
+    return { current, inDesired: kindOk };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const args = ctx.args as unknown as FileArgs;
     const path = String(args.path ?? "");

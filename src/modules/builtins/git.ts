@@ -124,6 +124,7 @@ async function resolveRef(
 /** @summary Clone a repo to the destination, or update a local checkout (stash/pull/reset/checkout) idempotently. @param ctx ModuleContext (connection, args, become). @returns ModuleResult with changed/skipped/failed and data. */
 export const gitModule: Module = {
   name: MODULE_NAME,
+  supportsCheck: true,
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const args = ctx.args as unknown as GitArgs;
     const repo = String(args.repo ?? "");

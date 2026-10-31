@@ -8,6 +8,7 @@
 // when both are true they run as two separate invocations.
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
@@ -80,8 +81,30 @@ function stringArg(args: FirewalldArgs, field: keyof FirewalldArgs): { value: st
 }
 
 /** @summary Idempotently manage a firewalld service, port, or rich rule. @param ctx ModuleContext carrying the rule selector, zone, permanent/immediate flags, and state. @returns ModuleResult; `changed:false` when the probe already matches the desired state. */
-export const firewalldModule: Module = {
+export const firewalldModule: Module & CheckableModule = {
   name: MODULE_NAME,
+  async check(args, ctx) {
+    const a = args as unknown as FirewalldArgs;
+    const serviceArg = stringArg(a, "service");
+    const portArg = stringArg(a, "port");
+    const richArg = stringArg(a, "rich_rule");
+    const zoneArg = stringArg(a, "zone");
+    if ("error" in serviceArg || "error" in portArg || "error" in richArg || "error" in zoneArg) {
+      return { current: null, inDesired: false };
+    }
+    const selected: Array<{ kind: RuleKind; value: string }> = [];
+    if (serviceArg.value) selected.push({ kind: "service", value: serviceArg.value });
+    if (portArg.value) selected.push({ kind: "port", value: portArg.value });
+    if (richArg.value) selected.push({ kind: "rich-rule", value: richArg.value });
+    if (selected.length !== 1) return { current: null, inDesired: false };
+    const { kind, value } = selected[0]!;
+    const zone = zoneArg.value || "public";
+    const valueArg = kind === "rich-rule" ? shQuote(value) : value;
+    const sudo = ctx.become ? "sudo " : "";
+    const exists = (await ctx.connection.exec(`${sudo}firewall-cmd --zone=${zone} --query-${kind}=${valueArg}`)).exitCode === 0;
+    const wantPresent = (a.state ?? "present") === "present";
+    return { current: { exists }, inDesired: exists === wantPresent };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const args = ctx.args as unknown as FirewalldArgs;
 
