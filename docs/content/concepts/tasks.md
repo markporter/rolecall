@@ -32,6 +32,7 @@ Tasks may carry these first-class operators (not module args):
 - `delegate_to` — run the task against a different target than the play's hosts.
 - `run_once` — execute only once (on the first host), not per host.
 - `become` / `become_user` — escalate privileges for the task (e.g. `become: true`, `become_user: root`).
+- `connection` — override the host's transport for this task only (`ssh`, `local`, or `network`). See [Transport](./transport.md).
 - `tags` — labels used by the global `--tags` / `--skip-tags` flags to select tasks (see [Tags](#tags)).
 
 ## Handlers
@@ -107,7 +108,7 @@ Tag selection runs against the fully-resolved task list — after role compositi
 - **`register` works** and is read via the `reg` namespace (e.g. `reg.myresult.data.stdout`), not by mutating the live var scope.
 - **`when` / `loop` use RoleCall operators** (`$if`, `$each`, …), not Ansible's `when:` string eval or `with_*`.
 - **Privilege is `become` / `become_user`**, the same idea as Ansible's become.
-- **`meta` control flags are partially honored**: `meta: end_play` / `end_host` are acted on by the executor (they halt the play or current host); `end_batch` / `refresh_inventory` / `flush_handlers` are surfaced in `data.meta.deferred` and not yet acted on.
+- **`meta` control flags are honored**: `end_play` / `end_host` halt the play or current host, `flush_handlers` flushes pending handlers immediately, `end_batch` stops the current serial batch, and `refresh_inventory` re-reads the configured inventory source.
 - **Idempotency is built in**: the `shell` module requires a guard (or `run_mode`) rather than relying on `changed_when`. See [Shell & idempotency](./shell-idempotency.md).
 
 ## Related concepts

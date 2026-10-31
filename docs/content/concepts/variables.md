@@ -36,9 +36,11 @@ metadata clearly separated so it is always obvious where a value came from.
 ### `vars` — authored variables
 
 The `vars` namespace is the precedence-merged result of everything you author: playbook
-`vars:`, role `vars`/`defaults`, inventory `group_vars`/`host_vars`, and `--extra-vars`.
-It is a flat map (`Record<string, unknown>`), so a key declared in a higher tier hides
-the same key from a lower tier. Example: `$var: vars.nginx_port`, `$var: vars.app_env`.
+`vars:`, play `vars_files:`, role `vars`/`defaults`, inventory `group_vars`/`host_vars`,
+and `--extra-vars`. It is a flat map (`Record<string, unknown>`), so a key declared in a
+higher tier hides the same key from a lower tier. Within a play, ordered `vars_files:`
+are merged below explicit `vars:` (later files override earlier files). Example:
+`$var: vars.nginx_port`, `$var: vars.app_env`.
 
 ### `facts` — observed facts
 

@@ -28,8 +28,8 @@ What npm ships is a Node bundle (`lib/cli.js`), so the full feature surface work
 If Bun is already on the host, install the package globally through it instead:
 
 ```sh
-bun install -g rolecall
-bunx rolecall --help
+bun install -g @rolecall/cli
+bunx @rolecall/cli --help
 ```
 
 ## Standalone binaries

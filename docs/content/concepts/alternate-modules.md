@@ -79,11 +79,17 @@ reference page lists the deltas. Highlights:
 | `get_url` / `git` / `user` / `group` | same | downloads, VCS, accounts (incl. `password_hash`) |
 | `hostname` / `sysctl` / `modprobe` / `mount` | same | host tuning; `hostname` `use`, `sysctl` `reload`/`sysctl_set`, `mount` `boot`/`dump`/`passno` |
 | `selinux` / `iptables` / `ufw` / `timezone` / `locale_gen` / `acl` / `pam_limits` | same | security/limits; `ufw` `default` policy |
-| `synchronize` | `synchronize` | rsync **on the target** (not controller→target) |
-| `json_query` | `json_query` | JSON-pointer resolve, not JMESPath |
+| `synchronize` | `synchronize` | controller-side rsync over ssh; `mode: push` (default) / `pull`; key auth required |
+| `json_query` | `json_query` | JMESPath; `/`-rooted queries keep the JSON-pointer resolver |
 | `service_facts` / `user_info` / `group_info` | same | fact lookups |
-| `pause` / `set_stats` / `meta` | same | `pause` has no interactive prompt; `meta` `end_play`/`end_host` halt the play/host, other flags are deferred |
-| `parted` / `filesystem` / `lvol` / `lvg` | same | storage/LVM |
+| `pause` / `set_stats` / `meta` | same | `pause` has no interactive prompt; `meta` `end_play`/`end_host` halt the play/host, `flush_handlers`/`end_batch`/`refresh_inventory` are wired |
+| `parted` / `filesystem` / `lvol` / `lvg` | same | storage/LVM; `lvol` `thin`/`resizefs`, guarded `shrink` |
+| `group_by` | `group_by` | adds the current host to run-level dynamic groups (`add_host` machinery) |
+| `getent` | `getent` | parsed `{ raw, fields }` entries from passwd/group/hosts/services |
+| `pip` | `pip` | idempotent install/uninstall, `virtualenv`, `latest` uses `--upgrade` |
+| `snap` | `snap` | idempotent install/remove, `classic` |
+| `firewalld` | `firewalld` | service/port/rich-rule management, separate permanent + immediate |
+| `openssl_certificate` | `community.crypto.openssl_certificate` | self-signed/CA/CA-signed, SANs, EKU, key/CSR reuse, `digest` |
 
 ## Compatibility notes
 
@@ -92,6 +98,6 @@ reference page lists the deltas. Highlights:
   `$template`. Most other modules drop in unchanged.
 - **Where RoleCall diverges**: templating is EJS-based by default, but Jinja is available
   on request via `engine: jinja` (e.g. with `copy`) when you need Ansible template
-  compatibility or its sandbox; `meta` control flags are not yet wired into the
-  executor, `synchronize` runs target-side, and `json_query` uses JSON pointers. Each
-  module's reference page states its exact deltas under `notes`.
+  compatibility or its sandbox. `meta` control flags are wired into the executor,
+  `synchronize` runs controller-side over ssh, and `json_query` uses JMESPath with a
+  JSON-pointer fallback. Each module's reference page states its exact deltas under `notes`.

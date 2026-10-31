@@ -146,7 +146,7 @@ the migration guide so humans and the converter share one reference.
 
 Legend: **M** 1:1 · **U** upgrade · **P** partial/manual · **X** unsupported by design
 
-> Matrix refreshed 2026-10-18 against src/ (src wins over prose).
+> Matrix refreshed 2026-10-31 against src/ (src wins over prose).
 
 | Ansible construct | RoleCall equivalent | Class | Notes |
 |---|---|---|---|
@@ -155,12 +155,13 @@ Legend: **M** 1:1 · **U** upgrade · **P** partial/manual · **X** unsupported 
 | Play `tasks:` | `tasks:` | M | |
 | Play `vars:` | `vars:` | M | |
 | Play `handlers:` | `listen:` task + `notify` | M | play-level `handlers:` block accepted and lowered to tasks carrying `listen:` (defaulting to the handler name); flushed at end of play (`src/config/schema.ts`) |
-| Play `gather_facts` | explicit `rolecall facts gather` | P | no implicit auto-gather; field still absent from the schema (lazy facts default) |
+| Play `gather_facts` | explicit `rolecall facts gather` | M | accepted as a compatibility no-op (`gather_facts?: boolean` on `PlaybookObject`, preserved on round-trip); facts remain lazy/on-demand |
 | Play `serial:` | `serial:` | M | |
 | Play `strategy: free` | `strategy: free` | M | |
 | Play `tags:` | `tags:` + `--tags` / `--skip-tags` | M | task `tags:` replace play `tags:` (no union); `--tags`/`--skip-tags` filter the expanded task list (`src/config/schema.ts`) |
-| Play `vars_files` / `vars_prompt` | — | P | load via helpers/module; document |
-| Play `pre_task` / `post_task` | ordered tasks / `tx` | P | |
+| Play `vars_files` | `vars_files:` | M | ordered play-relative YAML maps merged below explicit `vars:`; later files override earlier (`src/config/loader.ts`) |
+| Play `vars_prompt` | — | P | conflicts with RoleCall's non-interactive design |
+| Play `pre_tasks` / `post_tasks` | `pre_tasks:` / `post_tasks:` | M | ordered around role/play tasks (handlers still flush at end of play); expanded from `include_tasks` and retained for round-trip (`src/config/loader.ts`, `src/executor/engine.ts`) |
 | `import_playbook` | `imports:` | M | |
 | `import_role` / `include_role` | `roles:` / local `roles/` | U | per #3 |
 | `import_tasks` / `include_tasks` | `include_tasks` | M | directive task |
@@ -175,7 +176,7 @@ Legend: **M** 1:1 · **U** upgrade · **P** partial/manual · **X** unsupported 
 | Task `become:` | `become:` | M | |
 | Task `become_user` | `become_user` | M | threaded through module execution as `sudo -u <user>` (`src/executor/runner.ts`, `src/modules/builtins/fs.ts`) |
 | Task `become_method` | — | P | only `become: true` → sudo; escalation method not selectable |
-| Task `connection:` | — | P | transport chosen by target |
+| Task `connection:` | `connection:` | M | per-task override (`ssh`/`local`/`network`) via `connectionForKind`; defaults to the host's `rolecall_connection` (`src/executor/runner.ts`, `src/cli/commands/playbook.ts`) |
 | Task `ignore_errors:` | — | X | RoleCall fails host; use `tx`/guard |
 | Task `changed_when` / `failed_when` | — | X | intrinsic idempotency |
 | `block` / `rescue` / `always` | `tx` / `checkpoint` | P | rollback intent |
@@ -184,10 +185,15 @@ Legend: **M** 1:1 · **U** upgrade · **P** partial/manual · **X** unsupported 
 | `service` / `systemd` | `service` | M | |
 | `lineinfile` / `blockinfile` | `lineinfile` / `blockinfile` | M | |
 | `command` / `shell` | `shell` | M | guard recommended |
-| `http` / `uri` | `http` | U | |
+| `http` / `uri` | `http` | M | idempotent resource semantics; `status_code` aliases `expected_status`; `return_content` adds `data.content` |
+| `synchronize` | `synchronize` | M | controller-side rsync over ssh; `mode: push`/`pull`; key auth required (no `sshpass`) |
+| `json_query` | `json_query` | M | JMESPath; `/`-rooted queries keep the JSON-pointer resolver |
+| `lvol` | `lvol` | M | `thin` (`-V`/`-T`), `resizefs` (`-r`), guarded `shrink` |
+| `openssl_certificate` | `community.crypto.openssl_certificate` | M | self-signed/CA/CA-signed, SAN/EKU, key/CSR reuse, `digest` |
+| `group_by` / `getent` / `pip` / `snap` / `firewalld` | same | M | dynamic groups, parsed name-service entries, Python/snap packages, firewalld rules |
 | `sql` | `sql` | M | |
-| `apt` / `yum` / `dnf` | `package` | U | `package` builtin dispatches by `facts.os_family` (apt/yum/dnf/apk); idempotent installed-vs-desired |
-| `copy` / `template` / `file` | `copy` / `file` | M | `template` folded into `copy` (literal checksum-compare + on-host eta/jinja via `content`); `file` covers `state` values |
+| `apt` / `yum` / `dnf` / `apk` / `pacman` / `zypper` | `package` | M | `package` probes `which` (first match wins) with a `manager` override; idempotent installed-vs-desired, plus `hold`/`allow_downgrade` where supported |
+| `copy` / `template` / `file` | `copy` / `file` | M | `template` folded into `copy` (literal checksum-compare + on-host eta/jinja via `content`); `file` covers `state` values; `copy` `force` defaults FALSE (Ansible TRUE) |
 | `user` / `group` | `user` / `group` | M | idempotent create/remove/update via system commands |
 | Inventory INI/YAML | consumed directly | M | loader auto-detects Ansible INI / `all:`-rooted YAML and normalizes to native `children` + `host_vars` (`src/inventory/ansible.ts`, `src/config/loader.ts`) |
 | `group_vars/` / `host_vars/` dirs | discovered next to inventory | M | `resolveDirectoryVars` reads `group_vars/*.yaml` / `host_vars/*.yaml` (`src/config/loader.ts`) |
