@@ -147,7 +147,7 @@ jobs:
           node --test ./_node_parity.test.mjs
           rm -f ./_node_parity.test.mjs
 
-  # Acceptance gate that `npx rolecall` works on a machine with Node and no Bun:
+  # Acceptance gate that `npx @rolecall/cli` works on a machine with Node and no Bun:
   # build the Node-target JS bundle, pack it, then install and run the published
   # tarball with Bun removed from PATH. Packaging is OS-independent, so it runs on
   # a single Linux runner; the 3-OS "unit" matrix already covers cross-platform.
@@ -186,7 +186,7 @@ jobs:
           export PATH="$(dirname "$(command -v node)"):/usr/bin:/bin"
           if command -v bun >/dev/null 2>&1; then echo "bun must not be on PATH" >&2; exit 1; fi
           TMP="$(mktemp -d)"
-          npm install -g --prefix "$TMP" /tmp/pkg/rolecall-*.tgz
+          npm install -g --prefix "$TMP" /tmp/pkg/*.tgz
           "$TMP/bin/rolecall" --help >/dev/null
           "$TMP/bin/rolecall" --version
           "$TMP/bin/rolecall" inventory show tests/fixtures/inventory.valid.yaml

@@ -8,11 +8,13 @@ name: release
 #                    uploads it as a workflow artifact.
 #   3. `release`   — collects every binary, creates the GitHub Release with
 #                    auto-generated notes, and attaches the binaries.
-#   4. `npm`       — publishes the Node bundle to npm with signed provenance.
-#                    Skips cleanly when the NPM_TOKEN secret is not configured
-#                    (so a binaries-only release works with zero setup).
+#   4. `npm`       — publishes the Node bundle to npm via Trusted Publishing
+#                    (OIDC). There is no NPM_TOKEN secret in this pipeline and
+#                    none should be created. Skips cleanly when the name is not
+#                    on the registry yet (the first publish is manual) or when
+#                    that version already exists (re-pushed tag).
 #
-# See RELEASING.md for the operator flow and one-time npm setup.
+# See .local/RELEASING.md (maintainer-local, gitignored) for the operator flow.
 
 on:
   push:
@@ -109,41 +111,65 @@ jobs:
           files: dist/bin/*
           fail_on_unmatched_files: true
 
-  # ---- 4. npm publish (skipped unless NPM_TOKEN is configured) --------------
-  npm-check:
-    name: check npm token
+  # ---- 4. npm publish via Trusted Publishing (OIDC) ------------------------
+  #
+  # No stored credential: GitHub signs an OIDC token from the job's
+  # `id-token: write` permission and the npm CLI exchanges it for a short-lived
+  # publish credential, because `release.yml` is registered as a trusted
+  # publisher for the `@rolecall/cli` package (see .local/RELEASING.md). The same OIDC
+  # identity signs the provenance attestation, so `--provenance` is not needed.
+  #
+  # Preflight keeps two no-op releases green:
+  #   * package not on the registry  -> first publish must be manual (2FA)
+  #   * version already published    -> re-pushed tag / retried run
+  npm-preflight:
+    name: npm preflight
     runs-on: ubuntu-latest
     outputs:
-      has_token: ${{ steps.check.outputs.has_token }}
+      should_publish: ${{ steps.check.outputs.should_publish }}
     steps:
+      - uses: actions/checkout@v4
       - id: check
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          if [ -n "${NPM_TOKEN:-}" ]; then
-            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          name="$(node -p "require('./package.json').name")"
+          version="$(node -p "require('./package.json').version")"
+          if ! npm view "$name" version >/dev/null 2>&1; then
+            echo "::notice::${name} is not on the registry yet — the first publish is manual (see .local/RELEASING.md)"
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+          elif npm view "${name}@${version}" version >/dev/null 2>&1; then
+            echo "::notice::${name}@${version} is already published — nothing to publish"
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
           else
-            echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
           fi
 
   npm:
     name: npm publish
-    needs: [ci, npm-check]
-    if: needs.npm-check.outputs.has_token == 'true'
+    needs: [ci, npm-preflight]
+    if: needs.npm-preflight.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     permissions:
-      id-token: write # OIDC signed provenance
+      id-token: write # OIDC: authenticates the publish and signs provenance
       contents: read
-    env:
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
+      # Pin the npm 11.21 line rather than `npm@latest`: npm 12 (current latest)
+      # needs Node ^22.22.2 || ^24.15.0 || >=26, so it is not safe on this runner
+      # image. 11.21 clears both floors we need — trusted publishing (11.5.1) and
+      # OIDC dist-tag management (11.21.0).
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22.x"
+          node-version: "24"
           registry-url: "https://registry.npmjs.org"
+
+      - name: Ensure npm supports trusted publishing
+        run: |
+          npm install -g npm@^11.21.0
+          v="$(npm --version)"
+          echo "npm $v"
+          node -e 'const [a,b] = process.argv[1].split(".").map(Number); if (a < 11 || (a === 11 && b < 5)) { console.error(`npm ${process.argv[1]} is too old for trusted publishing (need >= 11.5.1)`); process.exit(1) }' "$v"
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -154,6 +180,6 @@ jobs:
         run: bun install --frozen-lockfile
 
       # The Node bundle (lib/cli.js) is built by `prepack` (npm run build:js),
-      # which runs automatically as part of `npm publish`.
-      - name: Publish to npm (with provenance)
-        run: npm publish --provenance --access public
+      # which runs as part of `npm publish` and shells out to Bun.
+      - name: Publish to npm (OIDC trusted publishing)
+        run: npm publish --access public
