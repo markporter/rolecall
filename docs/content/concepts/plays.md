@@ -11,6 +11,9 @@ A play is the unit of *targeting* — it answers "which hosts?" and "in what ord
 - `hosts` (required) — a host, group, or list of them (coerced to a list). See [Inventory](./inventory.md).
 - `name` (optional) — a human label for the play.
 - `vars` (optional) — variables scoped to the play; available to every task in it.
+- `vars_files` (optional) — ordered play-relative YAML maps merged into `vars`; later files override earlier ones and explicit `vars:` wins over all of them. See [Variables](./variables.md).
+- `pre_tasks` / `post_tasks` (optional) — task lists that run before role-composed + play tasks and after every normal task respectively (handlers still flush at end of play).
+- `gather_facts` (optional) — accepted for Ansible compatibility and preserved on round-trip; RoleCall always gathers facts lazily, so it does not change behavior.
 - `tasks` (required) — the ordered list of task entries.
 - `handlers` (optional) — a list of task-shaped handler entries, lowered at load time into `listen` tasks that run only when a task `notify`s them by name. See [Tasks](./tasks.md#handlers).
 - `trigger` (optional) — a schedule / cron / webhook descriptor (the scheduler that consumes it is scaffolded today).

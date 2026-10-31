@@ -649,6 +649,56 @@ _source: builtin_
 
 > ≠ Ansible `find`: returns a list of dicts ({path,size,mtime,type,mode}) rather than full `stat`. GNU `find -printf` required. `size` passes through to `find -size`; `age`+`age_stamp` map to `-mtime`/`-atime`/`-ctime` (d/w) or `-mmin`/`-amin`/`-cmin` (h/m/s); `contains` post-filters regular files with `grep -q -E`.
 
+## firewalld
+
+Open or close a firewalld service, port, or rich rule idempotently in a zone, with separate persistent and runtime application.
+
+_idempotent · source: builtin_
+
+**Args**
+
+| Arg | Type | Required | Description |
+| --- | --- | --- | --- |
+| `service` | `string` | optional | Service name, e.g. http. |
+| `port` | `string` | optional | Port or port range, e.g. 8080/tcp. |
+| `rich_rule` | `string` | optional | firewalld rich-rule expression. |
+| `zone` | `string` | optional | Firewall zone (default public). |
+| `permanent` | `boolean` | optional | Write the persistent config (default true). |
+| `immediate` | `boolean` | optional | Update the running config (default true). |
+| `state` | `present \| absent` | optional | Desired state (default present). |
+
+**Examples**
+
+```yaml
+- firewalld:
+    service: http
+    zone: public
+    state: present
+```
+
+```yaml
+- firewalld:
+    port: 8080/tcp
+    permanent: true
+    immediate: true
+```
+
+```yaml
+- firewalld:
+    rich_rule: rule family=ipv4 source address=10.0.0.0/8 accept
+    zone: trusted
+    state: present
+```
+
+```yaml
+- firewalld:
+    service: telnet
+    state: absent
+```
+
+
+> ≠ Ansible `firewalld`: requires exactly one of `service`, `port`, or `rich_rule`. `permanent` and `immediate` are applied as separate `firewall-cmd` invocations when both are true. The idempotency probe queries the running configuration (no `--permanent`).
+
 ## get_url
 
 Download a file from a URL onto the managed host, verifying an optional sha256 checksum and applying file attributes.
@@ -666,6 +716,41 @@ _idempotent · source: builtin_
 | `owner` | `string` | optional | Owner to chown to (needs become). |
 | `group` | `string` | optional | Group to chgrp to (needs become). |
 | `timeout` | `number` | optional | Download timeout in seconds. |
+
+## getent
+
+Read entries from a system name-service database (passwd/group/hosts/services/…) and return parsed fields (Ansible `getent` alternate).
+
+_idempotent · source: builtin_
+
+**Args**
+
+| Arg | Type | Required | Description |
+| --- | --- | --- | --- |
+| `database` | `string` | required | Name-service database, e.g. passwd, group, hosts, or services. |
+| `key` | `string` | optional | Optional lookup key; omit to list all entries. |
+
+**Examples**
+
+```yaml
+- getent:
+    database: passwd
+    key: root
+```
+
+```yaml
+- getent:
+    database: group
+```
+
+```yaml
+- getent:
+    database: hosts
+    key: localhost
+```
+
+
+> ≠ Ansible `getent`: returns every requested entry as `{ raw, fields }` rather than a single value/list split by key. `hosts` and `services` accept both the native whitespace layout and colon-delimited records. A non-zero exit means "no entries" and is not a failure.
 
 ## git
 
@@ -749,6 +834,37 @@ _idempotent · source: builtin_
 
 > ≠ Ansible `group`: imperative getent-based implementation using groupadd/groupmod/groupdel over Local/Ssh. No WinNT/AD group backends; GID drift is reconciled with groupmod only when a numeric gid is supplied.
 
+## group_by
+
+Add the current host to dynamic groups for the remainder of the run (Ansible `group_by` alternate). Calls the executor's in-memory `addHost`; never changes the target.
+
+_source: builtin_
+
+**Args**
+
+| Arg | Type | Required | Description |
+| --- | --- | --- | --- |
+| `key` | `string` | required | Group name to add the current host to. |
+| `parents` | `string \| string[]` | optional | Additional group(s) the host joins alongside `key`. |
+
+**Examples**
+
+```yaml
+- group_by:
+    key: rolecall_web
+```
+
+```yaml
+- group_by:
+    key: rolecall_linux
+    parents:
+      - rolecall_all
+      - rolecall_managed
+```
+
+
+> ≠ Ansible `group_by`: no expression templating is evaluated by the module itself (render `key`/`parents` with `$var` or task templating first). Membership is recorded through the executor's runtime `addHost`, so it affects later tasks in the same run only.
+
 ## group_info
 
 Look up a group's gid/members (Ansible `group_info` alternate). Returns `data.group_info`.
@@ -816,6 +932,8 @@ _idempotent · source: builtin_
 | `body` | `unknown` | optional | Request body (string verbatim, or JSON when json/non-string). |
 | `json` | `boolean` | optional | Serialize body as JSON when true or body is non-string. |
 | `expected_status` | `number \| number[]` | optional | Acceptable status code(s); default any 2xx. |
+| `status_code` | `number \| number[]` | optional | Alias for expected_status (expected_status wins when both are set). |
+| `return_content` | `boolean` | optional | Include the response body as data.content (default false). |
 | `check_url` | `string` | optional | URL used by describe to probe state (defaults to url). |
 | `state_present` | `boolean` | optional | Expect resource present (true) or absent (false). |
 | `match` | `unknown` | optional | Substring or JSON value the probed body must match to be in-desired. |
@@ -865,7 +983,7 @@ _idempotent · source: builtin_
 ```
 
 
-> ≠ Ansible `uri`: `describe` probes current state with a safe GET (or `check_url`) and only converges when the desired state is absent, so PUT/POST/PATCH are idempotent by default. There is no `status_code`/`return_content` nesting — use `match` + `expected_status`. Safe methods (GET/HEAD/OPTIONS) never report changed.
+> ≠ Ansible `uri`: `describe` probes current state with a safe GET (or `check_url`) and only converges when the desired state is absent, so PUT/POST/PATCH are idempotent by default. `status_code` aliases `expected_status` (`expected_status` wins when both are set), `return_content: true` adds the response body at `data.content`, and `match` remains available for body checks. Safe methods (GET/HEAD/OPTIONS) never report changed.
 
 ## iptables
 
@@ -899,7 +1017,7 @@ _source: builtin_
 
 ## json_query
 
-Resolve a JSON-pointer (/a/b/0 or $.a.b[0]) path against `data` (Ansible `json_query` alternate). Result in `data.json_query`.
+Query `data` with JMESPath (Ansible `json_query` parity); `/`-rooted queries use the legacy JSON-pointer resolver. Result in `data.json_query`.
 
 _source: builtin_
 
@@ -908,18 +1026,33 @@ _source: builtin_
 | Arg | Type | Required | Description |
 | --- | --- | --- | --- |
 | `data` | `any` | required | Value (or $var ref) to query. |
-| `query` | `string` | required | JSON-pointer path, e.g. /items/0/name or $.items[0].name. |
+| `query` | `string` | required | JMESPath expression, e.g. users[?age &gt; `30`].name or length(items); a leading `/` selects a JSON pointer such as /items/0/name. |
 
 **Examples**
 
 ```yaml
 - json_query:
-    data: $var
-    query: /users/0/name
+    data:
+      $var: users
+    query: users[?age > `30`].name
+```
+
+```yaml
+- json_query:
+    data:
+      $var: response
+    query: items[0].name
+```
+
+```yaml
+- json_query:
+    data:
+      $var: response
+    query: /items/0/name
 ```
 
 
-> ≠ Ansible `json_query`: RoleCall does not embed JMESPath; this resolves JSON-pointer paths. For richer transforms use `$call` in `set_fact`.
+> JMESPath is evaluated in-process via the `jmespath` package (Ansible parity). Queries starting with `/` remain JSON-pointer lookups for backward compatibility; parse/eval errors fail with a `json_query:` message.
 
 ## known_hosts
 
@@ -1034,7 +1167,7 @@ _source: builtin_
 
 ## lvol
 
-Create or remove an LVM logical volume (Ansible `lvol` alternate). Uses `lvcreate`/`lvremove`.
+Create, resize, or remove an LVM logical volume (Ansible `lvol` alternate). Uses `lvcreate`/`lvextend`/`lvreduce`/`lvremove`, including thin provisioning and guarded shrink.
 
 _source: builtin_
 
@@ -1044,8 +1177,14 @@ _source: builtin_
 | --- | --- | --- | --- |
 | `vg` | `string` | required | Volume group. |
 | `lv` | `string` | required | Logical volume name. |
-| `size` | `string` | optional | Size, e.g. 10G or 100%FREE. |
-| `state` | `present \| absent` | optional | present (default). |
+| `size` | `string` | optional | Size, e.g. 10G or 100%FREE. Required to create. |
+| `state` | `present \| absent` | optional | present (default) or absent. |
+| `thin` | `boolean` | optional | Create a thin logical volume; requires `thinpool` and `size`. |
+| `thinpool` | `string` | optional | Thin pool name, used with `thin: true`. |
+| `resizefs` | `boolean` | optional | Pass `-r`/`--resizefs` to `lvextend`/`lvreduce` so the filesystem is resized too. |
+| `shrink` | `boolean` | optional | Allow reducing an existing LV. Without it, a smaller requested size fails with an actionable error instead of shrinking silently. |
+| `force` | `boolean` | optional | Pass `-f` to `lvremove`/`lvreduce` (default true). |
+| `opts` | `string` | optional | Extra options appended verbatim to a non-thin `lvcreate`. |
 
 **Examples**
 
@@ -1056,8 +1195,33 @@ _source: builtin_
     size: 10G
 ```
 
+```yaml
+- lvol:
+    vg: vg0
+    lv: scratch
+    size: 20G
+    thin: true
+    thinpool: pool0
+```
 
-> ≠ Ansible `lvol`: no `thin`, `resizefs`, or `shrink` toggles; size is passed verbatim to `lvcreate -L`.
+```yaml
+- lvol:
+    vg: vg0
+    lv: data
+    size: 20G
+    resizefs: true
+```
+
+```yaml
+- lvol:
+    vg: vg0
+    lv: data
+    size: 5G
+    shrink: true
+```
+
+
+> ≠ Ansible `lvol`: thin volumes use `lvcreate -V/-T` (requires `thinpool`); `resizefs` adds `-r` to extend/reduce; shrinking requires `shrink: true` and otherwise fails rather than silently reducing. Only numeric sizes are compared for idempotency; percentage sizes defer to `lvextend`.
 
 ## meta
 
@@ -1071,9 +1235,11 @@ _source: builtin_
 | --- | --- | --- | --- |
 | `end_play` | `boolean` | optional | End the current play. |
 | `end_host` | `boolean` | optional | End for this host. |
+| `end_batch` | `boolean` | optional | End the current serial batch (the next batch continues). |
+| `flush_handlers` | `boolean` | optional | Flush pending handlers immediately. |
 | `reset_connection` | `boolean` | optional | Reset the connection. |
 | `clear_facts` | `boolean` | optional | Clear live facts for this host. |
-| `refresh_inventory` | `boolean` | optional | Refresh inventory. |
+| `refresh_inventory` | `boolean` | optional | Re-read the inventory source when one is configured. |
 
 **Examples**
 
@@ -1083,7 +1249,7 @@ _source: builtin_
 ```
 
 
-> `noop`, `reset_connection`, and `clear_facts` act immediately. `end_play` halts the play and `end_host` halts the current host (the executor honors the emitted halt signal). `end_batch`/`refresh_inventory`/`flush_handlers` are surfaced in `data.meta.deferred` for the executor to consume (engine support pending).
+> `noop`, `reset_connection`, and `clear_facts` act immediately. `end_play` halts the play and `end_host` halts the current host (the executor honors the emitted halt signal). `flush_handlers` flushes pending handlers at that point, `end_batch` stops the current serial batch (the next batch continues), and `refresh_inventory` re-reads `ExecOptions.inventoryPath` and re-resolves hosts (a safe no-op with a clear note when no inventory source is available). All control flags are wired; `deferred` remains empty for backward compatibility.
 
 ## modprobe
 
@@ -1159,7 +1325,9 @@ _idempotent · source: builtin_
 | `common_name` | `string` | optional | Certificate CN. |
 | `subject` | `string` | optional | Full subject (e.g. '/CN=foo/O=bar'); overrides common_name. |
 | `san` | `string[]` | optional | SAN tokens: ['DNS:foo','IP:1.2.3.4','email:a@b']. |
+| `subject_alt_name` | `string[]` | optional | Alias for san; san wins when both are set. |
 | `days` | `number` | optional | Validity in days (default 365). |
+| `digest` | `string` | optional | Signing digest for req/x509 (default sha256). |
 | `algorithm` | `'rsa' \| 'ecdsa' \| 'ed25519'` | optional | Key algorithm (default rsa). |
 | `key_size` | `number` | optional | RSA key size (default 2048). |
 | `curve` | `string` | optional | Curve (ecdsa) or key type (ed25519). |
@@ -1170,7 +1338,8 @@ _idempotent · source: builtin_
 | `ca_cert` | `string` | optional | CA cert to sign with (enables CA-signed mode). |
 | `ca_key` | `string` | optional | CA private key (with ca_cert). |
 | `csr` | `string` | optional | Existing CSR to sign (CA mode only). |
-| `force` | `boolean` | optional | Regenerate even if an existing cert matches. |
+| `csr_path` | `string` | optional | Managed CSR path in CA mode (default &lt;path&gt;.csr). |
+| `force` | `boolean` | optional | Regenerate the cert, key, and CSR even when the cert matches. |
 | `dry_run` | `boolean` | optional | Plan only; execute nothing. |
 
 **Examples**
@@ -1197,14 +1366,27 @@ _idempotent · source: builtin_
 - openssl_certificate:
     path: /etc/nginx/ssl/client.crt
     privatekey_path: /etc/nginx/ssl/client.key
+    csr_path: /etc/nginx/ssl/client.csr
     common_name: admin
     purpose: client
     ca_cert: /etc/ca/ca.crt
     ca_key: /etc/ca/ca.key
 ```
 
+```yaml
+- openssl_certificate:
+    path: /etc/nginx/ssl/site.crt
+    privatekey_path: /etc/nginx/ssl/site.key
+    common_name: site1.example.com
+    subject_alt_name:
+      - 'DNS:site1.example.com'
+      - 'IP:10.0.0.5'
+    digest: sha384
+    purpose: server
+```
 
-> ≠ Ansible `community.crypto.openssl_certificate`: covers self-signed, CA, and CA-signed certs with SANs + EKU. Idempotent via on-target inspection (subject/SAN/expiry). Requires the `openssl` CLI on the target.
+
+> ≠ Ansible `community.crypto.openssl_certificate`: covers self-signed, CA, and CA-signed certs with SANs + EKU. Reuses an existing private key (and, in CA mode, a CSR at `csr_path`) unless `force: true`; `csr_path` defaults to `&lt;path&gt;.csr`, `digest` defaults to sha256, and `subject_alt_name` aliases `san` (`san` wins). Idempotent via on-target inspection (subject/SAN/expiry). Requires the `openssl` CLI on the target.
 
 ## package
 
@@ -1352,6 +1534,56 @@ _source: builtin_
 
 
 > ≠ Ansible `pause`: `prompt` is ignored (RoleCall is non-interactive); only timed sleeps are supported.
+
+## pip
+
+Install, upgrade, or remove Python packages idempotently via pip or a virtualenv's pip (Ansible `pip` alternate).
+
+_idempotent · source: builtin_
+
+**Args**
+
+| Arg | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string \| string[]` | required | Package name or list of package names. |
+| `state` | `present \| absent \| latest` | optional | Desired state (default present); latest installs with --upgrade. |
+| `executable` | `string` | optional | pip binary to invoke (default pip3). |
+| `virtualenv` | `string` | optional | Virtualenv directory; uses &lt;virtualenv&gt;/bin/pip instead of executable. |
+| `extra_args` | `string` | optional | Additional arguments appended verbatim to install commands. |
+
+**Examples**
+
+```yaml
+- pip:
+    name: requests
+    state: present
+```
+
+```yaml
+- pip:
+    name:
+      - requests
+      - flask
+    state: latest
+```
+
+```yaml
+- pip:
+    name: ansible
+    state: absent
+    executable: pip3
+```
+
+```yaml
+- pip:
+    name: requests
+    state: present
+    virtualenv: /opt/venv
+    extra_args: --no-cache-dir
+```
+
+
+> ≠ Ansible `pip`: `latest` installs with `--upgrade` but does not query an index for newer versions, so an already-installed package is a no-op. `virtualenv` selects `&lt;virtualenv&gt;/bin/pip` and ignores `executable`. `extra_args` is appended verbatim to install commands only.
 
 ## raw
 
@@ -1677,7 +1909,7 @@ _idempotent · source: builtin_
 
 ## slurp
 
-Read a remote file's contents into a variable (Ansible `slurp` alternate). Returns decoded text and base64 in `data.slurp`.
+Read a remote file's contents into a variable (Ansible `slurp` alternate). Returns decoded text and base64 under both `data.slurp` and the top-level `data`.
 
 _source: builtin_
 
@@ -1696,7 +1928,45 @@ _source: builtin_
 ```
 
 
-> ≠ Ansible `slurp`: the decoded text lives at `register.data.slurp.content` (Ansible nests it under `content` directly).
+> Both shapes are present: `register.data.slurp.content` / `content_base64` (backward compatible) and top-level `register.data.content` / `content_base64` (Ansible-style `register.content`). The same JSON is written to `stdout`.
+
+## snap
+
+Install or remove a snap package idempotently, optionally with `--classic` confinement.
+
+_idempotent · source: builtin_
+
+**Args**
+
+| Arg | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | required | Snap package name. |
+| `state` | `present \| absent` | optional | Desired state (default present). |
+| `classic` | `boolean` | optional | Install with `--classic` confinement. |
+
+**Examples**
+
+```yaml
+- snap:
+    name: core
+    state: present
+```
+
+```yaml
+- snap:
+    name: code
+    state: present
+    classic: true
+```
+
+```yaml
+- snap:
+    name: core
+    state: absent
+```
+
+
+> ≠ Ansible `snap`: presence is probed with `snap list &lt;name&gt;`; `classic` only affects installs. Commands run with `sudo` when `become` is set (snap requires root).
 
 ## sql
 
@@ -1780,7 +2050,7 @@ _source: builtin_
 
 ## synchronize
 
-rsync files on the target (Ansible `synchronize` alternate). NOTE: runs rsync on the target itself, not controller→target.
+Rsync files between the controller and a target (Ansible `synchronize` alternate); rsync runs on the controller and reaches ssh targets with `-e`.
 
 _source: builtin_
 
@@ -1788,10 +2058,13 @@ _source: builtin_
 
 | Arg | Type | Required | Description |
 | --- | --- | --- | --- |
-| `src` | `string` | required | Source path (on target). |
-| `dest` | `string` | required | Destination path (on target). |
-| `delete` | `boolean` | optional | Mirror deletions (--delete). |
-| `recursive` | `boolean` | optional | Use -a (default true). |
+| `src` | `string` | required | Source path (controller path for `push`, target path for `pull`). |
+| `dest` | `string` | required | Destination path (target path for `push`, controller path for `pull`). |
+| `mode` | `string` | optional | Transfer direction: `push` (default, controller -&gt; target) or `pull` (target -&gt; controller). |
+| `delete` | `boolean` | optional | Mirror deletions on the destination (--delete). |
+| `recursive` | `boolean` | optional | Recurse (default true; `-a`, or `-r` when false). |
+| `rsync_opts` | `string` | optional | Extra rsync options, whitespace-separated (quotes supported). |
+| `check` | `boolean` | optional | Dry run: add `--dry-run` (the global `--check` passthrough sets `_check`). |
 
 **Examples**
 
@@ -1802,8 +2075,16 @@ _source: builtin_
     delete: true
 ```
 
+```yaml
+- synchronize:
+    mode: pull
+    src: /var/log/app.log
+    dest: /tmp/collected/
+    rsync_opts: --compress
+```
 
-> ≠ Ansible `synchronize`: Ansible runs rsync from the controller to the target; RoleCall runs rsync on the target (src/dest are both on the target). No `mode: pull` controller semantics.
+
+> Ansible-parity: rsync runs on the controller, not the target. Default `mode: push` sends a controller `src` to a target `dest`; `mode: pull` reverses it. Local targets (`rolecall_connection: local`) rsync locally with no ssh spec. SSH targets use `user@host:path` plus `-e "ssh -p &lt;port&gt; -o StrictHostKeyChecking=no"` from `rolecall_user`/`rolecall_ssh_user`, `rolecall_host`, and `rolecall_port`/`rolecall_ssh_port`. Key-based auth is required: password-only ssh cannot prompt through rsync, so it fails with an actionable error (no `sshpass`). Idempotency uses `--itemize-changes`; no output means `changed: false, skipped: true`.
 
 ## sysctl
 

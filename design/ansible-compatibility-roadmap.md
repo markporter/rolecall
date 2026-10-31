@@ -83,6 +83,9 @@ Each item below lists: **gap**, **plan** (files to touch), **effort**
   (only fetches used facts) and keeps RoleCall explicit (no surprise bulk connect).
   **Decision (D2):** lazy/on-demand is the RoleCall-native default; `gather_facts` field
   accepted but effectively a no-op compatibility hint.
+- **Status:** Implemented (compat) — `gather_facts?: boolean` is accepted by
+  `PlaybookObject`, normalized, and round-tripped; it intentionally does not change
+  fact-gathering behavior.
 
 ### P5. `group_vars/` / `host_vars/` loader  *(gap: dirs — P)*
 - **Plan:** `FsProjectSource` (or config loader) reads `group_vars/<group>.yml` and
@@ -176,6 +179,7 @@ Builtins already present (M): `service`/`systemd`, `lineinfile`, `blockinfile`,
   is a small idempotent builtin. **Effort:** M each.
 - **Status:** all implemented — `stat` (`stat.ts`), `get_url` (`get_url.ts` — download to host with sha256 verify), `replace` (`replace.ts` — in-file text substitution), `unarchive` (`unarchive.ts`), `cron` (`cron.ts` — `#Ansible: <name>`-marked crontab entries: present/absent/disabled, `special_time`, user crontab or `/etc/cron.d` drop-in), `apt_repository` (`apt_repository.ts` — `sources.list.d` line management, `validate_certs`/`update_cache`), and `yum_repository` (`yum_repository.ts` — `/etc/yum.repos.d` INI section management). Each is `resource()`-backed (describe/converge, `check` dry-run) over the SSH/local transport.
 - **Parity deltas closed:** `stat` (`follow`, `checksum`/`get_checksum`, `mtime_epoch`), `find` (`size`, `age`/`age_stamp`, `contains`, `file_type: link`), `archive` (`remove`, `exclude_path`, `force_archive` mtime skip), `unarchive` (`keep_newer`), `assemble` (`delimiter`), `cron` (`backup`, `env`, `insertafter`/`insertbefore`, `cron_file` `mode`), `apt_repository` (`mode`), `yum_repository` (`cost`, `priority`, `exclude`, `includepkgs`, `sslcacert`, `sslverify`). `wait_for` gained `search_regex` and `state` (`started`/`present`/`stopped`/`absent`/`drained`). `mount` gained `boot`/`dump`/`passno`; `hostname` gained `use`; `ufw` gained `default`; `sysctl` documented `reload`/`sysctl_set`.
+- **P2 additions:** `synchronize` is now controller-side rsync over ssh (`mode: push`/`pull`, key auth, itemize-based idempotency); `json_query` uses JMESPath with a `/`-rooted JSON-pointer fallback; `lvol` gained `thin`/`resizefs`/guarded `shrink`; `openssl_certificate` gained key/CSR reuse, `csr_path`, `subject_alt_name`, and `digest`. New modules: `group_by`, `getent`, `pip`, `snap`, `firewalld`.
 
 ---
 
@@ -223,6 +227,11 @@ Builtins already present (M): `service`/`systemd`, `lineinfile`, `blockinfile`,
 ### P17. `connection:` task field  *(gap — P)*
 - **Plan:** optional `connection?: string` mapping to transport selection
   (`src/transport/*`). **Effort:** S–M. **Tension:** none.
+- **Status:** Implemented — `connection?: "ssh" | "local" | "network"` is on
+  `TaskSchema`, normalized/round-tripped, and threaded through
+  `ExecOptions.connectionForKind`; connections cache per host+kind and are all torn
+  down at play end (`src/config/schema.ts`, `src/executor/runner.ts`,
+  `src/cli/commands/playbook.ts`).
 
 ### P18. `extra_vars` (`-e`)  *(gap — X → resolved/implemented)*
 - **Plan:** global flag `--extra-vars` / `-e` merged at the **highest** precedence
@@ -234,6 +243,16 @@ Builtins already present (M): `service`/`systemd`, `lineinfile`, `blockinfile`,
   (`ansible_os_family`, `ansible_distribution`, …) and aliases
   `inventory_hostname` → `host` so unconverted `{{ }}`-free references resolve.
 - **Effort:** M. **Tension:** none (additive aliases).
+
+### P20. Play phases & `vars_files`  *(gap — P)*
+- **Plan:** accept `pre_tasks` / `post_tasks` (task-shaped, collapsed form supported)
+  around the role/play task list, and ordered `vars_files` merged below explicit play
+  `vars:`. `vars_prompt` stays unsupported (non-interactive design).
+- **Effort:** M. **Tension:** none.
+- **Status:** Implemented — schema/normalizer/serializer carry the fields; the loader
+  expands `include_tasks` within all three task lists and orders `pre_tasks → roles →
+  tasks/imports → post_tasks`; `vars_files` resolve through the VFS seam relative to the
+  declaring playbook with later-file-overrides-earlier semantics.
 
 ---
 
