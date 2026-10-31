@@ -219,6 +219,11 @@ export interface ExecOptions {
   facts?: Record<string, Record<string, unknown>>;
   /** Resolve a Connection for a host. Defaults to `createNoopConnection`. */
   connectionFor?: (host: string) => Connection | Promise<Connection>;
+  /** Resolve a Connection for a host using an explicit per-task transport kind; takes precedence over {@link connectionFor} when a task declares `connection`. */
+  connectionForKind?: (
+    host: string,
+    kind: "ssh" | "local" | "network",
+  ) => Connection | Promise<Connection>;
   /** Abort signal propagated to module invocations. */
   signal?: AbortSignal;
   /** Forwarded to `resolveTargets` for inventory resolution. */

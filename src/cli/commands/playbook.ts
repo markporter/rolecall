@@ -165,6 +165,11 @@ export async function runPlaybookCommand(
     }
     result = await runPlaybook(playbook, inventory, {
       connectionFor: (h) => buildConnectionForHost(h, varsByHost[h] ?? {}),
+      connectionForKind: (h, kind) =>
+        buildConnectionForHost(h, {
+          ...(varsByHost[h] ?? {}),
+          rolecall_connection: kind,
+        }),
       playbookDir: dirname(file),
       playbookPath: file,
       inventoryPath: flags.inventory,

@@ -2,6 +2,8 @@
 // Zod field-path naming, and round-trip stability. Bun-only MVP (bun test).
 import { expect, test } from "bun:test";
 import { deepEqual } from "node:assert";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -529,6 +531,190 @@ test("serialize preserves the new fields (imports/include_tasks/hosts) round-tri
   ];
   const normalized = normalizePlaybook(raw as never)[0]!;
   deepEqual(serializePlaybook(normalized), normalized);
+});
+
+test("per-task connection validates, normalizes, and round-trips", () => {
+  const pb = loadPlaybook(`
+- hosts: web
+  tasks:
+    - name: via-local
+      module: ping
+      args: {}
+      connection: local
+    - name: via-ssh
+      module: ping
+      args: {}
+      connection: ssh
+    - name: via-network
+      module: ping
+      args: {}
+      connection: network
+`);
+  expect(pb[0]?.tasks.map((t) => t.connection)).toEqual([
+    "local",
+    "ssh",
+    "network",
+  ]);
+  deepEqual(serializePlaybook(pb[0]!), pb[0]!);
+});
+
+test("per-task connection rejects an invalid value", () => {
+  let err: unknown;
+  try {
+    loadPlaybook(`
+- hosts: web
+  tasks:
+    - name: t
+      module: ping
+      args: {}
+      connection: http
+`);
+  } catch (e) {
+    err = e;
+  }
+  expect(err).toBeInstanceOf(ZodError);
+  expect(String((err as Error).message)).toContain("connection");
+});
+
+
+// --- Play phases, vars_files, gather_facts --------------------------------
+test("pre_tasks/post_tasks normalize (collapsed form), order, and round-trip", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "rolecall-play-phases-"));
+  try {
+    writeFileSync(
+      join(dir, "play.yaml"),
+      `- name: phases
+  hosts: all
+  pre_tasks:
+    - name: prepare
+      debug:
+        msg: pre
+  tasks:
+    - name: main
+      module: debug
+      args: {}
+  post_tasks:
+    - name: cleanup
+      debug:
+        msg: post
+`,
+    );
+    const pb = await loadPlaybookFile("play.yaml", new FsProjectSource(dir));
+    const play = pb[0]!;
+    expect(play.tasks.map((t) => t.name)).toEqual(["prepare", "main", "cleanup"]);
+    expect(play.pre_tasks?.map((t) => t.name)).toEqual(["prepare"]);
+    expect(play.pre_tasks?.[0]?.module).toBe("debug");
+    expect(play.pre_tasks?.[0]?.args).toEqual({ msg: "pre" });
+    expect(play.post_tasks?.map((t) => t.name)).toEqual(["cleanup"]);
+    expect(play.post_tasks?.[0]?.module).toBe("debug");
+    deepEqual(serializePlaybook(play), play);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("vars_files merge below explicit play vars, later files override earlier ones", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "rolecall-vars-files-"));
+  try {
+    writeFileSync(join(dir, "one.yaml"), "a: 1\nb: one\nnested:\n  x: 1\n");
+    writeFileSync(join(dir, "two.yaml"), "b: two\nc: from-file\n");
+    writeFileSync(
+      join(dir, "play.yaml"),
+      `- hosts: all
+  vars_files:
+    - one.yaml
+    - two.yaml
+  vars:
+    c: explicit
+  tasks:
+    - name: t
+      module: debug
+      args: {}
+`,
+    );
+    const pb = await loadPlaybookFile("play.yaml", new FsProjectSource(dir));
+    expect(pb[0]?.vars_files).toEqual(["one.yaml", "two.yaml"]);
+    expect(pb[0]?.vars).toEqual({
+      a: 1,
+      b: "two",
+      c: "explicit",
+      nested: { x: 1 },
+    });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a missing vars_files entry throws an actionable error naming the file", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "rolecall-vars-files-missing-"));
+  try {
+    writeFileSync(
+      join(dir, "play.yaml"),
+      `- hosts: all
+  vars_files:
+    - missing.yaml
+  tasks:
+    - name: t
+      module: debug
+      args: {}
+`,
+    );
+    let err: unknown;
+    try {
+      await loadPlaybookFile("play.yaml", new FsProjectSource(dir));
+    } catch (e) {
+      err = e;
+    }
+    expect(err).toBeInstanceOf(Error);
+    const msg = String((err as Error).message);
+    expect(msg).toContain("vars_files");
+    expect(msg).toContain("missing.yaml");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a non-map vars_files entry throws an actionable error naming the file", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "rolecall-vars-files-shape-"));
+  try {
+    writeFileSync(join(dir, "list.yaml"), "- one\n- two\n");
+    writeFileSync(
+      join(dir, "play.yaml"),
+      `- hosts: all
+  vars_files:
+    - list.yaml
+  tasks:
+    - name: t
+      module: debug
+      args: {}
+`,
+    );
+    let err: unknown;
+    try {
+      await loadPlaybookFile("play.yaml", new FsProjectSource(dir));
+    } catch (e) {
+      err = e;
+    }
+    expect(err).toBeInstanceOf(Error);
+    const msg = String((err as Error).message);
+    expect(msg).toContain("list.yaml");
+    expect(msg).toContain("YAML mapping");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("gather_facts is accepted, preserved, and round-trips", () => {
+  const pb = loadPlaybook(`
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: t
+      module: debug
+      args: {}
+`);
+  expect(pb[0]?.gather_facts).toBe(false);
+  deepEqual(serializePlaybook(pb[0]!), pb[0]!);
 });
 
 // --- ADR 0008: $template operator (opt-in render; bare strings stay literal) --------

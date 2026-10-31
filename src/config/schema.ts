@@ -86,6 +86,9 @@ export const TaskSchema = z
       // tags: labels selected at run time by the global --tags / --skip-tags flags.
       // Absent => inherit the play's `tags` (see canonicalizeTask + tags.ts).
       tags: z.array(z.string()).optional(),
+      // connection: per-task transport override (Ansible parity). Absent => the
+      // host's default transport from `rolecall_connection`.
+      connection: z.enum(["ssh", "local", "network"]).optional(),
       // roleDir: absolute path of the contributing role (set by the loader) so
       // modules can resolve role-relative paths (e.g. copy `content.template_file`).
       roleDir: z.string().optional(),
@@ -124,7 +127,7 @@ export const TaskSchema = z
 const TASK_STRUCTURAL_KEYS = new Set<string>([
   "name", "module", "args", "when", "loop", "notify", "include_tasks",
   "hosts", "register", "delegate_to", "run_once", "listen", "become",
-  "roleDir", "tx", "checkpoint", "tags",
+  "roleDir", "tx", "checkpoint", "tags", "connection",
 ]);
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
@@ -174,6 +177,17 @@ export const PlaybookObject = z
     name: z.string().optional(),
     hosts: z.union([z.string(), z.array(z.string())]),
     tasks: z.array(CanonicalTaskSchema),
+    // pre_tasks/post_tasks: Ansible-style play phases. `pre_tasks` run before the
+    // role-composed + play tasks; `post_tasks` run after every normal task (but
+    // before the end-of-play handler flush). Task-shaped with collapsed-form support.
+    pre_tasks: z.array(CanonicalTaskSchema).optional(),
+    post_tasks: z.array(CanonicalTaskSchema).optional(),
+    // vars_files: ordered play-relative YAML map files merged into `vars` below the
+    // play's explicit `vars:` (later files override earlier ones). Resolved by the loader.
+    vars_files: z.array(z.string()).optional(),
+    // gather_facts: Ansible compatibility field. Accepted and preserved for round-trip,
+    // but deliberately a no-op — RoleCall gathers facts lazily/on demand.
+    gather_facts: z.boolean().optional(),
     // handlers: Ansible-style play-level handler list. Each entry is task-shaped and
     // lowered at load time (see normalizeOnePlay) into a task carrying `listen:`
     // defaulting to the entry's `name`, so a task's `notify: <name>` triggers it and
@@ -360,6 +374,8 @@ export interface NormalizedTask {
     no_log?: boolean;
     /** Labels selected at run time by the global `--tags` / `--skip-tags` flags. Absent => the task inherits its play's `tags`; present (even empty) => it replaces them (no union). */
     tags?: string[];
+    /** Per-task transport override; when absent the host's default connection applies. */
+    connection?: "ssh" | "local" | "network";
     /** Absolute path of the role directory this task was composed from (set by the loader); enables role-relative path resolution. */
     roleDir?: string;
     /** Transaction id grouping dependent tasks/plays for rollback (Todo 26). */
@@ -373,6 +389,14 @@ export interface NormalizedPlaybook {
   name?: string;
   hosts: string[];
   tasks: NormalizedTask[];
+  /** Tasks that run before role-composed + play tasks (Ansible `pre_tasks`). */
+  pre_tasks?: NormalizedTask[];
+  /** Tasks that run after all normal tasks, before the end-of-play handler flush (Ansible `post_tasks`). */
+  post_tasks?: NormalizedTask[];
+  /** Ordered play-relative vars files merged below explicit play `vars:`. */
+  vars_files?: string[];
+  /** Ansible compatibility flag preserved for round-trip; RoleCall gathers facts lazily regardless. */
+  gather_facts?: boolean;
   /** Optional `imports` directives (load-time expansion); absent after expansion. */
   imports?: string[];
   /** Roles composed into this play at load time; empty once expanded away. */
@@ -442,6 +466,7 @@ export function normalizeTask(raw: RawTask): NormalizedTask {
     ...(raw.environment !== undefined ? { environment: raw.environment } : {}),
     ...(raw.no_log !== undefined ? { no_log: raw.no_log } : {}),
     ...(raw.tags !== undefined ? { tags: raw.tags } : {}),
+    ...(raw.connection !== undefined ? { connection: raw.connection } : {}),
     ...(raw.roleDir !== undefined ? { roleDir: raw.roleDir } : {}),
     ...(raw.tx !== undefined ? { tx: raw.tx } : {}),
     ...(raw.checkpoint !== undefined ? { checkpoint: raw.checkpoint } : {}),
@@ -480,6 +505,14 @@ function normalizeOnePlay(raw: RawPlaybook): NormalizedPlaybook {
     ...(raw.name !== undefined ? { name: raw.name } : {}),
     hosts: Array.isArray(raw.hosts) ? raw.hosts : [raw.hosts],
     tasks,
+    ...(raw.pre_tasks !== undefined
+      ? { pre_tasks: raw.pre_tasks.map(normalizeTask) }
+      : {}),
+    ...(raw.post_tasks !== undefined
+      ? { post_tasks: raw.post_tasks.map(normalizeTask) }
+      : {}),
+    ...(raw.vars_files !== undefined ? { vars_files: raw.vars_files } : {}),
+    ...(raw.gather_facts !== undefined ? { gather_facts: raw.gather_facts } : {}),
     ...(raw.imports !== undefined ? { imports: raw.imports } : {}),
     roles: raw.roles ?? [],
     vars: raw.vars ?? {},
@@ -524,6 +557,7 @@ export function serializeTask(task: NormalizedTask): Record<string, unknown> {
   if (task.include_tasks !== undefined) out.include_tasks = task.include_tasks;
   if (task.become !== undefined) out.become = task.become;
   if (task.tags !== undefined) out.tags = task.tags;
+  if (task.connection !== undefined) out.connection = task.connection;
   if (task.tx !== undefined) out.tx = task.tx;
   if (task.checkpoint !== undefined) out.checkpoint = task.checkpoint;
   return out;
@@ -539,6 +573,14 @@ export function serializePlaybook(
     tasks: playbook.tasks.map(serializeTask),
     vars: playbook.vars,
   };
+  if (playbook.pre_tasks !== undefined) {
+    out.pre_tasks = playbook.pre_tasks.map(serializeTask);
+  }
+  if (playbook.post_tasks !== undefined) {
+    out.post_tasks = playbook.post_tasks.map(serializeTask);
+  }
+  if (playbook.vars_files !== undefined) out.vars_files = playbook.vars_files;
+  if (playbook.gather_facts !== undefined) out.gather_facts = playbook.gather_facts;
   if (playbook.imports !== undefined) out.imports = playbook.imports;
   if (playbook.roles !== undefined) out.roles = playbook.roles;
   if (playbook.appliedRoleNames !== undefined) out.appliedRoleNames = playbook.appliedRoleNames;

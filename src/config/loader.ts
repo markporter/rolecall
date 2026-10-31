@@ -90,7 +90,14 @@ export interface IdempotencyWarning {
  */
 export function lintPlaybookIdempotency(pb: NormalizedPlaybook): IdempotencyWarning[] {
   const out: IdempotencyWarning[] = [];
-  for (const t of pb.tasks) {
+  const seenTasks = new Set<NormalizedTask>();
+  for (const t of [
+    ...(pb.pre_tasks ?? []),
+    ...pb.tasks,
+    ...(pb.post_tasks ?? []),
+  ]) {
+    if (seenTasks.has(t)) continue;
+    seenTasks.add(t);
     const module = t.module ?? "";
     if (!UNGUARDED_MODULES.has(module)) continue;
     const args = t.args ?? {};
@@ -226,19 +233,24 @@ export function lintTemplateRefs(pb: NormalizedPlaybook): TemplateRefProblem[] {
   };
 
   if (pb.name !== undefined) walk(pb.name, "name");
-  for (const t of pb.tasks) {
-    walk(t.name, "tasks[].name");
-    walk(t.module, "tasks[].module");
-    walk(t.args, "tasks[].args");
-    if (t.when !== undefined) walk(t.when, "tasks[].when");
-    if (t.loop !== undefined) walk(t.loop, "tasks[].loop");
-    for (const n of t.notify) walk(n, "tasks[].notify");
-    if (t.register !== undefined) walk(t.register, "tasks[].register");
-    if (t.delegate_to !== undefined) walk(t.delegate_to, "tasks[].delegate_to");
-    if (t.listen !== undefined) walk(t.listen, "tasks[].listen");
-    if (t.tx !== undefined) walk(t.tx, "tasks[].tx");
-    if (t.checkpoint !== undefined) walk(t.checkpoint, "tasks[].checkpoint");
-  }
+  const lintTasks = (tasks: NormalizedTask[], prefix: string): void => {
+    for (const t of tasks) {
+      walk(t.name, `${prefix}[].name`);
+      walk(t.module, `${prefix}[].module`);
+      walk(t.args, `${prefix}[].args`);
+      if (t.when !== undefined) walk(t.when, `${prefix}[].when`);
+      if (t.loop !== undefined) walk(t.loop, `${prefix}[].loop`);
+      for (const n of t.notify) walk(n, `${prefix}[].notify`);
+      if (t.register !== undefined) walk(t.register, `${prefix}[].register`);
+      if (t.delegate_to !== undefined) walk(t.delegate_to, `${prefix}[].delegate_to`);
+      if (t.listen !== undefined) walk(t.listen, `${prefix}[].listen`);
+      if (t.tx !== undefined) walk(t.tx, `${prefix}[].tx`);
+      if (t.checkpoint !== undefined) walk(t.checkpoint, `${prefix}[].checkpoint`);
+    }
+  };
+  lintTasks(pb.pre_tasks ?? [], "pre_tasks");
+  lintTasks(pb.tasks, "tasks");
+  lintTasks(pb.post_tasks ?? [], "post_tasks");
 
   return problems;
 }
@@ -608,6 +620,93 @@ export function deepMerge(
 }
 
 /**
+ * @summary Load a play's ordered `vars_files`, resolving each entry relative to the
+ * declaring playbook's directory through the VFS seam. Every file must exist, parse as
+ * YAML, and contain a mapping; later files override earlier ones. The merged map is
+ * returned separately so the caller can layer it below explicit play `vars:`.
+ * @param entries Ordered play-relative file paths.
+ * @param fileDir Absolute directory of the declaring playbook file.
+ * @param source Project VFS used to read file bytes.
+ * @returns The merged vars map (empty when `entries` is empty).
+ * @throws {Error} When a file is unreadable or is not a YAML mapping, naming the file.
+ */
+async function loadVarsFiles(
+  entries: string[],
+  fileDir: string,
+  source: ProjectSource,
+): Promise<Record<string, unknown>> {
+  let merged: Record<string, unknown> = {};
+  for (const entry of entries) {
+    const abs = resolve(fileDir, entry);
+    let text: string;
+    try {
+      text = await source.readText(abs);
+    } catch (err) {
+      throw new Error(
+        `[rolecall:vars_files] could not read vars file '${entry}' (resolved to ${abs}): ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+    let data: unknown;
+    try {
+      data = parseYaml(text);
+    } catch (err) {
+      throw new Error(
+        `[rolecall:vars_files] vars file '${entry}' (resolved to ${abs}) is not valid YAML: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+    if (!isPlainRecord(data)) {
+      throw new Error(
+        `[rolecall:vars_files] vars file '${entry}' (resolved to ${abs}) must contain a YAML mapping of variable names to values`,
+      );
+    }
+    merged = deepMerge(merged, data);
+  }
+  return merged;
+}
+
+/**
+ * @summary Expand `include_tasks` directives within one task list at their original
+ * index, splicing each included play's tasks in place. Included tasks inherit the
+ * parent play's `hosts:` unless they declare their own.
+ * @param tasks The task list to expand.
+ * @param parentHosts Hosts inherited by included tasks lacking their own `hosts:`.
+ * @param fileDir Absolute directory of the file declaring `tasks`.
+ * @param source Project VFS used to read referenced files.
+ * @param visited Absolute paths already on the current load stack (cycle guard).
+ * @param depth Current import/include nesting depth.
+ * @returns The expanded task list.
+ */
+async function expandTaskIncludes(
+  tasks: NormalizedTask[],
+  parentHosts: string[],
+  fileDir: string,
+  source: ProjectSource,
+  visited: Set<string>,
+  depth: number,
+): Promise<NormalizedTask[]> {
+  const expanded: NormalizedTask[] = [];
+  for (const task of tasks) {
+    if (task.include_tasks === undefined) {
+      expanded.push(task);
+      continue;
+    }
+    const files = Array.isArray(task.include_tasks)
+      ? task.include_tasks
+      : [task.include_tasks];
+    for (const entry of files) {
+      const incAbs = resolve(fileDir, entry);
+      const incPlays = await loadAndExpand(incAbs, source, visited, depth + 1);
+      for (const incPlay of incPlays) {
+        for (const incTask of incPlay.tasks) {
+          expanded.push(inheritHosts(incTask, parentHosts));
+        }
+      }
+    }
+  }
+  return expanded;
+}
+
+/**
  * Expand a single play's `imports` and `include_tasks` directives in place. `imports`
  * entries resolve against the project source root; `include_tasks` entries resolve
  * against the directory containing the file currently being expanded.
@@ -625,7 +724,14 @@ async function expandPlay(
   depth: number,
 ): Promise<void> {
   const fileDir = dirname(fileAbs);
-  const expanded: NormalizedTask[] = [];
+
+  // --- vars_files: merge ordered play-relative YAML maps BELOW explicit play vars.
+  // Loading first (then layering role vars above them and explicit vars last) gives
+  // the required `vars_files < explicit play vars` precedence.
+  if (play.vars_files !== undefined && play.vars_files.length > 0) {
+    const varsFileVars = await loadVarsFiles(play.vars_files, fileDir, source);
+    play.vars = deepMerge(varsFileVars, play.vars ?? {});
+  }
 
   // --- Role composition: gather each named role's tasks/handlers and
   // merge their defaults/vars BEFORE the play's own tasks are spliced. Roles contribute
@@ -666,24 +772,30 @@ async function expandPlay(
   }
 
   // --- Task-level include_tasks: splice included tasks at the directive's index.
-  for (const task of play.tasks) {
-    if (task.include_tasks === undefined) {
-      expanded.push(task);
-      continue;
-    }
-    const files = Array.isArray(task.include_tasks)
-      ? task.include_tasks
-      : [task.include_tasks];
-    for (const entry of files) {
-      const incAbs = resolve(fileDir, entry);
-      const incPlays = await loadAndExpand(incAbs, source, visited, depth + 1);
-      for (const incPlay of incPlays) {
-        for (const incTask of incPlay.tasks) {
-          expanded.push(inheritHosts(incTask, play.hosts));
-        }
-      }
-    }
-  }
+  const preTasks = await expandTaskIncludes(
+    play.pre_tasks ?? [],
+    play.hosts,
+    fileDir,
+    source,
+    visited,
+    depth,
+  );
+  const expanded = await expandTaskIncludes(
+    play.tasks,
+    play.hosts,
+    fileDir,
+    source,
+    visited,
+    depth,
+  );
+  const postTasks = await expandTaskIncludes(
+    play.post_tasks ?? [],
+    play.hosts,
+    fileDir,
+    source,
+    visited,
+    depth,
+  );
 
   // --- Play-level imports: splice imported tasks at the end of this play's tasks.
   if (play.imports !== undefined) {
@@ -701,10 +813,20 @@ async function expandPlay(
     play.imports = undefined;
   }
 
-  // Assemble the final task list: composed role tasks first, then the play's own
-  // (include-expanded) and imported tasks. Handler tasks ride along among the head;
-  // the executor later filters them out via `listen` and flushes on notify only.
-  play.tasks = roleHead.length > 0 ? [...roleHead, ...expanded] : expanded;
+  // Assemble the final task list in execution order: pre_tasks, composed role tasks,
+  // the play's own (include-expanded) and imported tasks, then post_tasks. Handler
+  // tasks ride along among the head; the executor later filters them out via `listen`
+  // and flushes on notify only. The pre/post fields are retained for round-trip
+  // serialization; the executor dedupes by task identity so the spliced copies do not
+  // run twice when both representations are present.
+  play.tasks = [
+    ...preTasks,
+    ...roleHead,
+    ...expanded,
+    ...postTasks,
+  ];
+  if (play.pre_tasks !== undefined) play.pre_tasks = preTasks;
+  if (play.post_tasks !== undefined) play.post_tasks = postTasks;
 
   // Preserve the applied role names for the `play.roles` namespace (ADR 0013 §6)
   // before consuming the `roles` directive after expansion (reload-safety). Only
