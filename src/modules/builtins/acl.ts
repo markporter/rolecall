@@ -1,12 +1,26 @@
 // Built-in module: `acl` — Ansible `acl` alternate (set filesystem ACLs).
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote, wrapCommand } from "./fs";
 
 /** @summary Set or remove a filesystem ACL entry (Ansible `acl` alternate). @param ctx ModuleContext carrying `path`, `entity`, `etype`, `permissions`, `state`, `default`. @returns ModuleResult; `skipped` when already in desired state. */
-export const aclModule: Module = {
+export const aclModule: Module & CheckableModule = {
   name: "acl",
+  async check(args, ctx) {
+    const path = typeof args["path"] === "string" ? String(args["path"]) : "";
+    const entity = typeof args["entity"] === "string" ? String(args["entity"]) : "";
+    const etype = (typeof args["etype"] === "string" ? String(args["etype"]) : "user") as "user" | "group";
+    const perms = typeof args["permissions"] === "string" ? String(args["permissions"]) : "";
+    const state = (typeof args["state"] === "string" ? String(args["state"]) : "present") as "present" | "absent";
+    const isDefault = Boolean(args["default"]);
+    const flag = isDefault ? "d:" : "";
+    const cur = await ctx.connection.exec(`getfacl -p ${shQuote(path)} 2>/dev/null | grep -E "^${isDefault ? "default:" : ""}${etype}:${entity}:"`);
+    const current = (cur.stdout ?? "").trim();
+    const wanted = `${flag}${etype}:${entity}:${perms}`;
+    return { current, inDesired: state === "absent" ? !current : current === wanted };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args;
     const path = typeof a["path"] === "string" ? String(a["path"]) : "";

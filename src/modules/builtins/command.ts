@@ -27,6 +27,7 @@ interface CommandArgs {
 /** @summary Ansible `command`/`raw` alias of `shell`. Forwards to `shellModule.run`, defaulting `run_mode: always` (or `idempotent` when a `creates`/`removes` guard is set, or honoring an explicit `run_mode`). `chdir` is translated to a `cd` prefix. @param ctx ModuleContext carrying `cmd`/`command`, optional `creates`/`removes`, `chdir`, `run_mode`. @returns ModuleResult from the underlying shell run. */
 export const commandModule: Module = {
   name: "command",
+  supportsCheck: true,
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args as unknown as CommandArgs;
     const cmd = String(a.cmd ?? a.command ?? "");

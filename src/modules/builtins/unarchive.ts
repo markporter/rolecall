@@ -7,6 +7,7 @@ import { shQuote } from "./fs";
 /** @summary Extract an archive on the target (Ansible `unarchive` alternate). Reads `src` on the target and extracts into `dest`; skips when `creates` already exists. @param ctx ModuleContext carrying `src`, `dest`, `creates`, `keep_newer`, `remote_src`, `check`. @returns ModuleResult; `skipped` when guarded. */
 export const unarchiveModule: Module = {
   name: "unarchive",
+  supportsCheck: true,
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args;
     const src = typeof a["src"] === "string" ? String(a["src"]) : "";

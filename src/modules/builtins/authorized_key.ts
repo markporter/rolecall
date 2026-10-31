@@ -1,12 +1,39 @@
 // Built-in module: `authorized_key` — Ansible `authorized_key` alternate (manage SSH authorized keys).
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote, wrapCommand } from "./fs";
 
 /** @summary Manage an SSH authorized_keys entry (Ansible `authorized_key` alternate). Adds/removes the `key` line for `user` idempotently. @param ctx ModuleContext carrying `user`, `key`, `state`, `exclusive`, `path`. @returns ModuleResult; `skipped` when unchanged. */
-export const authorizedKeyModule: Module = {
+export const authorizedKeyModule: Module & CheckableModule = {
   name: "authorized_key",
+  async check(args, ctx) {
+    const a = args;
+    const user = typeof a["user"] === "string" ? String(a["user"]) : "root";
+    const key = typeof a["key"] === "string" ? String(a["key"]) : "";
+    const state = typeof a["state"] === "string" ? String(a["state"]) : "present";
+    const exclusive = Boolean(a["exclusive"]);
+    const homeRes = await ctx.connection.exec(`getent passwd ${shQuote(user)} | cut -d: -f6`);
+    const home = (homeRes.stdout ?? "").trim() || (user === "root" ? "/root" : `/home/${user}`);
+    const path = typeof a["path"] === "string" ? String(a["path"]) : `${home}/.ssh/authorized_keys`;
+    const read = await ctx.connection.exec(`cat ${shQuote(path)} 2>/dev/null`);
+    const lines = read.stdout ? read.stdout.split("\n") : [];
+    const keyBlob = key.trim().split(/\s+/).slice(0, 2).join(" ");
+    const matches = (l: string) => l.trim().split(/\s+/).slice(0, 2).join(" ") === keyBlob;
+    const comment = typeof a["comment"] === "string" ? String(a["comment"]) : "";
+    const keyOptions = typeof a["key_options"] === "string" ? String(a["key_options"]) : "";
+    const keyLine = `${keyOptions ? keyOptions + " " : ""}${keyBlob}${comment ? " " + comment : ""}`;
+    const oldContent = lines.join("\n") + (lines.length ? "\n" : "");
+    if (state === "absent") {
+      const kept = lines.filter((l) => !(l.trim() && matches(l)));
+      const newContent = kept.join("\n") + (kept.length ? "\n" : "");
+      return { current: oldContent, inDesired: newContent === oldContent };
+    }
+    const next = exclusive ? [keyLine] : [...lines.filter((l) => !(l.trim() && matches(l))), keyLine];
+    const newContent = next.join("\n") + (next.length ? "\n" : "");
+    return { current: oldContent, inDesired: newContent === oldContent };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args;
     const user = typeof a["user"] === "string" ? String(a["user"]) : "root";

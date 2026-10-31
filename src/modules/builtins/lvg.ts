@@ -1,12 +1,19 @@
 // Built-in module: `lvg` — Ansible `lvg` alternate (LVM volume group).
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
 /** @summary Create or remove an LVM volume group (Ansible `lvg` alternate). @param ctx ModuleContext carrying `vg`, `pvs`, `state`, `force`. @returns ModuleResult; `skipped` when unchanged. */
-export const lvgModule: Module = {
+export const lvgModule: Module & CheckableModule = {
   name: "lvg",
+  async check(args, ctx) {
+    const vg = typeof args["vg"] === "string" ? String(args["vg"]) : "";
+    const state = (typeof args["state"] === "string" ? String(args["state"]) : "present") as "present" | "absent";
+    const exists = (await ctx.connection.exec(`vgs ${shQuote(vg)} >/dev/null 2>&1`)).exitCode === 0;
+    return { current: { exists }, inDesired: state === "absent" ? !exists : exists };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args;
     const vg = typeof a["vg"] === "string" ? String(a["vg"]) : "";

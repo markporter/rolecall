@@ -74,6 +74,7 @@ function resolveDest(url: string, dest: string): string {
 /** @summary Download a file from a URL to a path on the managed host. Idempotent: skips when the destination exists and (if set) its sha256 matches. @param ctx ModuleContext (connection, args, become). @returns ModuleResult with changed/skipped/failed and data. */
 export const getUrlModule: Module = {
   name: MODULE_NAME,
+  supportsCheck: true,
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const args = ctx.args as unknown as GetUrlArgs;
     const url = String(args.url ?? "");

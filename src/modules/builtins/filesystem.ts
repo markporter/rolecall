@@ -1,12 +1,20 @@
 // Built-in module: `filesystem` — Ansible `filesystem` alternate (mkfs a device).
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
 /** @summary Create a filesystem on a device (Ansible `filesystem` alternate). @param ctx ModuleContext carrying `fstype`, `dev`, `force`, `opts`, `state`. @returns ModuleResult; `skipped` when already that fstype. */
-export const filesystemModule: Module = {
+export const filesystemModule: Module & CheckableModule = {
   name: "filesystem",
+  async check(args, ctx) {
+    const fstype = typeof args["fstype"] === "string" ? String(args["fstype"]) : "";
+    const dev = typeof args["dev"] === "string" ? String(args["dev"]) : "";
+    const cur = await ctx.connection.exec(`blkid -o value -s TYPE ${shQuote(dev)} 2>/dev/null`);
+    const current = (cur.stdout ?? "").trim();
+    return { current, inDesired: current === fstype };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args;
     const fstype = typeof a["fstype"] === "string" ? String(a["fstype"]) : "";

@@ -21,6 +21,7 @@ interface ScriptArgs {
 /** @summary Ansible `script` alias of `shell`. Reads a local `src` script and runs it on the target via `shell` (defaults `run_mode: always`, or `idempotent` with a `creates`/`removes` guard). @param ctx ModuleContext carrying `src` (local script), optional `creates`/`removes`, `run_mode`. @returns ModuleResult from the underlying shell run. */
 export const scriptModule: Module = {
   name: "script",
+  supportsCheck: true,
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args as unknown as ScriptArgs;
     const localSrc = typeof a.src === "string" ? a.src : "";

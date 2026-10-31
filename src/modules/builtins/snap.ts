@@ -5,6 +5,7 @@
 // `sudo` only when `ctx.become` is set, because snap normally needs root.
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 
 const MODULE_NAME = "snap";
@@ -48,8 +49,15 @@ export const meta: ModuleSummary = {
 };
 
 /** @summary Idempotently install/remove a snap package. @param ctx ModuleContext carrying `name`, `state`, and `classic`. @returns ModuleResult; `changed:false` when already in the desired state. */
-export const snapModule: Module = {
+export const snapModule: Module & CheckableModule = {
   name: MODULE_NAME,
+  async check(args, ctx) {
+    const name = typeof args["name"] === "string" ? String(args["name"]).trim() : "";
+    const state = (args["state"] ?? "present") as "present" | "absent";
+    const sudo = ctx.become ? "sudo " : "";
+    const installed = (await ctx.connection.exec(`${sudo}snap list ${name}`)).exitCode === 0;
+    return { current: { installed }, inDesired: state === "present" ? installed : !installed };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const args = ctx.args as unknown as SnapArgs;
     const name = typeof args.name === "string" ? args.name.trim() : "";

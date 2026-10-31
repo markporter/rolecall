@@ -1,12 +1,32 @@
 // Built-in module: `known_hosts` — Ansible `known_hosts` alternate (manage SSH known_hosts).
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
 /** @summary Manage an SSH known_hosts entry (Ansible `known_hosts` alternate). Adds/removes a `name key` line idempotently. @param ctx ModuleContext carrying `name`, `key`, `path`, `state`. @returns ModuleResult; `skipped` when unchanged. */
-export const knownHostsModule: Module = {
+export const knownHostsModule: Module & CheckableModule = {
   name: "known_hosts",
+  async check(args, ctx) {
+    const name = typeof args["name"] === "string" ? String(args["name"]) : "";
+    const key = typeof args["key"] === "string" ? String(args["key"]) : "";
+    const state = typeof args["state"] === "string" ? String(args["state"]) : "present";
+    const path = typeof args["path"] === "string" ? String(args["path"]) : "/etc/ssh/ssh_known_hosts";
+    const read = await ctx.connection.exec(`cat ${shQuote(path)} 2>/dev/null`);
+    const lines = read.stdout ? read.stdout.split("\n") : [];
+    if (state === "absent") {
+      const kept = lines.filter((l) => !(l.trim() && l.split(/\s+/)[0] === name));
+      const newContent = kept.join("\n") + (kept.length ? "\n" : "");
+      const oldContent = lines.join("\n") + (lines.length ? "\n" : "");
+      return { current: oldContent, inDesired: newContent === oldContent };
+    }
+    const line = `${name} ${key.trim()}`;
+    return {
+      current: lines,
+      inDesired: lines.some((l) => l.trim() === line || (l.split(/\s+/)[0] === name && l.split(/\s+/).slice(1).join(" ") === key.trim())),
+    };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args;
     const name = typeof a["name"] === "string" ? String(a["name"]) : "";

@@ -322,6 +322,7 @@ export async function runSynchronize(
 /** @summary rsync files between the controller and a target (Ansible `synchronize` alternate); rsync runs on the controller. @param ctx ModuleContext carrying `src`, `dest`, `mode`, `delete`, `recursive`, `rsync_opts`, and `check`/`_check`. @returns ModuleResult derived from rsync `--itemize-changes` output. */
 export const synchronizeModule: Module = {
   name: "synchronize",
+  supportsCheck: true,
   run(ctx: ModuleContext): Promise<ModuleResult> {
     return runSynchronize(ctx);
   },

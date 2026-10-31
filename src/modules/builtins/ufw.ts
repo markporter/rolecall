@@ -1,14 +1,52 @@
 // Built-in module: `ufw` — Ansible `ufw` alternate (Uncomplicated Firewall).
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
 const UFW_POLICIES = ["allow", "deny", "reject"] as const;
 
 /** @summary Manage UFW firewall rules/state (Ansible `ufw` alternate). @param ctx ModuleContext carrying `rule`, `port`, `proto`, `direction`, `state`, `default`, `from_ip`, `to_ip`, `interface`, `log`. @returns ModuleResult. */
-export const ufwModule: Module = {
+export const ufwModule: Module & CheckableModule = {
   name: "ufw",
+  async check(args, ctx) {
+    const a = args;
+    const status = await ctx.connection.exec("ufw status 2>/dev/null");
+    if (status.exitCode !== 0) return { current: null, inDesired: false };
+    const text = status.stdout ?? "";
+    const state = typeof a["state"] === "string" ? String(a["state"]) : "";
+    if (state === "enabled" || state === "disabled") {
+      const active = /^Status:\s*active/im.test(text);
+      return { current: { active }, inDesired: state === "enabled" ? active : !active };
+    }
+    const policyArg = a["default"];
+    const policy = policyArg === undefined || policyArg === null ? "" : String(policyArg);
+    if (policy) {
+      const verbose = await ctx.connection.exec("ufw status verbose 2>/dev/null");
+      const current = (verbose.stdout ?? text).match(/^Default:\s*(\w+)\s*\(incoming\)/im)?.[1] ?? "";
+      return { current, inDesired: current === policy };
+    }
+    const rule = typeof a["rule"] === "string" ? String(a["rule"]) : "allow";
+    const port = typeof a["port"] === "string" ? String(a["port"]) : "";
+    const proto = typeof a["proto"] === "string" ? String(a["proto"]) : "";
+    const fromIp = typeof a["from_ip"] === "string" ? String(a["from_ip"]) : "";
+    const toIp = typeof a["to_ip"] === "string" ? String(a["to_ip"]) : "";
+    const iface = typeof a["interface"] === "string" ? String(a["interface"]) : "";
+    const needles: string[] = [];
+    if (port) needles.push(proto ? `${port}/${proto}` : port);
+    else if (proto) needles.push(proto);
+    if (fromIp) needles.push(fromIp);
+    if (toIp) needles.push(toIp);
+    if (iface) needles.push(iface);
+    if (needles.length === 0) return { current: text, inDesired: false };
+    const action = rule.toUpperCase();
+    const present = text.split("\n").some((line) => {
+      const l = line.toLowerCase();
+      return l.includes(action.toLowerCase()) && needles.every((n) => l.includes(n.toLowerCase()));
+    });
+    return { current: text, inDesired: present };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args;
 

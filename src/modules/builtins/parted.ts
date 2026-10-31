@@ -1,12 +1,21 @@
 // Built-in module: `parted` — Ansible `parted` alternate (create/remove a partition).
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
 /** @summary Create or remove a partition with parted (Ansible `parted` alternate). @param ctx ModuleContext carrying `device`, `number`, `part_type`, `part_start`, `part_end`, `flags`, `state`, `label`. @returns ModuleResult; `skipped` when unchanged. */
-export const partedModule: Module = {
+export const partedModule: Module & CheckableModule = {
   name: "parted",
+  async check(args, ctx) {
+    const device = typeof args["device"] === "string" ? String(args["device"]) : "";
+    const number = args["number"] != null ? Number(args["number"]) : 1;
+    const state = (typeof args["state"] === "string" ? String(args["state"]) : "present") as "present" | "absent";
+    const out = await ctx.connection.exec(`parted -m ${shQuote(device)} print 2>/dev/null | awk -F: -v n=${number} '$1==n{print $1}'`);
+    const exists = out.exitCode === 0 && out.stdout.trim().length > 0;
+    return { current: { exists }, inDesired: state === "absent" ? !exists : exists };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args;
     const device = typeof a["device"] === "string" ? String(a["device"]) : "";
@@ -15,7 +24,8 @@ export const partedModule: Module = {
     const state = (typeof a["state"] === "string" ? String(a["state"]) : "present") as "present" | "absent";
     const label = typeof a["label"] === "string" ? String(a["label"]) : "gpt";
 
-    const exists = (await ctx.connection.exec(`parted -m ${shQuote(device)} print 2>/dev/null | awk -F: -v n=${number} '$1==n{print $1}'`)).exitCode === 0;
+    const probe = await ctx.connection.exec(`parted -m ${shQuote(device)} print 2>/dev/null | awk -F: -v n=${number} '$1==n{print $1}'`);
+    const exists = probe.exitCode === 0 && probe.stdout.trim().length > 0;
 
     if (state === "absent") {
       if (!exists) return { changed: false, skipped: true, msg: `parted: partition ${number} absent` };

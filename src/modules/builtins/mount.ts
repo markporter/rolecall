@@ -1,12 +1,19 @@
 // Built-in module: `mount` — Ansible `mount` alternate (mount/unmount a filesystem).
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
 /** @summary Mount or unmount a filesystem (Ansible `mount` alternate). Uses `mount`/`umount` and optionally persists to /etc/fstab. @param ctx ModuleContext carrying `path`, `src`, `fstype`, `opts`, `state`, `fstab`, `boot`, `dump`, `passno`. @returns ModuleResult; `skipped` when already in desired state. */
-export const mountModule: Module = {
+export const mountModule: Module & CheckableModule = {
   name: "mount",
+  async check(args, ctx) {
+    const path = typeof args["path"] === "string" ? String(args["path"]) : "";
+    const state = (typeof args["state"] === "string" ? String(args["state"]) : "mounted") as "mounted" | "unmounted" | "absent" | "present";
+    const isMounted = (await ctx.connection.exec(`findmnt -n -o TARGET ${shQuote(path)} 2>/dev/null`)).exitCode === 0;
+    return { current: { mounted: isMounted }, inDesired: state === "unmounted" || state === "absent" ? !isMounted : isMounted };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args;
     const path = typeof a["path"] === "string" ? String(a["path"]) : "";

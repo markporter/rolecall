@@ -1,12 +1,27 @@
 // Built-in module: `selinux` — Ansible `selinux`/`seboolean` alternate (SELinux state/boolean).
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
 /** @summary Manage SELinux state or a boolean (Ansible `selinux`/`seboolean` alternate). @param ctx ModuleContext carrying `state` (enforcing/permissive/disabled) and/or `boolean`+`value`. @returns ModuleResult; `skipped` when unchanged. */
-export const selinuxModule: Module = {
+export const selinuxModule: Module & CheckableModule = {
   name: "selinux",
+  async check(args, ctx) {
+    const state = typeof args["state"] === "string" ? String(args["state"]) : "";
+    const boolName = typeof args["boolean"] === "string" ? String(args["boolean"]) : "";
+    const boolVal = typeof args["value"] === "string" ? String(args["value"]) : "";
+    if (boolName) {
+      const cur = await ctx.connection.exec(`getsebool ${shQuote(boolName)}`);
+      const current = (cur.stdout ?? "").trim().split(/-->|\s+/)[1] ?? "";
+      const want = boolVal === "off" ? "off" : "on";
+      return { current, inDesired: current === want };
+    }
+    const cur = await ctx.connection.exec(`getenforce 2>/dev/null`);
+    const current = (cur.stdout ?? "").trim().toLowerCase();
+    return { current, inDesired: current === state };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args;
     const state = typeof a["state"] === "string" ? String(a["state"]) : "";

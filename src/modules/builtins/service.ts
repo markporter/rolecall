@@ -1,6 +1,7 @@
 // Built-in module: `service` — idempotent systemd/ SysV enable/start/stop (Todo 15, extended for Ansible parity).
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
+import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
@@ -24,8 +25,46 @@ interface ServiceArgs {
 }
 
 /** @summary Idempotent service enable/start/stop (Ansible `service`/`systemd` alternate). Probes current state before acting; supports `scope` (`system`/`user`), `pattern` as a `pgrep -f` liveness fallback, `runlevel` via `chkconfig --level` on SysV, `daemon_reload`, `state: reloaded`, a client-side `sleep` delay, and a SysV `service` fallback when systemd is absent. @param ctx ModuleContext carrying `name`, `enabled`, `state`, `daemon_reload`, `pattern`, `scope`, `runlevel`, `sleep`. @returns ModuleResult; `changed:false` when the desired state already holds. */
-export const serviceModule: Module = {
+export const serviceModule: Module & CheckableModule = {
   name: "service",
+  async check(args, ctx) {
+    const a = args as unknown as ServiceArgs;
+    const name = String(a.name ?? "");
+    const scope = a.scope ?? "system";
+    const conn = ctx.connection;
+    const sudo = scope === "system" && ctx.become ? "sudo " : "";
+    const ctl = scope === "user" ? "systemctl --user" : "systemctl";
+    const hasSystemd = (await conn.exec(`${sudo}command -v systemctl`)).exitCode === 0;
+    const runlevel = a.runlevel;
+    const enabledCmd = () => (hasSystemd ? `${sudo}${ctl} is-enabled ${name}` : `${sudo}chkconfig --list ${name} 2>/dev/null`);
+    const activeCmd = () => (hasSystemd ? `${sudo}${ctl} is-active ${name}` : `${sudo}service ${name} status`);
+    const isEnabled = async (): Promise<boolean> => {
+      const res = await conn.exec(enabledCmd());
+      if (hasSystemd) return res.exitCode === 0;
+      return res.stdout.split(/\s+/).some((tok) => {
+        const [svcName, level, state] = tok.split(":");
+        if (state !== "on" || svcName !== name) return false;
+        return runlevel === undefined || level === runlevel;
+      });
+    };
+    const isActive = async (): Promise<boolean> => {
+      if ((await conn.exec(activeCmd())).exitCode === 0) return true;
+      if (a.pattern === undefined) return false;
+      return (await conn.exec(`${sudo}pgrep -f ${shQuote(String(a.pattern))}`)).exitCode === 0;
+    };
+    const enabled = await isEnabled();
+    const active = await isActive();
+    const wantEnabled = a.enabled ?? true;
+    const wantState = a.state ?? "started";
+    let inDesired = wantEnabled === enabled;
+    if (inDesired) {
+      if (wantState === "started") inDesired = active;
+      else if (wantState === "stopped") inDesired = !active;
+      else inDesired = false;
+    }
+    if (inDesired && a.daemon_reload && hasSystemd) inDesired = false;
+    return { current: { enabled, active }, inDesired };
+  },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const args = ctx.args as unknown as ServiceArgs;
     const name = String(args.name ?? "");
