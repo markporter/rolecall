@@ -6,15 +6,16 @@ name: release
 #                    + npm-tarball smoke) as a hard gate.
 #   2. `binaries`  — builds one real, smoke-tested Bun-compiled binary per OS and
 #                    uploads it as a workflow artifact.
-#   3. `release`   — collects every binary, creates the GitHub Release with
-#                    auto-generated notes, and attaches the binaries.
+#   3. `release`   — collects every binary, generates notes from Conventional
+#                    Commits with git-cliff (`cliff.toml`), creates the GitHub
+#                    Release, and attaches the binaries.
 #   4. `npm`       — publishes the Node bundle to npm via Trusted Publishing
 #                    (OIDC). There is no NPM_TOKEN secret in this pipeline and
 #                    none should be created. Skips cleanly when the name is not
 #                    on the registry yet (the first publish is manual) or when
 #                    that version already exists (re-pushed tag).
 #
-# See .local/RELEASING.md (maintainer-local, gitignored) for the operator flow.
+# See the "Releasing" section in README.md for the operator flow.
 
 on:
   push:
@@ -94,6 +95,12 @@ jobs:
     permissions:
       contents: write # create release + upload assets
     steps:
+      # git-cliff needs the full history and tags to build the release range.
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Download all binaries
         uses: actions/download-artifact@v4
         with:
@@ -101,13 +108,24 @@ jobs:
           path: dist/bin
           merge-multiple: true
 
+      - name: Generate release notes (git-cliff)
+        uses: orhun/git-cliff-action@v4
+        with:
+          version: v2.14.2
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: RELEASE_NOTES.md
+          GITHUB_REPO: ${{ github.repository }}
+
       - name: List release assets
         run: ls -l dist/bin
 
-      - name: Create Release (auto notes + binaries)
+      - name: Create Release (git-cliff notes + binaries)
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          body_path: RELEASE_NOTES.md
+          generate_release_notes: false
           files: dist/bin/*
           fail_on_unmatched_files: true
 
