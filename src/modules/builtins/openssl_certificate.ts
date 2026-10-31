@@ -32,8 +32,12 @@ export interface OpenSSLCertArgs {
   subject?: string;
   /** Subject Alternative Names as OpenSSL tokens: `["DNS:foo","IP:1.2.3.4","email:a@b","URI:https://x"]`. */
   san?: string[];
+  /** Alias for `san`; ignored when `san` is set. */
+  subject_alt_name?: string[];
   /** Validity in days (default 365). */
   days?: number;
+  /** Signing digest for `req`/`x509` (default `sha256`), emitted as `-<digest>`. */
+  digest?: string;
   /** Key algorithm: `rsa` (default), `ecdsa`, or `ed25519`. */
   algorithm?: "rsa" | "ecdsa" | "ed25519";
   /** RSA key size (default 2048; only for `algorithm: rsa`). */
@@ -54,7 +58,9 @@ export interface OpenSSLCertArgs {
   ca_key?: string;
   /** Path to an existing CSR to sign (skips key/CSR generation). Requires `ca_cert`+`ca_key`. */
   csr?: string;
-  /** Force regeneration even when an existing cert already matches. */
+  /** Managed CSR path written/read in CA mode (default `<path>.csr`). */
+  csr_path?: string;
+  /** Force regeneration even when an existing cert already matches (regenerates key and CSR). */
   force?: boolean;
   /** Dry-run: report the planned openssl commands without executing them. */
   dry_run?: boolean;
@@ -87,8 +93,24 @@ export interface CertPlan {
   extfile?: { path: string; content: string };
 }
 
-/** Build the openssl command plan for a `present` cert. Pure — no I/O, easy to unit test. */
-export function buildCertPlan(args: OpenSSLCertArgs): CertPlan {
+/**
+ * Resolve the requested SAN tokens, preferring `san` over its `subject_alt_name` alias.
+ * @param args Certificate arguments.
+ * @returns SAN tokens, or an empty list when neither field is set.
+ */
+function effectiveSan(args: OpenSSLCertArgs): string[] {
+  return args.san ?? args.subject_alt_name ?? [];
+}
+
+/**
+ * Build the openssl command plan for a `present` cert. Pure — no I/O, easy to unit test.
+ * @summary Construct the ordered openssl commands (and optional CA extfile) for one certificate.
+ * @param args Certificate arguments.
+ * @param keyExists When true, reuse `privatekey_path` instead of generating a key with `-newkey`.
+ * @param csrExists When true (CA mode), sign the CSR already at `csr_path` instead of regenerating it.
+ * @returns The command plan, including an `extfile` when signing by a CA.
+ */
+export function buildCertPlan(args: OpenSSLCertArgs, keyExists = false, csrExists = false): CertPlan {
   const subject = args.subject ?? `/CN=${args.common_name ?? "localhost"}`;
   const days = args.days ?? 365;
   const algo = args.algorithm ?? "rsa";
@@ -98,7 +120,9 @@ export function buildCertPlan(args: OpenSSLCertArgs): CertPlan {
       : algo === "ecdsa"
         ? `ecdsa:${args.curve ?? "prime256v1"}`
         : "ed25519";
-  const san = args.san && args.san.length > 0 ? `subjectAltName=${args.san.join(",")}` : null;
+  const sanList = effectiveSan(args);
+  const san = sanList.length > 0 ? `subjectAltName=${sanList.join(",")}` : null;
+  const digestOpt = `-${(args.digest ?? "sha256").replace(/^-/, "")}`;
 
   const isCA = args.ca === true;
   const eku = args.extended_key_usage ? args.extended_key_usage : purposeToEKU(args.purpose);
@@ -115,24 +139,29 @@ export function buildCertPlan(args: OpenSSLCertArgs): CertPlan {
 
   const keyPath = args.privatekey_path;
   const certPath = args.path;
+  const csrPath = args.csr_path ?? `${certPath}.csr`;
   const commands: string[] = [];
 
   if (args.ca_cert && args.ca_key) {
+    const caCert = args.ca_cert;
+    const caKey = args.ca_key;
     const extPath = `${certPath}.ext`;
     const extfile = { path: extPath, content: `[v3]\n${extLines.join("\n")}` };
+    const signCommand = (csrIn: string) =>
+      `openssl x509 -req -in ${shQuote(csrIn)} -CA ${shQuote(caCert)} -CAkey ${shQuote(caKey)} -CAcreateserial -out ${shQuote(certPath)} -days ${days} ${digestOpt} -extfile ${shQuote(extPath)} -extensions v3`;
     if (args.csr) {
-      commands.push(
-        `openssl x509 -req -in ${shQuote(args.csr)} -CA ${shQuote(args.ca_cert)} -CAkey ${shQuote(args.ca_key)} -CAcreateserial -out ${shQuote(certPath)} -days ${days} -extfile ${shQuote(extPath)} -extensions v3`,
-      );
+      commands.push(signCommand(args.csr));
+    } else if (csrExists) {
+      commands.push(signCommand(csrPath));
     } else {
-      const csrPath = `${certPath}.csr`;
       const csrAddext = san ? `-addext ${shQuote(san)}` : "";
+      const csrKeyArgs = keyExists
+        ? `req -new -key ${shQuote(keyPath)}`
+        : `req -newkey ${keyOpt} -keyout ${shQuote(keyPath)} -nodes`;
       commands.push(
-        `openssl req -newkey ${keyOpt} -keyout ${shQuote(keyPath)} -out ${shQuote(csrPath)} -subj ${shQuote(subject)} -nodes ${csrAddext}`.trim(),
+        `openssl ${csrKeyArgs} -out ${shQuote(csrPath)} -subj ${shQuote(subject)} ${digestOpt} ${csrAddext}`.trim(),
       );
-      commands.push(
-        `openssl x509 -req -in ${shQuote(csrPath)} -CA ${shQuote(args.ca_cert)} -CAkey ${shQuote(args.ca_key)} -CAcreateserial -out ${shQuote(certPath)} -days ${days} -extfile ${shQuote(extPath)} -extensions v3`,
-      );
+      commands.push(signCommand(csrPath));
     }
     return { commands, extfile };
   }
@@ -142,8 +171,11 @@ export function buildCertPlan(args: OpenSSLCertArgs): CertPlan {
   if (ku.length) addexts.push(`-addext ${shQuote(`keyUsage=${ku.join(",")}`)}`);
   if (eku.length) addexts.push(`-addext ${shQuote(`extendedKeyUsage=${eku.join(",")}`)}`);
   if (san) addexts.push(`-addext ${shQuote(san)}`);
+  const keyArgs = keyExists
+    ? `-key ${shQuote(keyPath)}`
+    : `-newkey ${keyOpt} -keyout ${shQuote(keyPath)} -nodes`;
   commands.push(
-    `openssl req -x509 -newkey ${keyOpt} -keyout ${shQuote(keyPath)} -out ${shQuote(certPath)} -days ${days} -subj ${shQuote(subject)} -nodes ${addexts.join(" ")}`,
+    `openssl req -x509 ${keyArgs} -out ${shQuote(certPath)} -days ${days} -subj ${shQuote(subject)} ${digestOpt} ${addexts.join(" ")}`.trim(),
   );
   return { commands };
 }
@@ -184,8 +216,9 @@ async function certMatches(
   const info = await inspectCert(conn, args.path, become);
   if (!info) return false;
   if (args.common_name && info.cn && info.cn !== args.common_name) return false;
-  if (args.san && args.san.length > 0) {
-    const want = new Set(args.san);
+  const sanList = effectiveSan(args);
+  if (sanList.length > 0) {
+    const want = new Set(sanList);
     if (info.san.length !== want.size || !info.san.every((s) => want.has(s))) return false;
   }
   if (info.notAfter && info.notAfter.getTime() <= Date.now()) return false;
@@ -206,7 +239,9 @@ export const meta: ModuleSummary = {
     common_name: { type: "string", required: false, description: "Certificate CN." },
     subject: { type: "string", required: false, description: "Full subject (e.g. '/CN=foo/O=bar'); overrides common_name." },
     san: { type: "string[]", required: false, description: "SAN tokens: ['DNS:foo','IP:1.2.3.4','email:a@b']." },
+    subject_alt_name: { type: "string[]", required: false, description: "Alias for san; san wins when both are set." },
     days: { type: "number", required: false, description: "Validity in days (default 365)." },
+    digest: { type: "string", required: false, description: "Signing digest for req/x509 (default sha256)." },
     algorithm: { type: "'rsa' | 'ecdsa' | 'ed25519'", required: false, description: "Key algorithm (default rsa)." },
     key_size: { type: "number", required: false, description: "RSA key size (default 2048)." },
     curve: { type: "string", required: false, description: "Curve (ecdsa) or key type (ed25519)." },
@@ -217,7 +252,8 @@ export const meta: ModuleSummary = {
     ca_cert: { type: "string", required: false, description: "CA cert to sign with (enables CA-signed mode)." },
     ca_key: { type: "string", required: false, description: "CA private key (with ca_cert)." },
     csr: { type: "string", required: false, description: "Existing CSR to sign (CA mode only)." },
-    force: { type: "boolean", required: false, description: "Regenerate even if an existing cert matches." },
+    csr_path: { type: "string", required: false, description: "Managed CSR path in CA mode (default <path>.csr)." },
+    force: { type: "boolean", required: false, description: "Regenerate the cert, key, and CSR even when the cert matches." },
     dry_run: { type: "boolean", required: false, description: "Plan only; execute nothing." },
   },
   examples: [
@@ -236,13 +272,23 @@ export const meta: ModuleSummary = {
     `- openssl_certificate:
     path: /etc/nginx/ssl/client.crt
     privatekey_path: /etc/nginx/ssl/client.key
+    csr_path: /etc/nginx/ssl/client.csr
     common_name: admin
     purpose: client
     ca_cert: /etc/ca/ca.crt
     ca_key: /etc/ca/ca.key`,
+    `- openssl_certificate:
+    path: /etc/nginx/ssl/site.crt
+    privatekey_path: /etc/nginx/ssl/site.key
+    common_name: site1.example.com
+    subject_alt_name:
+      - 'DNS:site1.example.com'
+      - 'IP:10.0.0.5'
+    digest: sha384
+    purpose: server`,
   ],
   notes:
-    "≠ Ansible `community.crypto.openssl_certificate`: covers self-signed, CA, and CA-signed certs with SANs + EKU. Idempotent via on-target inspection (subject/SAN/expiry). Requires the `openssl` CLI on the target.",
+    "≠ Ansible `community.crypto.openssl_certificate`: covers self-signed, CA, and CA-signed certs with SANs + EKU. Reuses an existing private key (and, in CA mode, a CSR at `csr_path`) unless `force: true`; `csr_path` defaults to `<path>.csr`, `digest` defaults to sha256, and `subject_alt_name` aliases `san` (`san` wins). Idempotent via on-target inspection (subject/SAN/expiry). Requires the `openssl` CLI on the target.",
 };
 
 /** @summary Declarative X.509 certificate module: self-signed/CA/CA-signed with SANs and purpose EKU; idempotent via resource(). @returns Module & CheckableModule. */
@@ -281,7 +327,13 @@ export const opensslCertModule: Module & CheckableModule = resource({
       };
     }
 
-    const plan = buildCertPlan(a);
+    const keyExists = a.force ? false : (await readRemoteFile(conn, a.privatekey_path, bec)) !== null;
+    const csrPath = a.csr_path ?? `${a.path}.csr`;
+    const csrExists =
+      Boolean(a.ca_cert && a.ca_key) && !a.force && !a.csr
+        ? (await readRemoteFile(conn, csrPath, bec)) !== null
+        : false;
+    const plan = buildCertPlan(a, keyExists, csrExists);
     if (dryRun) {
       return { changed: false, msg: `would run ${plan.commands.length} openssl command(s)`, data: { commands: plan.commands } };
     }
