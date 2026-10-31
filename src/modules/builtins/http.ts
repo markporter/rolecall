@@ -48,6 +48,16 @@ export const meta: ModuleSummary = {
       required: false,
       description: "Acceptable status code(s); default any 2xx.",
     },
+    status_code: {
+      type: "number | number[]",
+      required: false,
+      description: "Alias for expected_status (expected_status wins when both are set).",
+    },
+    return_content: {
+      type: "boolean",
+      required: false,
+      description: "Include the response body as data.content (default false).",
+    },
     check_url: {
       type: "string",
       required: false,
@@ -104,7 +114,7 @@ export const meta: ModuleSummary = {
     state_present: false`,
   ],
   notes:
-    "≠ Ansible `uri`: `describe` probes current state with a safe GET (or `check_url`) and only converges when the desired state is absent, so PUT/POST/PATCH are idempotent by default. There is no `status_code`/`return_content` nesting — use `match` + `expected_status`. Safe methods (GET/HEAD/OPTIONS) never report changed.",
+    "≠ Ansible `uri`: `describe` probes current state with a safe GET (or `check_url`) and only converges when the desired state is absent, so PUT/POST/PATCH are idempotent by default. `status_code` aliases `expected_status` (`expected_status` wins when both are set), `return_content: true` adds the response body at `data.content`, and `match` remains available for body checks. Safe methods (GET/HEAD/OPTIONS) never report changed.",
 };
 
 interface HttpArgs {
@@ -120,6 +130,10 @@ interface HttpArgs {
   json?: boolean;
   /** Acceptable status code(s); default any 2xx. */
   expected_status?: number | number[];
+  /** Alias for `expected_status` (`expected_status` wins when both are set). */
+  status_code?: number | number[];
+  /** Include the response body as `data.content` (default false). */
+  return_content?: boolean;
   /** URL used by `describe` to probe current state (defaults to `url`). */
   check_url?: string;
   /** For write methods: expect the resource present (true) or absent (false). */
@@ -137,6 +151,10 @@ function statusMatches(status: number, expected: number | number[] | undefined):
   return Array.isArray(expected)
     ? expected.includes(status)
     : status === expected;
+}
+
+function expectedStatus(a: HttpArgs): number | number[] | undefined {
+  return a.expected_status ?? a.status_code;
 }
 
 function bodyToSend(a: HttpArgs): { body?: string; headers: Record<string, string> } {
@@ -201,8 +219,8 @@ function isSubset(actual: unknown, expected: unknown): boolean {
   );
 }
 
-/** @summary Idempotent HTTP/REST module: `describe` probes state via GET (or `check_url`), `converge` issues the mutating request. Safe methods (GET/HEAD/OPTIONS) are read-only and report changed:false. @param args HttpArgs (url, method, body, headers, expected_status, check_url, state_present, match). @returns Module & CheckableModule. */
-export const httpModule: Module & CheckableModule = resource({
+/** @summary Idempotent HTTP/REST module: `describe` probes state via GET (or `check_url`), `converge` issues the mutating request. Safe methods (GET/HEAD/OPTIONS) are read-only and report changed:false. @param args HttpArgs (url, method, body, headers, expected_status, status_code, return_content, check_url, state_present, match). @returns Module & CheckableModule. */
+const baseHttpModule: Module & CheckableModule = resource({
   name: "http",
   async describe(args) {
     const a = args as unknown as HttpArgs;
@@ -213,7 +231,7 @@ export const httpModule: Module & CheckableModule = resource({
       const st = await fetchText(a, url, method);
       return {
         current: { status: st.status, body: st.body.slice(0, 500) },
-        inDesired: statusMatches(st.status, a.expected_status ?? 200),
+        inDesired: statusMatches(st.status, expectedStatus(a) ?? 200),
       };
     }
     const checkUrl = a.check_url ?? url;
@@ -243,16 +261,28 @@ export const httpModule: Module & CheckableModule = resource({
       signal: a.timeout_seconds ? AbortSignal.timeout(a.timeout_seconds * 1000) : undefined,
     });
     const text = await res.text();
-    const ok = statusMatches(res.status, a.expected_status);
+    const ok = statusMatches(res.status, expectedStatus(a));
     const safe = SAFE_METHODS.has(method);
+    const data: Record<string, unknown> = { url, method, status: res.status };
+    if (a.return_content) data.content = text;
     return {
       changed: !safe,
       failed: !ok,
       stdout: text.slice(0, 1000),
       msg: `http ${method} ${url} -> ${res.status}`,
-      data: { url, method, status: res.status },
+      data,
     };
   },
 });
+
+/** @summary Idempotent HTTP/REST module: safe methods always issue the request (changed:false) so `return_content`/`stdout` are available; write methods converge only when `describe` reports not-in-desired. @returns Module & CheckableModule. */
+export const httpModule: Module & CheckableModule = {
+  ...baseHttpModule,
+  async run(ctx: ModuleContext): Promise<ModuleResult> {
+    const method = String(ctx.args["method"] ?? "GET").toUpperCase();
+    if (!SAFE_METHODS.has(method)) return baseHttpModule.run(ctx);
+    return baseHttpModule.run({ ...ctx, args: { ...ctx.args, force: true } });
+  },
+};
 
 (httpModule as Module & CheckableModule & { meta: ModuleSummary }).meta = meta;
