@@ -9,6 +9,7 @@
 // `runTask`. Low-level per-host execution lives in ./runner.
 
 import type { NormalizedInventory, NormalizedPlaybook, NormalizedTask } from "../config/schema";
+import { loadInventoryFile } from "../config/loader";
 import type { InventorySnapshot, ResolvedInventory } from "../inventory/engine";
 import { resolveInventorySnapshot, resolveTargets } from "../inventory/engine";
 import { detectRuntime } from "../util/runtime";
@@ -26,6 +27,7 @@ import { handlerExcludedBySkipTags, selectTagSkippedTasks } from "./tags";
 import {
   type RunState,
   chunk,
+  disconnectAllConnections,
   effectiveHosts,
   flushHandlers,
   runTaskOnHost,
@@ -111,8 +113,18 @@ async function runPlay(
     ansible_compat: false,
   };
 
-  const normalTasks = playbook.tasks.filter((t) => !t.listen);
-  const handlerTasks = playbook.tasks.filter((t) => t.listen);
+  const seenTasks = new Set<NormalizedTask>();
+  const orderedTasks = [
+    ...(playbook.pre_tasks ?? []),
+    ...playbook.tasks,
+    ...(playbook.post_tasks ?? []),
+  ].filter((task) => {
+    if (seenTasks.has(task)) return false;
+    seenTasks.add(task);
+    return true;
+  });
+  const normalTasks = orderedTasks.filter((t) => !t.listen);
+  const handlerTasks = orderedTasks.filter((t) => t.listen);
   // Tag selection is resolved against the fully-expanded task list (roles +
   // include_tasks already spliced) before any task executes. Handlers are exempt
   // from the --tags inclusion filter; --skip-tags excludes a handler only when it
@@ -169,9 +181,25 @@ async function runPlay(
     taskBaseHosts.get(task) ?? universe();
 
   if ((playbook.strategy ?? "linear") === "free") {
-    await runFree(normalTasks, baseHostsFor, state, result);
+    await runFree(
+      playbook,
+      normalTasks,
+      baseHostsFor,
+      runnableHandlers,
+      allHosts,
+      state,
+      result,
+    );
   } else {
-    await runLinear(playbook, normalTasks, baseHostsFor, state, result);
+    await runLinear(
+      playbook,
+      normalTasks,
+      baseHostsFor,
+      runnableHandlers,
+      allHosts,
+      state,
+      result,
+    );
   }
 
   // Fold this play's registered results into the shared result map.
@@ -182,12 +210,7 @@ async function runPlay(
   result.handlers.push(...(await flushHandlers(runnableHandlers, allHosts, state)));
 
   // Tear down all opened transport connections.
-  await Promise.all(
-    allHosts.map(async (h) => {
-      const conn = await state.connections.get(h);
-      if (conn) await conn.disconnect();
-    }),
-  );
+  await disconnectAllConnections(state);
 
   for (const h of allHosts) {
     for (const o of result.hosts[h]!) {
@@ -199,21 +222,93 @@ async function runPlay(
   }
 }
 
+interface MetaConsumption {
+  endBatch: boolean;
+  note?: string;
+}
+
+/**
+ * @summary Consume executor control flags requested by a `meta` task at the current
+ * task boundary: flush pending handlers, re-read the inventory source, and report
+ * whether the current serial batch should end. Flags are cleared before any await so
+ * concurrent host loops cannot double-consume them.
+ * @param state Shared run state carrying the pending flags and inventory snapshot.
+ * @param playbook Play being executed (hosts re-resolved on inventory refresh).
+ * @param runnableHandlers Handler tasks eligible for flushing.
+ * @param allHosts Mutable play host list; refreshed hosts are appended so later tasks see them.
+ * @param result Shared playbook result (handler outcomes + refreshed host registration).
+ * @returns Whether to end the current serial batch plus an optional human note.
+ */
+async function consumeMetaRequests(
+  state: RunState,
+  playbook: NormalizedPlaybook,
+  runnableHandlers: NormalizedTask[],
+  allHosts: string[],
+  result: PlaybookResult,
+): Promise<MetaConsumption> {
+  let note: string | undefined;
+  if (state.flushHandlersRequested) {
+    state.flushHandlersRequested = false;
+    result.handlers.push(...(await flushHandlers(runnableHandlers, allHosts, state)));
+  }
+  if (state.refreshInventoryRequested) {
+    state.refreshInventoryRequested = false;
+    const path = state.options.inventoryPath;
+    if (path === undefined || path === "") {
+      note = "refresh_inventory: no inventory source available; no-op";
+    } else {
+      try {
+        const refreshed = await loadInventoryFile(path);
+        const resolved = await resolveTargets(
+          refreshed,
+          playbook.hosts,
+          state.options.resolveOptions ?? {},
+        );
+        applyPlayVars(resolved, playbook, state.options.extraVars ?? {});
+        for (const [name, spec] of Object.entries(state.options.dynamicHosts ?? {})) {
+          if (!resolved.hosts[name]) resolved.hosts[name] = { ...spec.vars };
+        }
+        state.resolved = resolved;
+        state.invSnapshot = await resolveInventorySnapshot(
+          refreshed,
+          state.options.resolveOptions ?? {},
+        );
+        for (const host of resolved.matchedHosts) {
+          if (!allHosts.includes(host)) allHosts.push(host);
+          result.hosts[host] ??= [];
+          state.registered[host] ??= {};
+          result.registered[host] ??= {};
+        }
+      } catch (err) {
+        note = `refresh_inventory: could not reload '${path}' (${err instanceof Error ? err.message : String(err)}); no-op`;
+      }
+    }
+  }
+  const endBatch = state.endBatchRequested === true;
+  state.endBatchRequested = false;
+  return { endBatch, note };
+}
+
 async function runLinear(
   playbook: NormalizedPlaybook,
   normalTasks: NormalizedTask[],
   baseHostsFor: (task: NormalizedTask) => string[],
+  runnableHandlers: NormalizedTask[],
+  allHosts: string[],
   state: RunState,
   result: PlaybookResult,
 ): Promise<void> {
   const haltedHosts = new Set<string>();
+  const endedBatches = new Set<number>();
   let playHalted = false;
   for (const task of normalTasks) {
     if (playHalted) break;
     const target = effectiveHosts(task, baseHostsFor(task)).filter((h) => !haltedHosts.has(h));
     if (target.length === 0) continue;
     const batches = playbook.serial ? chunk(target, playbook.serial) : [target];
-    for (const batch of batches) {
+    for (let index = 0; index < batches.length; index++) {
+      if (endedBatches.has(index)) continue;
+      const batch = batches[index]!;
       const outcomes = await Promise.all(
         batch.map((h) => runTaskOnHost(task, h, state)),
       );
@@ -222,14 +317,30 @@ async function runLinear(
         if (o.halt === "play") playHalted = true;
         else if (o.halt === "host") haltedHosts.add(o.host);
       }
+      const meta = await consumeMetaRequests(
+        state,
+        playbook,
+        runnableHandlers,
+        allHosts,
+        result,
+      );
+      if (meta.note) {
+        for (const o of outcomes) {
+          if (o.module === "meta") o.msg = `${o.msg ?? ""} (${meta.note})`;
+        }
+      }
+      if (meta.endBatch && playbook.serial !== undefined) endedBatches.add(index);
       if (playHalted) break;
     }
   }
 }
 
 async function runFree(
+  playbook: NormalizedPlaybook,
   normalTasks: NormalizedTask[],
   baseHostsFor: (task: NormalizedTask) => string[],
+  runnableHandlers: NormalizedTask[],
+  allHosts: string[],
   state: RunState,
   result: PlaybookResult,
 ): Promise<void> {
@@ -251,6 +362,16 @@ async function runFree(
         if (!baseHostsFor(task).includes(h)) continue;
         const o = await runTaskOnHost(task, h, state);
         (result.hosts[h] ??= []).push(o);
+        const meta = await consumeMetaRequests(
+          state,
+          playbook,
+          runnableHandlers,
+          allHosts,
+          result,
+        );
+        if (meta.note && o.module === "meta") {
+          o.msg = `${o.msg ?? ""} (${meta.note})`;
+        }
         if (o.halt === "play") { playHalted = true; return; }
         if (o.halt === "host") { haltedHosts.add(h); return; }
       }
@@ -262,6 +383,16 @@ async function runFree(
       if (haltedHosts.has(h)) continue;
       const o = await runTaskOnHost(task, h, state);
       (result.hosts[o.host] ??= []).push(o);
+      const meta = await consumeMetaRequests(
+        state,
+        playbook,
+        runnableHandlers,
+        allHosts,
+        result,
+      );
+      if (meta.note && o.module === "meta") {
+        o.msg = `${o.msg ?? ""} (${meta.note})`;
+      }
       if (o.halt === "play") { playHalted = true; break; }
       if (o.halt === "host") haltedHosts.add(h);
     }

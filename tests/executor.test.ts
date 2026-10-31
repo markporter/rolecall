@@ -7,8 +7,17 @@
 // plus throwaway counting/recording modules.
 
 import { expect, test } from "bun:test";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { loadPlaybook, loadPlaybookFile } from "../src/config/loader";
 import type { NormalizedInventory, NormalizedPlaybook, NormalizedTask } from "../src/config/schema";
-import { registerModule, runPlaybook, runTask } from "../src/executor";
+import { registerModule, runPlaybook, runTask, type ExecOptions } from "../src/executor";
+import { registerAllModules } from "../src/modules/builtins";
+import type { Connection } from "../src/transport/connection";
+import { FsProjectSource } from "../src/vfs/fs-project-source";
+
+registerAllModules();
 
 function inventory(hosts: string[]): NormalizedInventory {
   return { groups: { all: { hosts, vars: {} } } };
@@ -252,4 +261,308 @@ test("(j) register exposes results to later tasks via templating", async () => {
   expect(got).toContain("hello");
   // registered var is also present in the result map
   expect((res.registered["h1"]!["result"] as { changed: boolean }).changed).toBe(false);
+});
+
+// (k) pre_tasks run before the play's tasks and post_tasks run after them.
+test("(k) pre_tasks run before tasks and post_tasks after (collapsed form)", async () => {
+  const events: string[] = [];
+  const name = `__phase_${Math.random().toString(36).slice(2)}`;
+  registerModule({
+    name,
+    run: async (ctx) => {
+      events.push(String(ctx.args["label"]));
+      return { changed: false };
+    },
+  });
+  const pb = loadPlaybook(`
+- hosts: all
+  pre_tasks:
+    - name: pre
+      ${name}:
+        label: pre
+  tasks:
+    - name: main
+      ${name}:
+        label: main
+  post_tasks:
+    - name: post
+      ${name}:
+        label: post
+`);
+  await runPlaybook(pb, inventory(["h1"]));
+  expect(events).toEqual(["pre", "main", "post"]);
+});
+
+// (l) add_host merges groups/vars into an existing dynamic host.
+test("(l) add_host on an existing host unions groups and merges vars", async () => {
+  const pb: NormalizedPlaybook = {
+    hosts: ["h1"],
+    tasks: [
+      mkTask({
+        name: "add first",
+        module: "add_host",
+        args: { name: "newhost", groups: "web,db", color: "blue", zone: "a" },
+      }),
+      mkTask({
+        name: "add second",
+        module: "add_host",
+        args: { name: "newhost", groups: "db,cache", color: "red" },
+      }),
+    ],
+    vars: {},
+  };
+  const options: ExecOptions = {};
+  await runPlaybook([pb], inventory(["h1"]), options);
+  expect(options.dynamicHosts?.["newhost"]).toEqual({
+    groups: ["web", "db", "cache"],
+    vars: { color: "red", zone: "a" },
+  });
+});
+
+// (m) meta flush_handlers flushes pending handlers mid-play, then continues.
+test("(m) meta flush_handlers runs handlers mid-play", async () => {
+  const events: string[] = [];
+  const name = `__meta_${Math.random().toString(36).slice(2)}`;
+  registerModule({
+    name,
+    run: async (ctx) => {
+      const label = String(ctx.args["label"]);
+      events.push(label);
+      return { changed: label === "change" };
+    },
+  });
+  const pb = loadPlaybook(`
+- hosts: all
+  tasks:
+    - name: change
+      ${name}:
+        label: change
+      notify: restart
+    - name: flush
+      meta:
+        flush_handlers: true
+    - name: after
+      ${name}:
+        label: after
+  handlers:
+    - name: restart
+      ${name}:
+        label: restart
+`);
+  const res = await runPlaybook(pb, inventory(["h1"]));
+  expect(events).toEqual(["change", "restart", "after"]);
+  expect(res.handlers.map((h) => h.handler)).toEqual(["restart"]);
+});
+
+// (n) meta end_batch stops the current serial batch; the next batch continues.
+test("(n) meta end_batch stops the current batch and continues with the next", async () => {
+  const events: string[] = [];
+  const name = `__batch_${Math.random().toString(36).slice(2)}`;
+  registerModule({
+    name,
+    run: async (ctx) => {
+      events.push(`${String(ctx.args["label"])}:${ctx.host}`);
+      return { changed: false };
+    },
+  });
+  const pb = loadPlaybook(`
+- hosts: all
+  serial: 1
+  tasks:
+    - name: end-batch
+      meta:
+        end_batch: true
+      when:
+        $template: "<%= play.host === 'h1' %>"
+    - name: after
+      ${name}:
+        label: after
+`);
+  await runPlaybook(pb, inventory(["h1", "h2"]));
+  expect(events).toEqual(["after:h2"]);
+});
+
+// (o) meta refresh_inventory is a safe no-op when no inventory source is configured.
+test("(o) meta refresh_inventory without an inventory source is a safe no-op", async () => {
+  const pb = loadPlaybook(`
+- hosts: all
+  tasks:
+    - name: refresh
+      meta:
+        refresh_inventory: true
+    - name: after
+      module: debug
+      args: {}
+`);
+  const res = await runPlaybook(pb, inventory(["h1"]));
+  const refresh = res.hosts["h1"]![0]!;
+  expect(refresh.failed).toBe(false);
+  expect(refresh.msg).toContain("no inventory source");
+  expect(res.hosts["h1"]![1]!.skipped).toBe(false);
+});
+
+// (p) meta refresh_inventory re-reads the configured source and re-resolves hosts.
+test("(p) meta refresh_inventory reloads the inventory source", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "rolecall-refresh-inventory-"));
+  try {
+    const inventoryPath = join(dir, "inventory.yaml");
+    writeFileSync(
+      inventoryPath,
+      `groups:
+  all:
+    hosts:
+      - h2
+`,
+    );
+    const pb = loadPlaybook(`
+- hosts: all
+  tasks:
+    - name: refresh
+      meta:
+        refresh_inventory: true
+    - name: after
+      module: debug
+      args: {}
+`);
+    const res = await runPlaybook(pb, inventory(["h1"]), { inventoryPath });
+    expect(res.hosts["h2"]?.[0]?.task).toBe("after");
+    expect(res.hosts["h2"]?.[0]?.failed).toBe(false);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// (q) loader-spliced pre/post phases run once each, in execution order.
+test("(q) loader-spliced pre/post tasks execute once in order", async () => {
+  const events: string[] = [];
+  const name = `__phasefile_${Math.random().toString(36).slice(2)}`;
+  registerModule({
+    name,
+    run: async (ctx) => {
+      events.push(String(ctx.args["label"]));
+      return { changed: false };
+    },
+  });
+  const dir = mkdtempSync(join(tmpdir(), "rolecall-phase-exec-"));
+  try {
+    writeFileSync(
+      join(dir, "play.yaml"),
+      `- hosts: all
+  pre_tasks:
+    - name: pre
+      ${name}:
+        label: pre
+  tasks:
+    - name: main
+      ${name}:
+        label: main
+  post_tasks:
+    - name: post
+      ${name}:
+        label: post
+`,
+    );
+    const pb = await loadPlaybookFile("play.yaml", new FsProjectSource(dir));
+    await runPlaybook(pb, inventory(["h1"]));
+    expect(events).toEqual(["pre", "main", "post"]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+function fakeConnection(kind: "ssh" | "local" | "network"): Connection {
+  return {
+    kind,
+    async connect() {},
+    async exec() {
+      return { exitCode: 0, stdout: "", stderr: "" };
+    },
+    async facts() {
+      return { host: "h1", user: "runner", transport: kind };
+    },
+    async disconnect() {},
+    async health() {
+      return { ok: true };
+    },
+  };
+}
+
+test("(r) a task without connection uses the default connection factory", async () => {
+  const defaultCalls: string[] = [];
+  const kindCalls: string[] = [];
+  const pb: NormalizedPlaybook = {
+    hosts: ["h1"],
+    tasks: [mkTask({ name: "t", module: "debug", args: {} })],
+    vars: {},
+  };
+  await runPlaybook([pb], inventory(["h1"]), {
+    connectionFor: (host) => {
+      defaultCalls.push(host);
+      return fakeConnection("ssh");
+    },
+    connectionForKind: (host, kind) => {
+      kindCalls.push(`${host}:${kind}`);
+      return fakeConnection(kind);
+    },
+  });
+  expect(defaultCalls).toEqual(["h1"]);
+  expect(kindCalls).toEqual([]);
+});
+
+test("(s) a task with connection local uses connectionForKind with local", async () => {
+  const defaultCalls: string[] = [];
+  const kindCalls: string[] = [];
+  const pb: NormalizedPlaybook = {
+    hosts: ["h1"],
+    tasks: [
+      mkTask({ name: "t", module: "debug", args: {}, connection: "local" }),
+    ],
+    vars: {},
+  };
+  await runPlaybook([pb], inventory(["h1"]), {
+    connectionFor: (host) => {
+      defaultCalls.push(host);
+      return fakeConnection("ssh");
+    },
+    connectionForKind: (host, kind) => {
+      kindCalls.push(`${host}:${kind}`);
+      return fakeConnection(kind);
+    },
+  });
+  expect(kindCalls).toEqual(["h1:local"]);
+  expect(defaultCalls).toEqual([]);
+});
+
+test("(t) different per-task connections cache independently per host and kind", async () => {
+  const factoryCalls: string[] = [];
+  const connections: Record<string, Connection> = {};
+  const seen: Connection[] = [];
+  const name = `__conn_${Math.random().toString(36).slice(2)}`;
+  registerModule({
+    name,
+    run: async (ctx) => {
+      seen.push(ctx.connection);
+      return { changed: false };
+    },
+  });
+  const pb: NormalizedPlaybook = {
+    hosts: ["h1"],
+    tasks: [
+      mkTask({ name: "local-1", module: name, args: {}, connection: "local" }),
+      mkTask({ name: "ssh", module: name, args: {}, connection: "ssh" }),
+      mkTask({ name: "local-2", module: name, args: {}, connection: "local" }),
+    ],
+    vars: {},
+  };
+  await runPlaybook([pb], inventory(["h1"]), {
+    connectionForKind: (host, kind) => {
+      const key = `${host}:${kind}`;
+      factoryCalls.push(key);
+      return (connections[key] ??= fakeConnection(kind));
+    },
+  });
+  expect(factoryCalls).toEqual(["h1:local", "h1:ssh"]);
+  expect(seen[0]).toBe(seen[2]);
+  expect(seen[0]).not.toBe(seen[1]);
+  expect(seen.map((c) => c.kind)).toEqual(["local", "ssh", "local"]);
 });

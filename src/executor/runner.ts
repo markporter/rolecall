@@ -59,17 +59,63 @@ export interface RunState {
   rolecallCtx: RolecallContext;
   /** Resolved normal tasks excluded by the `--tags` / `--skip-tags` selection, mapped to their skip reason. */
   tagSkipped?: Map<NormalizedTask, string>;
+  /** Set by a `meta: flush_handlers` task; the engine flushes and clears it at the next task boundary. */
+  flushHandlersRequested?: boolean;
+  /** Set by a `meta: end_batch` task; the engine stops the current serial batch and clears it. */
+  endBatchRequested?: boolean;
+  /** Set by a `meta: refresh_inventory` task; the engine re-reads the inventory source and clears it. */
+  refreshInventoryRequested?: boolean;
 }
 
-async function getConnection(state: RunState, host: string): Promise<Connection> {
-  const cached = state.connections.get(host);
+function connectionKey(host: string, kind?: "ssh" | "local" | "network"): string {
+  return `${host}\u0000${kind ?? ""}`;
+}
+
+async function getConnection(
+  state: RunState,
+  host: string,
+  kind?: "ssh" | "local" | "network",
+): Promise<Connection> {
+  const key = connectionKey(host, kind);
+  const cached = state.connections.get(key);
   if (cached) return cached;
-  const factory = state.options.connectionFor ?? createNoopConnection;
+  const factory =
+    kind && state.options.connectionForKind
+      ? (h: string) => state.options.connectionForKind!(h, kind)
+      : state.options.connectionFor ?? createNoopConnection;
   const conn = await factory(host);
   await conn.connect();
   const p = Promise.resolve(conn);
-  state.connections.set(host, p);
+  state.connections.set(key, p);
   return p;
+}
+
+async function disconnectPromises(pending: Promise<Connection>[]): Promise<void> {
+  await Promise.all(
+    pending.map(async (p) => {
+      try {
+        await (await p).disconnect();
+      } catch {
+      }
+    }),
+  );
+}
+
+/** @summary Disconnect every cached connection in a run and clear the cache. */
+export async function disconnectAllConnections(state: RunState): Promise<void> {
+  const pending = [...state.connections.values()];
+  state.connections.clear();
+  await disconnectPromises(pending);
+}
+
+async function resetHostConnections(state: RunState, host: string): Promise<void> {
+  const prefix = `${host}\u0000`;
+  const keys = [...state.connections.keys()].filter(
+    (k) => k === host || k.startsWith(prefix),
+  );
+  const pending = keys.map((k) => state.connections.get(k)!);
+  for (const k of keys) state.connections.delete(k);
+  await disconnectPromises(pending);
 }
 
 function buildVars(
@@ -204,7 +250,7 @@ export async function runTaskOnHost(
 
   let conn: Connection;
   try {
-    conn = await getConnection(state, host);
+    conn = await getConnection(state, host, task.connection);
   } catch (err) {
     outcome.failed = true;
     outcome.msg = `connection failed: ${err instanceof Error ? err.message : String(err)}`;
@@ -279,20 +325,24 @@ export async function runTaskOnHost(
           if (state.options.facts) state.options.facts[host] = {};
         },
         resetConnection: async () => {
-          const c = state.connections.get(host);
-          if (c) {
-            try {
-              await (await c).disconnect();
-            } catch {
-              /* connection already torn down */
-            }
-            state.connections.delete(host);
-          }
+          await resetHostConnections(state, host);
         },
         addHost: (name: string, groups: string[], vars: Record<string, unknown>) => {
           const d = (state.options.dynamicHosts ??= {});
-          d[name] = { groups, vars };
-          if (!state.resolved.hosts[name]) state.resolved.hosts[name] = vars;
+          const existing = d[name];
+          if (existing) {
+            const mergedGroups = [...existing.groups];
+            for (const group of groups) {
+              if (!mergedGroups.includes(group)) mergedGroups.push(group);
+            }
+            d[name] = { groups: mergedGroups, vars: { ...existing.vars, ...vars } };
+          } else {
+            d[name] = { groups: [...groups], vars: { ...vars } };
+          }
+          const priorVars = state.resolved.hosts[name];
+          state.resolved.hosts[name] = priorVars
+            ? { ...priorVars, ...vars }
+            : { ...vars };
           state.registered[name] ??= {};
         },
         setReg: (k: string, v: unknown) => {
@@ -317,6 +367,12 @@ export async function runTaskOnHost(
         if (res.halt) {
           iter.halt = res.halt;
           outcome.halt = res.halt;
+        }
+        const meta = res.data?.["meta"];
+        if (isPlainObject(meta)) {
+          if (meta["flush_handlers"] === true) state.flushHandlersRequested = true;
+          if (meta["end_batch"] === true) state.endBatchRequested = true;
+          if (meta["refresh_inventory"] === true) state.refreshInventoryRequested = true;
         }
         if (moduleCtx.no_log) {
           iter.stdout = undefined;
@@ -389,7 +445,9 @@ export async function flushHandlers(
 ): Promise<HandlerOutcome[]> {
   const out: HandlerOutcome[] = [];
   const runNames = new Set<string>();
-  for (const name of state.collector.pending()) {
+  const pending = state.collector.pending();
+  state.collector.clear();
+  for (const name of pending) {
     for (const htask of findHandlers(handlerTasks, name)) {
       if (runNames.has(htask.name)) continue; // dedupe by handler name
       runNames.add(htask.name);
