@@ -4,11 +4,24 @@ import type { Module, ModuleContext, ModuleResult } from "../../executor/module"
 import type { ModuleSummary } from "../search";
 import { shQuote } from "./fs";
 
-/** @summary Manage UFW firewall rules/state (Ansible `ufw` alternate). @param ctx ModuleContext carrying `rule`, `port`, `proto`, `direction`, `state`, `from_ip`, `to_ip`, `interface`, `log`. @returns ModuleResult. */
+const UFW_POLICIES = ["allow", "deny", "reject"] as const;
+
+/** @summary Manage UFW firewall rules/state (Ansible `ufw` alternate). @param ctx ModuleContext carrying `rule`, `port`, `proto`, `direction`, `state`, `default`, `from_ip`, `to_ip`, `interface`, `log`. @returns ModuleResult. */
 export const ufwModule: Module = {
   name: "ufw",
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args;
+
+    const policyArg = a["default"];
+    const policy = policyArg === undefined || policyArg === null ? "" : String(policyArg);
+    if (policy && !(UFW_POLICIES as readonly string[]).includes(policy)) {
+      return {
+        changed: false,
+        failed: true,
+        msg: `ufw: invalid 'default' ${JSON.stringify(policy)}; expected one of ${UFW_POLICIES.join(", ")}`,
+      };
+    }
+
     const state = typeof a["state"] === "string" ? String(a["state"]) : "";
     if (state === "enabled" || state === "disabled") {
       const cmd = `ufw --force ${state}`;
@@ -16,6 +29,14 @@ export const ufwModule: Module = {
       const res = await ctx.connection.exec(run);
       if (res.exitCode !== 0) return { changed: false, failed: true, msg: `ufw: failed: ${res.stderr}` };
       return { changed: true, msg: `ufw: ${state}` };
+    }
+
+    if (policy) {
+      const cmd = `ufw default ${policy} incoming`;
+      const run = ctx.become ? `sudo sh -c ${shQuote(cmd)}` : cmd;
+      const res = await ctx.connection.exec(run);
+      if (res.exitCode !== 0) return { changed: false, failed: true, msg: `ufw: failed: ${res.stderr}` };
+      return { changed: true, msg: `ufw: default ${policy} incoming` };
     }
 
     const rule = typeof a["rule"] === "string" ? String(a["rule"]) : "allow";
@@ -50,11 +71,16 @@ export const meta: ModuleSummary = {
   description: "Manage UFW firewall rules and enable/disable (Ansible `ufw` alternate).",
   source: "builtin",
   args: {
-    rule: { type: "allow | deny | limit | reject", required: false, description: "Action (default allow)." },
+    rule: { type: "allow | deny | limit | reject", required: false, description: "Action for a rule (default allow)." },
     port: { type: "string", required: false, description: "Port or port range." },
     proto: { type: "tcp | udp", required: false, description: "Protocol." },
     state: { type: "enabled | disabled", required: false, description: "Enable/disable the firewall." },
     direction: { type: "in | out", required: false, description: "Rule direction." },
+    default: { type: "allow | deny | reject", required: false, description: "Set the default incoming policy (`ufw default <policy> incoming`)." },
+    from_ip: { type: "string", required: false, description: "Source IP/network to match (`from <from_ip>`)." },
+    to_ip: { type: "string", required: false, description: "Destination IP/network to match (`to <to_ip>`)." },
+    interface: { type: "string", required: false, description: "Restrict a rule to an interface (`on <interface>`)." },
+    log: { type: "boolean", required: false, description: "Log packets matching the rule (appends `log`)." },
   },
   examples: [
     `- ufw:
@@ -63,8 +89,10 @@ export const meta: ModuleSummary = {
     proto: tcp`,
     `- ufw:
     state: enabled`,
+    `- ufw:
+    default: deny`,
   ],
-  notes: "≠ Ansible `ufw`: `ufw allow` is naturally idempotent on the host; no `default` policy arg (set via a `shell` task).",
+  notes: "≠ Ansible `ufw`: `ufw allow` is naturally idempotent on the host; the default incoming policy is set with `default: <allow|deny|reject>` (`ufw default <policy> incoming`).",
 };
 
 (ufwModule as Module & { meta: ModuleSummary }).meta = meta;

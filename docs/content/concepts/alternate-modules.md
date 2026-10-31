@@ -65,19 +65,20 @@ reference page lists the deltas. Highlights:
 
 | RoleCall module | Ansible equivalent | Notes |
 | --- | --- | --- |
-| `package` | `package`/`apt`/`dnf`/`yum` | auto-detects manager; supports `src` (local file) + `cache_valid_time` |
-| `service` | `service`/`systemd` | systemd-agnostic (SysV fallback); `daemon_reload`, `reloaded` |
-| `cron` | `cron` | marker `# ROLECALL-CRON:<name>` |
-| `apt_repository` / `yum_repository` | `apt_repository` / `yum_repository` | writes repo file |
+| `package` | `package`/`apt`/`dnf`/`yum` | auto-detects manager (or `manager` override); `src`; `hold` (apt/zypper), `allow_downgrade` (apt), real `cache_valid_time` age check |
+| `service` | `service`/`systemd` | systemd-agnostic (SysV fallback); `daemon_reload`, `reloaded`, `pattern`, `scope` (system/user), SysV `runlevel` |
+| `cron` | `cron` | marker `#Ansible: <name>`; `backup`, `env`, `insertafter`/`insertbefore`, `cron_file` `mode` |
+| `apt_repository` / `yum_repository` | `apt_repository` / `yum_repository` | writes repo file; `apt_repository` `mode`; `yum_repository` cost/priority/exclude/includepkgs/sslcacert/sslverify |
 | `authorized_key` / `known_hosts` | `authorized_key` / `known_hosts` | SSH key management |
-| `copy` / `fetch` / `slurp` | `copy` / `fetch` / `slurp` | push/pull/read on target |
-| `file` / `stat` / `lineinfile` / `blockinfile` / `replace` | same | idempotent file ops |
-| `assemble` | `assemble` | concatenate remote files |
-| `find` / `tempfile` | `find` / `tempfile` | target-side lookup |
-| `archive` / `unarchive` | `archive` / `unarchive` | target-side bundling/extraction |
-| `get_url` / `git` / `user` / `group` | same | downloads, VCS, accounts |
-| `hostname` / `sysctl` / `modprobe` / `mount` | same | host tuning |
-| `selinux` / `iptables` / `ufw` / `timezone` / `locale_gen` / `acl` / `pam_limits` | same | security/limits |
+| `copy` / `fetch` / `slurp` | `copy` / `fetch` / `slurp` | push/pull/read on target; `copy` `force` defaults FALSE (Ansible TRUE) |
+| `file` / `stat` / `lineinfile` / `blockinfile` / `replace` | same | idempotent file ops; `lineinfile` regex anchors, `blockinfile` opt-in Ansible markers, `stat` `follow`/`checksum` |
+| `assemble` | `assemble` | concatenate remote files; `delimiter` between parts |
+| `find` / `tempfile` | `find` / `tempfile` | target-side lookup; `find` `size`/`age`/`contains`/`link` |
+| `archive` / `unarchive` | `archive` / `unarchive` | target-side bundling/extraction; `remove`/`exclude_path`/`force_archive`, `keep_newer` |
+| `wait_for` | `wait_for` | port/path polling; `search_regex`, `state` started/present/stopped/absent/drained |
+| `get_url` / `git` / `user` / `group` | same | downloads, VCS, accounts (incl. `password_hash`) |
+| `hostname` / `sysctl` / `modprobe` / `mount` | same | host tuning; `hostname` `use`, `sysctl` `reload`/`sysctl_set`, `mount` `boot`/`dump`/`passno` |
+| `selinux` / `iptables` / `ufw` / `timezone` / `locale_gen` / `acl` / `pam_limits` | same | security/limits; `ufw` `default` policy |
 | `synchronize` | `synchronize` | rsync **on the target** (not controller→target) |
 | `json_query` | `json_query` | JSON-pointer resolve, not JMESPath |
 | `service_facts` / `user_info` / `group_info` | same | fact lookups |

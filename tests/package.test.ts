@@ -18,6 +18,7 @@ interface Rule {
 
 const ok: ExecResult = { exitCode: 0, stdout: "", stderr: "" };
 const miss: ExecResult = { exitCode: 1, stdout: "", stderr: "not found" };
+const out = (stdout: string): ExecResult => ({ exitCode: 0, stdout, stderr: "" });
 
 /**
  * ScriptedConnection satisfies every member of the Connection contract: read-only
@@ -207,5 +208,210 @@ describe("package module", () => {
     expect(res.failed).toBe(true);
     expect(res.msg).toContain("'name' is required");
     expect(conn.calls.length).toBe(0);
+  });
+
+  test("explicit manager skips detection but verifies the binary", async () => {
+    const conn = new ScriptedConn([
+      { when: (c) => /which zypper/.test(c), result: ok },
+      { when: (c) => c.includes("rpm -q"), result: miss },
+      { when: (c) => c.includes("zypper install"), result: ok },
+    ]);
+    const res = await run({ name: "nginx", state: "present", manager: "zypper" }, conn);
+    expect(res.data?.manager).toBe("zypper");
+    expect(res.changed).toBe(true);
+    expect(conn.calls[0]).toContain("which zypper");
+    expect(conn.calls.some((c) => c.includes("which apt-get"))).toBe(false);
+    expect(conn.calls.some((c) => c.endsWith("zypper install -y nginx"))).toBe(true);
+  });
+
+  test("explicit manager fails actionably when its binary is missing", async () => {
+    const conn = new ScriptedConn([{ when: (c) => c.includes("which dnf"), result: miss }]);
+    const res = await run({ name: "nginx", state: "present", manager: "dnf" }, conn);
+    expect(res.failed).toBe(true);
+    expect(res.msg).toContain("dnf");
+    expect(res.msg).toContain("not available");
+  });
+
+  test("invalid manager value lists accepted values", async () => {
+    const conn = new ScriptedConn([{ when: () => true, result: ok }]);
+    const res = await run({ name: "nginx", manager: "aptitude" }, conn);
+    expect(res.failed).toBe(true);
+    expect(res.msg).toContain("accepted values");
+    expect(res.msg).toContain("apt");
+    expect(conn.calls.length).toBe(0);
+  });
+
+  test("apt hold probes and issues apt-mark hold when not already held", async () => {
+    const conn = new ScriptedConn([
+      { when: (c) => /which apt-get/.test(c), result: ok },
+      { when: (c) => c.includes("dpkg -s"), result: ok },
+      { when: (c) => c.includes("apt-mark showhold"), result: out("") },
+      { when: (c) => c.includes("apt-mark hold"), result: ok },
+    ]);
+    const res = await run({ name: "nginx", state: "present", hold: true }, conn);
+    expect(res.data?.manager).toBe("apt");
+    expect(res.changed).toBe(true);
+    expect(conn.calls.some((c) => c.includes("apt-mark showhold"))).toBe(true);
+    expect(conn.calls.some((c) => c.endsWith("apt-mark hold nginx"))).toBe(true);
+  });
+
+  test("apt hold is a no-op when already held", async () => {
+    const conn = new ScriptedConn([
+      { when: (c) => /which apt-get/.test(c), result: ok },
+      { when: (c) => c.includes("dpkg -s"), result: ok },
+      { when: (c) => c.includes("apt-mark showhold"), result: out("nginx\n") },
+    ]);
+    const res = await run({ name: "nginx", state: "present", hold: true }, conn);
+    expect(res.changed).toBe(false);
+    expect(conn.calls.some((c) => c.endsWith("apt-mark hold nginx"))).toBe(false);
+  });
+
+  test("apt unhold issues apt-mark unhold when currently held", async () => {
+    const conn = new ScriptedConn([
+      { when: (c) => /which apt-get/.test(c), result: ok },
+      { when: (c) => c.includes("dpkg -s"), result: ok },
+      { when: (c) => c.includes("apt-mark showhold"), result: out("nginx\n") },
+      { when: (c) => c.includes("apt-mark unhold"), result: ok },
+    ]);
+    const res = await run({ name: "nginx", state: "present", hold: false }, conn);
+    expect(res.changed).toBe(true);
+    expect(conn.calls.some((c) => c.endsWith("apt-mark unhold nginx"))).toBe(true);
+  });
+
+  test("absent + hold unholds before removing", async () => {
+    const conn = new ScriptedConn([
+      { when: (c) => /which apt-get/.test(c), result: ok },
+      { when: (c) => c.includes("dpkg -s"), result: ok },
+      { when: (c) => c.includes("apt-mark showhold"), result: out("nginx\n") },
+      { when: (c) => c.includes("apt-mark unhold"), result: ok },
+      { when: (c) => c.includes("apt-get remove"), result: ok },
+    ]);
+    const res = await run({ name: "nginx", state: "absent", hold: true }, conn);
+    expect(res.changed).toBe(true);
+    const idxUnhold = conn.calls.findIndex((c) => c.includes("apt-mark unhold"));
+    const idxRemove = conn.calls.findIndex((c) => c.includes("apt-get remove"));
+    expect(idxUnhold).toBeGreaterThanOrEqual(0);
+    expect(idxRemove).toBeGreaterThan(idxUnhold);
+  });
+
+  test("hold on dnf fails actionably with versionlock guidance", async () => {
+    const conn = new ScriptedConn([
+      { when: (c) => c.includes("which apt-get"), result: miss },
+      { when: (c) => c.includes("which dnf"), result: ok },
+    ]);
+    const res = await run({ name: "httpd", hold: true }, conn);
+    expect(res.failed).toBe(true);
+    expect(res.msg).toContain("hold is not supported on dnf");
+    expect(res.msg).toContain("versionlock");
+  });
+
+  test("hold on yum fails actionably with versionlock guidance", async () => {
+    const conn = new ScriptedConn([
+      { when: (c) => c.includes("which apt-get"), result: miss },
+      { when: (c) => c.includes("which dnf"), result: miss },
+      { when: (c) => c.includes("which yum"), result: ok },
+    ]);
+    const res = await run({ name: "httpd", hold: true }, conn);
+    expect(res.failed).toBe(true);
+    expect(res.msg).toContain("hold is not supported on yum");
+    expect(res.msg).toContain("versionlock");
+  });
+
+  test("hold on pacman fails actionably with IgnorePkg guidance", async () => {
+    const conn = new ScriptedConn([
+      { when: (c) => c.includes("which apt-get"), result: miss },
+      { when: (c) => c.includes("which dnf"), result: miss },
+      { when: (c) => c.includes("which yum"), result: miss },
+      { when: (c) => c.includes("which apk"), result: miss },
+      { when: (c) => c.includes("which pacman"), result: ok },
+    ]);
+    const res = await run({ name: "nginx", hold: true }, conn);
+    expect(res.failed).toBe(true);
+    expect(res.msg).toContain("hold is not supported on pacman");
+    expect(res.msg).toContain("IgnorePkg");
+  });
+
+  test("apt allow_downgrade adds --allow-downgrades to install", async () => {
+    const conn = new ScriptedConn([
+      { when: (c) => /which apt-get/.test(c), result: ok },
+      { when: (c) => c.includes("dpkg -s"), result: miss },
+      { when: (c) => c.includes("apt-get install"), result: ok },
+    ]);
+    const res = await run(
+      { name: "nginx", state: "present", version: "1.0", allow_downgrade: true },
+      conn,
+    );
+    expect(res.changed).toBe(true);
+    expect(
+      conn.calls.some((c) => c.endsWith("apt-get install -y --allow-downgrades nginx=1.0")),
+    ).toBe(true);
+  });
+
+  test("allow_downgrade on non-apt fails actionably", async () => {
+    const conn = new ScriptedConn([{ when: (c) => c.includes("which dnf"), result: ok }]);
+    const res = await run({ name: "httpd", manager: "dnf", allow_downgrade: true }, conn);
+    expect(res.failed).toBe(true);
+    expect(res.msg).toContain("allow_downgrade");
+    expect(res.msg).toContain("apt");
+  });
+
+  test("cache_valid_time skips apt-get update when the cache is fresh", async () => {
+    const conn = new ScriptedConn([
+      { when: (c) => /which apt-get/.test(c), result: ok },
+      { when: (c) => c.includes("dpkg -s"), result: miss },
+      { when: (c) => c.includes("date +%s"), result: out("10000\n") },
+      { when: (c) => c.includes("stat -c %Y"), result: out("9000\n") },
+      { when: (c) => c.includes("apt-get install"), result: ok },
+    ]);
+    const res = await run({ name: "nginx", state: "present", cache_valid_time: 3600 }, conn);
+    expect(res.changed).toBe(true);
+    expect(conn.calls.some((c) => c.includes("date +%s"))).toBe(true);
+    expect(conn.calls.some((c) => c.includes("stat -c %Y"))).toBe(true);
+    expect(conn.calls.some((c) => c.includes("apt-get update"))).toBe(false);
+  });
+
+  test("cache_valid_time forces apt-get update when the cache is stale", async () => {
+    const conn = new ScriptedConn([
+      { when: (c) => /which apt-get/.test(c), result: ok },
+      { when: (c) => c.includes("dpkg -s"), result: miss },
+      { when: (c) => c.includes("date +%s"), result: out("10000\n") },
+      { when: (c) => c.includes("stat -c %Y"), result: out("1000\n") },
+      { when: (c) => c.includes("apt-get update"), result: ok },
+      { when: (c) => c.includes("apt-get install"), result: ok },
+    ]);
+    const res = await run({ name: "nginx", state: "present", cache_valid_time: 3600 }, conn);
+    expect(res.changed).toBe(true);
+    const idxUpdate = conn.calls.findIndex((c) => c.includes("apt-get update"));
+    const idxInstall = conn.calls.findIndex((c) => c.includes("apt-get install"));
+    expect(idxUpdate).toBeGreaterThanOrEqual(0);
+    expect(idxInstall).toBeGreaterThan(idxUpdate);
+  });
+
+  test("cache_valid_time forces update when the stat probe fails", async () => {
+    const conn = new ScriptedConn([
+      { when: (c) => /which apt-get/.test(c), result: ok },
+      { when: (c) => c.includes("dpkg -s"), result: miss },
+      { when: (c) => c.includes("date +%s"), result: out("10000\n") },
+      { when: (c) => c.includes("stat -c %Y"), result: miss },
+      { when: (c) => c.includes("apt-get update"), result: ok },
+      { when: (c) => c.includes("apt-get install"), result: ok },
+    ]);
+    const res = await run({ name: "nginx", state: "present", cache_valid_time: 3600 }, conn);
+    expect(res.changed).toBe(true);
+    expect(conn.calls.some((c) => c.includes("apt-get update"))).toBe(true);
+  });
+
+  test("update_cache forces apt-get update without an age check", async () => {
+    const conn = new ScriptedConn([
+      { when: (c) => /which apt-get/.test(c), result: ok },
+      { when: (c) => c.includes("dpkg -s"), result: miss },
+      { when: (c) => c.includes("apt-get update"), result: ok },
+      { when: (c) => c.includes("apt-get install"), result: ok },
+    ]);
+    const res = await run({ name: "nginx", state: "present", update_cache: true }, conn);
+    expect(res.changed).toBe(true);
+    expect(conn.calls.some((c) => c.includes("apt-get update"))).toBe(true);
+    expect(conn.calls.some((c) => c.includes("date +%s"))).toBe(false);
+    expect(conn.calls.some((c) => c.includes("stat -c %Y"))).toBe(false);
   });
 });

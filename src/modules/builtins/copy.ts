@@ -437,7 +437,7 @@ export const meta: ModuleSummary = {
     validate: 'visudo -cf %s'`,
   ],
     notes:
-    "≠ Ansible `copy`: `force` defaults to FALSE here (Ansible defaults TRUE), so copy only rewrites when the destination differs unless you pass force:true. Templating is on-host: pass `content` as an object with `template`/`template_file` and optional `engine` (EJS default, or `jinja`); a bare `content` string is written literally (never interpreted as a template). Attribute application relies on stat/chown/chgrp availability; no SELinux context handling.",
+    "≠ Ansible `copy`: **`force` defaults to FALSE** (Ansible defaults TRUE), so copy only rewrites when the destination differs unless you pass force:true. Templating is on-host: pass `content` as an object with `template`/`template_file` and optional `engine` (EJS default, or `jinja`); a bare `content` string is written literally (never interpreted as a template). Attribute application relies on stat/chown/chgrp availability; no SELinux context handling.",
 };
 
 (copyModule as Module & { meta: ModuleSummary }).meta = meta;

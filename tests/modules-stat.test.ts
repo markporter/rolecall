@@ -11,6 +11,7 @@ import type { ModuleContext } from "../src/executor/module";
 import { registerModule, getModule } from "../src/executor/module";
 import { createNoopConnection } from "../src/executor/context";
 import { createConnection } from "../src/transport";
+import type { ExecResult } from "../src/transport/connection";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -60,6 +61,26 @@ function localCtx(args: Record<string, unknown>): ModuleContext {
 }
 
 const tmp = (suffix: string) => join(tmpdir(), `rolecall-stat-${randomUUID()}${suffix}`);
+
+// --- scripted connection ----------------------------------------------------
+const okRes = (stdout = ""): ExecResult => ({ exitCode: 0, stdout, stderr: "" });
+const noRes = (): ExecResult => ({ exitCode: 1, stdout: "", stderr: "" });
+
+function scripted(
+  args: Record<string, unknown>,
+  router: (cmd: string) => ExecResult,
+): { ctx: ModuleContext; calls: string[] } {
+  const calls: string[] = [];
+  const conn = createNoopConnection("h1");
+  conn.exec = async (cmd: string): Promise<ExecResult> => {
+    calls.push(cmd);
+    return router(cmd);
+  };
+  return {
+    ctx: { host: "h1", connection: conn, args, vars: {}, facts: {}, registered: {} } as ModuleContext,
+    calls,
+  };
+}
 
 // --- registration -----------------------------------------------------------
 test("stat registers under its name via registerModule", () => {
@@ -117,4 +138,42 @@ test("stat fails when path is omitted", async () => {
   expect(res.changed).toBe(false);
   expect(res.failed).toBe(true);
   expect(String(res.msg)).toContain("path");
+});
+
+// --- follow:false on a symlink ----------------------------------------------
+test("stat follow:false classifies a symlink via stat -c %F", async () => {
+  const link = "/tmp/rolecall-stat-link";
+  const h = scripted({ path: link, follow: false }, (cmd) => {
+    if (cmd === `[ -e '${link}' ] || [ -L '${link}' ]`) return okRes();
+    if (cmd === `stat -c '%F' '${link}'`) return okRes("symbolic link\n");
+    if (cmd.startsWith(`stat -c '%a`)) return okRes("777 root root 5 1700000000\n");
+    throw new Error(`unexpected command: ${cmd}`);
+  });
+
+  const res = await statModule.run(h.ctx);
+  expect(res.data?.["exists"]).toBe(true);
+  expect(res.data?.["islnk"]).toBe(true);
+  expect(res.data?.["isdir"]).toBe(false);
+  expect(res.data?.["isfile"]).toBe(false);
+  expect(h.calls.some((c) => c === `stat -c '%F' '${link}'`)).toBe(true);
+});
+
+// --- sha256 checksum + numeric mtime_epoch ----------------------------------
+test("stat parses a sha256 checksum and reports numeric mtime_epoch", async () => {
+  const file = "/tmp/rolecall-stat-file";
+  const h = scripted({ path: file, checksum: "sha256" }, (cmd) => {
+    if (cmd === `[ -e '${file}' ]`) return okRes();
+    if (cmd === `[ -d '${file}' ]` || cmd === `[ -L '${file}' ]`) return noRes();
+    if (cmd === `[ -f '${file}' ]`) return okRes();
+    if (cmd.startsWith("stat -L -c")) return okRes("644 root root 11 1700000000\n");
+    if (cmd === `sha256sum '${file}'`) return okRes("a1b2c3d4  /tmp/rolecall-stat-file\n");
+    throw new Error(`unexpected command: ${cmd}`);
+  });
+
+  const res = await statModule.run(h.ctx);
+  expect(res.data?.["isfile"]).toBe(true);
+  expect(res.data?.["checksum"]).toBe("a1b2c3d4");
+  expect(typeof res.data?.["mtime_epoch"]).toBe("number");
+  expect(res.data?.["mtime_epoch"]).toBe(1700000000);
+  expect(h.calls.some((c) => c.startsWith("sha256sum "))).toBe(true);
 });

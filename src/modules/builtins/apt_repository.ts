@@ -7,8 +7,9 @@
 // every other line in the file. `state: absent` removes just the named source
 // line (deleting the file when nothing remains). `validate_certs: false` maps to
 // an apt `[trusted=yes]` option in the source line, and `update_cache: true`
-// runs `apt-get update` after a change. A `--check`/`check: true` invocation
-// reports `wouldChange` without writing.
+// runs `apt-get update` after a change. `mode` (e.g. `"0644"`) sets the
+// permissions of the written file with `chmod`. A `--check`/`check: true`
+// invocation reports `wouldChange` without writing.
 
 import type { Module } from "../../executor/module";
 import type { CheckableModule } from "../../idempotency/types";
@@ -18,7 +19,7 @@ import type { ModuleSummary } from "../search";
 
 const MODULE_NAME = "apt_repository";
 
-/** @summary Arguments for the `apt_repository` module. @property repo Full APT source line, e.g. `deb http://… jammy main` (required). @property filename File name under /etc/apt/sources.list.d (default `rolecall.list`; `.list` is appended when missing). @property state `present` (default) or `absent`. @property validate_certs When false, rewrite the source line with apt's `[trusted=yes]` option. @property update_cache Run `apt-get update` after a change. */
+/** @summary Arguments for the `apt_repository` module. @property repo Full APT source line, e.g. `deb http://… jammy main` (required). @property filename File name under /etc/apt/sources.list.d (default `rolecall.list`; `.list` is appended when missing). @property state `present` (default) or `absent`. @property validate_certs When false, rewrite the source line with apt's `[trusted=yes]` option. @property update_cache Run `apt-get update` after a change. @property mode Octal file mode (e.g. `"0644"`) applied with `chmod` after the file is written. */
 export interface AptRepositoryArgs {
   /** Full APT source line, e.g. `deb http://archive.ubuntu.com/ubuntu jammy main`. Required. */
   repo: string;
@@ -30,6 +31,8 @@ export interface AptRepositoryArgs {
   validate_certs?: boolean;
   /** Run `apt-get update` after the source list changes (default false). */
   update_cache?: boolean;
+  /** Octal file mode for the written source list (e.g. `"0644"`); applied with `chmod`. */
+  mode?: string;
   /** Internal: set by the `--check` global passthrough. */
   _check?: unknown;
   /** Internal: set by the `--check` global passthrough. */
@@ -49,19 +52,21 @@ export const meta: ModuleSummary = {
     state: { type: "present | absent", required: false, description: "Desired state (default present)." },
     validate_certs: { type: "boolean", required: false, description: "Validate the repository TLS certificate (default true). When false, the source line gets an apt [trusted=yes] option." },
     update_cache: { type: "boolean", required: false, description: "Run `apt-get update` after the source list changes (default false)." },
+    mode: { type: "string", required: false, description: "Octal file mode for the written source list (e.g. '0644'), applied with `chmod`." },
   },
   examples: [
     `- apt_repository:
     repo: "deb http://apt.nginx.org/ubuntu jammy nginx"
     filename: nginx.list
-    state: present`,
+    state: present
+    mode: "0644"`,
     `- apt_repository:
     repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable"
     filename: docker.list
     update_cache: true`,
   ],
   notes:
-    "≠ Ansible `apt_repository`: `filename` defaults to rolecall.list (not a URL-derived name), `update_cache` defaults to false, and `codename`/`arch`/`signed_by`/`comment` are not auto-composed — pass a complete `repo` line instead. `validate_certs: false` maps to an apt `[trusted=yes]` source option. Uses `$var` refs, not Jinja `{{ }}`.",
+    "≠ Ansible `apt_repository`: `filename` defaults to rolecall.list (not a URL-derived name) and `update_cache` defaults to false. `validate_certs: false` maps to an apt `[trusted=yes]` source option. Uses `$var` refs, not Jinja `{{ }}`.",
 };
 
 /** Normalize a filename to end in `.list` (APT only reads list files with a recognized extension). */
@@ -152,6 +157,12 @@ export const aptRepositoryModule: Module & CheckableModule = resource({
         await writeRemoteFileExact(ctx.connection, path, nextContent, Boolean(ctx.become));
       } catch (e) {
         return { changed: false, failed: true, msg: `apt_repository: ${e instanceof Error ? e.message : String(e)}`, data };
+      }
+      if (typeof a.mode === "string" && a.mode.length > 0) {
+        const ch = await ctx.connection.exec(wrapCommand(`chmod ${a.mode} ${shQuote(path)}`, wrapOpts));
+        if (ch.exitCode !== 0) {
+          return { changed: true, failed: true, msg: `apt_repository: ${filename} ${state}, but chmod failed: ${ch.stderr || `exit ${ch.exitCode}`}`, data };
+        }
       }
     }
 
