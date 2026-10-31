@@ -8,7 +8,7 @@ longname: module:modules.fileModule
 
 <Signature code="fileModule: Module" />
 
-<SourceLink href="/source/src/modules/builtins/file-ts/#L142" label="file.ts:142" />
+<SourceLink href="/source/src/modules/builtins/file-ts/#L145" label="file.ts:145" />
 
 **Returns**
 

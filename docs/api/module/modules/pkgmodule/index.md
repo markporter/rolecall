@@ -8,7 +8,7 @@ longname: module:modules.pkgModule
 
 <Signature code="pkgModule: Module" />
 
-<SourceLink href="/source/src/modules/builtins/package-ts/#L156" label="package.ts:156" />
+<SourceLink href="/source/src/modules/builtins/package-ts/#L250" label="package.ts:250" />
 
 **Returns**
 

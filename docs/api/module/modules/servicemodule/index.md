@@ -8,7 +8,7 @@ longname: module:modules.serviceModule
 
 <Signature code="serviceModule: Module" />
 
-<SourceLink href="/source/src/modules/builtins/service-ts/#L22" label="service.ts:22" />
+<SourceLink href="/source/src/modules/builtins/service-ts/#L27" label="service.ts:27" />
 
 **Returns**
 

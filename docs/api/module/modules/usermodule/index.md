@@ -8,7 +8,7 @@ longname: module:modules.userModule
 
 <Signature code="userModule: Module" />
 
-<SourceLink href="/source/src/modules/builtins/user-ts/#L207" label="user.ts:207" />
+<SourceLink href="/source/src/modules/builtins/user-ts/#L239" label="user.ts:239" />
 
 **Returns**
 

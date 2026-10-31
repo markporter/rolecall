@@ -8,7 +8,7 @@ longname: module:modules.lineinfileModule
 
 <Signature code="lineinfileModule: Module & CheckableModule" />
 
-<SourceLink href="/source/src/modules/builtins/lineinfile-ts/#L80" label="lineinfile.ts:80" />
+<SourceLink href="/source/src/modules/builtins/lineinfile-ts/#L87" label="lineinfile.ts:87" />
 
 **Returns**
 

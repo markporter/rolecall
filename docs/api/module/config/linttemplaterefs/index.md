@@ -9,7 +9,7 @@ description: "Inspect a normalized playbook for unsupported template constructs 
 
 <Signature code="lintTemplateRefs(pb: NormalizedPlaybook): TemplateRefProblem[]" />
 
-<SourceLink href="/source/src/config/loader-ts/#L146" label="loader.ts:146" />
+<SourceLink href="/source/src/config/loader-ts/#L145" label="loader.ts:145" />
 
 Inspect a normalized playbook for unsupported template constructs and return problems. Unlike [lintPlaybookIdempotency](/module/config/lintplaybookidempotency) these are hard errors: callers should throw. Scans task scalar args, `when`, `loop`, `notify`, and names; the `vars` data namespace is intentionally skipped (it holds literal values).
 

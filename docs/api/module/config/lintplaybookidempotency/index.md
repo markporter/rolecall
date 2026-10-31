@@ -13,7 +13,7 @@ description: Inspect a normalized playbook for unguarded shell/command tasks and
 ): IdempotencyWarning[]"
 />
 
-<SourceLink href="/source/src/config/loader-ts/#L92" label="loader.ts:92" />
+<SourceLink href="/source/src/config/loader-ts/#L91" label="loader.ts:91" />
 
 Inspect a normalized playbook for unguarded shell/command tasks and return human-readable warnings. Never throws — callers decide how to surface them.
 

@@ -196,6 +196,9 @@
     <loc>https://rolecall.example.com/module/config/normalizetask/</loc>
   </url>
   <url>
+    <loc>https://rolecall.example.com/module/config/playbookarray/</loc>
+  </url>
+  <url>
     <loc>https://rolecall.example.com/module/config/playbookobject/</loc>
   </url>
   <url>

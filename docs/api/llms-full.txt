@@ -1,4 +1,4 @@
-# rolecall — full documentation
+# @rolecall/cli — full documentation
 
 > RoleCall — config management & orchestration CLI. Runs on Node >=22.19 and Bun >=1.4.2.
 
@@ -6,10 +6,14 @@ Generated from https://rolecall.example.com/ . This file concatenates every docu
 
 ---
 
-# rolecall
+# @rolecall/cli
 Source: https://rolecall.example.com/
 
 RoleCall — config management & orchestration. A dual-runtime Ansible alternative: one executable that runs as a CLI (`rolecall playbook run …`) and as an orchestrator server (`rolecall --serve`).
+
+<Callout type="warning">
+  **Alpha — testing only.** RoleCall is pre-1.0 alpha software. The executor, SSH/local transports, facts gathering, and inventory handling are real and the test suite is green, but **breaking changes land without notice**: playbooks, inventory shapes, CLI flags, and module parameters may all change before `0.1.0`. Do not run it against production hosts. Issues and pull requests are welcome — pin exact versions if you experiment.
+</Callout>
 
 > Status: Execution is live. `playbook run` applies state over SSH/local transports, `facts gather` collects targeted/cached facts per host, `plugin list`/`register` persist and auto-load user module plugins, `--inventory` consumes Ansible inventories (INI + `all:`-rooted YAML) directly by auto-detecting the format, and `--tags`/`--skip-tags` plus play-level `handlers:`/`tags:` cover Ansible-style selection and notifications. Transport + the executor are implemented, on Node.js (>=22.19, via npm) as well as Bun. Still scaffolded (do not treat as functional): scheduler / cron / webhooks / SPA UI route registry, the richer Plugin SDK authoring surface, the full Jinja `{{ }}` renderer (only structured references `$var`/`$concat`/`$call`/`$if`/`$each`/`$template` + typed `when`/`loop` exist), the Postgres backend (record-only), and RBAC / Vault / WinRM target capabilities.
 
@@ -21,102 +25,99 @@ RoleCall — config management & orchestration. A dual-runtime Ansible alternati
 ## Install
 
 ```sh
-bun install
-```
-
-## Run
-
-```sh
-# Print usage / help
-bun run src/cli/index.ts --help
-# or via the bin shim
-bun bin/rolecall.js --help
-
-# Run the test suite (bun test is the primary runner)
-bun test
-
-# Type-check (no emit)
-bun run build      # -> bunx tsc --noEmit
-```
-
-## Design & architecture
-
-Design context for contributors and agents lives in [`design/`](design/README.md): goals, roadmap (implemented vs scaffolded), component architecture, and transport-layer design The published user guide/API reference is in `docs/`.
-
-## Project layout
-
-```
-src/
-  cli/          unified dual-mode entrypoint (CLI vs --serve) — implemented
-  config/       YAML config/playbook/inventory schema loaders — implemented
-  transport/    Connection trait + SSH/Local/Network implemented; Http connect-only (gRPC deferred)
-  executor/     declarative task state machine — implemented
-  idempotency/  check-compare-write + cache + skip-unchanged — implemented
-  templating/   structured refs ($var/$concat/$call/$if/$each/$template, namespaced vars/facts/reg/loop/play/inv/role/run/rolecall) implemented; full Jinja {{ }} kept literal
-  inventory/    host/group vars + precedence — implemented
-  facts/        targeted/cached fact gathering — implemented
-  modules/      JS/TS module SDK — modules + plugin register implemented; plugin SDK authoring partial
-  store/        SQLite project/run/schedule persistence — implemented
-  orchestrator/ Express server implemented; scheduler/cron/webhooks/SPA scaffold
-  ui/           pluggable served SPA — scaffold
-  util/         runtime detection (detectRuntime) — implemented
-test/           smoke test
-tests/          runtime detection test
-```
-
-See `.omo/plans/rolecall.md` for the full work plan.
-
----
-
-## Installing
-
-RoleCall installs from the npm registry and runs on Node.js, or as a Bun-native addition to a project:
-
-```sh
 # Global CLI on PATH — works on a machine with Node >= 22.19.0 and no Bun
-npm i -g rolecall
+npm i -g @rolecall/cli
 
 # Or, if you live in the Bun ecosystem
-bun add rolecall
+bun add @rolecall/cli
+
+# One-off usage
+npx @rolecall/cli --help
 ```
 
-The npm package ships a Node bundle (`lib/cli.js`) built by `bun run build:js` (`node scripts/build-js.mjs`); `prepack` runs that build automatically so the baked version matches the release. `npx rolecall` works the same way.
+The npm package ships a Node bundle (`lib/cli.js`) built by `bun run build:js` (`node scripts/build-js.mjs`); `prepack` runs that build automatically so the baked version matches the release.
 
-For local development / contributing:
+For local development / contributing, clone and install with Bun:
 
 ```sh
+git clone git@github.com:markporter/rolecall.git
+cd rolecall
 bun install          # installs deps from bun.lock (--frozen-lockfile in CI)
 ```
 
-> **Runtime split:** none. The full feature surface — playbook runs, facts, inventory, vars, docs, plugins, the durable SQLite store, and everything that boots it (`--serve`, `--trace`, `--profile`, `run replay`) — works on both runtimes. See [Node.js support](#nodejs-support) below.
+## Quickstart
 
-## Running
+An inventory names your hosts and their variables; a playbook declares the tasks to apply on them. The smallest useful pair looks like this:
 
-While developing directly from source:
+```yaml
+# inventory.yaml
+groups:
+  web:
+    hosts:
+      - web1.example.com
+      - web2.example.com
+    vars:
+      http_port: 80
+```
+
+```yaml
+# playbook.yaml
+- name: deploy-web
+  hosts:
+    - web1.example.com
+    - web2.example.com
+  tasks:
+    - name: Install web server package
+      package:
+        name: nginx
+        state: present
+    - name: Configure HTTP port
+      copy:
+        dest: /etc/nginx/nginx.conf
+        content: |
+          events {
+            worker_connections 1024;
+          }
+          http {
+            server {
+              listen 80;
+            }
+          }
+    - name: Ensure nginx is running
+      service:
+        name: nginx
+        state: started
+```
+
+Inspect what will run before applying it, then apply:
 
 ```sh
-# Print usage / help
-bun run src/cli/index.ts --help
-# or via the source-checkout bin shim
-bun bin/rolecall.js --help
-
-# Run the test suite (primary runner — Bun-native `bun:test`)
-bun test
-
-# Type-check (no emit)
-bun run build        # -> bunx tsc --noEmit
+rolecall inventory show inventory.yaml    # resolved hosts + merged vars
+rolecall playbook run playbook.yaml --inventory inventory.yaml --check --diff
+rolecall playbook run playbook.yaml --inventory inventory.yaml
 ```
+
+A larger worked example lives in [`examples/lxd-lab`](examples/lxd-lab). The full guide is in [`docs/`](docs/).
+
+## Running
 
 After an npm/global install, the `rolecall` command is available on your `PATH`:
 
 ```sh
 rolecall --help
-rolecall playbook run playbook.yaml
-rolecall vars list <play>  # list declared vars/facts grouped by source file
-rolecall vars trace <name> # show a var's full precedence / override chain
+rolecall playbook run playbook.yaml --inventory inventory.yaml
+rolecall vars list <play>     # list declared vars/facts grouped by source file
+rolecall vars trace <play>    # show each var's full precedence / override chain
+rolecall --serve              # start the orchestrator HTTP server
 ```
 
-`rolecall --serve` (start the orchestrator HTTP server) works on Node too — see [Node.js support](#nodejs-support).
+While developing directly from source:
+
+```sh
+bun run src/cli/index.ts --help
+# or via the source-checkout bin shim
+bun bin/rolecall.js --help
+```
 
 ## Building native binaries (`--compile`)
 
@@ -148,7 +149,7 @@ Binaries are written to `dist/bin/<name>-<platform>` and named after the project
 
 ### Cross-compilation & multi-OS builds
 
-The builder maps each requested platform to Bun's cross-compile override (`BUN_TARGET_OVERRIDE`). Because true cross-compilation needs Bun to fetch the remote runtime for the target OS, this machine (a Linux x64 box) can only produce and execute the **Linux host artifact**. Non-host targets (`windows-*`, `darwin-*`, `freebsd-*`) are still emitted so their paths exist, but they are **never executed here** — the builder logs a clear `generated, unexecuted on host` line plus a note when a file came out of the wrong toolchain. To get genuine non-host binaries, either run the build on the matching OS or let GitHub Actions do it:
+The builder maps each requested platform to Bun's cross-compile override (`BUN_TARGET_OVERRIDE`). Because true cross-compilation needs Bun to fetch the remote runtime for the target OS, a single build machine can only produce and execute the artifact matching its own OS/arch. Non-host targets (`windows-*`, `darwin-*`, `freebsd-*`) are still emitted so their paths exist, but they are **never executed on the building host** — the builder logs a clear `generated, unexecuted on host` line plus a note when a file came out of the wrong toolchain. To get genuine non-host binaries, either run the build on the matching OS or let GitHub Actions do it:
 
 ```yaml
 # .github/workflows/ci.yml drives one real per-OS build across a matrix
@@ -183,7 +184,7 @@ Whichever you choose, pin the executable path to the correct published binary (`
 
 ## Node.js support
 
-RoleCall ships two distribution channels from one codebase. The **npm channel is Node.js**: `npm i -g rolecall` (or `npx rolecall`) works on a machine with Node
+RoleCall ships two distribution channels from one codebase. The **npm channel is Node.js**: `npm i -g @rolecall/cli` (or `npx @rolecall/cli`) works on a machine with Node
 
 > \= 22.19.0 and no Bun installed. The published bin is `lib/cli.js`, a `bun build --target=node --packages=external` bundle produced by `bun run build:js` (`node scripts/build-js.mjs`, run automatically by `prepack`). **Bun remains the batteries-included channel**: compiled binaries (`npm run build-bin`, untouched) and source-checkout dev (`bun bin/rolecall.js`, `bun run dev`).
 
@@ -215,13 +216,40 @@ ROLECALL_RUNTIME=bun bun test     # force Bun PAL branch
 ROLECALL_RUNTIME=node bun test    # force Node PAL branch (green — runner is Bun)
 ```
 
-The assertion suite imports `bun:test`, which is Bun-native and unavailable under plain Node without an extra transpiling loader we deliberately do not vendor. To still exercise the **Node runtime through its own harness**, CI runs a small `node --test` probe against the pure-JS runtime-detection module (`src/util/runtime.ts`), verifying `ROLECALL_RUNTIME` overrides work on both runtimes. See `.github/workflows/ci.yml`.
+The assertion suite imports `bun:test`, which is Bun-native and unavailable under plain Node without an extra transpiling loader we deliberately do not vendor. To still exercise the **Node runtime through its own harness**, CI runs a small `node --test` probe against the pure-JS runtime-detection module (`src/util/runtime.ts`), verifying `ROLECALL_RUNTIME` overrides work on both runtimes, plus a `node-package-smoke` job that installs the packed npm tarball with no Bun on PATH and drives the CLI end to end. See `.github/workflows/ci.yml`.
 
 ## Security & packaging notes
 
 These inherited constraints affect how dependencies are installed and packaged:
 
-- **ssh2** is installed with `--omit=optional` to avoid pulling native `cpu-features` / `node-libssh2` bindings. See the ssh2 CVE surface in `.omo/notepads/rolecall/issues.md`.
+- **ssh2** is installed with `--omit=optional` to avoid pulling native `cpu-features` / `node-libssh2` bindings.
 - **undici** is pinned `>= 8.5.0` (devDependency) to avoid keep-alive connection-pool poisoning (CVE-2026-6733). Product code does not import it (comment-only reference), so it does not constrain the Node engines floor.
 - **Bun workers**: only offload CPU-bound work via `bun.workers` (`workers: N`); `worker_threads` support is partial — don't assume full Node worker parity.
 - These optional/native-dep semantics are preserved in build docs above; the compiled bundle embeds RoleCall's direct dependencies while respecting that some packages are intentionally optional at install time.
+
+## Design & architecture
+
+Design context for contributors and agents lives in [`design/`](design/README.md): goals, roadmap (implemented vs scaffolded), component architecture, and transport-layer design. The published user guide/API reference is in `docs/`.
+
+## Project layout
+
+```
+src/
+  cli/          unified dual-mode entrypoint (CLI vs --serve) — implemented
+  config/       YAML config/playbook/inventory schema loaders — implemented
+  transport/    Connection trait + SSH/Local/Network implemented; Http connect-only (gRPC deferred)
+  executor/     declarative task state machine — implemented
+  idempotency/  check-compare-write + cache + skip-unchanged — implemented
+  templating/   structured refs ($var/$concat/$call/$if/$each/$template, namespaced vars/facts/reg/loop/play/inv/role/run/rolecall) implemented; full Jinja {{ }} kept literal
+  inventory/    host/group vars + precedence — implemented
+  facts/        targeted/cached fact gathering — implemented
+  modules/      JS/TS module SDK — modules + plugin register implemented; plugin SDK authoring partial
+  store/        SQLite project/run/schedule persistence — implemented
+  orchestrator/ Express server implemented; scheduler/cron/webhooks/SPA scaffold
+  ui/           pluggable served SPA — scaffold
+  util/         runtime detection (detectRuntime) — implemented
+test/           smoke test
+tests/          runtime detection test
+```
+
+See [`design/`](design/README.md) for goals, the full roadmap, and ADRs.

@@ -13,7 +13,7 @@ longname: module:config.loadInventory
 ): NormalizedInventory"
 />
 
-<SourceLink href="/source/src/config/loader-ts/#L787" label="loader.ts:787" />
+<SourceLink href="/source/src/config/loader-ts/#L795" label="loader.ts:795" />
 
 **Parameters**
 

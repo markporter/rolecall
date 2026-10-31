@@ -13,7 +13,7 @@ description: Normalize a validated RawTask into canonical form (string→list, o
 ): NormalizedTask"
 />
 
-<SourceLink href="/source/src/config/schema-ts/#L398" label="schema.ts:398" />
+<SourceLink href="/source/src/config/schema-ts/#L419" label="schema.ts:419" />
 
 Normalize a validated RawTask into canonical form (string→list, omitted→defaults).
 

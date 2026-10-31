@@ -8,7 +8,7 @@ longname: module:config.InventoryGroupSchema
 
 <Signature code="InventoryGroupSchema: ZodObject<{ children: ZodOptional<ZodArray<ZodString>>; hosts: ZodArray<ZodString>; vars: ZodOptional<ZodRecord<ZodString, ZodUnknown>> }, $strict>" />
 
-<SourceLink href="/source/src/config/schema-ts/#L242" label="schema.ts:242" />
+<SourceLink href="/source/src/config/schema-ts/#L263" label="schema.ts:263" />
 
 **Type**
 

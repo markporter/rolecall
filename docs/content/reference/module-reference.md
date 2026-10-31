@@ -77,6 +77,7 @@ _idempotent · source: builtin_
 | `state` | `present \| absent` | optional | Desired state (default present). |
 | `validate_certs` | `boolean` | optional | Validate the repository TLS certificate (default true). When false, the source line gets an apt [trusted=yes] option. |
 | `update_cache` | `boolean` | optional | Run `apt-get update` after the source list changes (default false). |
+| `mode` | `string` | optional | Octal file mode for the written source list (e.g. '0644'), applied with `chmod`. |
 
 **Examples**
 
@@ -85,6 +86,7 @@ _idempotent · source: builtin_
     repo: "deb http://apt.nginx.org/ubuntu jammy nginx"
     filename: nginx.list
     state: present
+    mode: "0644"
 ```
 
 ```yaml
@@ -95,11 +97,11 @@ _idempotent · source: builtin_
 ```
 
 
-> ≠ Ansible `apt_repository`: `filename` defaults to rolecall.list (not a URL-derived name), `update_cache` defaults to false, and `codename`/`arch`/`signed_by`/`comment` are not auto-composed — pass a complete `repo` line instead. `validate_certs: false` maps to an apt `[trusted=yes]` source option. Uses `$var` refs, not Jinja `{{ }}`.
+> ≠ Ansible `apt_repository`: `filename` defaults to rolecall.list (not a URL-derived name) and `update_cache` defaults to false. `validate_certs: false` maps to an apt `[trusted=yes]` source option. Uses `$var` refs, not Jinja `{{ }}`.
 
 ## archive
 
-Bundle files on the target into an archive (Ansible `archive` alternate). Supports tar/zip; always recreates the archive (not diff-based).
+Bundle files on the target into an archive (Ansible `archive` alternate). Supports tar/zip, `exclude_path` filtering, source removal, and an mtime-based up-to-date skip.
 
 _source: builtin_
 
@@ -110,6 +112,9 @@ _source: builtin_
 | `path` | `string` | required | Destination archive path. |
 | `src` | `string \| string[]` | required | Files/dirs to include. |
 | `format` | `tar \| zip` | optional | Archive format (default tar; zip if path ends .zip). |
+| `exclude_path` | `string \| string[]` | optional | Paths to exclude (tar `--exclude`, zip `-x`). |
+| `remove` | `boolean` | optional | After a successful archive, `rm -rf` each `src` path (default false). |
+| `force_archive` | `boolean` | optional | Recreate the archive even when it is at least as new as its sources (default false). |
 
 **Examples**
 
@@ -122,7 +127,7 @@ _source: builtin_
 ```
 
 
-> ≠ Ansible `archive`: always recreates the archive (no `remove`/mtime check); no `exclude_path` filtering yet.
+> ≠ Ansible `archive`: `force_archive` false (default) skips when the destination is at least as new as every source (mtime comparison; proceeds when either mtime is unreadable). `remove` deletes sources after archiving and `exclude_path` filters entries.
 
 ## assemble
 
@@ -137,6 +142,7 @@ _source: builtin_
 | `src` | `string` | required | Remote directory to read parts from. |
 | `dest` | `string` | required | Remote destination file. |
 | `regexp` | `string` | optional | Only include filenames matching this regex. |
+| `delimiter` | `string` | optional | String inserted between parts (not after the last one). |
 
 **Examples**
 
@@ -148,7 +154,7 @@ _source: builtin_
 ```
 
 
-> ≠ Ansible `assemble`: `remote_src` is always true (RoleCall reads from the target); files are concatenated in sorted filename order. No `delimiter` insertion between parts yet.
+> ≠ Ansible `assemble`: `remote_src` is always true (RoleCall reads from the target); files are concatenated in sorted filename order. `delimiter` is inserted between parts, never after the last.
 
 ## assert
 
@@ -246,6 +252,7 @@ _idempotent · source: builtin_
 | `block` | `string` | required | Block body to insert/ensure (multiline allowed). |
 | `marker` | `string` | optional | Marker template; {mark} becomes BEGIN &lt;id&gt; / END &lt;id&gt;. Default '# RoleCall BLOCK {mark}'. |
 | `marker_id` | `string` | optional | Id used inside the markers. Default 'block'. |
+| `ansible_marker` | `boolean` | optional | Use Ansible's `# BEGIN/END ANSIBLE MANAGED BLOCK` markers instead of RoleCall's. Defaults to false. |
 | `state` | `present \| absent` | optional | Desired state (default present). |
 | `insertafter` | `EOF \| START` | optional | Where to insert when absent (default EOF). |
 | `backup` | `boolean` | optional | Back up the existing file (a timestamped `.bak` sibling, attributes preserved) before writing. Defaults to false. |
@@ -278,7 +285,7 @@ _idempotent · source: builtin_
 ```
 
 
-> ≠ Ansible `blockinfile`: the marker default is `# RoleCall BLOCK {mark}` (not `# BEGIN/END ANSIBLE MANAGED BLOCK`). Uses `$var` refs, not Jinja `{{ }}`.
+> ≠ Ansible `blockinfile`: the default marker is `# RoleCall BLOCK {mark}` (not `# BEGIN/END ANSIBLE MANAGED BLOCK`); set `ansible_marker: true` to opt into the Ansible markers. Multiple blocks in one file need explicit `marker` templates instead of `ansible_marker` (which ignores `marker`/`marker_id`). Uses `$var` refs, not Jinja `{{ }}`.
 
 ## command
 
@@ -406,7 +413,7 @@ _source: builtin_
 ```
 
 
-> ≠ Ansible `copy`: `force` defaults to FALSE here (Ansible defaults TRUE), so copy only rewrites when the destination differs unless you pass force:true. Templating is on-host: pass `content` as an object with `template`/`template_file` and optional `engine` (EJS default, or `jinja`); a bare `content` string is written literally (never interpreted as a template). Attribute application relies on stat/chown/chgrp availability; no SELinux context handling.
+> ≠ Ansible `copy`: **`force` defaults to FALSE** (Ansible defaults TRUE), so copy only rewrites when the destination differs unless you pass force:true. Templating is on-host: pass `content` as an object with `template`/`template_file` and optional `engine` (EJS default, or `jinja`); a bare `content` string is written literally (never interpreted as a template). Attribute application relies on stat/chown/chgrp availability; no SELinux context handling.
 
 ## cron
 
@@ -430,6 +437,11 @@ _idempotent · source: builtin_
 | `state` | `present \| absent` | optional | Desired state (default present). |
 | `disabled` | `boolean` | optional | Comment the entry out instead of removing it. |
 | `cron_file` | `string` | optional | Manage /etc/cron.d/&lt;cron_file&gt; instead of a user crontab. |
+| `backup` | `boolean` | optional | Back up the previous non-empty crontab to a timestamped file before a changing write (returned as data.backup_file). |
+| `env` | `boolean` | optional | Environment-variable mode: write name=job instead of a scheduled command (user crontabs only). |
+| `insertafter` | `string` | optional | Place a newly added entry after the last line matching this regexp (EOF appends). Ignored when the entry already exists. |
+| `insertbefore` | `string` | optional | Place a newly added entry before the last line matching this regexp (BOF/START prepends). Mutually exclusive with insertafter. Ignored when the entry already exists. |
+| `mode` | `string` | optional | chmod mode applied to the managed cron_file after writing (requires cron_file). |
 
 **Examples**
 
@@ -455,7 +467,7 @@ _idempotent · source: builtin_
 ```
 
 
-> ≠ Ansible `cron`: no `backup` (no timestamped crontab backup), no `env`/`insertafter`/`insertbefore`, and no `mode` for a created `cron_file`; `cron_file` accepts an absolute path or a bare name rooted at /etc/cron.d. Uses `$var` refs, not Jinja `{{ }}`.
+> ≠ Ansible `cron`: `env` is supported only in user crontabs (not with `cron_file`) and `mode` requires `cron_file`; `backup` writes `&lt;cron_file&gt;.&lt;epoch&gt;.bak` or `/tmp/rolecall-crontab-&lt;user&gt;-&lt;epoch&gt;.bak`. `cron_file` accepts an absolute path or a bare name rooted at /etc/cron.d. Uses `$var` refs, not Jinja `{{ }}`.
 
 ## debug
 
@@ -604,11 +616,15 @@ _source: builtin_
 | --- | --- | --- | --- |
 | `paths` | `string \| string[]` | optional | Root path(s) to search (default /). |
 | `pattern` | `string` | optional | Name (or regex with `use_regex`) pattern. |
-| `file_type` | `file \| directory \| any` | optional | Filter by type (default any). |
+| `file_type` | `file \| directory \| link \| any` | optional | Filter by type (default any). |
 | `recurse` | `boolean` | optional | Descend into subdirectories (default true). |
 | `depth` | `number` | optional | Max search depth. |
 | `use_regex` | `boolean` | optional | Treat `pattern` as a regex. |
 | `hidden` | `boolean` | optional | Include dotfiles (default false). |
+| `size` | `string` | optional | GNU `find -size` filter, e.g. `+10M`, `-1k`, `10G`. |
+| `age` | `string` | optional | Relative age filter, e.g. `+2d`, `-12h`, `30m`. |
+| `age_stamp` | `atime \| ctime \| mtime` | optional | Timestamp the `age` filter measures (default mtime). |
+| `contains` | `string` | optional | Keep only regular files whose contents match this regex. |
 
 **Examples**
 
@@ -619,8 +635,19 @@ _source: builtin_
     recurse: true
 ```
 
+```yaml
+- find:
+    paths: /var/log
+    file_type: file
+    size: +10M
+    age: +2d
+    age_stamp: mtime
+    contains: "ERROR"
+  register: stale_logs
+```
 
-> ≠ Ansible `find`: returns a list of dicts ({path,size,mtime,type,mode}) rather than full `stat`. GNU `find -printf` required. No `size`/`age`/`contains` filters yet.
+
+> ≠ Ansible `find`: returns a list of dicts ({path,size,mtime,type,mode}) rather than full `stat`. GNU `find -printf` required. `size` passes through to `find -size`; `age`+`age_stamp` map to `-mtime`/`-atime`/`-ctime` (d/w) or `-mmin`/`-amin`/`-cmin` (h/m/s); `contains` post-filters regular files with `grep -q -E`.
 
 ## get_url
 
@@ -746,7 +773,7 @@ _source: builtin_
 
 ## hostname
 
-Set the target hostname (Ansible `hostname` alternate). Uses `hostnamectl set-hostname` on systemd, else writes /etc/hostname.
+Set the target hostname (Ansible `hostname` alternate). `use` selects systemd, network (/etc/sysconfig/network), non-OS (runtime), or auto-detect.
 
 _source: builtin_
 
@@ -755,6 +782,7 @@ _source: builtin_
 | Arg | Type | Required | Description |
 | --- | --- | --- | --- |
 | `name` | `string` | required | Desired hostname. |
+| `use` | `systemd \| network \| non-os` | optional | How to persist the hostname: systemd (`hostnamectl`), network (`/etc/sysconfig/network`), or non-os (runtime only). Defaults to systemd when `hostnamectl` exists, else `hostname` + `/etc/hostname`. |
 
 **Examples**
 
@@ -763,8 +791,14 @@ _source: builtin_
     name: web-01
 ```
 
+```yaml
+- hostname:
+    name: web-01
+    use: systemd
+```
 
-> ≠ Ansible `hostname`: no `use` (systemd/network/non-OS) selection — picks systemd when available; no /etc/hosts update (edit that file via `copy`/`blockinfile`).
+
+> ≠ Ansible `hostname`: honors the `use` selection (`systemd`/`network`/`non-os`, otherwise auto-detect systemd). Like Ansible, this module does not manage /etc/hosts for any mode — manage the hosts file via `lineinfile`/`copy`.
 
 ## http
 
@@ -927,7 +961,8 @@ _idempotent · source: builtin_
 | `line` | `string` | optional | Desired line content (required for present state). |
 | `regexp` | `string` | optional | Optional regexp matching an existing line to replace. |
 | `state` | `present \| absent` | optional | Desired state (default present). |
-| `insertafter` | `EOF \| START` | optional | Insert location when absent (default EOF). |
+| `insertafter` | `string` | optional | Insert position when absent: `EOF` to append, or a regex string to insert after the last matching line. Default EOF. |
+| `insertbefore` | `string` | optional | Insert position when absent: `BOF`/`START` to prepend, or a regex string to insert before the last matching line. Mutually exclusive with `insertafter`. |
 | `backup` | `boolean` | optional | Back up the existing file (a timestamped `.bak` sibling, attributes preserved) before writing. Defaults to false. |
 | `validate` | `string` | optional | Validation command run against the file after writing; `%s` is replaced with the file path. The task fails if the command exits non-zero (e.g. `nginx -t -c %s`). |
 
@@ -945,7 +980,7 @@ _idempotent · source: builtin_
 ```
 
 
-> ≠ Ansible `lineinfile`: `insertafter` accepts `EOF` or `START` only (no arbitrary regex anchor yet). Uses `$var` refs, not Jinja `{{ }}`.
+> ≠ Ansible `lineinfile`: `insertafter` accepts `EOF` or a regex string; `insertbefore` accepts `BOF`/`START` or a regex string. Regex anchors insert relative to the LAST matching line, falling back to EOF. Uses `$var` refs, not Jinja `{{ }}`.
 
 ## locale_gen
 
@@ -1089,7 +1124,11 @@ _source: builtin_
 | `src` | `string` | optional | Device/source (required to mount). |
 | `fstype` | `string` | optional | Filesystem type (required to mount). |
 | `opts` | `string` | optional | Mount options (default 'defaults'). |
-| `state` | `mounted \| unmounted \| present \| absent` | optional | mounted (default). |
+| `state` | `mounted \| unmounted \| present \| absent` | optional | mounted (default), unmounted, present, or absent. |
+| `fstab` | `boolean` | optional | Persist an /etc/fstab entry (default true). |
+| `boot` | `boolean` | optional | Write the /etc/fstab entry for boot-time mounting (default true). |
+| `dump` | `number \| string` | optional | fstab dump field (default 0). |
+| `passno` | `number \| string` | optional | fstab passno field (default 0). |
 
 **Examples**
 
@@ -1102,7 +1141,7 @@ _source: builtin_
 ```
 
 
-> ≠ Ansible `mount`: no `boot`/dump/pass per-field control — fstab line uses `0 0`; idempotency is via `findmnt`.
+> ≠ Ansible `mount`: the /etc/fstab line is `${src} ${path} ${fstype} ${opts} ${dump} ${passno}` (defaults `0 0`); `boot: false` skips all /etc/fstab writes; idempotency is via `findmnt`.
 
 ## openssl_certificate
 
@@ -1180,8 +1219,11 @@ _idempotent · source: builtin_
 | `name` | `string` | required | Package name, e.g. 'nginx'. |
 | `state` | `present \| absent` | optional | Desired state (default 'present'). |
 | `version` | `string` | optional | Pin an exact version using native PM syntax at install time. |
+| `manager` | `apt \| dnf \| yum \| apk \| pacman \| zypper` | optional | Explicit manager override; skips auto-detection but still verifies the binary exists. |
+| `hold` | `boolean` | optional | Hold (true) or unhold (false); apt and zypper only, other managers fail with an actionable error. |
+| `allow_downgrade` | `boolean` | optional | For apt only: pass `--allow-downgrades` to the install command when `version` is supplied. |
 | `update_cache` | `boolean` | optional | For apt: run `apt-get update` before installing (default false). |
-| `cache_valid_time` | `number` | optional | For apt: treat as update_cache when &gt; 0 (cache-age check is not yet implemented). |
+| `cache_valid_time` | `number` | optional | For apt: run `apt-get update` only when the apt list cache is older than this many seconds (real age check; no-op on other managers). |
 | `src` | `string` | optional | Local package file (.deb/.rpm/.apk) to install instead of a repo name. |
 
 **Examples**
@@ -1205,8 +1247,24 @@ _idempotent · source: builtin_
     src: /tmp/nginx_1.26.0-1~bookworm_amd64.deb
 ```
 
+```yaml
+- package:
+    name: nginx
+    state: present
+    version: 1.26.0-1~bookworm
+    allow_downgrade: true
+```
 
-> ≠ Ansible `package`/`apt`/`dnf`/`yum`: auto-detects one of apt/dnf/yum/apk/pacman/zypper (first match wins); no per-task `manager` override. Version syntax maps to each PM's native form. `src` installs a local file. No `hold`, `allow_downgrade`, or transactional rollback yet.
+```yaml
+- package:
+    name: nginx
+    state: present
+    manager: apt
+    hold: true
+```
+
+
+> ≠ Ansible `package`/`apt`/`dnf`/`yum`: auto-detects one of apt/dnf/yum/apk/pacman/zypper (first match wins) unless `manager` overrides it (an override skips detection but still verifies the binary). Version syntax maps to each PM's native form. `src` installs a local file. `hold` is implemented for apt (`apt-mark`) and zypper (`addlock`/`removelock`) and is rejected with an actionable error on dnf/yum (use versionlock), pacman (use IgnorePkg), and apk. `allow_downgrade` is apt-only. `cache_valid_time` performs a real apt cache-age check via `date`/`stat`. No transactional rollback yet.
 
 ## pam_limits
 
@@ -1391,7 +1449,7 @@ _source: builtin_
 
 ## service
 
-Idempotent service enable/start/stop (Ansible `service`/`systemd` alternate). Probes current state before acting; supports `daemon_reload`, `state: reloaded`, and a SysV `service` fallback when systemd is absent.
+Idempotent service enable/start/stop (Ansible `service`/`systemd` alternate). Probes current state before acting; supports `scope` (system/user), a `pattern` liveness fallback, SysV `runlevel` via `chkconfig`, `daemon_reload`, `state: reloaded`, and a SysV `service` fallback when systemd is absent.
 
 _idempotent · source: builtin_
 
@@ -1400,9 +1458,13 @@ _idempotent · source: builtin_
 | Arg | Type | Required | Description |
 | --- | --- | --- | --- |
 | `name` | `string` | required | Unit name, e.g. 'nginx'. |
-| `enabled` | `boolean` | optional | Enable the unit (default true). |
+| `enabled` | `boolean` | optional | Enable (or disable when false) the unit (default true). |
 | `state` | `started \| stopped \| restarted \| reloaded` | optional | Desired active state (default 'started'). |
 | `daemon_reload` | `boolean` | optional | Run `systemctl daemon-reload` first (systemd only). |
+| `pattern` | `string` | optional | Fallback liveness regex: when the primary probe reports inactive, a `pgrep -f` match is treated as running (started/stopped). |
+| `scope` | `system \| user` | optional | systemd scope; 'user' runs `systemctl --user` without sudo (default 'system'). |
+| `runlevel` | `string` | optional | SysV runlevel for `chkconfig --level &lt;runlevel&gt;` (non-systemd targets only). |
+| `sleep` | `number` | optional | Client-side delay in seconds after service actions complete (no remote command). |
 
 **Examples**
 
@@ -1421,8 +1483,15 @@ _idempotent · source: builtin_
     daemon_reload: true
 ```
 
+```yaml
+- service:
+    name: myapp
+    scope: user
+    state: started
+```
 
-> ≠ Ansible `service`/`systemd`: `pattern`/`sleep`/`scope`/`runlevel` are accepted but currently no-ops. SysV fallback uses the `service` init script when `systemctl` is missing; no `daemon_reload` under SysV.
+
+> ≠ Ansible `service`/`systemd`: `sleep` is honored (a client-side delay after service actions complete, not a remote command). `scope: user` rewrites every command to `systemctl --user` and never prefixes `sudo`; any other `scope` value fails. `pattern` is a fallback only — the primary probe stays `systemctl is-active` (or `service &lt;name&gt; status` on SysV), and a `pgrep -f &lt;pattern&gt;` match marks the service active for `state: started`/`stopped`. `runlevel` is SysV-only (`chkconfig --level &lt;runlevel&gt; &lt;name&gt; on/off`, probed via `chkconfig --list`) and errors on a systemd target. SysV fallback uses the `service` init script when `systemctl` is missing; no `daemon_reload` under SysV.
 
 ## service_facts
 
@@ -1678,6 +1747,9 @@ _source: builtin_
 | Arg | Type | Required | Description |
 | --- | --- | --- | --- |
 | `path` | `string` | required | Path on the target to inspect. |
+| `follow` | `boolean` | optional | Resolve symlinks before testing (default true); when false a broken symlink counts as present. |
+| `checksum` | `md5 \| sha1 \| sha256` | optional | Checksum algorithm to compute for regular files. |
+| `get_checksum` | `boolean` | optional | Compute a checksum (default sha1) for regular files. |
 
 **Examples**
 
@@ -1695,8 +1767,16 @@ _source: builtin_
     $var: vars.paths_to_check
 ```
 
+```yaml
+- stat:
+    path: /etc/app/config.yml
+    follow: false
+    checksum: sha256
+  register: config_stat
+```
 
-> ≠ Ansible `stat`: read-only probe implemented with POSIX `[ -e/-d/-f/-L ]` tests plus GNU `stat -c`; there is no `follow` toggle (always resolves symlinks), no `checksum`/`md5sum` side effect, no `get_checksum`, and `islnk` reflects whether the entry itself is a symlink while `isdir`/`isfile` describe the resolved target. `mtime` is emitted as an ISO-8601 string rather than Ansible's parsed datetime object.
+
+> ≠ Ansible `stat`: read-only probe implemented with POSIX `[ -e/-d/-f/-L ]` tests plus GNU `stat -c`. `follow` (default true) toggles symlink resolution and the `stat -L` flag; when false a broken symlink counts as existing and kind comes from `stat -c '%F'`. `checksum`/`get_checksum` compute an `md5`/`sha1`/`sha256` digest for regular files. `mtime` is emitted as an ISO-8601 string, with `mtime_epoch` alongside it; `islnk` reflects whether the entry itself is a symlink while `isdir`/`isfile` describe the resolved target (always true under `follow: true`).
 
 ## synchronize
 
@@ -1739,7 +1819,9 @@ _source: builtin_
 | `value` | `string` | optional | Value to set (required when state=present). |
 | `state` | `present \| absent` | optional | present (default) or absent. |
 | `sysctl_file` | `string` | optional | Persisted-file path for the setting (default /etc/sysctl.d/99-rolecall.conf). |
-| `ignoreerrors` | `boolean` | optional | Continue (do not fail the task) when `sysctl` returns a non-zero exit. |
+| `sysctl_set` | `boolean` | optional | Persist the setting to `sysctl_file` (default true). |
+| `reload` | `boolean` | optional | Run `sysctl --system` after a change (default true). |
+| `ignoreerrors` | `boolean` | optional | Continue (do not fail the task) when `sysctl` returns a non-zero exit (default false). |
 
 **Examples**
 
@@ -1750,7 +1832,7 @@ _source: builtin_
 ```
 
 
-> ≠ Ansible `sysctl`: persists to a single default file (override with `sysctl_file`); `ignoreerrors` continues past non-zero `sysctl` exits.
+> ≠ Ansible `sysctl`: persistence goes to `sysctl_file` (default /etc/sysctl.d/99-rolecall.conf, overridable per key); `sysctl_set: false` skips the persistence write, `reload: false` skips `sysctl --system`, and `ignoreerrors: true` continues past non-zero `sysctl` exits.
 
 ## tempfile
 
@@ -1763,7 +1845,7 @@ _source: builtin_
 | Arg | Type | Required | Description |
 | --- | --- | --- | --- |
 | `path` | `string` | optional | Directory to create in (default /tmp). |
-| `prefix` | `string` | optional | Filename prefix. |
+| `prefix` | `string` | optional | Filename prefix (default 'rolecall'). |
 | `suffix` | `string` | optional | Filename suffix. |
 | `state` | `file \| directory` | optional | Create a file or directory (default file). |
 
@@ -1778,7 +1860,7 @@ _source: builtin_
 ```
 
 
-> ≠ Ansible `tempfile`: always creates a new node (`changed: true`); RoleCall does not yet track/clean it up automatically.
+> ≠ Ansible `tempfile`: the default filename prefix is `rolecall`; always creates a new node (`changed: true`); RoleCall does not yet track/clean it up automatically.
 
 ## timezone
 
@@ -1812,11 +1894,16 @@ _source: builtin_
 
 | Arg | Type | Required | Description |
 | --- | --- | --- | --- |
-| `rule` | `allow \| deny \| limit \| reject` | optional | Action (default allow). |
+| `rule` | `allow \| deny \| limit \| reject` | optional | Action for a rule (default allow). |
 | `port` | `string` | optional | Port or port range. |
 | `proto` | `tcp \| udp` | optional | Protocol. |
 | `state` | `enabled \| disabled` | optional | Enable/disable the firewall. |
 | `direction` | `in \| out` | optional | Rule direction. |
+| `default` | `allow \| deny \| reject` | optional | Set the default incoming policy (`ufw default &lt;policy&gt; incoming`). |
+| `from_ip` | `string` | optional | Source IP/network to match (`from &lt;from_ip&gt;`). |
+| `to_ip` | `string` | optional | Destination IP/network to match (`to &lt;to_ip&gt;`). |
+| `interface` | `string` | optional | Restrict a rule to an interface (`on &lt;interface&gt;`). |
+| `log` | `boolean` | optional | Log packets matching the rule (appends `log`). |
 
 **Examples**
 
@@ -1832,8 +1919,13 @@ _source: builtin_
     state: enabled
 ```
 
+```yaml
+- ufw:
+    default: deny
+```
 
-> ≠ Ansible `ufw`: `ufw allow` is naturally idempotent on the host; no `default` policy arg (set via a `shell` task).
+
+> ≠ Ansible `ufw`: `ufw allow` is naturally idempotent on the host; the default incoming policy is set with `default: &lt;allow\|deny\|reject&gt;` (`ufw default &lt;policy&gt; incoming`).
 
 ## unarchive
 
@@ -1848,6 +1940,7 @@ _source: builtin_
 | `src` | `string` | required | Remote archive path to extract. |
 | `dest` | `string` | required | Remote directory to extract into. |
 | `creates` | `string` | optional | Skip the task if this path exists. |
+| `keep_newer` | `boolean` | optional | Preserve files newer than the archive (tar `--keep-newer-files`; zip `-n`). |
 
 **Examples**
 
@@ -1859,7 +1952,7 @@ _source: builtin_
 ```
 
 
-> ≠ Ansible `unarchive`: `remote_src` is always true (RoleCall extracts on the target); no `keep_newer`/per-file diff — re-running re-extracts unless `creates` guards it.
+> ≠ Ansible `unarchive`: `remote_src` is always true (RoleCall extracts on the target); no per-file diff — re-running re-extracts unless `creates` guards it. `keep_newer` maps to tar `--keep-newer-files`; for zip it uses `-n` (never overwrite), the closest available option — note that `-n` takes precedence over the default `-o` overwrite.
 
 ## user
 
@@ -1883,6 +1976,7 @@ _idempotent · source: builtin_
 | `append` | `boolean` | optional | Append groups to the existing set instead of replacing it. |
 | `system` | `boolean` | optional | Create a system account. |
 | `password` | `string` | optional | Cleartext password applied via chpasswd when provided. |
+| `password_hash` | `string` | optional | Already-crypted password (e.g. $6$...) applied verbatim via usermod -p. Exclusive with password. |
 | `remove` | `boolean` | optional | Delete home dir + mail spool on removal (userdel -r). |
 
 **Examples**
@@ -1903,7 +1997,7 @@ _idempotent · source: builtin_
 ```
 
 
-> ≠ Ansible `user`: imperative getent-based implementation using useradd/usermod/userdel/chpasswd over Local/Ssh. Passwords are sent in cleartext via chpasswd (no hashing); no login-history validation, no encrypted-password (`password_hash`) support, and no OpenSSH/LDAP account backends.
+> ≠ Ansible `user`: imperative getent-based implementation using useradd/usermod/userdel/chpasswd over Local/Ssh. `password` is sent in cleartext via chpasswd (no hashing); `password_hash` applies an already-crypted value verbatim via usermod -p (compared against the current shadow entry so a matching hash is a no-op). No login-history validation and no OpenSSH/LDAP account backends.
 
 ## user_info
 
@@ -1929,7 +2023,7 @@ _source: builtin_
 
 ## wait_for
 
-Poll until a TCP port is open or a path exists (Ansible `wait_for` alternate). Reports `changed: false` once satisfied; fails after `timeout` seconds.
+Poll until a port is open/closed, a path exists/is absent, or no established connections remain (Ansible `wait_for` alternate). Reports `changed: false` once satisfied; fails after `timeout` seconds.
 
 _source: builtin_
 
@@ -1939,7 +2033,9 @@ _source: builtin_
 | --- | --- | --- | --- |
 | `port` | `number` | optional | TCP port to probe (with `host`). |
 | `host` | `string` | optional | Host to probe (default 127.0.0.1). |
-| `path` | `string` | optional | Filesystem path that must exist. |
+| `path` | `string` | optional | Filesystem path that must exist or be absent. |
+| `state` | `string` | optional | `started`/`present` (default) wait for the port open or path present; `stopped`/`absent` wait for the port closed or path gone; `drained` waits for no established connections on `port`. |
+| `search_regex` | `string` | optional | With `path` (started/present), require the path contents to match this regex; with `port`, require the socket output to match. |
 | `timeout` | `number` | optional | Seconds to wait (default 300). |
 | `delay` | `number` | optional | Seconds to wait before first probe. |
 
@@ -1948,7 +2044,7 @@ _source: builtin_
 ```yaml
 - wait_for:
     port: 8000
-    host: "{{ vars.app_host }}"
+    host: 127.0.0.1
     timeout: 60
 ```
 
@@ -1958,8 +2054,22 @@ _source: builtin_
     timeout: 30
 ```
 
+```yaml
+- wait_for:
+    path: /var/run/app.pid
+    search_regex: '^[0-9]+$'
+    timeout: 30
+```
 
-> ≠ Ansible `wait_for`: only `port`/`path` polling is implemented (no `search_regex` on socket output, no `active_connection` states). Port probing uses bash `/dev/tcp`.
+```yaml
+- wait_for:
+    port: 5432
+    state: drained
+    timeout: 120
+```
+
+
+> ≠ Ansible `wait_for`: port probing uses bash `/dev/tcp`; `state: drained` inspects established connections via `ss` (falling back to `netstat -an`) rather than `active_connection`.
 
 ## yum_repository
 
@@ -1980,6 +2090,12 @@ _idempotent · source: builtin_
 | `repo_gpgcheck` | `boolean` | optional | Enable GPG check of metadata (written only when set). |
 | `enabled` | `boolean` | optional | Enable the repo (default true). |
 | `gpgkey` | `string` | optional | GPG key URL used to verify packages. |
+| `cost` | `number` | optional | Relative cost/priority (written only when set). |
+| `priority` | `number` | optional | Repo priority, lower wins (written only when set). |
+| `exclude` | `string` | optional | Space-separated package-name globs to exclude (written only when set). |
+| `includepkgs` | `string` | optional | Space-separated package-name globs to include (written only when set). |
+| `sslcacert` | `string` | optional | Path/URL of the CA certificate bundle (written only when set). |
+| `sslverify` | `boolean` | optional | Verify the repo TLS certificate; written as sslverify=1/sslverify=0 (written only when set). |
 | `file` | `string` | optional | Repo filename without extension (default = name). |
 | `state` | `present \| absent` | optional | Desired state (default present). |
 
@@ -2004,5 +2120,5 @@ _idempotent · source: builtin_
 ```
 
 
-> ≠ Ansible `yum_repository`: only the base INI fields are written (no `cost`/`priority`/`exclude`/`includepkgs`/`sslcacert`/`sslverify`, no `gpgkey` auto-import — add a `shell` task to import keys). `description` defaults to the repo id, `enabled` to true, and `gpgcheck` to false. Uses `$var` refs, not Jinja `{{ }}`.
+> ≠ Ansible `yum_repository`: `gpgkey` is written to the section but not imported — add a `shell` task to import keys (Ansible also does not import it). `description` defaults to the repo id, `enabled` to true, and `gpgcheck` to false. Uses `$var` refs, not Jinja `{{ }}`.
 

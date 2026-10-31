@@ -8,4 +8,4 @@ longname: module:config.RawInventory
 
 <Signature code="RawInventory = z.infer<typeof InventorySchema>" />
 
-<SourceLink href="/source/src/config/schema-ts/#L305" label="schema.ts:305" />
+<SourceLink href="/source/src/config/schema-ts/#L326" label="schema.ts:326" />

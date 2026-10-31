@@ -2,7 +2,7 @@
 title: loadPlaybookFile
 kind: function
 longname: module:config.loadPlaybookFile
-description: Read a playbook YAML file, expand imports / include_tasks at load time, and return its normalized array of plays. Expansion is the single chokepoint for import_playbook / include_tasks , so downstream consumers (skeleton, task counts, executor) always see the fully-resolved task list. Reads through the VFS seam so a non-disk ProjectSource can serve playbooks unchanged. A single play object normalizes to a 1-element array.
+description: Read a playbook YAML file, expand imports / include_tasks at load time, and return its normalized array of plays. Expansion is the single chokepoint for import_playbook / include_tasks , so downstream consumers (skeleton, task counts, executor) always see the fully-resolved task list. Reads through the VFS seam so a non-disk ProjectSource can serve playbooks unchanged. The document root must be a top-level list of plays; a bare object is rejected by {@link module:config.loadPlaybook|loadPlaybook}.
 ---
 
 # loadPlaybookFile
@@ -14,11 +14,11 @@ description: Read a playbook YAML file, expand imports / include_tasks at load t
 ): Promise<NormalizedPlaybook[]>"
 />
 
-<SourceLink href="/source/src/config/loader-ts/#L722" label="loader.ts:722" />
+<SourceLink href="/source/src/config/loader-ts/#L730" label="loader.ts:730" />
 
 **Modifiers:** `async`
 
-Read a playbook YAML file, expand `imports`/`include_tasks` at load time, and return its normalized array of plays. Expansion is the single chokepoint for `import_playbook` / `include_tasks`, so downstream consumers (skeleton, task counts, executor) always see the fully-resolved task list. Reads through the VFS seam so a non-disk ProjectSource can serve playbooks unchanged. A single play object normalizes to a 1-element array.
+Read a playbook YAML file, expand `imports`/`include_tasks` at load time, and return its normalized array of plays. Expansion is the single chokepoint for `import_playbook` / `include_tasks`, so downstream consumers (skeleton, task counts, executor) always see the fully-resolved task list. Reads through the VFS seam so a non-disk ProjectSource can serve playbooks unchanged. The document root must be a top-level list of plays; a bare object is rejected by [loadPlaybook](/module/config/loadplaybook).
 
 **Parameters**
 

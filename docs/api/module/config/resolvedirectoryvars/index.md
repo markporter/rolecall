@@ -14,7 +14,7 @@ description: "Discover directory-adjacent group_vars/ and host_vars/ var files n
 ): Promise<DirectoryVars>"
 />
 
-<SourceLink href="/source/src/config/loader-ts/#L830" label="loader.ts:830" />
+<SourceLink href="/source/src/config/loader-ts/#L838" label="loader.ts:838" />
 
 **Modifiers:** `async`
 

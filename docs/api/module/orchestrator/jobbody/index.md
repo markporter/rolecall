@@ -83,7 +83,7 @@ Ad-hoc module name (e.g. "ping", "command").
 
 <MemberMeta sourceHref="/source/src/orchestrator/types-ts/#L68" sourceLabel="types.ts:68" />
 
-Inline parsed playbook (alternative to playbook/playbookPath). A playbook file may be a single play or a list of plays.
+Inline normalized playbook (alternative to playbook/playbookPath): one play or a list of plays.
 
 <MemberHeading id="playbookpath" depth="3" name="playbookPath" sig="playbookPath: string" />
 

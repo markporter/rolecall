@@ -8,8 +8,8 @@ longname: module:modules.waitForModule
 
 <Signature code="waitForModule: Module" />
 
-<SourceLink href="/source/src/modules/builtins/wait-for-ts/#L10" label="wait_for.ts:10" />
+<SourceLink href="/source/src/modules/builtins/wait-for-ts/#L18" label="wait_for.ts:18" />
 
 **Returns**
 
-- ModuleResult; `failed` if the timeout elapses.
+- ModuleResult; `failed` if the timeout elapses or the args are invalid.

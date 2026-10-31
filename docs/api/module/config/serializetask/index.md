@@ -9,7 +9,7 @@ description: Serialize a NormalizedTask back to a plain, round-trip-stable objec
 
 <Signature code="serializeTask(task: NormalizedTask): Record<string, unknown>" />
 
-<SourceLink href="/source/src/config/schema-ts/#L496" label="schema.ts:496" />
+<SourceLink href="/source/src/config/schema-ts/#L516" label="schema.ts:516" />
 
 Serialize a NormalizedTask back to a plain, round-trip-stable object.
 

@@ -62,6 +62,7 @@ longname: module:config
 - [`InventoryGroupSchema`](/module/config/inventorygroupschema)
 - [`InventorySchema`](/module/config/inventoryschema)
 - [`KNOWN_NAMESPACES`](/module/config/known-namespaces)
+- [`PlaybookArray`](/module/config/playbookarray)
 - [`PlaybookObject`](/module/config/playbookobject)
 - [`PlaybookSchema`](/module/config/playbookschema)
 - [`TaskSchema`](/module/config/taskschema)

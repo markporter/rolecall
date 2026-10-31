@@ -13,7 +13,7 @@ description: Serialize a NormalizedInventory back to a plain, round-trip-stable 
 ): Record<string, unknown>"
 />
 
-<SourceLink href="/source/src/config/schema-ts/#L531" label="schema.ts:531" />
+<SourceLink href="/source/src/config/schema-ts/#L551" label="schema.ts:551" />
 
 Serialize a NormalizedInventory back to a plain, round-trip-stable object.
 

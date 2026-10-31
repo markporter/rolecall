@@ -8,7 +8,7 @@ longname: module:modules.statModule
 
 <Signature code="statModule: Module" />
 
-<SourceLink href="/source/src/modules/builtins/stat-ts/#L108" label="stat.ts:108" />
+<SourceLink href="/source/src/modules/builtins/stat-ts/#L175" label="stat.ts:175" />
 
 **Returns**
 

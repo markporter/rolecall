@@ -12,7 +12,7 @@ longname: module:config.deepMerge
 ): Record<string, unknown>"
 />
 
-<SourceLink href="/source/src/config/loader-ts/#L584" label="loader.ts:584" />
+<SourceLink href="/source/src/config/loader-ts/#L592" label="loader.ts:592" />
 
 **Parameters**
 

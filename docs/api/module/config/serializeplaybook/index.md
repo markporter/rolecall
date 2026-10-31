@@ -13,7 +13,7 @@ description: Serialize a NormalizedPlaybook back to a plain, round-trip-stable o
 ): Record<string, unknown>"
 />
 
-<SourceLink href="/source/src/config/schema-ts/#L513" label="schema.ts:513" />
+<SourceLink href="/source/src/config/schema-ts/#L533" label="schema.ts:533" />
 
 Serialize a NormalizedPlaybook back to a plain, round-trip-stable object.
 

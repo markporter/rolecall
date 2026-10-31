@@ -8,4 +8,4 @@ longname: module:config.RawPlaybook
 
 <Signature code="RawPlaybook = z.infer<typeof PlaybookObject>" />
 
-<SourceLink href="/source/src/config/schema-ts/#L223" label="schema.ts:223" />
+<SourceLink href="/source/src/config/schema-ts/#L224" label="schema.ts:224" />

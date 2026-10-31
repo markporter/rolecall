@@ -1,8 +1,8 @@
-# rolecall
+# @rolecall/cli
 
 > RoleCall — config management & orchestration CLI. Runs on Node >=22.19 and Bun >=1.4.2.
 
-Documentation for rolecall. Every page below links to its Markdown source; the whole site as a single file is at https://rolecall.example.com/llms-full.txt
+Documentation for @rolecall/cli. Every page below links to its Markdown source; the whole site as a single file is at https://rolecall.example.com/llms-full.txt
 
 ## cli
 - [cli](https://rolecall.example.com/module/cli/index.md)
@@ -68,6 +68,7 @@ Documentation for rolecall. Every page below links to its Markdown source; the w
 - [InventoryGroupSchema](https://rolecall.example.com/module/config/inventorygroupschema/index.md)
 - [InventorySchema](https://rolecall.example.com/module/config/inventoryschema/index.md)
 - [KNOWN_NAMESPACES](https://rolecall.example.com/module/config/known-namespaces/index.md)
+- [PlaybookArray](https://rolecall.example.com/module/config/playbookarray/index.md)
 - [PlaybookObject](https://rolecall.example.com/module/config/playbookobject/index.md)
 - [PlaybookSchema](https://rolecall.example.com/module/config/playbookschema/index.md)
 - [TaskSchema](https://rolecall.example.com/module/config/taskschema/index.md)

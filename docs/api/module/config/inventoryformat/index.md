@@ -8,4 +8,4 @@ longname: module:config.InventoryFormat
 
 <Signature code="InventoryFormat = 'ini' | 'ansible-yaml' | 'native'" />
 
-<SourceLink href="/source/src/config/loader-ts/#L745" label="loader.ts:745" />
+<SourceLink href="/source/src/config/loader-ts/#L753" label="loader.ts:753" />

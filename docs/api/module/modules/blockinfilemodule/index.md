@@ -8,7 +8,7 @@ longname: module:modules.blockinfileModule
 
 <Signature code="blockinfileModule: Module & CheckableModule" />
 
-<SourceLink href="/source/src/modules/builtins/blockinfile-ts/#L109" label="blockinfile.ts:109" />
+<SourceLink href="/source/src/modules/builtins/blockinfile-ts/#L122" label="blockinfile.ts:122" />
 
 **Returns**
 
