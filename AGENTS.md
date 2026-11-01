@@ -187,8 +187,17 @@ ROLECALL_RUNTIME=node bun test
 
 The suite imports `bun:test`, which plain Node cannot load without a loader we
 deliberately avoid shipping, so these variants keep the `bun:test` runner while
-exercising each detection branch. CI's `unit` job runs all three across Linux,
-macOS, and Windows.
+exercising each detection branch. CI's `unit` job runs all three across Linux
+and macOS; Windows is covered by the native binary job.
+
+Isolation is part of the test default: `tests/setup.ts` sets
+`ROLECALL_ISOLATION=auto` on Linux and `none` on macOS/Windows (where bwrap is
+unavailable and Docker is not guaranteed). Set `ROLECALL_ISOLATION=none` to
+disable sandboxing locally, or `ROLECALL_ISOLATION=docker
+ROLECALL_REQUIRE_DOCKER=1` to require the Docker backend. The CI
+`isolation-docker` job pulls `debian:bookworm-slim` and runs the live Docker
+test. `tests/example-smoke.test.ts` runs the checked-in
+`examples/local-smoke` playbook under the default backend.
 
 **Type-check gate.** Finish every change with:
 

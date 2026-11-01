@@ -268,6 +268,10 @@ Notes worth stating plainly:
 bun test                     # primary suite — Bun-native `bun:test`
 ROLECALL_RUNTIME=bun bun test     # force Bun PAL branch
 ROLECALL_RUNTIME=node bun test    # force Node PAL branch (green — runner is Bun)
+
+# Isolation: Linux runs the suite with `ROLECALL_ISOLATION=auto`; macOS/Windows
+# default to `none` unless a backend is installed. `ROLECALL_ISOLATION=none`
+# disables it locally, and the Docker CI job runs the live Docker backend test.
 ```
 
 The assertion suite imports `bun:test`, which is Bun-native and unavailable under
