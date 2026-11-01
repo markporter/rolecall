@@ -21,7 +21,7 @@ They come directly from `GLOBAL_OPTS` in `src/cli/index.ts`, which passes them t
 | `--isolation` | `auto`\|`namespace`\|`docker`\|`none` | Opt local transports into the ADR 0025 sandbox. The current slice is opt-in; `rolecall doctor` reports bwrap/userns and Docker readiness. | unset (direct) |
 | `--isolation-network` | `module`\|`none`\|`all` | Sandbox egress policy: `module` (default) lets trusted modules that declare `network: true` use the network while shell/command/script/raw stay net-off; `none` denies all; `all` is ambient (warned). | `module` |
 | `--mount` | `<src:dst[:ro|rw]>` | Repeatable explicit filesystem grant, requires `--isolation`. Source and target must be absolute; `ro` is the default. | none |
-| `--allow-egress` | `<host[:port]>` | Repeatable ephemeral destination whitelist entry, requires `--isolation`. Module URL checks (`http`/`get_url`/`git`) enforce it; the shell egress broker is still being built. | none |
+| `--allow-egress` | `<host[:port]>` | Repeatable ephemeral destination whitelist entry, requires `--isolation`. Module URL checks (`http`/`get_url`/`git`) enforce it; the broker core exists but its sandbox wiring is still being built. | none |
 | `--help` | `-h` | Print usage and exit 0. | n/a |
 | `--version` | `-v` | Print `rolecall <version>`. | n/a |
 

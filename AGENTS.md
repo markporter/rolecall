@@ -128,7 +128,7 @@ Global flags (parsed once by `parseArgs`):
    stay net-off). `--mount <src:dst[:ro|rw]>` adds an explicit filesystem grant and
    `--allow-egress <host[:port]>` adds an ephemeral destination rule (both repeatable,
    both require `--isolation`). Module URL checks (`http`/`get_url`/`git`) enforce the
-   destination policy; the shell egress broker is still a follow-up.
+   destination policy; the shell egress broker core exists but its sandbox wiring is still a follow-up.
 - `--tags <list>` / `--skip-tags <list>` (comma-separated) select/skip tasks by tag on
    `playbook run`; a task's own tags replace play tags, and tag-filtered tasks report
    as skipped.
