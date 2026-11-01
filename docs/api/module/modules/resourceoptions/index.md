@@ -12,6 +12,7 @@ description: Options for {@link module:modules.resource|resource}.
 	converge: (args: Record<string, unknown>, ctx: ModuleContext) => ModuleResult | Promise<ModuleResult>;
 	describe: (args: Record<string, unknown>, ctx: ModuleContext) => DescribeResult | Promise<DescribeResult>;
 	name?: string;
+	network?: boolean;
 }"
 />
 
@@ -40,3 +41,9 @@ Observe the current state for the given args and report whether it already match
 <MemberMeta sourceHref="/source/src/modules/resource-ts/#L26" sourceLabel="resource.ts:26" />
 
 Optional module name; set before registering (defaults to a placeholder).
+
+<MemberHeading id="network" depth="3" name="network" sig="network: boolean" />
+
+<MemberMeta sourceHref="/source/src/modules/resource-ts/#L50" sourceLabel="resource.ts:50" />
+
+Declare ADR 0025 local-network capability (get_url/git/package-style modules).

@@ -8,7 +8,7 @@ longname: module:modules.getUrlModule
 
 <Signature code="getUrlModule: Module" />
 
-<SourceLink href="/source/src/modules/builtins/get-url-ts/#L75" label="get_url.ts:75" />
+<SourceLink href="/source/src/modules/builtins/get-url-ts/#L76" label="get_url.ts:76" />
 
 **Returns**
 

@@ -8,4 +8,4 @@ longname: module:transport.ConnectionOptions
 
 <Signature code="ConnectionOptions = SshConnectionOptions | LocalConnectionOptions | NetworkConnectionOptions | HttpApiConnectionOptions" />
 
-<SourceLink href="/source/src/transport/connection-ts/#L165" label="connection.ts:165" />
+<SourceLink href="/source/src/transport/connection-ts/#L171" label="connection.ts:171" />

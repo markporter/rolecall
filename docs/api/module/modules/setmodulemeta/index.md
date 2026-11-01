@@ -14,7 +14,7 @@ description: Attach metadata to a registered module name (idempotent upsert).
 ): void"
 />
 
-<SourceLink href="/source/src/modules/search-ts/#L40" label="search.ts:40" />
+<SourceLink href="/source/src/modules/search-ts/#L42" label="search.ts:42" />
 
 Attach metadata to a registered module name (idempotent upsert).
 

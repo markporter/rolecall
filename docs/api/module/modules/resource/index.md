@@ -9,7 +9,7 @@ description: Build an idempotent-by-default Module from a declarative describe/c
 
 <Signature code="resource(opts: ResourceOptions): Module & CheckableModule" />
 
-<SourceLink href="/source/src/modules/resource-ts/#L58" label="resource.ts:58" />
+<SourceLink href="/source/src/modules/resource-ts/#L60" label="resource.ts:60" />
 
 Build an idempotent-by-default Module from a declarative describe/converge pair. The returned object satisfies BOTH `Module` (via `run`) and `CheckableModule` (via `check`), so the idempotency policy detects and uses `check` automatically.
 

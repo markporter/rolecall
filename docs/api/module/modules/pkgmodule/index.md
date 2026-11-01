@@ -8,7 +8,7 @@ longname: module:modules.pkgModule
 
 <Signature code="pkgModule: Module & CheckableModule" />
 
-<SourceLink href="/source/src/modules/builtins/package-ts/#L251" label="package.ts:251" />
+<SourceLink href="/source/src/modules/builtins/package-ts/#L252" label="package.ts:252" />
 
 **Returns**
 

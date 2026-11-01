@@ -63,7 +63,7 @@ Establish the underlying transport (idempotent once connected).
 
 <MemberHeading id="disconnect" depth="3" name="disconnect" sig="disconnect(): Promise<void>" />
 
-<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L148" sourceLabel="local.ts:148" />
+<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L152" sourceLabel="local.ts:152" />
 
 _Implementation of&#x20;_[`disconnect`](/module/transport/connection#disconnect)
 
@@ -83,7 +83,7 @@ Tear down the underlying transport.
 ): Promise<ExecResult>"
 />
 
-<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L122" sourceLabel="local.ts:122" />
+<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L126" sourceLabel="local.ts:126" />
 
 _Implementation of&#x20;_[`exec`](/module/transport/connection#exec)
 
@@ -100,7 +100,7 @@ Run a command, returning captured stdout/stderr/exit code.
 
 <MemberHeading id="facts" depth="3" name="facts" sig="facts(): Promise<ConnectionFacts>" />
 
-<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L126" sourceLabel="local.ts:126" />
+<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L130" sourceLabel="local.ts:130" />
 
 _Implementation of&#x20;_[`facts`](/module/transport/connection#facts)
 
@@ -112,7 +112,7 @@ Best-effort targeted fact gathering for the target.
 
 <MemberHeading id="health" depth="3" name="health" sig="health(): Promise<HealthStatus>" />
 
-<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L136" sourceLabel="local.ts:136" />
+<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L140" sourceLabel="local.ts:140" />
 
 _Implementation of&#x20;_[`health`](/module/transport/connection#health)
 

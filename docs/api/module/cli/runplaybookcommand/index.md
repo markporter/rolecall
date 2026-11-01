@@ -14,7 +14,7 @@ longname: module:cli.runPlaybookCommand
 ): Promise<CliResult>"
 />
 
-<SourceLink href="/source/src/cli/commands/playbook-ts/#L28" label="playbook.ts:28" />
+<SourceLink href="/source/src/cli/commands/playbook-ts/#L29" label="playbook.ts:29" />
 
 **Modifiers:** `async`
 

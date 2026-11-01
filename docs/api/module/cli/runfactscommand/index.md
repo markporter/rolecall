@@ -14,7 +14,7 @@ longname: module:cli.runFactsCommand
 ): Promise<CliResult>"
 />
 
-<SourceLink href="/source/src/cli/commands/facts-ts/#L18" label="facts.ts:18" />
+<SourceLink href="/source/src/cli/commands/facts-ts/#L19" label="facts.ts:19" />
 
 **Modifiers:** `async`
 

@@ -12,6 +12,7 @@ description: A pluggable unit of work. Registered by name; resolved at dispatch 
 	factGatherer?: FactGatherer;
 	facts?: readonly VarManifestEntry[];
 	name: string;
+	network?: boolean;
 	supportsCheck?: boolean;
 	run(ctx: ModuleContext): Promise<ModuleResult>;
 }"
@@ -40,6 +41,12 @@ Typed fact schemas this module can produce. When present, the module is auto-reg
 <MemberHeading id="name" depth="3" name="name" sig="name: string" />
 
 <MemberMeta badges="readonly" sourceHref="/source/src/executor/module-ts/#L74" sourceLabel="module.ts:74" />
+
+<MemberHeading id="network" depth="3" name="network" sig="network: boolean" />
+
+<MemberMeta badges="readonly" sourceHref="/source/src/executor/module-ts/#L98" sourceLabel="module.ts:98" />
+
+Declares that this trusted module may need local network access through the connection (e.g. get_url/git/package managers). Under ADR 0025's `module` network mode, the executor wraps `connection.exec` with the `networked` profile for this module; shell/command/script/raw never set it.
 
 <MemberHeading id="supportscheck" depth="3" name="supportsCheck" sig="supportsCheck: boolean" />
 

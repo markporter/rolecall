@@ -13,7 +13,7 @@ description: "Build a runner that wraps a raw per-command executor with: bounded
 ): (core: CoreExec, options?: ExecOptions) => Promise<ExecResult>"
 />
 
-<SourceLink href="/source/src/transport/connection-ts/#L243" label="connection.ts:243" />
+<SourceLink href="/source/src/transport/connection-ts/#L249" label="connection.ts:249" />
 
 Build a runner that wraps a raw per-command executor with:
 

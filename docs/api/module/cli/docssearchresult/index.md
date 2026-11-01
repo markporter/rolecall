@@ -16,7 +16,7 @@ description: Result of searching RoleCall's prose documentation ( rolecall docs 
 }"
 />
 
-<SourceLink href="/source/src/cli/types-ts/#L159" label="types.ts:159" />
+<SourceLink href="/source/src/cli/types-ts/#L163" label="types.ts:163" />
 
 Result of searching RoleCall's prose documentation (`rolecall docs search`). Hits reuse DocHit.
 
@@ -26,22 +26,22 @@ Result of searching RoleCall's prose documentation (`rolecall docs search`). Hit
 
 <MemberHeading id="command" depth="3" name="command" sig="command: 'docs search'" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L160" sourceLabel="types.ts:160" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L164" sourceLabel="types.ts:164" />
 
 <MemberHeading id="count" depth="3" name="count" sig="count: number" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L164" sourceLabel="types.ts:164" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L168" sourceLabel="types.ts:168" />
 
 Number of hits actually returned.
 
 <MemberHeading id="hits" depth="3" name="hits" sig="hits: DocHit[]" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L166" sourceLabel="types.ts:166" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L170" sourceLabel="types.ts:170" />
 
 Ordered hits; most-matching-first, then line ascending.
 
 <MemberHeading id="query" depth="3" name="query" sig="query: string" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L162" sourceLabel="types.ts:162" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L166" sourceLabel="types.ts:166" />
 
 The query term echoed back (trimmed).

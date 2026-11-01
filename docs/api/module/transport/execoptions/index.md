@@ -10,6 +10,7 @@ longname: module:transport.ExecOptions
   code="interface ExecOptions {
 	cwd?: string;
 	env?: Record<string, string | undefined>;
+	profile?: 'untrusted' | 'networked';
 	signal?: AbortSignal;
 	timeoutMs?: number;
 }"
@@ -28,6 +29,12 @@ longname: module:transport.ExecOptions
 <MemberHeading id="env" depth="3" name="env" sig="env: Record<string, string | undefined>" />
 
 <MemberMeta sourceHref="/source/src/transport/connection-ts/#L66" sourceLabel="connection.ts:66" />
+
+<MemberHeading id="profile" depth="3" name="profile" sig="profile: 'untrusted' | 'networked'" />
+
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L76" sourceLabel="connection.ts:76" />
+
+ADR 0025 execution profile. Trusted modules that declare `network` get `networked`; shell/command/script/raw and everything else default to `untrusted` (no network under the sandbox).
 
 <MemberHeading id="signal" depth="3" name="signal" sig="signal: AbortSignal" />
 

@@ -8,7 +8,7 @@ longname: module:transport.resolveRetryConfig
 
 <Signature code="resolveRetryConfig(override?: Partial<RetryConfig>): RetryConfig" />
 
-<SourceLink href="/source/src/transport/connection-ts/#L186" label="connection.ts:186" />
+<SourceLink href="/source/src/transport/connection-ts/#L192" label="connection.ts:192" />
 
 **Parameters**
 

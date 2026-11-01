@@ -15,7 +15,9 @@ longname: module:cli.GlobalFlags
 	forks?: number;
 	inventory?: string;
 	isolation?: IsolationBackendName;
+	isolationNetwork?: 'none' | 'module' | 'all';
 	limit?: string;
+	mounts?: IsolationMount[];
 	output: string;
 	profile: boolean;
 	resume?: string;
@@ -73,11 +75,23 @@ Optional inventory source for playbook run (resolves target patterns).
 
 Requested local isolation backend (--isolation; default auto).
 
+<MemberHeading id="isolationnetwork" depth="3" name="isolationNetwork" sig="isolationNetwork: 'none' | 'module' | 'all'" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L47" sourceLabel="types.ts:47" />
+
+Network policy under isolation (--isolation-network; default module).
+
 <MemberHeading id="limit" depth="3" name="limit" sig="limit: string" />
 
 <MemberMeta sourceHref="/source/src/cli/types-ts/#L19" sourceLabel="types.ts:19" />
 
 Target pattern restricting hosts (single pattern; RoleCall-style).
+
+<MemberHeading id="mounts" depth="3" name="mounts" sig="mounts: IsolationMount[]" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L49" sourceLabel="types.ts:49" />
+
+Explicit filesystem grants (repeatable --mount).
 
 <MemberHeading id="output" depth="3" name="output" sig="output: string" />
 

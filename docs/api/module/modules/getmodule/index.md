@@ -9,7 +9,7 @@ description: Look up a registered module by name, or undefined if absent.
 
 <Signature code="getModule(name: string): Module | undefined" />
 
-<SourceLink href="/source/src/executor/module-ts/#L133" label="module.ts:133" />
+<SourceLink href="/source/src/executor/module-ts/#L140" label="module.ts:140" />
 
 Look up a registered module by name, or `undefined` if absent.
 

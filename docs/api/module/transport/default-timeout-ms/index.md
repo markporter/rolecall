@@ -8,7 +8,7 @@ longname: module:transport.DEFAULT_TIMEOUT_MS
 
 <Signature code="DEFAULT_TIMEOUT_MS: 30000" />
 
-<SourceLink href="/source/src/transport/connection-ts/#L183" label="connection.ts:183" />
+<SourceLink href="/source/src/transport/connection-ts/#L189" label="connection.ts:189" />
 
 **Type**
 

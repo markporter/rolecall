@@ -9,7 +9,7 @@ description: Filter all registered modules by a substring match against name OR 
 
 <Signature code="searchModules(term: string): ModuleSummary[]" />
 
-<SourceLink href="/source/src/modules/search-ts/#L61" label="search.ts:61" />
+<SourceLink href="/source/src/modules/search-ts/#L63" label="search.ts:63" />
 
 Filter all registered modules by a substring match against name OR description (case-insensitive). An empty/whitespace `term` returns every module.
 

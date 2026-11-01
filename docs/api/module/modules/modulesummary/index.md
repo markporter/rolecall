@@ -14,6 +14,7 @@ description: Serializable summary of a registered module, returned by searchModu
 	examples?: string[];
 	idempotent?: boolean;
 	name: string;
+	network?: boolean;
 	notes?: string;
 	source?: string;
 }"
@@ -29,7 +30,7 @@ Serializable summary of a registered module, returned by `searchModules`.
 
 <MemberHeading id="args" depth="3" name="args" sig="args: Record<string, { description: string; required: boolean; type: string }>" />
 
-<MemberMeta sourceHref="/source/src/modules/search-ts/#L22" sourceLabel="search.ts:22" />
+<MemberMeta sourceHref="/source/src/modules/search-ts/#L24" sourceLabel="search.ts:24" />
 
 Optional per-argument metadata for the module.
 
@@ -41,7 +42,7 @@ Human-readable one-line description.
 
 <MemberHeading id="examples" depth="3" name="examples" sig="examples: string[]" />
 
-<MemberMeta sourceHref="/source/src/modules/search-ts/#L24" sourceLabel="search.ts:24" />
+<MemberMeta sourceHref="/source/src/modules/search-ts/#L26" sourceLabel="search.ts:26" />
 
 Optional usage examples (e.g. task snippets).
 
@@ -57,9 +58,15 @@ True when the module implements an idempotent `check` (CheckableModule).
 
 Module name (dispatched via `module:` in a task).
 
+<MemberHeading id="network" depth="3" name="network" sig="network: boolean" />
+
+<MemberMeta sourceHref="/source/src/modules/search-ts/#L22" sourceLabel="search.ts:22" />
+
+True when the module declares local network capability under ADR 0025.
+
 <MemberHeading id="notes" depth="3" name="notes" sig="notes: string" />
 
-<MemberMeta sourceHref="/source/src/modules/search-ts/#L30" sourceLabel="search.ts:30" />
+<MemberMeta sourceHref="/source/src/modules/search-ts/#L32" sourceLabel="search.ts:32" />
 
 Optional "≠ Ansible" callout noting where this module's semantics differ from the Ansible module it most resembles (rendered as a callout block under each module in the generated reference). Omit when there is nothing notable.
 

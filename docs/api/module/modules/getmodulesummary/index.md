@@ -9,7 +9,7 @@ description: Look up the summary for a single module, falling back to a name-onl
 
 <Signature code="getModuleSummary(name: string): ModuleSummary" />
 
-<SourceLink href="/source/src/modules/search-ts/#L51" label="search.ts:51" />
+<SourceLink href="/source/src/modules/search-ts/#L53" label="search.ts:53" />
 
 Look up the summary for a single module, falling back to a name-only entry when no metadata has been registered via [setModuleMeta](/module/modules/setmodulemeta).
 

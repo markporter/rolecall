@@ -13,7 +13,7 @@ longname: module:cli.AgentManifestResult
 }"
 />
 
-<SourceLink href="/source/src/cli/types-ts/#L153" label="types.ts:153" />
+<SourceLink href="/source/src/cli/types-ts/#L157" label="types.ts:157" />
 
 ---
 
@@ -21,8 +21,8 @@ longname: module:cli.AgentManifestResult
 
 <MemberHeading id="command" depth="3" name="command" sig="command: 'agent manifest'" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L154" sourceLabel="types.ts:154" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L158" sourceLabel="types.ts:158" />
 
 <MemberHeading id="manifest" depth="3" name="manifest" sig="manifest: McpManifest" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L155" sourceLabel="types.ts:155" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L159" sourceLabel="types.ts:159" />
