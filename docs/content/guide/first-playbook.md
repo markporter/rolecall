@@ -88,13 +88,13 @@ rolecall playbook run playbook.yaml --inventory inventory.yaml
 
 With nothing else on the command line RoleCall resolves the matched hosts and applies tasks live over SSH or local transports, recording a run trace; adding `--output json` gives machine-readable output instead of the default `syslog` realtime stream or the `human_summary` table.
 
-## What is deliberately not happening
+## Execution and templating behavior
 
-Be clear-eyed about the gaps so the tool keeps its honesty label:
+These behaviors are worth knowing up front:
 
 - **Execution is live.** RoleCall resolves matched hosts and runs each task over SSH or local transports; the outcome lines reflect actual convergence, proven end-to-end by an integration test against an in-process ssh2 simulator.
 - **No global `{{ }}` interpolation.** RoleCall does not auto-render `{{ }}` in task arguments; an ordinary argument containing it is rejected by the playbook lint. Structured `$var`/`$concat`/`$call` and typed `when`/`loop` are what render. Jinja rendering is opt-in inside `copy`, via a `content` template spec with `engine: jinja` (the default engine is Eta) or a `.j2` `template_file`.
-- **Facts gathering works.** ` rolecall facts gather <inv>` gathers targeted/cached facts per resolved host through its built connection, failing gracefully on unreachable hosts.
-- **Plugin CLI works; the SDK authoring surface is partial.** `rolecall plugin list` and `rolecall plugin register` are implemented: registered module/fact plugins persist to `.rolecall/plugins.json` and auto-load at startup, and project plugins under `plugins/<type>/<namespace>/` are auto-discovered at `playbook run`. Only the richer Plugin SDK authoring/test harness remains partial.
+- **Facts gathering works.** `rolecall facts gather <inv>` gathers targeted/cached facts per resolved host through its built connection, failing gracefully on unreachable hosts.
+- **Plugins are first class.** `rolecall plugin list` and `rolecall plugin register` persist module/fact plugins to `.rolecall/plugins.json` and auto-load them at startup, and project plugins under `plugins/<type>/<namespace>/` are auto-discovered at `playbook run`.
 
 An identical second run of a well-formed playbook is now expected to report `changed=false` because converge detects already-satisfied state; confirm exact per-module idempotence against their docs.

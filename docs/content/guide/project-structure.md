@@ -8,28 +8,22 @@ This guide describes how to lay out a RoleCall project: where playbooks, invento
 your own modules, and reusable roles live. It mirrors an Ansible project but is
 JS/TS-first.
 
-> **Status note:** RoleCall's executor is live — `rolecall playbook run` applies state over SSH/local
-> transports against resolved targets, and local `plugins/` plus local `roles/` are
-> scanned and resolved at run time. The layout below is otherwise the target shape:
-> `rolecall collections install` and `rolecall --create-project` are planned behind the
-> seams described in `design/decisions/0014-project-and-plugin-architecture.md` (and
-> `design/decisions/0015-collections-and-install-commands.md` for distribution).
-
 ## A minimal project
 
 ```text
 my-site/
   rolecall.yaml            # project manifest
   playbooks/
-    site.yaml         # the playbook(s) you run
+    site.yaml              # the playbook(s) you run
   inventory/
-    inventory.yaml    # hosts (+ group_vars/ host_vars/ if you use them)
-  plugins/            # project-local plugins (scanned at playbook run)
+    inventory.yaml         # hosts (+ group_vars/ host_vars/ if you use them)
+  plugins/                 # project-local plugins (scanned at playbook run)
     modules/
       <namespace>/
         example-module.ts
-  group_vars/         # shared variables (optional)
-  host_vars/          # per-host variables (optional)
+  roles/                   # reusable local roles (optional)
+  group_vars/              # shared variables (optional)
+  host_vars/               # per-host variables (optional)
 ```
 
 Run it with:
@@ -38,14 +32,15 @@ Run it with:
 rolecall playbook run playbooks/site.yaml --inventory inventory/inventory.yaml
 ```
 
-RoleCall scans a `plugins/` tree at `playbook run` time. A
-plugin's fully-qualified name (FQCN) is `<namespace>.<name>`, implied by its
-directory under `plugins/<type>/<namespace>/<name>.ts` (supported types: `modules`,
-`connection_types`, `callbacks`, `inventory`, `facts`; only `modules` is dispatched
-today). Reference a project module from a task as `module: myorg.firewall`. Builtins
-reserve their bare names (`copy`, `shell`, `file`, and so on), so a user plugin is
-reachable by FQCN or by its bare name only when that bare name is unambiguous; an
-ambiguous bare reference is an error you fix by writing the explicit FQCN. See
+RoleCall scans a `plugins/` tree at `playbook run` time. A plugin's
+fully-qualified name (FQCN) is `<namespace>.<name>`, implied by its directory
+under `plugins/<type>/<namespace>/<name>.ts`. The supported type directories are
+`modules`, `connection_types`, `callbacks`, `inventory`, and `facts`; `modules`
+are dispatched by the executor. Reference a project module from a task as
+`module: myorg.firewall`. Builtins reserve their bare names (`copy`, `shell`,
+`file`, and so on), so a user plugin is reachable by FQCN or by its bare name
+only when that bare name is unambiguous; an ambiguous bare reference is an error
+you fix by writing the explicit FQCN. See
 [/reference/writing-a-plugin](/reference/writing-a-plugin) for the full layout and
 resolution rules.
 
@@ -57,36 +52,30 @@ See `examples/nginx-baseline/` in the repository for a copy-able sample.
 name: my-site
 ```
 
-`rolecall.yaml` names the project. It does not carry a dependency list; dependencies
-on other RoleCall projects are declared separately in `collections.yml` (see below).
+`rolecall.yaml` names the project. It does not carry a dependency list.
 
-## Collections (dependencies)
+## Vendored dependencies
 
-A dependency is simply another RoleCall project. You declare the projects you depend
-on in `collections.yml`, giving each a name, a version or git ref, and a source:
+A dependency is simply another RoleCall project. Vendor the checkout under
+`collections/<org>/<coll>/`, and RoleCall scans its plugins at the same time as
+project-local ones:
 
-```yaml
-# collections.yml
-collections:
-  - name: rolecall-nginx
-    source: github.com/myorg/rolecall-nginx
-    ref: v1.2.0
-  - name: rolecall-apt
-    source: github.com/myorg/rolecall-apt
-    ref: main
+```text
+my-site/
+  collections/
+    myorg/
+      rolecall-nginx/
+        rolecall.yaml
+        plugins/
+          modules/
+            nginx/
+              install.ts
 ```
 
-Hydrate them into the local `collections/` working copy with:
-
-```sh
-rolecall collections install
-```
-
-`collections/` is the resolved, gitignored checkout of your dependencies. There is
-no npm `imports:` list and no `node_modules` graph. Discovery rides on the web: a
-git repository plus its README and git topics advertise what a collection provides.
-Reference a collection's modules and roles by name from your playbooks, just as you
-would a local `plugins/` or `roles/` entry.
+Reference the vendored module by its FQCN (`nginx.install`) or by its bare name
+when unambiguous. There is no npm `imports:` list and no `node_modules` graph.
+Roles are resolved from the local `roles/` tree; a vendored collection contributes
+modules, not roles.
 
 ## Modules
 
@@ -102,49 +91,42 @@ export default resource({
 });
 ```
 
-Reference it from a playbook task with `module: myorg.example-resource` (local
-`plugins/`) or `"rolecall-nginx/install":` (a module from an installed collection) — the module name
-is the task key (collapsed Ansible-style form).
+Reference it from a playbook task with `module: myorg.example-resource` — the
+module name is the task key in the collapsed Ansible-style form.
 
-Share a module by factoring it into its own RoleCall project (a collection) and listing
-that project in `collections.yml`, rather than publishing an npm package.
+## Roles (reusable tasks)
 
-## Roles (reusable projects)
-
-A role is a *full RoleCall project* you can reuse. Keep local roles in `roles/`:
+A local role is a directory under `roles/` (next to the playbook or at the project
+root) with a required `tasks/main.yml` plus optional `handlers/main.yml`,
+`defaults/main.yml`, and `vars/main.yml`:
 
 ```text
 my-site/
   roles/
-    web-tier/               # a local role
-      rolecall.yaml             # its own manifest
-      plugins/modules/
-        <namespace>/
-          enable-site.ts
-      playbooks/site.yaml  # its entry playbook
+    web-tier/
+      tasks/main.yml         # required: a YAML list of tasks
+      handlers/main.yml      # optional
+      defaults/main.yml      # optional: lowest-precedence vars
+      vars/main.yml          # optional: role vars
+      templates/             # optional: role-relative templates
+      files/                 # optional: role-relative source files
 ```
 
-Compose a role into a parent playbook:
+Compose one into a parent playbook:
 
 ```yaml
 # playbooks/site.yaml
-- roles:
-    - web-tier                # local role (bare name)
-    - rolecall-nginx               # role provided by an installed collection
+- hosts: web
+  roles:
+    - web-tier
 ```
 
-Roles are host-agnostic: they ship `group_vars/`/`host_vars/` defaults but not a
-real inventory. The parent project supplies the actual hosts. A role you want to
-reuse across projects is itself a RoleCall project; publish it as a collection and pull
-it in through `collections.yml` rather than as an npm package.
-
-## Bootstrapping with the wizard
-
-`rolecall --create-project` (planned) walks you through scaffolding the layout above
-and seeds a sample module.
+Role defaults merge below play vars, and role tasks can resolve files relative to
+the role directory. The parent project supplies the hosts; a role never carries
+its own inventory. See [Roles](/concepts/roles) for details.
 
 ## Where state lives
 
-Each project gets its own `state.db` colocated under `.rolecall/` (or `<cwd>/.rolecall` when
-no project root is detected). When `ROLECALL_DB_URL` is set, RoleCall uses shared Postgres
-instead. See `design/decisions/0006` for the storage model.
+Each project gets its own `state.db` colocated under `.rolecall/` (or
+`<cwd>/.rolecall` when no project root is detected). Persistence is SQLite on both
+Node.js and Bun. See `design/decisions/0006` for the storage model.

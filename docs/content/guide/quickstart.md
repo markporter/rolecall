@@ -2,7 +2,7 @@
 title: Quickstart
 ---
 
-This page gets you from zero to a working RoleCall invocation quickly. It walks through confirming the CLI responds, resolving an inventory against a tiny playbook, applying it over SSH or local transports, and starting the orchestrator server. Nothing here oversells capabilities still left `[deferred]` — the SPA UI, the plugin SDK authoring surface, and literal Jinja rendering — so the guide focuses on what works today.
+This page gets you from zero to a working RoleCall invocation quickly. It walks through confirming the CLI responds, resolving an inventory against a tiny playbook, applying it over SSH or local transports, and starting the orchestrator server.
 
 ## Confirm the CLI is alive
 
