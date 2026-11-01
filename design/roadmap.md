@@ -10,10 +10,10 @@ transaction/checkpoint, idempotency-module library, and the clientless agent sur
 are implemented and verified. The **execution half** — applying state to remote hosts
 over SSH/local transports and collecting targeted/cached facts per host — is now also
 implemented and verified (see below). What remains scaffolded and deferred is the SPA
-UI (only static `--ui-dist` serving exists), serve-side executor parity (server dispatch
-uses a simplified per-target runner, not `runPlaybook`), the richer plugin SDK authoring
+UI (only static `--ui-dist` serving exists), the richer plugin SDK authoring
 surface (`plugin list`/`register` persistence + auto-load are implemented), the full
-Jinja renderer (`{{ }}` stays literal), and the Postgres backend. The Node-runtime PAL
+global Jinja `{{ }}` interpolation in playbook scalars (Jinja renders through explicit
+`copy` content templates), and the Postgres backend. The Node-runtime PAL
 is implemented (npm channel = Node.js, ADR 0018); the durable SQLite store runs on
 both runtimes over the PAL SqliteDb seam (ADR 0019 — drizzle-orm removed), so
 `--serve`, `--trace`, `--profile`, and `run replay` work on Node too.
@@ -27,6 +27,7 @@ both runtimes over the PAL SqliteDb seam (ADR 0019 — drizzle-orm removed), so
 | Ansible-compat play sugar | `src/config/schema.ts`, `src/config/loader.ts` | play-level `handlers:` (notify/flush) + `tags:` with `--tags`/`--skip-tags`; loader-level Ansible inventory detection (INI + `all:` YAML → native groups via `--inventory`) |
 | Orchestrator server | `src/orchestrator/*` | Express + route registry + stores; run dispatch over real transports |
 | Cron scheduler + webhooks | `src/orchestrator/scheduler.ts`, `cron.ts`, `webhooks.ts` | `CronScheduler` arms durable schedules and fires them through the engine; Bearer-gated `POST /webhook` + `POST /api/run` |
+| Forked full-executor server runs | `src/orchestrator/child-run.ts`, `src/orchestrator/engine.ts` | each run forks `playbook run -o jsonl`; temp playbook/inventory; full executor semantics + crash isolation |
 | Transport interfaces | `src/transport/*` | typed `Ssh/Local/Network/Http`; Ssh/Local/Network connect/run executed over real connections (Http gRPC deferred) |
 | Execution over SSH/local | `src/cli/commands/playbook.ts`, `src/cli/commands/facts.ts`, `src/executor/*`, `src/cli/connections.ts` | resolves targets, builds connection per host (`rolecall_connection`), drives describe/converge live; facts gathered per host |
 | Remote idempotent apply | `src/modules/*`, `src/executor/*` | module `describe`/`converge` driven live by executor; proven by sim integration test |
@@ -42,13 +43,10 @@ both runtimes over the PAL SqliteDb seam (ADR 0019 — drizzle-orm removed), so
 | API reference + VitePress + OpenAPI | `docs/` | TypeDoc + VitePress + route-synced OpenAPI |
 
 ## Scaffolded / deferred (designed, typed, "not yet implemented")
-- **Real Jinja rendering**: `{{ }}` preserved verbatim until a renderer lands. Structured `$var`/`$concat`/`$call` + typed `when`/`loop` ARE implemented.
+- **Global Jinja `{{ }}` interpolation in playbook scalars**: not implemented; ordinary args are lint-rejected. Structured `$var`/`$concat`/`$call` + typed `when`/`loop` are native, and Jinja renders through explicit `copy` content templates with `engine: jinja`.
 - **Postgres backend**: record-only store; SQLite is the implemented persistence layer, now dual-runtime over the PAL SqliteDb seam (ADR 0019). The narrow `Store`/`TracesRepository` interface is the future Postgres seam.
 - **Plugin SDK**: `plugin list`/`register` are implemented (persist + auto-load user module/fact plugins — see ADR 0016); the richer authoring/test harness is deferred.
 - **SPA UI**: only static `--ui-dist` serving (health JSON when unset); no built SPA ships yet.
-- **Serve-side executor parity**: run dispatch applies over real transports, but the
-  server runner is a simplified per-target path — roles, phases, `when`/`loop`,
-  handlers, and tx/checkpoint do not apply to server runs yet.
 - **RBAC / Vault secret engine / WinRM**: target capabilities, not built.
 
 ## Deferred-but-designed (future)

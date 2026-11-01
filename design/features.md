@@ -40,7 +40,7 @@ are present in code but do **not** apply real remote state.
 | Structured reference templating (`$var` / `$concat` / `$call` / `$if` / `$each` / `$template`) | ✅ | todo 24; `src/templating/refs.ts` |
 | Facts reference (`$var: facts.key`) | ✅ | declared via `kind: fact` manifest or plugin/module `declares`; the `$fact` operator was removed in ADR 0013 |
 | Typed `when` / `loop` | ✅ | todo 24 |
-| Jinja-style `{{ }}` templating | 🟡 | kept literal (scaffold) |
+| Jinja-style `{{ }}` templating | 🟡 | global scalar interpolation absent; `$template` is EJS; Jinja is Nunjucks and renders only through explicit `copy` content templates / `.j2` files with `engine: jinja`, always in the ADR 0025 sandbox worker |
 
 ## Run model & safety
 
@@ -83,7 +83,7 @@ are present in code but do **not** apply real remote state.
 | Run dispatch over real transports | ✅ | `POST /run` drives SSH/local/HTTP/network simulator |
 | Cron scheduler | ✅ | `CronScheduler` arms durable schedules and fires them through the engine |
 | Webhooks | ✅ | `POST /webhook` + `POST /api/run`, optional single-token Bearer guard |
-| Serve-side executor parity | 🟡 | simplified per-target runner, not `runPlaybook`; no roles/phases/`when`/`loop`/handlers/tx |
+| Serve-side executor parity | ✅ | each run forks the one-shot CLI (`playbook run -o jsonl`) with a materialized playbook/inventory, so the full executor (roles/phases/`when`/`loop`/handlers/tx/check) applies |
 | SQLite store | ✅ | trace + state |
 | SPA UI | 🟡 | scaffold; only static `--ui-dist` serving, no built SPA |
 
@@ -120,7 +120,8 @@ are present in code but do **not** apply real remote state.
 
 | Feature | Status | Notes |
 |---|---|---|
-| Vault / secret engine | ⏳ | `goals.md` target capability |
+| Vault / secret engine | ⏳ | designed in ADR 0022 (`$secret`, provider chain, native AEAD vault, Ansible Vault read, masking); not built |
+| Ansible analyzer / mechanical converter | ⏳ | designed in ADR 0024 (`rolecall convert ansible`, matrix-driven analysis, mechanical rewriter, LLM handoff bundle); not built |
 | GUI in core | ⏳ | promote the SPA to a first-class, core-shipped UI (`goals.md`) |
 
 ## Designed but not yet built (future)

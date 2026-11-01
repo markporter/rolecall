@@ -75,8 +75,10 @@ Subcommand reality (from the HELP string):
 
 - `playbook run <file>` parses and resolves the inventory, then applies tasks live
    over SSH or local transports rather than merely printing a plan. The orchestrator
-   cron scheduler and HTTP webhooks are implemented; the SPA UI and literal Jinja
-   `{{ }}` templating remain scaffolded.
+   cron scheduler and HTTP webhooks are implemented; the SPA UI remains scaffolded.
+   Global Jinja `{{ }}` interpolation in playbook scalars is intentionally absent
+   (ordinary args are lint-rejected); Jinja renders only through explicit `copy`
+   content templates with `engine: jinja` or `.j2` files.
    The Plugin SDK now ships `plugin register`/`list` (module plugins persist and
    auto-load at startup); the richer SDK authoring/test harness is still partial.
    At startup it also scans project-local plugins under `plugins/<type>/<namespace>/`
@@ -108,7 +110,7 @@ Subcommand reality (from the HELP string):
 
 Global flags (parsed once by `parseArgs`):
 
-- `-o/--output human|json` selects the output plugin (default `human`).
+- `-o/--output` selects the output plugin: `syslog` (default for playbook runs), `human_summary`, `json`, or `jsonl` (typed event + final-result stream used by the serve child-run protocol).
 - `--limit <hosts>` restricts targets to one pattern.
 - `--inventory <file>` sets the inventory source (native `groups:` YAML or Ansible INI/`all:`-rooted YAML, auto-detected).
 - `--force` bypasses idempotency skips (passed to modules as `force`).
@@ -135,17 +137,20 @@ rolecall --serve --ui-dist ./build       # serve static UI dir (env ROLECALL_UI_
 With no UI dist set, `GET /` returns a zero-build health JSON object instead of
 serving pages. The server implements run dispatch, project/schedule CRUD, a cron
 scheduler (`CronScheduler`) that fires armed schedules through the engine, and
-Bearer-gated webhooks (`POST /webhook`, `POST /api/run`). Dispatch executes over real
-transports (SSH/local/HTTP/network simulator), but the server still uses its own
-simplified per-target runner rather than the CLI playbook executor, so roles, play
-phases, `when`/`loop`, handlers, and tx/checkpoint do not apply to server runs yet.
-The SPA itself is not built: `--ui-dist` only serves a static directory.
+Bearer-gated webhooks (`POST /webhook`, `POST /api/run`). Each run is forked to the
+one-shot CLI (`rolecall playbook run -o jsonl`) with a materialized temporary
+playbook/inventory pair, so the full executor applies: roles, play phases,
+`when`/`loop`, handlers, tx/checkpoint, modules, and `--check`/`--diff`/`--force`.
+Network simulator targets are reached through the simulator's HTTP `/cli` bridge, and
+the fork isolates resolver/facts/plugin globals from concurrent runs. The SPA itself
+is not built: `--ui-dist` only serves a static directory.
 
-Honest status note: the genuinely-scaffold subsystems are templating (Jinja `{{ }}`
-kept literal), the SPA UI, serve-side executor parity (the server runner is a simplified
-per-target path, not `runPlaybook`), Http transport (gRPC capability deferred), and the
-richer Plugin SDK authoring surface. The executor, the SSH/Local/Network transports, the
-cron scheduler and webhooks, `facts gather`, `vars list`/`trace`, and `plugin
+Honest status note: the genuinely-scaffold subsystems are global Jinja `{{ }}`
+interpolation in playbook scalars (Jinja renders only through explicit content
+templates with `engine: jinja`), the SPA UI, Http transport (gRPC capability
+deferred), and the richer Plugin SDK authoring surface. The executor, the SSH/Local/Network/HTTP
+transports, the cron scheduler and webhooks, serve-side forked playbook execution,
+`facts gather`, `vars list`/`trace`, and `plugin
 list`/`register` (module-plugin persistence + auto-load) are implemented; never claim any
 scaffolded item above applies real remote state. The Node-runtime PAL is implemented
 for the surfaces listed in the matrix above (sqlite/crypto/dns/spawn/file/http/
@@ -224,15 +229,15 @@ execution, transport, and facts collection now apply real state. Where a doc sti
 labels an area as scaffold while `src/` implements it, trust `src/` and update the
 doc accordingly.
 
-**Subsystem honesty.** Templating (Jinja `{{ }}` literals preserved verbatim), the
-SPA UI (only static `--ui-dist` serving exists), serve-side executor parity (server
-dispatch uses a simplified per-target runner, not `runPlaybook`), Http transport (gRPC
-capability deferred), and the richer Plugin SDK authoring surface (module/plugin
-`register` persistence + auto-load are implemented — see ADR 0016) are scaffolded or
-partial and must not be asserted as functional.
-The executor, the SSH/Local/Network network transports, facts-collection, the cron
-scheduler, and webhooks are implemented and applied live; do not describe them as
-pending. The durable store
+**Subsystem honesty.** Global Jinja `{{ }}` interpolation in playbook scalars is
+not supported (ordinary args are lint-rejected; Jinja is opt-in via `copy` content
+templates with `engine: jinja`), the SPA UI (only static `--ui-dist` serving exists),
+Http transport (gRPC capability deferred), and the richer Plugin SDK authoring surface (module/plugin `register`
+persistence + auto-load are implemented — see ADR 0016) are scaffolded or partial and
+must not be asserted as functional.
+The executor, the SSH/Local/Network/HTTP transports, facts-collection, the cron
+scheduler, webhooks, and serve-side forked playbook execution are implemented and
+applied live; do not describe them as pending. The durable store
 is dual-runtime (PAL SqliteDb seam, drizzle-orm removed — ADR 0019); Postgres
 remains record-only/deferred.
 

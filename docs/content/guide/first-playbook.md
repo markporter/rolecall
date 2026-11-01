@@ -93,7 +93,7 @@ With nothing else on the command line RoleCall resolves the matched hosts and ap
 Be clear-eyed about the gaps so the tool keeps its honesty label:
 
 - **Execution is live.** RoleCall resolves matched hosts and runs each task over SSH or local transports; the outcome lines reflect actual convergence, proven end-to-end by an integration test against an in-process ssh2 simulator.
-- **Templating stays literal by default.** RoleCall does not auto-render `{{ }}` in task arguments, so a literal `"{{ http_port }}"` passes through verbatim; structured `$var`/`$concat`/`$call` and typed `when`/`loop` are what render. The only Jinja rendering is opt-in inside `copy`, via a `content` template spec with `engine: jinja` (the default engine is Eta). A global argument-level Jinja renderer remains scaffolded.
+- **No global `{{ }}` interpolation.** RoleCall does not auto-render `{{ }}` in task arguments; an ordinary argument containing it is rejected by the playbook lint. Structured `$var`/`$concat`/`$call` and typed `when`/`loop` are what render. Jinja rendering is opt-in inside `copy`, via a `content` template spec with `engine: jinja` (the default engine is Eta) or a `.j2` `template_file`.
 - **Facts gathering works.** ` rolecall facts gather <inv>` gathers targeted/cached facts per resolved host through its built connection, failing gracefully on unreachable hosts.
 - **Plugin CLI works; the SDK authoring surface is partial.** `rolecall plugin list` and `rolecall plugin register` are implemented: registered module/fact plugins persist to `.rolecall/plugins.json` and auto-load at startup, and project plugins under `plugins/<type>/<namespace>/` are auto-discovered at `playbook run`. Only the richer Plugin SDK authoring/test harness remains partial.
 

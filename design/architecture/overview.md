@@ -8,7 +8,7 @@
 | Orchestrator server (Express) | `src/orchestrator/*` | implemented (route registry, MCP, stores) |
 | Stores (sqlite-backed repos) | `src/store/*` | implemented (runs/traces/schedules/projects) |
 | Config model & validation | `src/config/*` | implemented (Zod) |
-| Templating | `src/templating/*` | implemented (fast mode; Jinja verbatim) |
+| Templating | `src/templating/*` | implemented (fast EJS + structured refs; Jinja only via explicit content templates with `engine: jinja`) |
 | Executor (tx / checkpoint) | `src/executor/*` | implemented (drives describe/converge live; rollback/resume via tx) |
 | Modules / idempotency lib | `src/modules/*` | implemented (describe/converge executed live by executor) |
 | Transport interfaces | `src/transport/*` | implemented (Ssh/Local/Network connect/run; Http gRPC deferred) |
@@ -31,9 +31,9 @@
    the executor.
 
 ## Honesty note
-Per `AGENTS.md`, templating (Jinja `{{ }}` kept literal), Http transport (gRPC deferred), the plugin
-SDK authoring surface, the SPA UI (static `--ui-dist` serving only), and serve-side executor parity
-(simplified per-target runner, not `runPlaybook`) are scaffolded or partial and must never be asserted
-as fully functional. The executor, SSH/Local/Network transports, facts-collection, the cron scheduler,
-and webhooks ARE implemented: `playbook run` applies state over SSH/local transports, and server run
-dispatch executes over real transports. Never claim a scaffolded item above applies real remote state.
+Per `AGENTS.md`, global Jinja `{{ }}` interpolation in playbook scalars (Jinja renders only via explicit content templates), Http transport (gRPC deferred), the plugin
+SDK authoring surface, and the SPA UI (static `--ui-dist` serving only) are scaffolded or partial and
+must never be asserted as fully functional. The executor, SSH/Local/Network/HTTP transports,
+facts-collection, the cron scheduler, webhooks, and forked full-executor server runs ARE implemented:
+`playbook run` applies state over real transports, and each serve run forks the same CLI path with a
+materialized playbook/inventory. Never claim a scaffolded item above applies real remote state.

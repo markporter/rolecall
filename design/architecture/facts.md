@@ -9,9 +9,9 @@ for the recorded decision.
 > **Honesty note.** Fact gathering is implemented and applied live today (the
 > `FactsEngine` runs real gatherers over SSH/local/HTTP connections during
 > `playbook run` and `facts gather`). It is **not** scaffolded. The templating
-> surface is the structured `$var: facts.<key>` reference (not the full Jinja `{{ }}`
-> renderer). The cron scheduler and webhooks are implemented; the SPA UI remains
-> scaffolded (static `--ui-dist` serving only).
+> surface is the structured `$var: facts.<key>` reference (not global Jinja `{{ }}`
+> renderer). The cron scheduler, webhooks, and forked full-executor server runs are
+> implemented; the SPA UI remains scaffolded (static `--ui-dist` serving only).
 
 ---
 

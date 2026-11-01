@@ -13,8 +13,9 @@
 ## `--serve`
 1. `main()` detects `--serve` → dynamic-imports orchestrator → `startServe(argv)`.
 2. `createServer()` builds the Express app, mounts `ROUTE_DEFINITIONS`, registers signal handlers.
-3. `startServe` blocks (never resolves) until SIGINT/SIGTERM; `settle()` drains, closes store, exits.
-4. With `--ui-dist`, static SPA is served; otherwise `GET /` returns health JSON.
+3. `POST /run`, cron, and webhooks enqueue a job; the engine materializes a temp playbook/inventory and forks `rolecall playbook run -o jsonl`, parsing typed events + the final result. The child gets fresh resolver/facts/module state, so the full executor (roles, phases, `when`/`loop`, handlers, tx, check/diff/force) applies.
+4. `startServe` blocks (never resolves) until SIGINT/SIGTERM; `settle()` drains, closes store, exits.
+5. With `--ui-dist`, static SPA is served; otherwise `GET /` returns health JSON.
 
 ## Clientless MCP / agent surface
 - `GET /mcp` → `buildManifest()` renders tool specs from `TOOL_DEFS` (Zod `inputSchema` → JSON Schema).

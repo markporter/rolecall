@@ -99,7 +99,7 @@ Static strings are not enough — tasks branch, loop, and interpolate. RoleCall 
 
 ## How playbooks differ from Ansible
 
-- **`{{ }}` is not rendered.** Ansible-style `{{ }}` stays literal in values. Use `$var`/`$concat`/`$template` (EJS) for interpolation, or `copy` with `engine: jinja` when you need Jinja. See [Templating](./templates.md).
+- **`{{ }}` is not interpreted in ordinary values.** Ansible-style `{{ }}` in a task argument is rejected by the playbook lint. Use `$var`/`$concat`/`$template` (EJS) for interpolation, or a `copy` content template spec with `engine: jinja` when you need Jinja. See [Templating](./templates.md).
 - **`hosts` is required.** There is no implicit `localhost` or `all`; name your targets explicitly (or via groups — see [Inventory](./inventory.md)).
 - **Idempotency is by design.** The `shell` module requires a guard (or an explicit `run_mode`) instead of Ansible's `changed_when`. See [Shell & idempotency](./shell-idempotency.md).
 - **`register` works.** It stores a task result under a name you can read later via the `reg` namespace (e.g. `reg.myresult.data.stdout`).

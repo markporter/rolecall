@@ -8,7 +8,7 @@ RoleCall has three ways to inject dynamic content, in order of preference:
 2. **EJS templates** — the default renderer for anything needing real string interpolation, whether inside a single value (the `$template` operator) or a whole file (`copy` with `engine: ejs`, which is the default). EJS uses `<%= %>` for output and `<% %>` for logic.
 3. **Jinja templates** — *opt-in only*, via `copy` with `engine: jinja`. Use Jinja when a template comes from an existing Ansible project (so you can drop it in with minimal changes) or when you want its sandboxed execution for untrusted template code.
 
-RoleCall deliberately does **not** auto-render <code v-pre>{{ }}</code> as a global template engine. A literal <code v-pre>{{ ... }}</code> written in an argument is passed through verbatim. Templating is *opt-in*: you either use a structured ref, wrap a value in `$template`, or render a file with `copy`'s `engine`.
+RoleCall deliberately does **not** auto-render <code v-pre>{{ }}</code> as a global template engine. An ordinary argument containing <code v-pre>{{ ... }}</code> is rejected by the playbook lint, not interpreted. Templating is *opt-in*: you either use a structured ref, wrap a value in `$template`, or use a `copy` content template spec with `engine: jinja`. The content spec is a runtime payload like EJS, so Jinja delimiters are allowed inside it.
 
 ## EJS templates
 
@@ -57,7 +57,7 @@ EJS uses two delimiters:
 
 ## Jinja templates
 
-Jinja uses <code v-pre>{{ expr }}</code> for output and `{% ... %}` for logic — the syntax Ansible users know. In RoleCall, Jinja is **only** available through `copy` via a `content` template spec with `engine: jinja`; there is no global <code v-pre>{{ }}</code> auto-render, so a bare <code v-pre>{{ ... }}</code> elsewhere stays literal.
+Jinja uses <code v-pre>{{ expr }}</code> for output and `{% ... %}` for logic — the syntax Ansible users know. In RoleCall, Jinja is **only** available through `copy` via a `content` template spec with `engine: jinja` (or a `.j2` `template_file`); there is no global <code v-pre>{{ }}</code> auto-render, and an ordinary argument containing <code v-pre>{{ ... }}</code> is rejected by the playbook lint.
 
 ```yaml
 - copy:
