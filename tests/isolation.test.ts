@@ -163,3 +163,72 @@ test("the executor tags module exec with the right ADR 0025 profile", async () =
   await runPlaybook(pb("__profile_plain") as never, inv as never, { connectionFor: () => conn as never });
   expect(seen).toEqual(["networked", "untrusted"]);
 });
+
+test("namespace builder wires the egress shim and proxy env", () => {
+  const cmd = buildNamespaceCommand({
+    shell: "/bin/sh",
+    command: "curl https://api.example.com",
+    projectRoot: "/work",
+    network: "off",
+    systemPaths: [],
+    egress: {
+      socketDir: "/tmp/egress",
+      shim: { file: "/bin/rolecall", args: ["__egress-shim"] },
+      binds: [{ source: "/bin/rolecall", target: "/run/rolecall/rolecall" }],
+      proxyPort: 18080,
+    },
+  });
+  expect(cmd.args).toEqual(expect.arrayContaining(["--bind", "/tmp/egress", "/run/rolecall-egress"]));
+  expect(cmd.args).toEqual(
+    expect.arrayContaining(["--ro-bind", "/bin/rolecall", "/run/rolecall/rolecall"]),
+  );
+  expect(cmd.args).toEqual(expect.arrayContaining(["--setenv", "HTTP_PROXY", "http://127.0.0.1:18080"]));
+  expect(cmd.args).toEqual(expect.arrayContaining(["--setenv", "HTTPS_PROXY", "http://127.0.0.1:18080"]));
+  expect(cmd.args).toEqual(expect.arrayContaining(["--setenv", "ROLECALL_USER_COMMAND", "curl https://api.example.com"]));
+  expect(cmd.args.at(-1)).toContain('exec /bin/sh -c "$ROLECALL_USER_COMMAND"');
+});
+
+test("namespace egress broker allows and denies real local traffic", async () => {
+  const probe = probeIsolation({ backend: "namespace" });
+  if (probe.selected !== "namespace" || !probe.userns) return; // no bwrap/userns on this host
+  const { LocalConnection } = await import("../src/transport/local");
+  const server = Bun.serve({ port: 0, fetch: () => new Response("egress-ok") });
+  const url = `http://127.0.0.1:${server.port}/`;
+  try {
+    const allowed = new LocalConnection({
+      kind: "local",
+      host: "localhost",
+      user: "tester",
+      isolation: {
+        backend: "namespace",
+        projectRoot: process.cwd(),
+        network: "module",
+        egress: [{ host: "127.0.0.1", ports: [server.port], scope: "all" }],
+      },
+    });
+    await allowed.connect();
+    const ok = await allowed.exec(`curl -m 5 -fsS ${url}`);
+    expect(ok.exitCode).toBe(0);
+    expect(ok.stdout).toContain("egress-ok");
+    await allowed.disconnect();
+
+    const denied = new LocalConnection({
+      kind: "local",
+      host: "localhost",
+      user: "tester",
+      isolation: {
+        backend: "namespace",
+        projectRoot: process.cwd(),
+        network: "module",
+        egress: [{ host: "10.0.0.0/8", ports: [server.port], scope: "all" }],
+      },
+    });
+    await denied.connect();
+    const blocked = await denied.exec(`curl -m 5 -fsS ${url}`);
+    expect(blocked.exitCode).not.toBe(0);
+    expect(blocked.stderr).toContain("403");
+    await denied.disconnect();
+  } finally {
+    server.stop(true);
+  }
+}, 30_000);

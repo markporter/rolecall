@@ -93,10 +93,10 @@ Serve mode (rolecall --serve, see src/orchestrator):
 
 Subcommands:
    playbook run <file> [--inventory <inv>] [--limit] [--force] [--check] [--diff] [--forks N] [--extra-vars <kv>] [--tags <list>] [--skip-tags <list>] [--trace] [--profile]
-                       Parse + resolve inventory + print a dry-run skeleton (no exec)
+                       Parse + resolve inventory + apply tasks over SSH/local transports
    run replay <id>     Re-emit a stored run's execution-trace ledger (--trace/--profile)
    facts gather <inv> [--limit]
-                       Resolve inventory targets (facts gathering pending)
+                       Resolve inventory targets and gather facts per host
     inventory show <inv>
                        Print resolved hosts + per-host vars
     inventory list <inv>
@@ -218,6 +218,36 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
 
 /** @summary Unified entrypoint: boots the orchestrator server when --serve is set, otherwise parses global flags and dispatches the requested subcommand handler. @param argv Command-line arguments (runtime argv: Bun.argv or process.argv); slice(2) drops node/script paths. @returns Process exit code (0 ok, 1 runtime error, 2 usage/validation error). */
 export async function main(argv: string[]): Promise<number> {
+  // Internal sandbox shim: listens on sandbox loopback and forwards to the
+  // host-side egress broker over a bind-mounted Unix socket. Kept out of HELP.
+  if (argv.slice(2)[0] === "__egress-shim") {
+    const socketPath = process.env["ROLECALL_EGRESS_SOCKET"];
+    if (!socketPath) {
+      writeErr("error: __egress-shim requires ROLECALL_EGRESS_SOCKET\n");
+      return 2;
+    }
+    const listen = process.env["ROLECALL_EGRESS_LISTEN"] ?? "127.0.0.1:0";
+    const idx = listen.lastIndexOf(":");
+    const host = idx > 0 ? listen.slice(0, idx) : "127.0.0.1";
+    const port = idx > 0 ? Number(listen.slice(idx + 1)) : Number(listen);
+    const { startEgressShim } = await import("../isolation/egress-shim");
+    const shim = await startEgressShim({ socketPath, host, port });
+    const ready = process.env["ROLECALL_EGRESS_READY"];
+    if (ready) {
+      const { writeFileSync } = await import("node:fs");
+      writeFileSync(ready, shim.address, { mode: 0o600 });
+    }
+    writeErr(`rolecall egress-shim listening on ${shim.address}\n`);
+    await new Promise<void>((resolve) => {
+      const stop = (): void => {
+        void shim.close().finally(resolve);
+      };
+      process.once("SIGTERM", stop);
+      process.once("SIGINT", stop);
+    });
+    return 0;
+  }
+
   // Dual-mode entrypoint: `rolecall --serve` boots the Express orchestrator instead of
   // dispatching a CLI subcommand. Short-circuit BEFORE parseArgs (strict mode would
   // otherwise reject `--serve` as an unknown option). Loaded lazily so plain CLI

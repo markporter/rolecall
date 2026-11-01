@@ -5,12 +5,20 @@
 // Retry is disabled by default for local exec (failures are not transient), but
 // the same bounded-concurrency + timeout wrapper from connection.ts applies so
 // callers fan out identically across SSH and Local targets.
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
+import { appendFileSync, existsSync, mkdtempSync, rmSync } from "node:fs";
+import { createServer } from "node:net";
+import { tmpdir } from "node:os";
+import { basename, join, resolve } from "node:path";
 import {
   buildDockerCommand,
   buildNamespaceCommand,
+  EgressPolicy,
   IsolationUnavailableError,
   probeIsolation,
+  startEgressBroker,
+  resolveShimCliPath,
+  type EgressBrokerHandle,
   type IsolationOptions,
 } from "../isolation";
 import {
@@ -38,6 +46,15 @@ export class LocalConnection implements Connection {
   #runner: (core: CoreExec, options?: ExecOptions) => Promise<ExecResult>;
   #isolation?: { backend: "namespace" | "docker"; options: IsolationOptions };
   #isolationError?: IsolationUnavailableError;
+  #egress?: {
+    dir: string;
+    broker: EgressBrokerHandle;
+    proxyPort: number;
+    shimFile: string;
+    shimArgs: string[];
+    binds?: Array<{ source: string; target: string }>;
+  };
+  #egressStarting?: Promise<void>;
 
   constructor(options: LocalConnectionOptions) {
     this.options = options;
@@ -66,15 +83,85 @@ export class LocalConnection implements Connection {
       );
       return;
     }
+    if (probe.selected === "docker" && options.egress?.length && (options.network ?? "module") !== "on") {
+      this.#isolationError = new IsolationUnavailableError(
+        "egress broker wiring is not implemented for the Docker backend yet; use --isolation namespace or --isolation-network all",
+      );
+      return;
+    }
     this.#isolation = { backend: probe.selected as "namespace" | "docker", options };
   }
 
   async connect(): Promise<void> {
-    // Local transport is always present; nothing to establish.
+    await this.#ensureEgress();
+  }
+
+  async #ensureEgress(): Promise<void> {
+    if (!this.#isolation) return;
+    const iso = this.#isolation.options;
+    if (!iso.egress || iso.egress.length === 0) return;
+    if ((iso.network ?? "module") === "on") return;
+    if (this.#egress) return;
+    if (this.#egressStarting) return this.#egressStarting;
+    this.#egressStarting = (async () => {
+      const dir = mkdtempSync(join(tmpdir(), "rolecall-egress-"));
+      try {
+        const auditPath = process.env["ROLECALL_EGRESS_AUDIT"];
+        const broker = await startEgressBroker({
+          policy: new EgressPolicy(iso.egress!),
+          socketPath: join(dir, "egress.sock"),
+          ...(auditPath
+            ? { audit: (e: import("../isolation").EgressAuditEvent) => appendFileSync(auditPath, `${JSON.stringify(e)}\n`) }
+            : {}),
+        });
+        const proxyPort = await freePort();
+        const projectRoot = iso.projectRoot ?? process.cwd();
+        const runtimePath = resolve(process.execPath);
+        const runtime = basename(runtimePath).replace(/\.exe$/i, "");
+        const inSystemPath = ["/usr", "/bin", "/sbin", "/lib", "/lib64", "/opt"].some(
+          (p) => runtimePath === p || runtimePath.startsWith(`${p}/`),
+        );
+        const binds: Array<{ source: string; target: string }> = [];
+        let shimFile = runtimePath;
+        let shimArgs = ["__egress-shim"];
+        const entry = resolveShimCliPath();
+        if ((runtime === "bun" || runtime === "node") && entry) {
+          const script = entry;
+          let scriptPath = script;
+          if (!(script.startsWith(`${projectRoot}/`) || script === projectRoot)) {
+            binds.push({ source: script, target: "/run/rolecall/cli.js" });
+            scriptPath = "/run/rolecall/cli.js";
+          }
+          if (!inSystemPath) {
+            binds.push({ source: runtimePath, target: "/run/rolecall/runtime" });
+            shimFile = "/run/rolecall/runtime";
+          }
+          shimArgs = [scriptPath, "__egress-shim"];
+        } else {
+          binds.push({ source: runtimePath, target: "/run/rolecall/rolecall" });
+          shimFile = "/run/rolecall/rolecall";
+        }
+        this.#egress = {
+          dir,
+          broker,
+          proxyPort,
+          shimFile,
+          shimArgs,
+          ...(binds.length > 0 ? { binds } : {}),
+        };
+      } catch (err) {
+        rmSync(dir, { recursive: true, force: true });
+        throw err;
+      }
+    })().finally(() => {
+      this.#egressStarting = undefined;
+    });
+    return this.#egressStarting;
   }
 
   async #rawExec(command: string, execOptions: ExecOptions | undefined, _signal: AbortSignal): Promise<ExecResult> {
     if (this.#isolationError) throw this.#isolationError;
+    await this.#ensureEgress();
 
     const env = execOptions?.env
       ? (Object.fromEntries(
@@ -111,16 +198,45 @@ export class LocalConnection implements Connection {
       network,
       ...(iso.mounts ? { mounts: iso.mounts } : {}),
       ...(iso.image ? { image: iso.image } : {}),
+      ...(this.#egress && this.#isolation.backend === "namespace"
+        ? {
+            egress: {
+              socketDir: this.#egress.dir,
+              shim: { file: this.#egress.shimFile, args: this.#egress.shimArgs },
+              ...(this.#egress.binds ? { binds: this.#egress.binds } : {}),
+              proxyPort: this.#egress.proxyPort,
+            },
+          }
+        : {}),
       ...(typeof process.getuid === "function" ? { uid: process.getuid() } : {}),
       ...(typeof process.getgid === "function" ? { gid: process.getgid() } : {}),
     });
-    const result = spawnSync(built.file, built.args, {
-      env: built.env,
-      encoding: "utf8",
-      timeout: timeoutMs,
+    return await new Promise<ExecResult>((resolve, reject) => {
+      const child = spawn(built.file, built.args, {
+        env: built.env,
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+      let stdout = "";
+      let stderr = "";
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      if (timeoutMs > 0) {
+        timer = setTimeout(() => {
+          try { child.kill("SIGTERM"); } catch { /* already exited */ }
+        }, timeoutMs);
+      }
+      child.stdout?.setEncoding("utf8");
+      child.stderr?.setEncoding("utf8");
+      child.stdout?.on("data", (chunk: string) => { stdout += chunk; });
+      child.stderr?.on("data", (chunk: string) => { stderr += chunk; });
+      child.on("error", (err) => {
+        if (timer) clearTimeout(timer);
+        reject(err);
+      });
+      child.on("close", (code) => {
+        if (timer) clearTimeout(timer);
+        resolve({ exitCode: code ?? 1, stdout, stderr });
+      });
     });
-    if (result.error) throw result.error;
-    return { exitCode: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
   }
 
   exec(command: string, options?: ExecOptions): Promise<ExecResult> {
@@ -150,6 +266,24 @@ export class LocalConnection implements Connection {
   }
 
   async disconnect(): Promise<void> {
-    // Nothing to tear down for a local transport.
+    if (this.#egress) {
+      const { dir, broker } = this.#egress;
+      this.#egress = undefined;
+      await broker.close().catch(() => undefined);
+      rmSync(dir, { recursive: true, force: true });
+    }
   }
+}
+
+/** Pick a loopback port for the in-sandbox shim (close-then-reuse race is acceptable for an ephemeral port). */
+function freePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const server = createServer();
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      const port = typeof address === "object" && address ? address.port : 0;
+      server.close((err) => (err ? reject(err) : resolve(port)));
+    });
+  });
 }
