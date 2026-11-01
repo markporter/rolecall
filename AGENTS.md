@@ -123,6 +123,10 @@ Global flags (parsed once by `parseArgs`):
 - `--isolation <auto|namespace|docker|none>` opts local transports into the ADR 0025
    sandbox (bwrap/userns or Docker). The current slice is opt-in; default-on `auto`
    is the ADR target. `rolecall doctor` reports the probe and selected backend.
+- `--isolation-network <module|none|all>` controls sandbox egress (default `module`:
+   trusted modules that declare `network: true` get network, shell/command/script/raw
+   stay net-off). `--mount <src:dst[:ro|rw]>` adds an explicit filesystem grant
+   (repeatable, requires `--isolation`).
 - `--tags <list>` / `--skip-tags <list>` (comma-separated) select/skip tasks by tag on
    `playbook run`; a task's own tags replace play tags, and tag-filtered tasks report
    as skipped.

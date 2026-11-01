@@ -35,6 +35,54 @@ function isPlainObject(x: unknown): x is Record<string, unknown> {
 }
 
 /**
+ * Wraps a Connection so every module-initiated exec carries the ADR 0025
+ * execution profile. Trusted modules that declare `network: true` get
+ * `networked`; shell/command/script/raw and everything else stay `untrusted`.
+ */
+class ProfiledConnection implements Connection {
+  constructor(
+    private readonly inner: Connection,
+    private readonly profile: "untrusted" | "networked",
+  ) {}
+
+  get kind(): Connection["kind"] {
+    return this.inner.kind;
+  }
+
+  connect(): Promise<void> {
+    return this.inner.connect();
+  }
+
+  exec(command: string, options?: ExecOptions): Promise<import("../transport/connection").ExecResult> {
+    return this.inner.exec(command, { ...options, profile: this.profile });
+  }
+
+  facts(): Promise<import("../transport/connection").ConnectionFacts> {
+    return this.inner.facts();
+  }
+
+  health(): Promise<import("../transport/connection").HealthStatus> {
+    return this.inner.health();
+  }
+
+  disconnect(): Promise<void> {
+    return this.inner.disconnect();
+  }
+}
+
+const profiledCache = new WeakMap<Connection, Partial<Record<"untrusted" | "networked", ProfiledConnection>>>();
+
+/** Reuse the profile wrapper so connection identity is stable per host/kind. */
+function profileConnection(conn: Connection, profile: "untrusted" | "networked"): Connection {
+  let entry = profiledCache.get(conn);
+  if (!entry) {
+    entry = {};
+    profiledCache.set(conn, entry);
+  }
+  return (entry[profile] ??= new ProfiledConnection(conn, profile));
+}
+
+/**
  * Modules whose `run` only observes target state (or mutates executor-local run
  * state such as facts/registers) and is therefore safe to execute under `--check`.
  * Check-capable modules are detected automatically via a `check` method or the
@@ -380,7 +428,7 @@ export async function runTaskOnHost(
       const mod = resolved.module;
       const moduleCtx: ModuleContext = {
         host,
-        connection: conn,
+        connection: profileConnection(conn, mod.network === true ? "networked" : "untrusted"),
         args,
         vars: vars.vars,
         facts: vars.facts,

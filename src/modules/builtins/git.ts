@@ -50,6 +50,7 @@ export const meta: ModuleSummary = {
     "Clone a repository, or update a local checkout via stash/pull/reset/checkout. Idempotent by comparing current and desired HEAD. Supports shallow clone (depth), forced clean (force), and automatic host-key acceptance (accept_hostkey).",
   idempotent: true,
   source: "builtin",
+  network: true,
   args: {
     repo: { type: "string", required: true, description: "Source repository URL." },
     dest: { type: "string", required: true, description: "Destination directory." },
@@ -124,6 +125,7 @@ async function resolveRef(
 /** @summary Clone a repo to the destination, or update a local checkout (stash/pull/reset/checkout) idempotently. @param ctx ModuleContext (connection, args, become). @returns ModuleResult with changed/skipped/failed and data. */
 export const gitModule: Module = {
   name: MODULE_NAME,
+  network: true,
   supportsCheck: true,
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const args = ctx.args as unknown as GitArgs;

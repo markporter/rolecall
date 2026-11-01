@@ -13,6 +13,7 @@ import { defaultFactsEngine } from "../../facts/engine";
 import { FsProjectSource } from "../../vfs/fs-project-source";
 import type { FactMap } from "../../facts/types";
 import { buildConnectionForHost } from "../connections";
+import type { IsolationOptions } from "../../isolation/types";
 import { CliError, type CliResult, type GlobalFlags } from "../types";
 
 export async function runFactsCommand(
@@ -45,8 +46,13 @@ export async function runFactsCommand(
   // Connect + gather per host; isolate any single-host failure into `failures`.
   const facts: Record<string, FactMap> = {};
   const failures: Record<string, string> = {};
-  const isolation = flags.isolation
-    ? { backend: flags.isolation, projectRoot: process.cwd() }
+  const isolation: IsolationOptions | undefined = flags.isolation
+    ? {
+        backend: flags.isolation,
+        projectRoot: process.cwd(),
+        network: flags.isolationNetwork === "none" ? "off" : flags.isolationNetwork === "all" ? "on" : "module",
+        ...(flags.mounts ? { mounts: flags.mounts } : {}),
+      }
     : undefined;
   for (const host of matchedHosts) {
     try {

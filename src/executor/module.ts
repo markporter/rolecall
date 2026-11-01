@@ -89,6 +89,13 @@ export interface Module {
    * `--check` rather than run.
    */
   readonly supportsCheck?: boolean;
+  /**
+   * Declares that this trusted module may need local network access through the
+   * connection (e.g. get_url/git/package managers). Under ADR 0025's `module`
+   * network mode, the executor wraps `connection.exec` with the `networked`
+   * profile for this module; shell/command/script/raw never set it.
+   */
+  readonly network?: boolean;
 }
 
 /**

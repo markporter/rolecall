@@ -48,6 +48,7 @@ export const meta: ModuleSummary = {
     "Install, upgrade, or remove Python packages idempotently via pip or a virtualenv's pip (Ansible `pip` alternate).",
   idempotent: true,
   source: "builtin",
+  network: true,
   args: {
     name: {
       type: "string | string[]",
@@ -138,6 +139,7 @@ async function isInstalled(ctx: ModuleContext, pipCmd: string, pkg: string): Pro
 /** @summary Idempotently manage Python packages through pip or a virtualenv pip. @param args PipArgs (name/state/executable/virtualenv/extra_args). @returns Module & CheckableModule. */
 export const pipModule: Module & CheckableModule = resource({
   name: MODULE_NAME,
+  network: true,
   async describe(args, ctx) {
     const parsed = resolveArgs(args as unknown as PipArgs);
     if (!parsed.ok) return { current: null, inDesired: false };

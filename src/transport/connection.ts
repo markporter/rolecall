@@ -68,6 +68,12 @@ export interface ExecOptions {
   timeoutMs?: number;
   /** Abort signal; aborting cancels the in-flight attempt. */
   signal?: AbortSignal;
+  /**
+   * ADR 0025 execution profile. Trusted modules that declare `network` get
+   * `networked`; shell/command/script/raw and everything else default to
+   * `untrusted` (no network under the sandbox).
+   */
+  profile?: "untrusted" | "networked";
 }
 
 export interface BaseConnectionOptions {

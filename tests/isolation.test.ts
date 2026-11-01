@@ -8,6 +8,10 @@ import {
   probeIsolation,
   type ProbeDeps,
 } from "../src/isolation";
+import { parseMounts } from "../src/cli/parse-mounts";
+import { getUrlModule } from "../src/modules/builtins/get_url";
+import { gitModule } from "../src/modules/builtins/git";
+import { commandModule } from "../src/modules/builtins/command";
 
 function deps(overrides: Partial<ProbeDeps>): ProbeDeps {
   return {
@@ -109,4 +113,53 @@ test("docker image pinning is surfaced", () => {
   });
   expect(probe.dockerRootless).toBe(true);
   expect(probe.warnings.join(" ")).toContain("not digest-pinned");
+});
+
+test("parseMounts validates absolute source/target and mode", () => {
+  expect(parseMounts(["/srv/certs:/mnt/certs:rw", "/data:/mnt/data"])).toEqual([
+    { source: "/srv/certs", target: "/mnt/certs", mode: "rw" },
+    { source: "/data", target: "/mnt/data", mode: "ro" },
+  ]);
+  expect(() => parseMounts(["relative:/mnt"])).toThrow(/absolute/);
+  expect(() => parseMounts(["/src"])).toThrow(/src:dst/);
+});
+
+test("trusted network modules declare the ADR 0025 capability", () => {
+  expect(getUrlModule.network).toBe(true);
+  expect(gitModule.network).toBe(true);
+  expect(commandModule.network).toBeUndefined();
+});
+
+test("the executor tags module exec with the right ADR 0025 profile", async () => {
+  const { registerModule, runPlaybook } = await import("../src/executor");
+  const { createNoopConnection } = await import("../src/executor/context");
+  const seen: Array<string | undefined> = [];
+  const base = createNoopConnection();
+  const conn = {
+    ...base,
+    exec: async (_cmd: string, opts?: import("../src/transport/connection").ExecOptions) => {
+      seen.push(opts?.profile);
+      return { exitCode: 0, stdout: "", stderr: "" };
+    },
+  };
+  registerModule({
+    name: "__profile_net",
+    network: true,
+    run: async (ctx) => {
+      await ctx.connection.exec("true");
+      return { changed: false };
+    },
+  });
+  registerModule({
+    name: "__profile_plain",
+    run: async (ctx) => {
+      await ctx.connection.exec("true");
+      return { changed: false };
+    },
+  });
+  const inv = { groups: { all: { hosts: ["h1"], vars: {} } } };
+  const pb = (module: string) => [{ hosts: ["all"], vars: {}, tasks: [{ name: "t", module, args: {}, notify: [] }] }];
+  await runPlaybook(pb("__profile_net") as never, inv as never, { connectionFor: () => conn as never });
+  await runPlaybook(pb("__profile_plain") as never, inv as never, { connectionFor: () => conn as never });
+  expect(seen).toEqual(["networked", "untrusted"]);
 });

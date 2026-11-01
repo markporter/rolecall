@@ -96,7 +96,11 @@ export class LocalConnection implements Connection {
 
     const iso = this.#isolation.options;
     const projectRoot = iso.projectRoot ?? process.cwd();
-    const network = iso.network === "on" ? "on" : "off";
+    const networkMode = iso.network ?? "module";
+    const network =
+      networkMode === "on" || (networkMode === "module" && execOptions?.profile === "networked")
+        ? "on"
+        : "off";
     const build = this.#isolation.backend === "namespace" ? buildNamespaceCommand : buildDockerCommand;
     const built = build({
       shell: this.#shell,
