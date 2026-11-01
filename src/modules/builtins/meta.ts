@@ -69,7 +69,7 @@ export const metaSummary: ModuleSummary = {
     `- meta:
     end_play: true`,
   ],
-  notes: "`noop`, `reset_connection`, and `clear_facts` act immediately. `end_play` halts the play and `end_host` halts the current host (the executor honors the emitted halt signal). `flush_handlers` flushes pending handlers at that point, `end_batch` stops the current serial batch (the next batch continues), and `refresh_inventory` re-reads `ExecOptions.inventoryPath` and re-resolves hosts (a safe no-op with a clear note when no inventory source is available). All control flags are wired; `deferred` remains empty for backward compatibility.",
+  notes: "`noop`, `reset_connection`, and `clear_facts` act immediately. `end_play` halts the play and `end_host` halts the current host (the executor honors the emitted halt signal). `flush_handlers` flushes pending handlers at that point, `end_batch` stops the current serial batch (the next batch continues), and `refresh_inventory` re-reads `ExecOptions.inventoryPath` and re-resolves hosts (a safe no-op with a clear note when no inventory source is available). All control flags are honored.",
 };
 
 (metaModule as Module & { meta: ModuleSummary }).meta = metaSummary;
