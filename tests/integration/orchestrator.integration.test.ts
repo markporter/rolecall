@@ -9,7 +9,7 @@
 // dbPath so nothing touches real home or project dirs.
 
 import { afterEach, afterAll, beforeAll, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { readFileSync } from "node:fs";
@@ -120,7 +120,10 @@ test("POST /run returns a stable runId; polling reaches success (eventual consis
 });
 
 test("serve runs the full executor: when, notify handlers, and check mode", async () => {
-  const marker = join(TMP_ROOT, "executor-parity.txt");
+  // Keep the marker inside the project root: serve-mode local isolation is
+  // default-on, and the sandbox only grants the project mount.
+  const markerDir = mkdtempSync(join(process.cwd(), ".rolecall-it-"));
+  const marker = join(markerDir, "executor-parity.txt");
   const playbook = [
     {
       hosts: ["all"],
@@ -139,7 +142,7 @@ test("serve runs the full executor: when, notify handlers, and check mode", asyn
   expect(readFileSync(marker, "utf-8")).toBe("parity\n");
   expect(done.outcomes.some((o: any) => o.task === "flush")).toBe(true);
 
-  const checkMarker = join(TMP_ROOT, "executor-parity-check.txt");
+  const checkMarker = join(markerDir, "executor-parity-check.txt");
   const checkPb = [
     {
       hosts: ["all"],
@@ -152,6 +155,7 @@ test("serve runs the full executor: when, notify handlers, and check mode", asyn
   expect(done2.status).toBe("success");
   expect(existsSync(checkMarker)).toBe(false);
   expect(done2.outcomes[0].changed).toBe(true);
+  rmSync(markerDir, { recursive: true, force: true });
 });
 
 test("playbook across mixed transports reuses config loaders + inventory engine", async () => {
