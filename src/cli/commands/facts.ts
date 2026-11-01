@@ -45,9 +45,12 @@ export async function runFactsCommand(
   // Connect + gather per host; isolate any single-host failure into `failures`.
   const facts: Record<string, FactMap> = {};
   const failures: Record<string, string> = {};
+  const isolation = flags.isolation
+    ? { backend: flags.isolation, projectRoot: process.cwd() }
+    : undefined;
   for (const host of matchedHosts) {
     try {
-      const conn = buildConnectionForHost(host, varsByHost[host] ?? {});
+      const conn = buildConnectionForHost(host, varsByHost[host] ?? {}, { isolation });
       await conn.connect();
       try {
         facts[host] = await defaultFactsEngine.gatherFacts(conn, [], {});

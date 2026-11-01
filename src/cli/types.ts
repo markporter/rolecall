@@ -41,6 +41,8 @@ export interface GlobalFlags {
   tags?: string;
   /** Raw `--skip-tags` string (comma-separated tag list); parsed into a filter by the playbook command. */
   skipTags?: string;
+  /** Requested local isolation backend (--isolation; default auto). */
+  isolation?: import("../isolation/types").IsolationBackendName;
 }
 
 // ---------------------------------------------------------------------------
@@ -201,6 +203,13 @@ export interface VarsTraceResult {
   plays: Array<{ name?: string; hosts: Record<string, Record<string, VarResolution>> }>;
 }
 
+/** Result of `rolecall doctor`: local isolation backend discovery. */
+export interface DoctorResult {
+  command: "doctor";
+  isolation: import("../isolation/types").IsolationProbe;
+  note: string;
+}
+
 export type CliResult =
   | PlaybookRunResult
   | FactsGatherResult
@@ -213,7 +222,8 @@ export type CliResult =
   | DocsSearchResult
   | DocsModulesResult
   | VarsListResult
-  | VarsTraceResult;
+  | VarsTraceResult
+  | DoctorResult;
 
 // ---------------------------------------------------------------------------
 // Error class — `usage: true` => exit code 2 (unknown subcommand / bad args);

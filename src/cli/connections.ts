@@ -20,6 +20,7 @@ import { SshConnection } from "../transport/ssh";
 import { HttpApiConnection } from "../transport/http";
 import { SimNetworkConnection } from "../transport/sim-network";
 import type { Connection, Credentials, HttpAuth } from "../transport/connection";
+import type { IsolationOptions } from "../isolation/types";
 
 const NO_RETRY = { retries: 0, minTimeout: 10, maxTimeout: 50, factor: 2, randomize: false };
 const CONNECT_TIMEOUT_MS = 8000;
@@ -80,6 +81,7 @@ function resolveCredentials(vars: Record<string, unknown>): Credentials | undefi
 export function buildConnectionForHost(
   host: string,
   vars: Record<string, unknown>,
+  opts: { isolation?: IsolationOptions } = {},
 ): Connection {
   const kind = (asString(vars["rolecall_connection"]) ?? "ssh").toLowerCase();
   const targetHost = asString(vars["rolecall_host"]) ?? host;
@@ -99,6 +101,7 @@ export function buildConnectionForHost(
         user,
         timeoutMs: CONNECT_TIMEOUT_MS,
         retry: NO_RETRY,
+        ...(opts.isolation ? { isolation: opts.isolation } : {}),
       });
     case "network":
       return new NetworkSshConnection({
