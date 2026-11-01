@@ -51,6 +51,11 @@ is the deliberate ceiling; every added mechanism must justify its own test matri
 - Project plugins are trusted code after approval; the sandbox is **not** a jail for
   in-process module code. To jail the whole process, run RoleCall itself in a
   container/VM (deployment choice), or expose only a constrained gateway ([ADR 0027](0027-exposed-orchestrator-api-security.md)).
+- **Local `become` and resource limits.** `become`/sudo inside the sandbox is denied by
+  default; a task that needs privileged local changes must use a module that performs them
+  through a granted mechanism or an explicit privileged execution mode (documented and
+  traced). Shell processes get PID/CPU/memory/output limits (cgroups where available,
+  rlimits/`ulimit` otherwise) so a fork bomb or output bomb cannot take down the host.
 
 ### 3. `namespace` backend (cheap Linux path, no daemon)
 
@@ -156,6 +161,9 @@ projects:
   untrusted profile's only route. It accepts HTTP CONNECT, HTTP Host, and SOCKS5 (TCP),
   checks host/port/CIDR, and records allow/deny in the trace without secrets. The sandbox
   gets loopback plus a proxy shim bridged to the socket; direct egress stays off.
+  **TOCTOU/DNS-rebinding hardening:** resolve once, validate every A/AAAA record, connect
+  to the validated IP (not a second lookup), pin that result for the request, re-check on
+  redirect, and disable cross-origin redirects by default.
 - `--isolation-network module` (default), `none` (deny even modules), `all` (ambient egress;
   last resort, warned and traced).
 - **Fail-closed limitation:** proxy-unaware programs opening raw TCP/UDP fail even when
@@ -349,6 +357,8 @@ separate decision (ADR 0026).
 - [ ] Harden in-process structured refs and remove the Eta `globalThis` fallback; block `process`/`require`/`Bun`/`globalThis` in code templates
 - [ ] Confine `copy` `template_file`/`src` paths to the project root (canonicalize, reject `..`/symlink escapes) or require a filesystem grant
 - [ ] Template tests: Eta `process.env` blocked; structured refs unchanged; Nunjucks sandbox-only render; Ansible filter/test/global layer; helper approval; path traversal; sandbox-unavailable guidance plus unsafe override; render caps; no `__render-template` route in `--serve`
+- [ ] Egress hardening: DNS pinning/no-rebinding, connect-to-validated-IP, redirect re-checks and cross-origin redirect denial; tests for mixed A/AAAA, rebinding, and redirect-to-internal
+- [ ] Local `become` policy (deny by default, explicit privileged mode) and PID/CPU/memory/output limits for sandboxed commands (cgroups/rlimits); fork-bomb and output-bomb tests
 - [ ] Shared contract tests for both backends, grants, network profiles, denial hints, and the auto matrix; dual-runtime per ADR 0018
 
 ## References

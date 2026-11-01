@@ -132,6 +132,10 @@ node (ADR 0014 §8). Therefore:
 - the docs must state that untrusted projects should arrive pre-bundled
   (`_bundled.js`, ADR 0014 §4.1/§8), and that JIT `bun install` over an untrusted repo is
   outside the trust boundary;
+- the resolved commit is pinned, but operators should also be able to require **signed tags
+  or commits**, use `--frozen`/lockfile semantics for collections and plugins, and mark a
+  project **trusted** before `.ts` plugins are auto-imported. Cloning alone must not imply
+  trust;
 - the cache directory is treated as sensitive as the checkout itself (it contains
   executable project code) and is never shared across users.
 
@@ -194,6 +198,7 @@ the checkout — but neither implements the other. `rolecall install` continues 
 - [ ] Add `prepareProjectSource`/`createProjectSource` and replace direct `FsProjectSource` construction at the read sites in §5 (fix `playbook run` passing no source to `loadPlaybookFile`)
 - [ ] Add `--project` / `--project-ref` to `GLOBAL_OPTS`/HELP; give `ROLECALL_PROJECT_GIT_URL` its first consumer and add `ROLECALL_PROJECT_GIT_REF`
 - [ ] Add `source` metadata to the `Project` store model + migration, and materialize on create/dispatch in the orchestrator
+- [ ] Add signed-commit/tag verification (optional policy), `--frozen`/lockfile semantics for project dependencies, and an explicit trusted-project flag gating `.ts` plugin auto-import
 - [ ] Contract-test `GitProjectSource` against the `FsProjectSource` suite (`src/vfs/project-source.test.ts`), skipping when `git` is unavailable; cover offline, moving refs, concurrent materialization, and cache corruption
 - [ ] Dual-runtime tests per ADR 0018 (`ROLECALL_RUNTIME=bun` and `=node`)
 - [ ] Four-surface sync per AGENTS.md once implemented: `AGENTS.md` (status/flag), `README.md`, `design/` (this ADR + the `design/README.md` map, `vfs-and-io-abstractions.md` matrix, `goals.md`, `serverless-and-git-friendly.md` Phase 1), `docs/` guide
