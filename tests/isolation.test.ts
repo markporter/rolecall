@@ -232,3 +232,25 @@ test("namespace egress broker allows and denies real local traffic", async () =>
     server.stop(true);
   }
 }, 30_000);
+
+test("docker builder wires the egress socket, shim, and proxy env", () => {
+  const cmd = buildDockerCommand({
+    shell: "/bin/sh",
+    command: "curl https://api.example.com",
+    projectRoot: "/work",
+    network: "off",
+    image: "rolecall/isolation@sha256:abc",
+    egress: {
+      socketDir: "/tmp/egress",
+      shim: { file: "/run/rolecall/runtime", args: ["/run/rolecall/cli.js", "__egress-shim"] },
+      binds: [{ source: "/home/me/.bun/bin/bun", target: "/run/rolecall/runtime" }],
+      proxyPort: 18080,
+    },
+  });
+  expect(cmd.args).toEqual(expect.arrayContaining(["-v", "/tmp/egress:/run/rolecall-egress"]));
+  expect(cmd.args).toEqual(
+    expect.arrayContaining(["-v", "/home/me/.bun/bin/bun:/run/rolecall/runtime:ro"]),
+  );
+  expect(cmd.args).toEqual(expect.arrayContaining(["-e", "HTTP_PROXY=http://127.0.0.1:18080"]));
+  expect(cmd.args.at(-1)).toContain('exec /bin/sh -c "$ROLECALL_USER_COMMAND"');
+});
