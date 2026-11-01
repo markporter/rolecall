@@ -210,6 +210,10 @@ Notes worth stating plainly:
 bun test                     # primary suite — Bun-native `bun:test`
 ROLECALL_RUNTIME=bun bun test     # force Bun PAL branch
 ROLECALL_RUNTIME=node bun test    # force Node PAL branch (green — runner is Bun)
+
+# Isolation: Linux runs the suite with `ROLECALL_ISOLATION=auto`; macOS/Windows
+# default to `none` unless a backend is installed. `ROLECALL_ISOLATION=none`
+# disables it locally, and the Docker CI job runs the live Docker backend test.
 ```
 
 The assertion suite imports `bun:test`, which is Bun-native and unavailable under plain Node without an extra transpiling loader we deliberately do not vendor. To still exercise the **Node runtime through its own harness**, CI runs a small `node --test` probe against the pure-JS runtime-detection module (`src/util/runtime.ts`), verifying `ROLECALL_RUNTIME` overrides work on both runtimes, plus a `node-package-smoke` job that installs the packed npm tarball with no Bun on PATH and drives the CLI end to end. See `.github/workflows/ci.yml`.
