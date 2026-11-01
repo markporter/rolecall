@@ -65,7 +65,10 @@ This ADR owns the exposed-serve controls and the gaps assigned to it there.
 ### 3. Serve-mode execution integration
 
 `--serve` forks a one-shot `playbook run -o jsonl` per job (ADR 0017), so children inherit
-the config/defaults from ADR 0025. Practical requirements:
+the config/defaults from ADR 0025. ADR 0017 already gives per-run process/global-state
+isolation and crash/hang containment; the requirements below add the **security** boundary
+around that fork (authorization, state/cache confinement, worker identity). Practical
+requirements:
 
 - Start the egress broker per child (simple, policy-isolated) or in the parent and pass its
   socket path to children. Denials must appear in the run trace and jsonl event detail
