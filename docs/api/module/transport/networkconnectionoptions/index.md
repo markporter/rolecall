@@ -22,7 +22,7 @@ longname: module:transport.NetworkConnectionOptions
 }"
 />
 
-<SourceLink href="/source/src/transport/connection-ts/#L117" label="connection.ts:117" />
+<SourceLink href="/source/src/transport/connection-ts/#L119" label="connection.ts:119" />
 
 #### Hierarchy
 
@@ -49,7 +49,7 @@ _Inherited from&#x20;_[`credentials`](/module/transport/baseconnectionoptions#cr
 
 <MemberHeading id="driver" depth="3" name="driver" sig="driver: VendorDriver" />
 
-<MemberMeta sourceHref="/source/src/transport/connection-ts/#L120" sourceLabel="connection.ts:120" />
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L122" sourceLabel="connection.ts:122" />
 
 Vendor CLI driver; defaults to IOS_DRIVER when omitted.
 
@@ -61,11 +61,11 @@ _Inherited from&#x20;_[`host`](/module/transport/baseconnectionoptions#host)
 
 <MemberHeading id="kind" depth="3" name="kind" sig="kind: 'network'" />
 
-<MemberMeta sourceHref="/source/src/transport/connection-ts/#L118" sourceLabel="connection.ts:118" />
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L120" sourceLabel="connection.ts:120" />
 
 <MemberHeading id="knownhostspath" depth="3" name="knownHostsPath" sig="knownHostsPath: string" />
 
-<MemberMeta sourceHref="/source/src/transport/connection-ts/#L122" sourceLabel="connection.ts:122" />
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L124" sourceLabel="connection.ts:124" />
 
 Path to a known_hosts file; defaults to \~/.ssh/known_hosts.
 
@@ -85,7 +85,7 @@ Partial retry overrides merged onto DEFAULT_RETRY_CONFIG.
 
 <MemberHeading id="stricthostkeychecking" depth="3" name="strictHostKeyChecking" sig="strictHostKeyChecking: boolean" />
 
-<MemberMeta sourceHref="/source/src/transport/connection-ts/#L124" sourceLabel="connection.ts:124" />
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L126" sourceLabel="connection.ts:126" />
 
 When false, any host key is accepted (insecure; tests/trust-on-first-use).
 

@@ -8,7 +8,7 @@ longname: module:transport.DEFAULT_CONCURRENCY
 
 <Signature code="DEFAULT_CONCURRENCY: 4" />
 
-<SourceLink href="/source/src/transport/connection-ts/#L182" label="connection.ts:182" />
+<SourceLink href="/source/src/transport/connection-ts/#L184" label="connection.ts:184" />
 
 **Type**
 

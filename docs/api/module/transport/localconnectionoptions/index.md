@@ -11,6 +11,7 @@ longname: module:transport.LocalConnectionOptions
 	concurrency?: number;
 	credentials?: Credentials;
 	host: string;
+	isolation?: IsolationOptions;
 	kind: 'local';
 	port?: number;
 	retry?: Partial<RetryConfig>;
@@ -50,6 +51,12 @@ _Inherited from&#x20;_[`credentials`](/module/transport/baseconnectionoptions#cr
 <MemberMeta sourceHref="/source/src/transport/connection-ts/#L74" sourceLabel="connection.ts:74" />
 
 _Inherited from&#x20;_[`host`](/module/transport/baseconnectionoptions#host)
+
+<MemberHeading id="isolation" depth="3" name="isolation" sig="isolation: IsolationOptions" />
+
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L99" sourceLabel="connection.ts:99" />
+
+Optional ADR 0025 sandbox. Omit for direct, unsandboxed library execution.
 
 <MemberHeading id="kind" depth="3" name="kind" sig="kind: 'local'" />
 

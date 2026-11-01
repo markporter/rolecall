@@ -8,7 +8,7 @@ longname: module:transport.DEFAULT_RETRY_CONFIG
 
 <Signature code="DEFAULT_RETRY_CONFIG: RetryConfig" />
 
-<SourceLink href="/source/src/transport/connection-ts/#L173" label="connection.ts:173" />
+<SourceLink href="/source/src/transport/connection-ts/#L175" label="connection.ts:175" />
 
 **Type**
 

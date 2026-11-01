@@ -14,7 +14,7 @@ description: Deferred gRPC capability. Presence triggers a deferred error at con
 }"
 />
 
-<SourceLink href="/source/src/transport/connection-ts/#L134" label="connection.ts:134" />
+<SourceLink href="/source/src/transport/connection-ts/#L136" label="connection.ts:136" />
 
 Deferred gRPC capability. Presence triggers a deferred error at connect().
 
@@ -24,8 +24,8 @@ Deferred gRPC capability. Presence triggers a deferred error at connect().
 
 <MemberHeading id="method" depth="3" name="method" sig="method: string" />
 
-<MemberMeta sourceHref="/source/src/transport/connection-ts/#L136" sourceLabel="connection.ts:136" />
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L138" sourceLabel="connection.ts:138" />
 
 <MemberHeading id="service" depth="3" name="service" sig="service: string" />
 
-<MemberMeta sourceHref="/source/src/transport/connection-ts/#L135" sourceLabel="connection.ts:135" />
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L137" sourceLabel="connection.ts:137" />

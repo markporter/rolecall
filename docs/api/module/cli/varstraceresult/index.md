@@ -13,7 +13,7 @@ longname: module:cli.VarsTraceResult
 }"
 />
 
-<SourceLink href="/source/src/cli/types-ts/#L198" label="types.ts:198" />
+<SourceLink href="/source/src/cli/types-ts/#L200" label="types.ts:200" />
 
 ---
 
@@ -21,10 +21,10 @@ longname: module:cli.VarsTraceResult
 
 <MemberHeading id="command" depth="3" name="command" sig="command: 'vars trace'" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L199" sourceLabel="types.ts:199" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L201" sourceLabel="types.ts:201" />
 
 <MemberHeading id="plays" depth="3" name="plays" sig="plays: { hosts: Record<string, Record<string, VarResolution>>; name?: string }[]" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L201" sourceLabel="types.ts:201" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L203" sourceLabel="types.ts:203" />
 
 Per-play resolution: each host maps to var name → resolution (winning value + override chain).

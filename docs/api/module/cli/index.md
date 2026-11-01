@@ -21,6 +21,7 @@ longname: module:cli
 - [`DocsModuleEntry`](/module/cli/docsmoduleentry)
 - [`DocsModulesResult`](/module/cli/docsmodulesresult)
 - [`DocsSearchResult`](/module/cli/docssearchresult)
+- [`DoctorResult`](/module/cli/doctorresult)
 - [`FactsGatherResult`](/module/cli/factsgatherresult)
 - [`GlobalFlags`](/module/cli/globalflags)
 - [`InventoryListResult`](/module/cli/inventorylistresult)

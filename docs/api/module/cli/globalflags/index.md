@@ -14,6 +14,7 @@ longname: module:cli.GlobalFlags
 	force: boolean;
 	forks?: number;
 	inventory?: string;
+	isolation?: IsolationBackendName;
 	limit?: string;
 	output: string;
 	profile: boolean;
@@ -65,6 +66,12 @@ Concurrency fan-out (--forks N). Parsed to a number by the dispatcher.
 <MemberMeta sourceHref="/source/src/cli/types-ts/#L31" sourceLabel="types.ts:31" />
 
 Optional inventory source for playbook run (resolves target patterns).
+
+<MemberHeading id="isolation" depth="3" name="isolation" sig="isolation: IsolationBackendName" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L45" sourceLabel="types.ts:45" />
+
+Requested local isolation backend (--isolation; default auto).
 
 <MemberHeading id="limit" depth="3" name="limit" sig="limit: string" />
 

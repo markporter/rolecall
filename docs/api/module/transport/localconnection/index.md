@@ -6,7 +6,7 @@ longname: module:transport.LocalConnection
 
 # LocalConnection
 
-<SourceLink href="/source/src/transport/local-ts/#L26" label="local.ts:26" />
+<SourceLink href="/source/src/transport/local-ts/#L33" label="local.ts:33" />
 
 ---
 
@@ -39,19 +39,19 @@ longname: module:transport.LocalConnection
 
 <MemberHeading id="kind" depth="3" name="kind" sig="kind: 'local'" />
 
-<MemberMeta badges="readonly" sourceHref="/source/src/transport/local-ts/#L27" sourceLabel="local.ts:27" />
+<MemberMeta badges="readonly" sourceHref="/source/src/transport/local-ts/#L34" sourceLabel="local.ts:34" />
 
 _Implementation of&#x20;_[`kind`](/module/transport/connection#kind)
 
 <MemberHeading id="options" depth="3" name="options" sig="options: LocalConnectionOptions" />
 
-<MemberMeta badges="readonly" sourceHref="/source/src/transport/local-ts/#L28" sourceLabel="local.ts:28" />
+<MemberMeta badges="readonly" sourceHref="/source/src/transport/local-ts/#L35" sourceLabel="local.ts:35" />
 
 ## Methods
 
 <MemberHeading id="connect" depth="3" name="connect" sig="connect(): Promise<void>" />
 
-<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L49" sourceLabel="local.ts:49" />
+<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L72" sourceLabel="local.ts:72" />
 
 _Implementation of&#x20;_[`connect`](/module/transport/connection#connect)
 
@@ -63,7 +63,7 @@ Establish the underlying transport (idempotent once connected).
 
 <MemberHeading id="disconnect" depth="3" name="disconnect" sig="disconnect(): Promise<void>" />
 
-<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L98" sourceLabel="local.ts:98" />
+<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L148" sourceLabel="local.ts:148" />
 
 _Implementation of&#x20;_[`disconnect`](/module/transport/connection#disconnect)
 
@@ -83,7 +83,7 @@ Tear down the underlying transport.
 ): Promise<ExecResult>"
 />
 
-<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L72" sourceLabel="local.ts:72" />
+<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L122" sourceLabel="local.ts:122" />
 
 _Implementation of&#x20;_[`exec`](/module/transport/connection#exec)
 
@@ -100,7 +100,7 @@ Run a command, returning captured stdout/stderr/exit code.
 
 <MemberHeading id="facts" depth="3" name="facts" sig="facts(): Promise<ConnectionFacts>" />
 
-<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L76" sourceLabel="local.ts:76" />
+<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L126" sourceLabel="local.ts:126" />
 
 _Implementation of&#x20;_[`facts`](/module/transport/connection#facts)
 
@@ -112,7 +112,7 @@ Best-effort targeted fact gathering for the target.
 
 <MemberHeading id="health" depth="3" name="health" sig="health(): Promise<HealthStatus>" />
 
-<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L86" sourceLabel="local.ts:86" />
+<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L136" sourceLabel="local.ts:136" />
 
 _Implementation of&#x20;_[`health`](/module/transport/connection#health)
 

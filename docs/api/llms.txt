@@ -12,6 +12,7 @@ Documentation for @rolecall/cli. Every page below links to its Markdown source; 
 - [DocsModuleEntry](https://rolecall.example.com/module/cli/docsmoduleentry/index.md)
 - [DocsModulesResult](https://rolecall.example.com/module/cli/docsmodulesresult/index.md)
 - [DocsSearchResult](https://rolecall.example.com/module/cli/docssearchresult/index.md)
+- [DoctorResult](https://rolecall.example.com/module/cli/doctorresult/index.md)
 - [FactsGatherResult](https://rolecall.example.com/module/cli/factsgatherresult/index.md)
 - [GlobalFlags](https://rolecall.example.com/module/cli/globalflags/index.md)
 - [InventoryListResult](https://rolecall.example.com/module/cli/inventorylistresult/index.md)

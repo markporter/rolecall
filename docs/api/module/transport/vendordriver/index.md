@@ -19,7 +19,7 @@ description: "Vendor CLI semantics for network switches: how to enter config mod
 }"
 />
 
-<SourceLink href="/source/src/transport/connection-ts/#L101" label="connection.ts:101" />
+<SourceLink href="/source/src/transport/connection-ts/#L103" label="connection.ts:103" />
 
 Vendor CLI semantics for network switches: how to enter config mode, show/commit config, etc.
 
@@ -29,23 +29,23 @@ Vendor CLI semantics for network switches: how to enter config mode, show/commit
 
 <MemberHeading id="enterconfig" depth="3" name="enterConfig" sig="enterConfig: string" />
 
-<MemberMeta badges="readonly" sourceHref="/source/src/transport/connection-ts/#L104" sourceLabel="connection.ts:104" />
+<MemberMeta badges="readonly" sourceHref="/source/src/transport/connection-ts/#L106" sourceLabel="connection.ts:106" />
 
 Command that enters configuration mode (privileged EXEC → config).
 
 <MemberHeading id="exitconfig" depth="3" name="exitConfig" sig="exitConfig: string" />
 
-<MemberMeta badges="readonly" sourceHref="/source/src/transport/connection-ts/#L106" sourceLabel="connection.ts:106" />
+<MemberMeta badges="readonly" sourceHref="/source/src/transport/connection-ts/#L108" sourceLabel="connection.ts:108" />
 
 Command that exits configuration mode back to privileged EXEC.
 
 <MemberHeading id="name" depth="3" name="name" sig="name: string" />
 
-<MemberMeta badges="readonly" sourceHref="/source/src/transport/connection-ts/#L102" sourceLabel="connection.ts:102" />
+<MemberMeta badges="readonly" sourceHref="/source/src/transport/connection-ts/#L104" sourceLabel="connection.ts:104" />
 
 <MemberHeading id="showrunning" depth="3" name="showRunning" sig="showRunning: string" />
 
-<MemberMeta badges="readonly" sourceHref="/source/src/transport/connection-ts/#L108" sourceLabel="connection.ts:108" />
+<MemberMeta badges="readonly" sourceHref="/source/src/transport/connection-ts/#L110" sourceLabel="connection.ts:110" />
 
 Command that dumps the running configuration.
 
@@ -53,7 +53,7 @@ Command that dumps the running configuration.
 
 <MemberHeading id="commit" depth="3" name="commit" sig="commit(): string" />
 
-<MemberMeta sourceHref="/source/src/transport/connection-ts/#L110" sourceLabel="connection.ts:110" />
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L112" sourceLabel="connection.ts:112" />
 
 Atomic commit of the running configuration.
 
@@ -63,7 +63,7 @@ Atomic commit of the running configuration.
 
 <MemberHeading id="commitconfirmed" depth="3" name="commitConfirmed" sig="commitConfirmed(seconds: number): string" />
 
-<MemberMeta sourceHref="/source/src/transport/connection-ts/#L112" sourceLabel="connection.ts:112" />
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L114" sourceLabel="connection.ts:114" />
 
 Commit that auto-reverts after `seconds` unless confirmed.
 
@@ -77,7 +77,7 @@ Commit that auto-reverts after `seconds` unless confirmed.
 
 <MemberHeading id="parserunning" depth="3" name="parseRunning" sig="parseRunning(raw: string): string" />
 
-<MemberMeta sourceHref="/source/src/transport/connection-ts/#L114" sourceLabel="connection.ts:114" />
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L116" sourceLabel="connection.ts:116" />
 
 Optional post-processing of raw `show running-config` output.
 

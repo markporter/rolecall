@@ -26,7 +26,7 @@ longname: module:transport.HttpApiConnectionOptions
 }"
 />
 
-<SourceLink href="/source/src/transport/connection-ts/#L145" label="connection.ts:145" />
+<SourceLink href="/source/src/transport/connection-ts/#L147" label="connection.ts:147" />
 
 #### Hierarchy
 
@@ -39,11 +39,11 @@ longname: module:transport.HttpApiConnectionOptions
 
 <MemberHeading id="auth" depth="3" name="auth" sig="auth: HttpAuth" />
 
-<MemberMeta sourceHref="/source/src/transport/connection-ts/#L151" sourceLabel="connection.ts:151" />
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L153" sourceLabel="connection.ts:153" />
 
 <MemberHeading id="basepath" depth="3" name="basePath" sig="basePath: string" />
 
-<MemberMeta sourceHref="/source/src/transport/connection-ts/#L150" sourceLabel="connection.ts:150" />
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L152" sourceLabel="connection.ts:152" />
 
 Path prefix prepended to request.path (e.g. "/api/v1").
 
@@ -63,13 +63,13 @@ _Inherited from&#x20;_[`credentials`](/module/transport/baseconnectionoptions#cr
 
 <MemberHeading id="grpc" depth="3" name="grpc" sig="grpc: HttpGrpcCapability" />
 
-<MemberMeta sourceHref="/source/src/transport/connection-ts/#L160" sourceLabel="connection.ts:160" />
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L162" sourceLabel="connection.ts:162" />
 
 Deferred gRPC capability — setting this throws at connect().
 
 <MemberHeading id="healthpath" depth="3" name="healthPath" sig="healthPath: string" />
 
-<MemberMeta sourceHref="/source/src/transport/connection-ts/#L157" sourceLabel="connection.ts:157" />
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L159" sourceLabel="connection.ts:159" />
 
 Path used by health(); defaults to request.path.
 
@@ -81,11 +81,11 @@ _Inherited from&#x20;_[`host`](/module/transport/baseconnectionoptions#host)
 
 <MemberHeading id="kind" depth="3" name="kind" sig="kind: 'http'" />
 
-<MemberMeta sourceHref="/source/src/transport/connection-ts/#L146" sourceLabel="connection.ts:146" />
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L148" sourceLabel="connection.ts:148" />
 
 <MemberHeading id="poolsize" depth="3" name="poolSize" sig="poolSize: number" />
 
-<MemberMeta sourceHref="/source/src/transport/connection-ts/#L155" sourceLabel="connection.ts:155" />
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L157" sourceLabel="connection.ts:157" />
 
 undici Pool max sockets; bounds concurrent in-flight requests.
 
@@ -97,13 +97,13 @@ _Inherited from&#x20;_[`port`](/module/transport/baseconnectionoptions#port)
 
 <MemberHeading id="protocol" depth="3" name="protocol" sig="protocol: 'http' | 'https'" />
 
-<MemberMeta sourceHref="/source/src/transport/connection-ts/#L148" sourceLabel="connection.ts:148" />
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L150" sourceLabel="connection.ts:150" />
 
 URL scheme (default http).
 
 <MemberHeading id="request" depth="3" name="request" sig="request: HttpApiRequest" />
 
-<MemberMeta sourceHref="/source/src/transport/connection-ts/#L153" sourceLabel="connection.ts:153" />
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L155" sourceLabel="connection.ts:155" />
 
 The configured request issued by exec().
 
