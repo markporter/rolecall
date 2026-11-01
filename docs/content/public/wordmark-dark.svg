@@ -42,8 +42,9 @@ wordmark-e - corrective revision of D (round 2, lead candidate)
   x-height rounds y23..57 (+1u overshoot); baseline 56; cap 8..56 (R/l stems),
   C cap y7..57; round counters only (R horn excepted); no fonts/<text>;
     #748FFC; viewBox 252x64 (reflow: right ink 247.5 + 4.5 pad).
-  Status: PENDING USER APPROVAL (D rejected by user: serif-e, skinny-C/gap;
-  round-1 E gaps 8.22/8.22 rejected by user: C->a still too wide).
+  Status: ADOPTED — user-approved after the round-2 reflow (D rejected by user:
+  serif-e, skinny-C/gap; round-1 E gaps 8.22/8.22 rejected: C->a still too
+  wide; round-2 reflow set C->a 4.72 / e->C 6.23).
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 252 64" fill="#748FFC" role="img" aria-label="rolecall wordmark">
   <title>rolecall wordmark (wordmark-dark)</title>

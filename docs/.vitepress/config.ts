@@ -10,7 +10,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'RoleCall',
   description:
-    'RoleCall - Bun-first config management & orchestration (an Ansible alternative). User guide.',
+    'RoleCall - dual-runtime config management & orchestration (an Ansible alternative). User guide.',
   srcDir: 'content',
   outDir: '.vitepress/dist',
   base: '/',
@@ -90,7 +90,7 @@ export default defineConfig({
     },
 
     footer: {
-      message: 'RoleCall user guide. Local static build only.',
+      message: 'RoleCall — config management & orchestration.',
       copyright: 'Released under the LICENSE bundled with the project.',
     },
   },
