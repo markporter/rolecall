@@ -58,7 +58,10 @@ later.
    layer. Default behavior unchanged. `ROLECALL_DB_BACKEND=postgres` throws a clear
    "not implemented (deferred)" error (no silent sqlite fallback).
 - **Phase 1 — remote project + scratch (deferred)**: `GitProjectSource` +
-   `S3ProjectSource`; `S3ScratchStore`.
+   `S3ProjectSource`; `S3ScratchStore`. The git-project design (materialize-to-cache,
+   `--project`/`ROLECALL_PROJECT_GIT_URL` selection, cache/offline semantics, trust
+   boundary) is recorded in [ADR 0021](decisions/0021-remote-git-project-source.md)
+   (**Proposed**); S3 remains undesigned beyond the seam matrix.
 - **Phase 2 — Postgres backend (deferred)**: `PostgresStore` (postgres-js) +
    advisory locks for multi-replica coordination.
 - **Phase 3 — serverless mode (deferred)**: one-shot run mode + HTTP/poll

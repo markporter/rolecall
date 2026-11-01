@@ -1,6 +1,6 @@
 # 0017 — Execution isolation: dependency-injected run scope and forked playbook runs
 
-- Status: **Proposed**
+- Status: **Accepted — implemented (fork-per-run + run-scope seams)**
 - Date: 2026-10-14
 - Related: [ADR 0014](0014-project-and-plugin-architecture.md) (plugin resolution), [ADR 0016](0016-plugin-and-module-sdk-authoring-surface.md) (module/plugin SDK), [ADR 0006](0006-storage-backend-colocation-and-postgres.md) (storage)
 
@@ -25,16 +25,13 @@ in two more places: the executor's module `registry` Map in
 `searchModules` metadata map (`src/modules/search.ts`).
 
 Today the CLI is one-shot, so none of this races: one process, one scan, one
-run, exit. `rolecall --serve` (`src/orchestrator/**`) is different. It is a
-long-lived process, and when it starts running playbooks, concurrent runs inside
-one process would race and leak one project's resolution into another. The
-orchestrator's `Engine` (`src/orchestrator/engine.ts`) today uses its own
-simplified `#executeOne` path and does not call `runPlaybook`, so the race is
-latent. **Update:** the scheduler/cron/webhooks described as scaffolded here are now
-implemented and fire through `Engine.enqueue`, but dispatch still uses the simplified
-`#executeOne` path; the race is still latent because serve mode does not yet call
-`runPlaybook`. That is good news: the fix can land before serve ever wires up full
-playbook execution.
+run, exit. `rolecall --serve` (`src/orchestrator/**`) is different: it is a
+long-lived process. **Implemented:** the serve engine no longer calls
+`runPlaybook` in-process. Each job is forked to `rolecall playbook run -o jsonl`
+with a materialized temporary playbook/inventory pair (`src/orchestrator/
+child-run.ts`), so resolver/facts/module/search globals are process-local to each
+run. The scheduler and webhooks fire through the same `Engine.enqueue` path, and
+the child's typed event/result stream carries progress back to the parent.
 
 One subsystem is already safe for multi-process use. The Store sets
 `journal_mode=WAL`, `synchronous=NORMAL`, and `busy_timeout=5000`
@@ -121,20 +118,17 @@ protocol rather than in-process callbacks.
   is partial (per AGENTS.md), and workers would still fork the shared Store and
   transport sessions for no correctness gain over dependency injection.
 
-**Work items (implementation, not in this ADR)**
-1. Add the per-run table type and make `scanAndRegister` return it.
-2. Add the optional table parameter to `resolveModule` and thread `resolution`
-   through `ExecOptions`, `RunState`, and `RollbackInput`.
-3. Update `tests/resolver.test.ts` to pass the table, and add a
-   two-roots-isolated test proving two scans do not bleed into each other.
-4. Remove the resolver module globals (`resolutionByType`, `bareAliasByType`,
-   `ambiguousBareByType`).
-5. Route scanned fact plugins through the table instead of the global
-   `registerFactPlugin`.
-6. Define the child-run JSON event protocol, exit codes, and SIGTERM handling.
-7. Wire the serve orchestrator to fork `rolecall playbook run` and parse the event
-   stream.
-8. Four-surface doc sync (`AGENTS.md`, `README.md`, `design/`, `docs/`).
+**Work items**
+1. Fork-per-run is implemented in `src/orchestrator/child-run.ts`: temp
+   playbook/inventory materialization, `-o jsonl` event/result protocol, child
+   resolution, timeout/SIGTERM, and parent-side trace persistence.
+2. Server HTTP runs use the CLI's real `http` module; network-simulator targets use
+   `SimNetworkConnection` against the simulator's `POST /cli` bridge.
+3. `--check`/`--diff`/`--force` and handlers/tx/roles/phases now apply to server runs.
+4. Four-surface doc sync is part of the same change.
+5. **Remaining:** dependency-injected `RunScope` for in-process multi-run callers
+   (tests/MCP) remains a follow-up; serve no longer needs it because the fork
+   isolates globals.
 
 ## References
 - RoleCall source: `src/modules/resolver.ts` (globals, `buildResolutionTable`, `scanAndRegister`, `resolveModule`), `src/facts/engine.ts` (`registerFactPlugin`, `defaultFactsEngine`)

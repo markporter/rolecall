@@ -10,10 +10,10 @@
 layers. RoleCall now also executes live: `playbook run` applies state over SSH/local transports and
 `facts gather` gathers targeted/cached facts per host. Use cases below describe what the
 design *targets*; items not marked 🟢 remain roadmap or target capabilities.
-(Per `AGENTS.md`: the SPA UI, serve-side executor parity, the plugin SDK authoring
-surface, literal Jinja rendering, and the Postgres backend stay genuinely scaffolded;
-the orchestrator cron scheduler and webhooks are implemented, and the durable store runs
-on both runtimes over the PAL SqliteDb seam — ADR 0019.)
+(Per `AGENTS.md`: the SPA UI, the plugin SDK authoring surface, global Jinja `{{ }}` scalar interpolation,
+and the Postgres backend stay genuinely scaffolded; the orchestrator cron scheduler,
+webhooks, and forked full-executor runs are implemented, and the durable store runs on
+both runtimes over the PAL SqliteDb seam — ADR 0019.)
 
 ## Why these use cases
 

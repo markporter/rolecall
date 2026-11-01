@@ -46,7 +46,7 @@ pros/cons, TechTarget network-automation limitations, and InfoWorld review.
 
 | Ansible flaw | RoleCall's design response | Status |
 |---|---|---|
-| Slow templating / YAML+Jinja escaping hell | Dual-mode templating: fast **eta/vento compiled-to-JS** default + optional **LiquidJS Jinja-mode**; **lenient undefined resolution** (empty string) by default so runtime-secret placeholders don't throw; shared filter registry; **structured-reference alternative** (`$var`/`$concat`/`$call` nodes) proposed for escapeless, type-safe values — see §6 | ✅ Addressed (structured refs implemented; see §6) |
+| Slow templating / YAML+Jinja escaping hell | Dual-mode templating: fast **eta/vento compiled-to-JS** default + optional **Nunjucks Jinja-mode (sandboxed)**; **lenient undefined resolution** (empty string) by default so runtime-secret placeholders don't throw; shared filter registry; **structured-reference alternative** (`$var`/`$concat`/`$call` nodes) proposed for escapeless, type-safe values — see §6 | ✅ Addressed (structured refs implemented; see §6) |
 | Painful extensibility / Python-only modules | **First-class JS/TS plugin SDK** — author a module in ~one function, dynamic `.ts/.js` load, no build step. Explicitly the #1 user differentiator | ✅ Addressed |
 | No notion of state / stateless | **Idempotency intrinsic to module contract**; check-compare-write + observed-state cache + skip-unchanged; **observe-and-reconcile minimal delta** by default; `rolecall_managed_only` flag governs drift ownership | ✅ Addressed |
 | SSH overhead / per-task connections | **Pure-JS ssh2, channel multiplexing** (1 TCP/SSH session, many channels), keepalive, **centralized resilient runner** (retry/timeout/concurrency) | ✅ Addressed |

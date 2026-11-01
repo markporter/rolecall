@@ -13,8 +13,8 @@
 - **Source of truth is `src/`**: if `README.md`'s status banner conflicts with actual
   `src/`, trust `src/` and document what it really does.
 - **Honesty**: never claim a scaffold/partial area (Jinja templating, SPA UI,
-  serve-side executor parity, plugin-SDK authoring, Http/gRPC) as functional; executor,
-  transport, idempotency, facts, cron scheduler, and webhooks are implemented.
+  plugin-SDK authoring, Http/gRPC) as functional; executor, transport, idempotency,
+  facts, cron scheduler, webhooks, and forked full-executor server runs are implemented.
 
 ## For agents
 

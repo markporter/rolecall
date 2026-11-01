@@ -105,12 +105,13 @@ for this reason. Run plain `bun run build` inside `docs/` (that script is
 
 Server mode is implemented: `src/orchestrator/routes.ts` mounts real endpoints, run
 dispatch executes over real transports, and the cron scheduler plus webhooks are wired.
-Two things stay partial: server dispatch uses a simplified per-target runner rather than
-the full CLI `runPlaybook` executor, and the SPA UI is static-`--ui-dist`-only. The
-executor, idempotency, transport, facts-collection, structured templating, cron, and
-webhooks are implemented; Jinja `{{ }}` rendering, the SPA UI, serve-side executor
-parity, the plugin-SDK authoring surface, Http/gRPC, and Postgres remain scaffolded or
-partial. Document those boundaries honestly; never assert a scaffolded item applies
+Each serve run forks `rolecall playbook run -o jsonl` with a materialized temporary
+playbook/inventory, so the full executor (roles/phases/`when`/`loop`/handlers/tx/check)
+applies. The SPA UI is static-`--ui-dist`-only. The executor, idempotency, transport,
+facts-collection, structured templating, cron, webhooks, and forked full-executor server
+runs are implemented; global Jinja `{{ }}` interpolation in playbook scalars (explicit
+`copy` content templates with `engine: jinja` work), the SPA UI, the plugin-SDK
+authoring surface, Http/gRPC, and Postgres remain scaffolded or partial. Document those boundaries honestly; never assert a scaffolded item applies
 remote state.
 
 ## See also

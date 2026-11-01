@@ -65,6 +65,12 @@ was wired into every existing caller (`loader.ts`, `inventory/plugin.ts`,
 `executor/module.ts`), leaving their default behavior byte-for-byte identical. The git/S3
 variants implement the same shape and will select via env var once built.
 
+The git backend's design is recorded in [ADR 0021](decisions/0021-remote-git-project-source.md)
+(**Proposed**): it materializes the repo into a content-addressed local cache and then
+delegates to `FsProjectSource`, because `resolveImportablePath`/`import()` and ADR 0014
+bundling need a real, writable tree. Until that ADR lands, `GitProjectSource` stays
+deferred and `ROLECALL_PROJECT_GIT_URL` remains parsed-but-unused.
+
 **DbConn** (the PAL `SqliteDb` seam, `src/pal/types.ts`) is the dialect-agnostic contract the repositories depend
 on. Its members:
 
@@ -121,6 +127,12 @@ Notes on the table above:
   option alongside `fs`/`memory`.
 - No dotenv dependency here: Bun auto-loads `.env` into `process.env`, so reading
   `process.env` covers both real vars and any project `.env`.
+
+> **Pending change:** [ADR 0023](decisions/0023-installation-layout-and-service-model.md)
+> (**Proposed**) replaces ambient-only selection with a permissioned `rolecall.env`
+> config file read on both runtimes, splits config/state/cache into OS-standard
+> per-scope directories, and keeps process env as the highest-precedence source. Until
+> that lands, the table above describes actual behavior.
 
 ## Defaults (unchanged)
 

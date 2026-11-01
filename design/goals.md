@@ -32,7 +32,7 @@ none are implemented yet (per the honesty principle, scaffold ≠ functional).
   one `ProjectSource` interface (`src/vfs/project-source.ts`). Local-disk reading already
   works today (`FsProjectSource`); resolving from git (`ROLECALL_PROJECT_GIT_URL`,
   `GitProjectSource`) or an object store (`S3ProjectSource`) is designed-in and deferred.
-  See [`vfs-and-io-abstractions.md`](vfs-and-io-abstractions.md) and [ADR 0004](decisions/0004-serverless-and-git-friendly.md).
+  See [`vfs-and-io-abstractions.md`](vfs-and-io-abstractions.md), [ADR 0004](decisions/0004-serverless-and-git-friendly.md), and the git-backend design in [ADR 0021](decisions/0021-remote-git-project-source.md) (**Proposed**).
 - **Scratch/temp VFS (memory + fs now; S3 deferred):** temporary artifacts written to a
   key/value scratch space selected by `ROLECALL_SCRATCH` (`src/vfs/scratch.ts`). Memory and
   local-disk backends exist now (`MemoryScratchStore`, `FsScratchStore`); storing on an
@@ -41,8 +41,9 @@ none are implemented yet (per the honesty principle, scaffold ≠ functional).
 - **Project layout + RoleCall-native collections (design captured in ADR 0014/0015):** a RoleCall project exposes local `modules/` and local `roles/`; a dependency is simply another RoleCall project (the "everything is a project" model), reused via `collections.yml` + git-first `rolecall collections install` — no npm and no `node_modules` graph. Roles are themselves full RoleCall projects. Scaffold tooling (`--create-project`) and the collections resolver are planned; no execution surface yet. See [ADR 0014](decisions/0014-project-and-plugin-architecture.md) (architecture) and [ADR 0015](decisions/0015-collections-and-install-commands.md) (collections & install).
 - **Vault / secret engine** — first-class secrets management: a vault-reference
   resolution layer + secret injection that **never renders secrets into
-  logs/stdout**. The design rationale lives in
-  [`ansible-comparison.md`](ansible-comparison.md) §4.
+  logs/stdout**. The decision is captured in
+  [ADR 0022](decisions/0022-secrets-vault-and-provider-chain.md); the design
+  rationale lives in [`ansible-comparison.md`](ansible-comparison.md) §4.
 - **WinRM transport (Windows)** — first-class Windows host support via
   `winrm-client` (or a `pywinrm` sidecar) behind the existing `Connection`
   trait; see [`architecture/connectivity.md`](architecture/connectivity.md).

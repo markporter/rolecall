@@ -2,7 +2,7 @@
 title: Quickstart
 ---
 
-This page gets you from zero to a working RoleCall invocation quickly. It walks through confirming the CLI responds, resolving an inventory against a tiny playbook, applying it over SSH or local transports, and starting the orchestrator server. Nothing here oversells capabilities still left `[deferred]` — the SPA UI, serve-side executor parity, the plugin SDK authoring surface, and literal Jinja rendering — so the guide focuses on what works today.
+This page gets you from zero to a working RoleCall invocation quickly. It walks through confirming the CLI responds, resolving an inventory against a tiny playbook, applying it over SSH or local transports, and starting the orchestrator server. Nothing here oversells capabilities still left `[deferred]` — the SPA UI, the plugin SDK authoring surface, and literal Jinja rendering — so the guide focuses on what works today.
 
 ## Confirm the CLI is alive
 
@@ -32,7 +32,7 @@ For long-running use RoleCall also runs as a server process:
 rolecall --serve           # start the orchestrator HTTP server
 ```
 
-By default it listens on `127.0.0.1:8080`; override the port with `--port` (env `ROLECALL_SERVE_PORT`) and the address with `--host` (env `ROLECALL_SERVE_HOST`). Point `--dist` or `--ui-dist` at a directory to serve a pluggable SPA, or leave it unset to get a zero-build health JSON back on `GET /`. Serve mode boots the durable SQLite store, which works on both Node and Bun (ADR 0019); under Node, `node:sqlite` prints a one-time `ExperimentalWarning` to stderr on first use. The server accepts run dispatch (`POST /run`), project/schedule CRUD, Bearer-gated webhooks (`POST /webhook`, `POST /api/run`), and arms a cron scheduler that fires durable schedules through the engine. Server-side dispatch executes over real transports but still uses a simplified per-target runner rather than the full CLI executor, so roles, `when`/`loop`, handlers, and tx/checkpoint apply only to CLI runs today.
+By default it listens on `127.0.0.1:8080`; override the port with `--port` (env `ROLECALL_SERVE_PORT`) and the address with `--host` (env `ROLECALL_SERVE_HOST`). Point `--dist` or `--ui-dist` at a directory to serve a pluggable SPA, or leave it unset to get a zero-build health JSON back on `GET /`. Serve mode boots the durable SQLite store, which works on both Node and Bun (ADR 0019); under Node, `node:sqlite` prints a one-time `ExperimentalWarning` to stderr on first use. The server accepts run dispatch (`POST /run`), project/schedule CRUD, Bearer-gated webhooks (`POST /webhook`, `POST /api/run`), and arms a cron scheduler that fires durable schedules through the engine. Each run is forked to the one-shot CLI (`playbook run -o jsonl`) against a materialized playbook/inventory, so the full executor applies: roles, phases, `when`/`loop`, handlers, tx/checkpoint, and check/diff/force.
 
 ## Where to go next
 

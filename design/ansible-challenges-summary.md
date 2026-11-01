@@ -27,7 +27,7 @@ secrets leaking into logs; limited debug tooling.
 ## 2. How RoleCall addresses them
 
 **Addressed (built or in MVP):**
-- Templating speed → fast compiled eta/vento + optional LiquidJS Jinja-mode.
+- Templating speed → fast compiled eta/vento + optional Nunjucks Jinja-mode (sandboxed).
 - Painful Python modules → first-class **JS/TS plugin SDK** (author ~1 function, no build, dynamic `.ts` load) — the #1 user differentiator.
 - No state → **idempotency intrinsic to module contract**; observe-reconcile + cache + skip-unchanged; `rolecall_managed_only` governs drift ownership.
 - SSH overhead → **pure-JS ssh2, channel multiplexing** + resilient runner (retry/timeout/concurrency).

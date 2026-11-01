@@ -20,12 +20,16 @@ server (`rolecall --serve`).
 > Ansible-style selection and notifications. Transport + the executor are implemented,
 > on Node.js (>=22.19, via npm) as well as Bun. The orchestrator boots a real HTTP
 > server with run dispatch over real transports, project/schedule CRUD, a working cron
-> scheduler, and Bearer-gated webhooks; serve-side dispatch still uses a simplified
-> per-target runner rather than the full CLI executor. Still scaffolded (do not treat as
-> functional): the SPA UI (only static `--ui-dist` serving), the richer Plugin SDK
-> authoring surface, the full Jinja `{{ }}` renderer (only structured references
-> `$var`/`$concat`/`$call`/`$if`/`$each`/`$template` + typed `when`/`loop` exist), the
-> Postgres backend (record-only), and RBAC / Vault / WinRM target capabilities.
+> scheduler, and Bearer-gated webhooks. Each server run is forked to the one-shot CLI
+> (`playbook run -o jsonl`) against a materialized playbook/inventory, so roles, phases,
+> `when`/`loop`, handlers, modules, and `--check`/`--diff`/`--force` all apply. Still
+> scaffolded (do not treat as functional): the SPA UI (only static `--ui-dist` serving),
+> the richer Plugin SDK
+> authoring surface, global Jinja `{{ }}` interpolation in playbook scalars (Jinja
+> renders only through explicit `copy` content templates with `engine: jinja`; structured
+> references `$var`/`$concat`/`$call`/`$if`/`$each`/`$template` + typed `when`/`loop`
+> are the native path), the Postgres backend (record-only), and RBAC / Vault / WinRM
+> target capabilities.
 
 ## Requirements
 
@@ -318,12 +322,12 @@ src/
   transport/    Connection trait + SSH/Local/Network implemented; Http connect-only (gRPC deferred)
   executor/     declarative task state machine — implemented
   idempotency/  check-compare-write + cache + skip-unchanged — implemented
-  templating/   structured refs ($var/$concat/$call/$if/$each/$template, namespaced vars/facts/reg/loop/play/inv/role/run/rolecall) implemented; full Jinja {{ }} kept literal
+  templating/   structured refs ($var/$concat/$call/$if/$each/$template, namespaced vars/facts/reg/loop/play/inv/role/run/rolecall) implemented; global Jinja {{ }} interpolation absent (explicit copy content templates with engine: jinja render Jinja)
   inventory/    host/group vars + precedence — implemented
   facts/        targeted/cached fact gathering — implemented
   modules/      JS/TS module SDK — modules + plugin register implemented; plugin SDK authoring partial
   store/        SQLite project/run/schedule persistence — implemented
-  orchestrator/ Express server, run dispatch, cron scheduler, webhooks implemented; serve-side executor parity + SPA UI partial
+  orchestrator/ Express server, run dispatch, cron scheduler, webhooks, forked full-executor runs implemented; SPA UI partial
   ui/           pluggable served SPA — scaffold (static --ui-dist serving only)
   util/         runtime detection (detectRuntime) — implemented
 test/           smoke test

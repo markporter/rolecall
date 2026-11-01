@@ -10,6 +10,7 @@
   - `goals.md` §"Ansible-inspired design (complaint-driven)"
   - `ansible-comparison.md` / `ansible-challenges-summary.md`
   - [`ansible-compatibility-roadmap.md`](../ansible-compatibility-roadmap.md) (execution plan for this ADR; every open decision D1–D6 resolved)
+  - [ADR 0024](0024-ansible-analyzer-and-mechanical-converter.md) (analyzer, mechanical converter, and LLM handoff architecture; refines §6)
 
 ## Context
 
@@ -120,7 +121,7 @@ steps plus a **gotchas** section:
 - inventory format (`groups:` map vs INI/YAML), `group_vars/`/`host_vars/` status,
 - `extra_vars` (`-e`) absence; `ansible_*` magic vars → `facts.*`, `inventory_hostname` → `host` alias.
 
-Status: **planned deliverable.**
+Status: **planned deliverable** — architecture and handoff contract defined by [ADR 0024](0024-ansible-analyzer-and-mechanical-converter.md).
 
 ### 6. Deliverable: LLM-assisted conversion tool
 
