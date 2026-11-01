@@ -1,0 +1,7 @@
+- name: Local isolation smoke test
+  hosts: all
+  tasks:
+    - name: Print a marker
+      module: command
+      args:
+        command: "echo local-smoke"

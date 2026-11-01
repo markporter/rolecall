@@ -67,6 +67,12 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      # Linux tests run with the product's default isolation (`auto`). Install
+      # bubblewrap; Docker is the auto fallback if user namespaces are restricted.
+      - name: Install bubblewrap (Linux isolation)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y bubblewrap
+
       - name: Type-check (tsc --noEmit)
         run: bunx tsc --noEmit
 
@@ -80,6 +86,35 @@ jobs:
 
       - name: Test (force ROLECALL_RUNTIME=node)
         run: ROLECALL_RUNTIME=node bun test
+
+  isolation-docker:
+    name: isolation (Docker backend)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ">=1.4.2"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Pull isolation image
+        run: docker pull debian:bookworm-slim
+
+      - name: Test Docker isolation backend
+        env:
+          ROLECALL_ISOLATION: docker
+          ROLECALL_ISOLATION_IMAGE: debian:bookworm-slim
+          ROLECALL_REQUIRE_DOCKER: "1"
+        run: bun test tests/isolation-docker.test.ts
 
   native:
     name: native build + dual-runtime parity (${{ matrix.hostTarget }})
