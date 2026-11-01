@@ -148,6 +148,13 @@ Harness builders get documented blast-radius guidance, as in comparison §10.
 Reaffirmed: no LLM provider or agent loop is embedded in RoleCall; the harness stays
 external. MCP changes the transport, not that boundary.
 
+**Per-tool scopes (ADR 0028 gap 10).** Every tool carries a scope (`run`, `read`,
+`author`, `plugin-write`) and the transport enforces it per token. Exposed mode
+(`--serve --exposed`, ADR 0027) disables the author/plugin-write scopes by default;
+enabling them is an explicit, warned configuration. Tool calls are audited with the same
+redaction as run events, and no tool may read another project's files or runs without the
+matching scope.
+
 ## Consequences
 
 **Positive**
