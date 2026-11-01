@@ -50,6 +50,7 @@ export const meta: ModuleSummary = {
     "Detects the target package manager (apt/dnf/yum/apk/pacman/zypper) and installs/removes a package idempotently.",
   idempotent: true,
   source: "builtin",
+  network: true,
   args: {
     name: { type: "string", required: true, description: "Package name, e.g. 'nginx'." },
     state: {
@@ -250,6 +251,7 @@ function buildLocalInstall(manager: PkgManager, src: string): string {
 /** @summary Detect (or use an explicit `manager`) the target package manager and apply `state` for `name` idempotently. Probes presence first so re-runs are no-ops; reconciles `hold` for apt/zypper and `allow_downgrade`/`cache_valid_time` for apt, rejecting unsupported managers with an actionable error. @param ctx ModuleContext carrying args (name/state/version/manager/hold/allow_downgrade/update_cache/cache_valid_time/src) and connection. @returns ModuleResult with data.manager/name/state populated. */
 export const pkgModule: Module & CheckableModule = {
   name: "package",
+  network: true,
   async check(args, ctx) {
     const a = args as unknown as PackageArgs;
     const name = String(a.name ?? "");

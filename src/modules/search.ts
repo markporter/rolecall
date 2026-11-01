@@ -18,6 +18,8 @@ export interface ModuleSummary {
   idempotent?: boolean;
   /** Provenance: "builtin" | "plugin" | "user" | "example". */
   source?: string;
+  /** True when the module declares local network capability under ADR 0025. */
+  network?: boolean;
   /** Optional per-argument metadata for the module. */
   args?: Record<string, { type: string; required: boolean; description: string }>;
   /** Optional usage examples (e.g. task snippets). */

@@ -32,6 +32,7 @@ import { runAgentCommand } from "./commands/agent";
 import { runDocsCommand } from "./commands/docs";
 import { runVarsCommand } from "./commands/vars";
 import { runDoctorCommand } from "./commands/doctor";
+import { parseMounts } from "./parse-mounts";
 import { CliError, type CliResult, type GlobalFlags } from "./types";
 
 export { runPlaybookCommand } from "./commands/playbook";
@@ -71,6 +72,8 @@ Global flags (parsed once, injected downward):
   --check             Global dry-run: check-capable modules report would-change; unsupported custom modules are skipped
   --diff              Attach an observed-vs-desired patch to checkable results
   --isolation <mode>  Opt-in local isolation backend: auto | namespace | docker | none (doctor reports availability)
+  --isolation-network <mode>  Network under isolation: module (default) | none | all
+  --mount <src:dst[:ro|rw]>   Add an approved filesystem grant (requires --isolation; repeatable)
   --forks <N>         Concurrency fan-out (number)
   --trace             Emit + persist an execution-trace ledger for the run
   --profile           Print a per-host/per-task performance profile at run end
@@ -131,6 +134,8 @@ const GLOBAL_OPTS = {
   resume: { type: "string" },
   json: { type: "boolean" },
   isolation: { type: "string" },
+  "isolation-network": { type: "string" },
+  mount: { type: "string", multiple: true },
 } as const;
 
 /** @summary Write rendered CLI output to stdout, stripping NUL/control chars from the `json` stream so a polluted data channel never breaks a downstream JSON parser. @param text Rendered text to emit. @param output Selected output plugin name; only `json` gets control-char scrubbing. */
@@ -162,6 +167,15 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
     }
     forks = n;
   }
+  const isolation = values["isolation"] as string | undefined;
+  const isolationNetwork = values["isolation-network"] as string | undefined;
+  if (isolationNetwork !== undefined && !["module", "none", "all"].includes(isolationNetwork)) {
+    throw new CliError(true, `--isolation-network must be module, none, or all (got '${isolationNetwork}')`);
+  }
+  const mounts = parseMounts(values["mount"] as string[] | undefined);
+  if (mounts.length > 0 && isolation === undefined) {
+    throw new CliError(true, "--mount requires an explicit --isolation backend");
+  }
   return {
     limit: values["limit"] as string | undefined,
     force: (values["force"] as boolean | undefined) ?? false,
@@ -175,7 +189,9 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
     extraVars: values["extra-vars"] as string | undefined,
     tags: values["tags"] as string | undefined,
     skipTags: values["skip-tags"] as string | undefined,
-    isolation: values["isolation"] as GlobalFlags["isolation"],
+    isolation: isolation as GlobalFlags["isolation"],
+    isolationNetwork: isolationNetwork as GlobalFlags["isolationNetwork"],
+    ...(mounts.length > 0 ? { mounts } : {}),
     // --json is a convenience shorthand for --output json (used by the docs
     // subcommands and any other command the user wants structured output from).
     output: (values["json"] as boolean | undefined)

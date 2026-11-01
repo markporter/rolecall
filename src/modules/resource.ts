@@ -46,6 +46,8 @@ export interface ResourceOptions {
     args: Record<string, unknown>,
     ctx: ModuleContext,
   ) => ModuleResult | Promise<ModuleResult>;
+  /** Declare ADR 0025 local-network capability (get_url/git/package-style modules). */
+  network?: boolean;
 }
 
 /**
@@ -58,6 +60,7 @@ export interface ResourceOptions {
 export function resource(opts: ResourceOptions): Module & CheckableModule {
   const mod: Module & CheckableModule = {
     name: opts.name ?? "__resource__",
+    ...(opts.network ? { network: true } : {}),
     async run(ctx: ModuleContext): Promise<ModuleResult> {
       // Self-contained idempotency: observe before mutating so the module stays
       // idempotent even when the external idempotency policy/cache is not wired in

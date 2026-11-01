@@ -27,6 +27,7 @@ export const meta: ModuleSummary = {
     "Install or remove a snap package idempotently, optionally with `--classic` confinement.",
   idempotent: true,
   source: "builtin",
+  network: true,
   args: {
     name: { type: "string", required: true, description: "Snap package name." },
     state: { type: "present | absent", required: false, description: "Desired state (default present)." },
@@ -51,6 +52,7 @@ export const meta: ModuleSummary = {
 /** @summary Idempotently install/remove a snap package. @param ctx ModuleContext carrying `name`, `state`, and `classic`. @returns ModuleResult; `changed:false` when already in the desired state. */
 export const snapModule: Module & CheckableModule = {
   name: MODULE_NAME,
+  network: true,
   async check(args, ctx) {
     const name = typeof args["name"] === "string" ? String(args["name"]).trim() : "";
     const state = (args["state"] ?? "present") as "present" | "absent";

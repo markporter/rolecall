@@ -43,6 +43,10 @@ export interface GlobalFlags {
   skipTags?: string;
   /** Requested local isolation backend (--isolation; default auto). */
   isolation?: import("../isolation/types").IsolationBackendName;
+  /** Network policy under isolation (--isolation-network; default module). */
+  isolationNetwork?: "module" | "none" | "all";
+  /** Explicit filesystem grants (repeatable --mount). */
+  mounts?: import("../isolation/types").IsolationMount[];
 }
 
 // ---------------------------------------------------------------------------

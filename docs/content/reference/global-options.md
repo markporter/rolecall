@@ -19,6 +19,8 @@ They come directly from `GLOBAL_OPTS` in `src/cli/index.ts`, which passes them t
 | `--diff` | none | Attach an observed-vs-desired patch to each checkable module result (human output prints it; JSON carries it in `iterationData[].diff`). | off |
 | `--forks` | `<N>` | Concurrency fan-out; must resolve to a finite number or RoleCall exits 2. | unset |
 | `--isolation` | `auto`\|`namespace`\|`docker`\|`none` | Opt local transports into the ADR 0025 sandbox. The current slice is opt-in; `rolecall doctor` reports bwrap/userns and Docker readiness. | unset (direct) |
+| `--isolation-network` | `module`\|`none`\|`all` | Sandbox egress policy: `module` (default) lets trusted modules that declare `network: true` use the network while shell/command/script/raw stay net-off; `none` denies all; `all` is ambient (warned). | `module` |
+| `--mount` | `<src:dst[:ro|rw]>` | Repeatable explicit filesystem grant, requires `--isolation`. Source and target must be absolute; `ro` is the default. | none |
 | `--help` | `-h` | Print usage and exit 0. | n/a |
 | `--version` | `-v` | Print `rolecall <version>`. | n/a |
 

@@ -45,6 +45,7 @@ export const meta: ModuleSummary = {
     "Download a file from a URL onto the managed host, verifying an optional sha256 checksum and applying file attributes.",
   idempotent: true,
   source: "builtin",
+  network: true,
   args: {
     url: { type: "string", required: true, description: "Source URL to download." },
     dest: { type: "string", required: true, description: "Destination path; trailing slash appends the URL basename." },
@@ -74,6 +75,7 @@ function resolveDest(url: string, dest: string): string {
 /** @summary Download a file from a URL to a path on the managed host. Idempotent: skips when the destination exists and (if set) its sha256 matches. @param ctx ModuleContext (connection, args, become). @returns ModuleResult with changed/skipped/failed and data. */
 export const getUrlModule: Module = {
   name: MODULE_NAME,
+  network: true,
   supportsCheck: true,
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const args = ctx.args as unknown as GetUrlArgs;

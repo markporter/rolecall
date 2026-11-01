@@ -11,6 +11,7 @@ import { render as renderEta } from "../../templating/fast";
 import { renderJinja } from "../../templating/jinja";
 import type { NormalizedInventory } from "../../config/schema";
 import { buildConnectionForHost } from "../connections";
+import type { IsolationOptions } from "../../isolation/types";
 import { defaultFactsEngine } from "../../facts/engine";
 import { openStore } from "../../store";
 import type { Store } from "../../store/types";
@@ -44,8 +45,13 @@ export async function runPlaybookCommand(
   const tags = flags.tags !== undefined ? parseTagList(flags.tags, "--tags") : undefined;
   const skipTags =
     flags.skipTags !== undefined ? parseTagList(flags.skipTags, "--skip-tags") : undefined;
-  const isolation = flags.isolation
-    ? { backend: flags.isolation, projectRoot: process.cwd() }
+  const isolation: IsolationOptions | undefined = flags.isolation
+    ? {
+        backend: flags.isolation,
+        projectRoot: process.cwd(),
+        network: flags.isolationNetwork === "none" ? "off" : flags.isolationNetwork === "all" ? "on" : "module",
+        ...(flags.mounts ? { mounts: flags.mounts } : {}),
+      }
     : undefined;
 
   const playbook = await loadPlaybookFile(file);
