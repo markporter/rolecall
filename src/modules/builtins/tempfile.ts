@@ -45,7 +45,7 @@ export const meta: ModuleSummary = {
     state: directory
   register: tmp`,
   ],
-  notes: "≠ Ansible `tempfile`: the default filename prefix is `rolecall`; always creates a new node (`changed: true`); RoleCall does not yet track/clean it up automatically.",
+  notes: "≠ Ansible `tempfile`: the default filename prefix is `rolecall`; always creates a new node (`changed: true`); RoleCall does not track or clean it up automatically.",
 };
 
 (tempfileModule as Module & { meta: ModuleSummary }).meta = meta;

@@ -84,7 +84,7 @@ export function buildOpenApi(): OpenApiDocument {
       title: "RoleCall Orchestrator API",
       version: "0.1.0",
       description:
-        "REST surface served by `rolecall --serve`. Executor, transport, structured templating, run dispatch, cron scheduling, and webhooks are implemented. Serve-side dispatch uses a simplified per-target runner rather than the full CLI executor; the SPA UI is static-`--ui-dist`-only and RBAC is a single optional Bearer token. See individual descriptions for honest caveats.",
+        "REST surface served by `rolecall --serve`. The executor, SSH/local/network transports, structured templating, run dispatch, cron scheduling, webhooks, and forked full-executor playbook runs are implemented. Each run forks the one-shot CLI (`playbook run -o jsonl`) against a materialized playbook/inventory. The UI is a static directory served with `--ui-dist`; authentication is a single optional Bearer token.",
     },
     servers: [{ url: "/", description: "Local orchestrator HTTP server" }],
     paths,
@@ -94,7 +94,7 @@ export function buildOpenApi(): OpenApiDocument {
           type: "http",
           scheme: "bearer",
           description:
-            "Optional single-token Bearer guard (Todo 21). Present-but-limited: when ServerOptions.authToken is unset every trigger accepts requests; RBAC remains deferred.",
+            "Optional single-token Bearer guard. When no token is configured, every trigger accepts requests; RoleCall does not implement role-based access control.",
         },
       },
     },
