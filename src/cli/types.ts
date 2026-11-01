@@ -213,6 +213,18 @@ export interface VarsTraceResult {
 export interface DoctorResult {
   command: "doctor";
   isolation: import("../isolation/types").IsolationProbe;
+  /** ADR 0023 install layout that subsequent commands would use. */
+  install: {
+    scope: import("../install/layout").InstallScope;
+    platform: string;
+    programDir: string;
+    configDir: string;
+    stateDir: string;
+    cacheDir: string;
+    binDir: string;
+    envFile: string;
+    envFileExists: boolean;
+  };
   note: string;
 }
 

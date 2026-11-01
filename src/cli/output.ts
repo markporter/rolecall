@@ -298,6 +298,13 @@ function formatHuman(data: CliResult): string {
       lines.push(`unshare  : ${p.unshare ? "yes" : "no"}`);
       lines.push(`docker   : ${p.dockerCli ? "cli" : "no"}${p.dockerCli ? ` (daemon: ${p.dockerDaemon ? "ok" : "unreachable"}${p.dockerRootless === false ? ", rootful" : ""})` : ""}`);
       lines.push(`image    : ${p.image}`);
+      const i = data.install;
+      lines.push(`Install  : ${i.scope} (${i.platform})`);
+      lines.push(`  program: ${i.programDir}`);
+      lines.push(`  config : ${i.configDir} (rolecall.env ${i.envFileExists ? "present" : "absent"})`);
+      lines.push(`  state  : ${i.stateDir}`);
+      lines.push(`  cache  : ${i.cacheDir}`);
+      lines.push(`  bin    : ${i.binDir}`);
       for (const reason of p.reasons) lines.push(`  - ${reason}`);
       for (const warning of p.warnings) lines.push(`  ! ${warning}`);
       lines.push(`Note     : ${data.note}`);
