@@ -44,8 +44,9 @@ export class HttpApiConnection implements Connection {
 
   constructor(options: HttpApiConnectionOptions) {
     this.options = options;
-    const port = options.port ?? 80;
-    this.#origin = `http://${options.host}:${port}`;
+    const protocol = options.protocol ?? "http";
+    const port = options.port ?? (protocol === "https" ? 443 : 80);
+    this.#origin = `${protocol}://${options.host}:${port}`;
     // poolSize bounds concurrent in-flight requests (the Pool analogue).
     this.#runner = createResilientRunner({
       concurrency: options.poolSize ?? DEFAULT_POOL_SIZE,

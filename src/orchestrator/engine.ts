@@ -1,38 +1,20 @@
-// Orchestrator execution engine (Task 18).
+// Orchestrator execution engine (Task 18 + ADR 0017).
 //
-// Owns the fleet registry and the durable-ish RunRecords map, and DISPATCHES jobs
-// against reachable targets using REAL transport clients (SshConnection /
-// LocalConnection) or real HTTP round-trips (global fetch) — never faked. The
-// network kind drives the Task-17 in-process device simulator's programmatic
-// apply/diff surface, which shares src/transport/diff logic.
-//
-// Target resolution reuses upstream loaders + inventory engine verbatim:
-//   - playbook/inventory YAML files are parsed by src/config/loader (loadPlaybookFile
-//     / loadInventoryFile); patterns resolve through src/inventory/engine.resolveTargets.
-//   - inline playbook/tasks/inventory in the job body skip file IO entirely.
-//
-// Concurrency note (dbt #14550 lesson): records are inserted into the map
-// SYNCHRONOUSLY before returning, and every later mutation only SETS fields (never
-// check-then-set), so concurrent dispatches cannot race within the single-threaded
-// event loop. In-flight promises are tracked only to bound graceful drain.
+// The serve orchestrator never runs playbooks in-process. Each job is forked to
+// the one-shot CLI (`rolecall playbook run … -o jsonl`) with a materialized
+// temporary playbook/inventory pair. The child therefore gets fresh resolver,
+// facts, module, and search state, while the parent parses the typed event /
+// result stream for progress, outcomes, and run-trace rows. This is the exact
+// CLI execution path users already run, so roles, phases, when/loop, handlers,
+// modules, check/diff/force, and tx/checkpoint all apply to server runs.
 
 import { randomUUID } from "node:crypto";
 
-import { loadInventoryFile, loadPlaybookFile, resolveDirectoryVars, type DirectoryVars } from "../config/loader";
-import { resolveTargets } from "../inventory/engine";
-import { FsProjectSource } from "../vfs/fs-project-source";
-import { dirname } from "node:path";
-import { SshConnection } from "../transport/ssh";
-import { LocalConnection } from "../transport/local";
-import type { RetryConfig } from "../transport/connection";
 import type { Store } from "../store";
-import type { NetworkDeviceSimHandle } from "../testing/sims/network-device";
-import type { ApplyOpts } from "../testing/sims/network-device";
-import type { JobBody, PlanTask, RunRecord, SchedulerApi, ServerOptions, TargetDescriptor } from "./types";
+import type { JobBody, RunRecord, SchedulerApi, ServerOptions, TargetDescriptor } from "./types";
+import { childArgs, materializeChildRun, resolveChildCommand, runChild, type ChildEvent } from "./child-run";
 
-type Outcome = import("./types").HostOutcome;
-
-const NO_RETRY: Partial<RetryConfig> = { retries: 0, minTimeout: 10, maxTimeout: 20, factor: 2, randomize: false };
+const DEFAULT_CHILD_TIMEOUT_MS = 15 * 60_000;
 
 export class Engine {
   readonly #fleet = new Map<string, TargetDescriptor>();
@@ -40,11 +22,15 @@ export class Engine {
   readonly #inflight = new Set<Promise<void>>();
   readonly #store?: Store;
   readonly #scheduler?: SchedulerApi;
+  readonly #childCommand: string[];
+  readonly #childTimeoutMs: number;
   #draining = false;
 
-  constructor(store?: Store, fleet?: TargetDescriptor[], scheduler?: SchedulerApi, _opts?: ServerOptions) {
+  constructor(store?: Store, fleet?: TargetDescriptor[], scheduler?: SchedulerApi, opts?: ServerOptions) {
     this.#store = store;
     this.#scheduler = scheduler;
+    this.#childCommand = resolveChildCommand(opts?.childCli);
+    this.#childTimeoutMs = opts?.childTimeoutMs ?? DEFAULT_CHILD_TIMEOUT_MS;
     if (fleet) this.registerFleet(fleet);
   }
 
@@ -90,292 +76,53 @@ export class Engine {
   async #dispatch(body: JobBody, rec: RunRecord): Promise<void> {
     rec.status = "running";
     this.#persistStatus(rec, "running");
+    let materialized: Awaited<ReturnType<typeof materializeChildRun>> | undefined;
     try {
-      const { descriptors, plan } = await this.#plan(body);
-      const outcomes: Outcome[] = [];
-      let failed = false;
-      for (const task of plan) {
-        for (const desc of descriptors) {
-          const outcome = await this.#executeOne(desc, task, body, rec.id);
-          outcomes.push(outcome);
-          if (!outcome.ok) failed = true;
-        }
-        // non-idempotent applies EVERY task regardless of earlier failures.
-        if (failed && body.type !== "nonIdempotent") break;
-      }
-      const ok = outcomes.every((o) => o.ok);
-      rec.outcomes = outcomes;
-      rec.dispatchCount = outcomes.length;
+      materialized = await materializeChildRun(body, this.#fleet);
+      const result = await runChild(this.#childCommand, childArgs(body, materialized), {
+        cwd: process.cwd(),
+        timeoutMs: this.#childTimeoutMs,
+      });
+      for (const event of result.events) this.#traceEvent(rec.id, event);
+
+      rec.outcomes = result.outcomes;
+      rec.dispatchCount = result.outcomes.length;
+      const ok = result.exitCode === 0 && result.outcomes.every((o) => o.ok);
       rec.status = ok ? "success" : "failed";
-      rec.error = ok ? undefined : `${outcomes.filter((o) => !o.ok).length} failing target(s)`;
+      rec.error = ok
+        ? undefined
+        : result.stderr.trim() || `${result.outcomes.filter((o) => !o.ok).length} failing target(s)`;
       this.#persistStatus(rec, rec.status, ok ? "completed" : undefined);
     } catch (err) {
       rec.status = "failed";
       rec.error = err instanceof Error ? err.message : String(err);
       this.#persistStatus(rec, "failed", undefined);
+    } finally {
+      materialized?.cleanup();
     }
   }
 
-  // --- resolution (reuses upstream loaders + inventory engine) --------------
-
-  async #plan(body: JobBody): Promise<{ descriptors: TargetDescriptor[]; plan: PlanTask[] }> {
-    let inventory = body.inventory;
-    let dirVars: DirectoryVars = { groupVarsByGroup: {}, hostVarsByHost: {} };
-    if (!inventory && body.inventoryPath) {
-      const source = new FsProjectSource(dirname(body.inventoryPath));
-      inventory = await loadInventoryFile(body.inventoryPath, source);
-      dirVars = await resolveDirectoryVars(body.inventoryPath, source);
-    }
-    let playbook = body.playbook;
-    if (!playbook && body.playbookPath) playbook = await loadPlaybookFile(body.playbookPath);
-    const firstPlay = Array.isArray(playbook) ? playbook[0] : playbook;
-
-    const inlineTasks = body.tasks ?? firstPlay?.tasks?.map((t) => ({ name: t.name, module: t.module ?? "", args: t.args })) ?? [];
-    // Explicit per-run target selection wins; fall back to playbook/host vars, then "all".
-    const selected = (body.targets ?? body.hosts) ?? (firstPlay?.hosts as string[] | undefined);
-    let patterns = selected ?? ["all"];
-    if (body.limit) patterns = [body.limit];
-
-    let matchedNames: string[];
-    if (inventory) {
-      const resolved = await resolveTargets(inventory, patterns, {
-        groupVars: dirVars.groupVarsByGroup,
-        hostVars: dirVars.hostVarsByHost,
-      });
-      matchedNames = resolved.matchedHosts;
-    } else {
-      matchedNames = Engine.#expandPatterns(patterns, [...this.#fleet.keys()]);
-    }
-
-    const baseModule = body.module ?? "ping";
-    const plan: PlanTask[] = inlineTasks.length > 0 ? inlineTasks : [{ name: `${body.type}:${baseModule}`, module: baseModule }];
-    const descriptors = matchedNames.map((n) => this.#fleet.get(n)).filter((d): d is TargetDescriptor => Boolean(d));
-    return { descriptors, plan };
-  }
-
-  static #expandPatterns(patterns: string[], keys: string[]): string[] {
-    const out = new Set<string>();
-    for (const p of patterns) {
-      if (p === "all" || p === "*") { for (const k of keys) out.add(k); continue; }
-      if (p.includes("*")) {
-        const re = new RegExp(`^${p.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*")}$`);
-        for (const k of keys) if (re.test(k)) out.add(k);
-      } else if (keys.includes(p)) {
-        out.add(p);
-      }
-    }
-    return [...out].sort();
-  }
-
-  // --- per-target execution -------------------------------------------------
-
-  async #executeOne(desc: TargetDescriptor, task: PlanTask, body: JobBody, runId: string): Promise<Outcome> {
-    const a = { module: task.module ?? "ping", args: { ...(body.args ?? {}), ...(task.args ?? {}) }, config: body.config, force: body.force === true || body.type === "nonIdempotent" };
-    const taskName = `${body.type}:${a.module}`;
-    const startedAt = Date.now();
-    const t0 = performance.now();
-    this.#trace({ runId, host: desc.name, taskName, phase: "start", status: "running", startedAt });
-    try {
-      let outcome: Outcome;
-      if (body.check) {
-        outcome = this.#execCheck(desc, a, body);
-      } else {
-        switch (desc.kind) {
-          case "ssh": outcome = await this.#execSsh(desc, a); break;
-          case "local": outcome = await this.#execLocal(desc, a); break;
-          case "http": outcome = await this.#execHttp(desc, a); break;
-          case "network": outcome = await this.#execNetwork(desc, a); break;
-          default: outcome = { host: desc.name, ok: false, changed: false, summary: `unknown transport kind '${String((desc as { kind?: string }).kind)}'` };
-        }
-      }
-      this.#trace({
-        runId,
-        host: desc.name,
-        taskName,
-        phase: "end",
-        status: outcome.ok ? "ok" : "failed",
-        startedAt,
-        endedAt: Date.now(),
-        durationMs: Math.round(performance.now() - t0),
-        detail: { summary: outcome.summary, changed: outcome.changed },
-      });
-      return outcome;
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      this.#trace({
-        runId,
-        host: desc.name,
-        taskName,
-        phase: "end",
-        status: "failed",
-        startedAt,
-        endedAt: Date.now(),
-        durationMs: Math.round(performance.now() - t0),
-        detail: { error: msg },
-      });
-      return { host: desc.name, ok: false, changed: false, summary: "execution error", detail: msg };
-    }
-  }
-
-  /** Best-effort persistence of one execution-trace event via the store (Todo 25). */
-  #trace(partial: {
-    runId: string;
-    host: string;
-    taskName: string;
-    iteration?: number;
-    phase: string;
-    status: string;
-    startedAt: number;
-    endedAt?: number | null;
-    durationMs?: number | null;
-    detail?: Record<string, unknown>;
-  }): void {
+  /** Best-effort persistence of child task events into the durable trace ledger. */
+  #traceEvent(runId: string, event: ChildEvent): void {
     const store = this.#store;
     if (!store) return;
+    const at = Date.parse(event.ts);
+    const timestamp = Number.isFinite(at) ? at : Date.now();
     void store.traces.create({
-      runId: partial.runId,
-      host: partial.host,
-      taskName: partial.taskName,
-      iteration: partial.iteration ?? -1,
-      phase: partial.phase,
-      status: partial.status,
-      startedAt: partial.startedAt,
-      endedAt: partial.endedAt ?? null,
-      durationMs: partial.durationMs ?? null,
-      detail: partial.detail ?? {},
+      runId,
+      host: event.host,
+      taskName: event.task,
+      iteration: -1,
+      phase: "end",
+      status: event.status === "changed" ? "ok" : event.status,
+      startedAt: timestamp,
+      endedAt: timestamp,
+      durationMs: null,
+      detail: { module: event.module, ...(event.msg ? { msg: event.msg } : {}), changed: event.status === "changed" },
     }).catch(() => undefined);
   }
 
-  #isPing(mod: string): boolean {
-    return mod === "ping" || mod === "check" || mod === "facts";
-  }
-
-  #commandFor(args: Record<string, unknown>): string {
-    if (typeof args.command === "string") return args.command;
-    if (typeof args.message === "string") return `echo ${args.message}`;
-    return typeof args.text === "string" ? `echo ${args.text}` : "true";
-  }
-
-  /**
-   * Check/dry-run path: never mutates target state. Network targets compute a real
-   * candidate-vs-running diff; other transports report the command/request that
-   * would have been issued. Idempotent ping/check-style modules report no change.
-   */
-  #execCheck(
-    desc: TargetDescriptor,
-    a: { module: string; args: Record<string, unknown>; config?: string; force: boolean },
-    body: JobBody,
-  ): Outcome {
-    if (desc.kind === "network") {
-      const dev = desc.device as NetworkDeviceSimHandle | undefined;
-      const cfg = String(a.config ?? a.args.config ?? "");
-      if (!dev) return { host: desc.name, ok: false, changed: false, summary: "no device handle" };
-      const diff = dev.diff(cfg);
-      return {
-        host: desc.name,
-        ok: true,
-        changed: diff.changed,
-        summary: diff.changed ? "would change (check)" : "no change (check)",
-        detail: body.diff ? { check: true, diff } : { check: true },
-      };
-    }
-    if (this.#isPing(a.module)) {
-      return { host: desc.name, ok: true, changed: false, summary: "no change (check)", detail: { check: true } };
-    }
-    if (desc.kind === "http") {
-      const route = String(a.args.route ?? "GET /").trim();
-      const [rawMethod = "GET", rawPath = "/"] = route.split(" ");
-      const method = rawMethod.toUpperCase();
-      const path = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
-      const mutates = ["POST", "PATCH", "PUT", "DELETE"].includes(method);
-      return {
-        host: desc.name,
-        ok: true,
-        changed: mutates,
-        summary: `would send: ${method} ${path}`,
-        detail: { check: true, method, path },
-      };
-    }
-    const command = this.#commandFor(a.args);
-    return {
-      host: desc.name,
-      ok: true,
-      changed: true,
-      summary: `would run: ${command}`,
-      detail: { check: true, command },
-    };
-  }
-
-  async #execSsh(desc: TargetDescriptor, a: { module: string; args: Record<string, unknown>; force: boolean }): Promise<Outcome> {
-    const conn = new SshConnection({
-      kind: "ssh", host: desc.host ?? "127.0.0.1", user: desc.user ?? "root", port: desc.port,
-      credentials: desc.credentials, knownHostsPath: desc.knownHostsPath, strictHostKeyChecking: false,
-      retry: { ...NO_RETRY, ...(desc.retry ?? {}) }, timeoutMs: desc.timeoutMs ?? 8000,
-    });
-    try {
-      await conn.connect();
-      const command = this.#isPing(a.module) ? "true" : this.#commandFor(a.args);
-      const r = await conn.exec(command);
-      return { host: desc.name, ok: r.exitCode === 0, changed: !this.#isPing(a.module), summary: command, detail: { exitCode: r.exitCode, stdout: r.stdout.trim(), stderr: r.stderr.trim() } };
-    } finally {
-      await conn.disconnect();
-    }
-  }
-
-  async #execLocal(desc: TargetDescriptor, a: { module: string; args: Record<string, unknown>; force: boolean }): Promise<Outcome> {
-    const conn = new LocalConnection({ kind: "local", host: desc.host ?? "localhost", user: desc.user ?? process.env.USER ?? "user", shell: desc.shell, retry: { ...NO_RETRY, ...(desc.retry ?? {}) }, timeoutMs: desc.timeoutMs ?? 8000 });
-    try {
-      await conn.connect();
-      const command = this.#isPing(a.module) ? "true" : this.#commandFor(a.args);
-      const r = await conn.exec(command);
-      return { host: desc.name, ok: r.exitCode === 0, changed: !this.#isPing(a.module), summary: command, detail: { exitCode: r.exitCode, stdout: r.stdout.trim() } };
-    } finally {
-      await conn.disconnect();
-    }
-  }
-
-  async #execHttp(desc: TargetDescriptor, a: { module: string; args: Record<string, unknown>; force: boolean }): Promise<Outcome> {
-    const origin = desc.url?.replace(/\/$/, "") ?? "http://127.0.0.1";
-    // Ping maps to the conventional health endpoint unless an explicit route is given.
-    const route = String(a.args.route ?? (this.#isPing(a.module) ? "GET /ping" : "GET /")).trim();
-    const [rawMethod = "GET", rawPath = "/"] = route.split(" ");
-    const method = rawMethod.toUpperCase();
-    let path = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
-    if (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
-    const headers: Record<string, string> = {};
-    if (desc.auth?.type === "basic") headers["authorization"] = `Basic ${Buffer.from(`${desc.auth.user}:${desc.auth.pass}`).toString("base64")}`;
-    else if (desc.auth?.type === "token") headers["authorization"] = `Bearer ${desc.auth.token}`;
-    const hasBody = ["POST", "PATCH", "PUT"].includes(method);
-    const payload = a.args.payload !== undefined ? JSON.stringify(a.args.payload) : undefined;
-    try {
-      const res = await fetch(`${origin}${path}`, { method, headers, body: hasBody ? payload : undefined, signal: AbortSignal.timeout(desc.timeoutMs ?? 8000) });
-      const txt = await res.text();
-      let parsed: unknown = null;
-      try { parsed = txt ? JSON.parse(txt) : null; } catch { parsed = txt || null; }
-      return { host: desc.name, ok: res.ok, changed: hasBody, summary: `${method} ${path}`, detail: { status: res.status, response: parsed } };
-    } catch (err) {
-      return { host: desc.name, ok: false, changed: false, summary: `${method} ${path} failed`, detail: err instanceof Error ? err.message : String(err) };
-    }
-  }
-
-  async #execNetwork(desc: TargetDescriptor, a: { module: string; args: Record<string, unknown>; config?: string; force: boolean }): Promise<Outcome> {
-    const dev = desc.device as NetworkDeviceSimHandle | undefined;
-    if (!dev) return { host: desc.name, ok: false, changed: false, summary: "no device handle" };
-    if (this.#isPing(a.module)) {
-      const running = dev.showRunning().trim();
-      return { host: desc.name, ok: running.length > 0, changed: false, summary: "device reachable", detail: { runningLines: running.split("\n").filter(Boolean).length } };
-    }
-    // set_config-style apply. Force (non-idempotent) applies WITHOUT checking first.
-    const cfg = String(a.config ?? a.args.config ?? "");
-    const mode: ApplyOpts["mode"] = a.args.mode === "replace" ? "replace" : "merge";
-    const applied = await dev.apply(cfg, { mode, commit: true });
-    const issuedCommands = applied.commands.length;
-    const deviceChanged = applied.changed;
-    const forcedApplied = a.force === true || issuedCommands > 0;
-    return { host: desc.name, ok: true, changed: forcedApplied, summary: a.force ? "applied (non-idempotent, not checked)" : deviceChanged ? "applied" : "noop", detail: { deviceChanged, issuedCommands } };
-  }
-
-  // --- persistence (best-effort through Task-19 store) ----------------------
+  // --- persistence (best-effort through the durable store) ------------------
 
   #persistStart(rec: RunRecord, body: JobBody): void {
     const store = this.#store;

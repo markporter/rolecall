@@ -5,6 +5,7 @@ export * from "./local";
 export * from "./network";
 export * from "./diff";
 export * from "./http";
+export * from "./sim-network";
 
 import type { Connection, ConnectionOptions } from "./connection";
 import { SshConnection } from "./ssh";

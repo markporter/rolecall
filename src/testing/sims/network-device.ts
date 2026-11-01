@@ -152,6 +152,13 @@ export async function createNetworkDeviceSim(opts: NetworkDeviceSimOptions = {})
       doCommit();
       return { committed: true };
     },
+    // Line-oriented CLI bridge used by SimNetworkConnection so a forked child
+    // can drive the live simulator without sharing process state.
+    "POST /cli": async (_req, ctx) => {
+      const b = await parseJson(await ctx.text());
+      const line = typeof b.line === "string" ? b.line : "";
+      return { output: cli(line).output };
+    },
   };
 
   const http = await createHttpSim({

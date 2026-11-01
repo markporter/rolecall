@@ -86,6 +86,19 @@ async function runPlay(
     playbook.hosts,
     options.resolveOptions ?? {},
   );
+  // The global --limit narrows the play's resolved host set (single pattern).
+  if (options.limit) {
+    const limited = await resolveTargets(
+      inventory,
+      [options.limit],
+      options.resolveOptions ?? {},
+    );
+    const allowed = new Set(limited.matchedHosts);
+    resolved.matchedHosts = resolved.matchedHosts.filter((h) => allowed.has(h));
+    for (const host of Object.keys(resolved.hosts)) {
+      if (!allowed.has(host)) delete resolved.hosts[host];
+    }
+  }
   applyPlayVars(resolved, playbook, options.extraVars ?? {});
   const allHosts = resolved.matchedHosts;
   const invSnapshot: InventorySnapshot = await resolveInventorySnapshot(

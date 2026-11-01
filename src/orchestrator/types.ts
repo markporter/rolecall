@@ -90,6 +90,10 @@ export interface HostOutcome {
   ok: boolean;
   changed: boolean;
   summary: string;
+  /** Task name that produced this outcome, when the run executed a playbook. */
+  task?: string;
+  /** Module that produced this outcome, when known. */
+  module?: string;
   detail?: unknown;
 }
 
@@ -131,6 +135,10 @@ export interface ServerOptions {
   tickMs?: number;
   /** Disable signal-handler installation (used by tests that close manually). Default false. */
   noSignalHandlers?: boolean;
+  /** Override the command used to fork playbook runs (default: resolve the current CLI entrypoint). */
+  childCli?: string[];
+  /** Hard timeout for a forked run before SIGTERM, in ms (default 15 minutes). */
+  childTimeoutMs?: number;
   // TODO(ROLECALL-PLACEHOLDER): authToken is a placeholder only — RBAC/multi-user deferred
   /** Optional single-token Bearer guard for run-trigger endpoints (webhook/REST). When set, requests must send `Authorization: Bearer <token>` else 401. Placeholder ONLY — RBAC/multi-user is deferred. Unset => open. */
   authToken?: string;

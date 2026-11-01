@@ -9,7 +9,7 @@
 // dbPath so nothing touches real home or project dirs.
 
 import { afterEach, afterAll, beforeAll, expect, test } from "bun:test";
-import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { readFileSync } from "node:fs";
@@ -59,6 +59,7 @@ async function boot(): Promise<void> {
     { name: "web1", kind: "ssh", host: sshApi.host, port: sshApi.port, user: sshApi.user, credentials: { privateKey: readFileSync(sshApi.privateKeyPath, "utf-8") } },
     { name: "api1", kind: "http", url: httpApi.baseUrl },
     { name: "sw1", kind: "network", device: netApi },
+    { name: "local1", kind: "local", host: "localhost", user: process.env.USER ?? "user" },
   ];
 
   const store = openStore({ dbPath: DB_PATH });
@@ -116,6 +117,41 @@ test("POST /run returns a stable runId; polling reaches success (eventual consis
   const done2 = await waitForRun(r2.runId, (b: any) => b.status === "success" || b.status === "failed");
   expect(done2.status).toBe("success");
   expect(done2.outcomes[0].detail.response.msg).toBe("hi");
+});
+
+test("serve runs the full executor: when, notify handlers, and check mode", async () => {
+  const marker = join(TMP_ROOT, "executor-parity.txt");
+  const playbook = [
+    {
+      hosts: ["all"],
+      vars: {},
+      tasks: [
+        { name: "skip", module: "debug", args: { msg: "skipped" }, when: false, notify: [] },
+        { name: "write", module: "copy", args: { dest: marker, content: "parity\n" }, notify: ["flush"] },
+        { name: "flush", module: "debug", args: { msg: "handler ran" }, notify: [], listen: "flush" },
+      ],
+    },
+  ];
+
+  const r = await postRun({ type: "playbook", targets: ["local1"], playbook: playbook as any });
+  const done = await waitForRun(r.runId, (b: any) => b.status === "success" || b.status === "failed");
+  expect(done.status).toBe("success");
+  expect(readFileSync(marker, "utf-8")).toBe("parity\n");
+  expect(done.outcomes.some((o: any) => o.task === "flush")).toBe(true);
+
+  const checkMarker = join(TMP_ROOT, "executor-parity-check.txt");
+  const checkPb = [
+    {
+      hosts: ["all"],
+      vars: {},
+      tasks: [{ name: "check-write", module: "copy", args: { dest: checkMarker, content: "no write\n" }, notify: [] }],
+    },
+  ];
+  const r2 = await postRun({ type: "playbook", targets: ["local1"], playbook: checkPb as any, check: true, diff: true });
+  const done2 = await waitForRun(r2.runId, (b: any) => b.status === "success" || b.status === "failed");
+  expect(done2.status).toBe("success");
+  expect(existsSync(checkMarker)).toBe(false);
+  expect(done2.outcomes[0].changed).toBe(true);
 });
 
 test("playbook across mixed transports reuses config loaders + inventory engine", async () => {
