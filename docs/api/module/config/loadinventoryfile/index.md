@@ -14,7 +14,7 @@ description: "Read an inventory file and return its normalized form, auto-detect
 ): Promise<NormalizedInventory>"
 />
 
-<SourceLink href="/source/src/config/loader-ts/#L999" label="loader.ts:999" />
+<SourceLink href="/source/src/config/loader-ts/#L1004" label="loader.ts:1004" />
 
 **Modifiers:** `async`
 

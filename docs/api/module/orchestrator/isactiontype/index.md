@@ -9,7 +9,7 @@ description: True only for literal membership among the accepted action types.
 
 <Signature code="isActionType(v: unknown): v is ActionType" />
 
-<SourceLink href="/source/src/orchestrator/job-validation-ts/#L65" label="job-validation.ts:65" />
+<SourceLink href="/source/src/orchestrator/job-validation-ts/#L66" label="job-validation.ts:66" />
 
 True only for literal membership among the accepted action types.
 

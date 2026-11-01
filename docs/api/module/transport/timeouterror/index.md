@@ -6,7 +6,7 @@ longname: module:transport.TimeoutError
 
 # TimeoutError
 
-<SourceLink href="/source/src/transport/connection-ts/#L190" label="connection.ts:190" />
+<SourceLink href="/source/src/transport/connection-ts/#L192" label="connection.ts:192" />
 
 ---
 
@@ -47,7 +47,7 @@ _Inherited from&#x20;_`message`
 
 <MemberHeading id="ms" depth="3" name="ms" sig="ms: number" />
 
-<MemberMeta badges="readonly" sourceHref="/source/src/transport/connection-ts/#L191" sourceLabel="connection.ts:191" />
+<MemberMeta badges="readonly" sourceHref="/source/src/transport/connection-ts/#L193" sourceLabel="connection.ts:193" />
 
 <MemberHeading id="name" depth="3" name="name" sig="name: string" />
 

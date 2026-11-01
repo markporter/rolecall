@@ -14,7 +14,7 @@ longname: module:transport.ResilienceConfig
 }"
 />
 
-<SourceLink href="/source/src/transport/connection-ts/#L223" label="connection.ts:223" />
+<SourceLink href="/source/src/transport/connection-ts/#L225" label="connection.ts:225" />
 
 ---
 
@@ -22,12 +22,12 @@ longname: module:transport.ResilienceConfig
 
 <MemberHeading id="concurrency" depth="3" name="concurrency" sig="concurrency: number" />
 
-<MemberMeta sourceHref="/source/src/transport/connection-ts/#L224" sourceLabel="connection.ts:224" />
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L226" sourceLabel="connection.ts:226" />
 
 <MemberHeading id="retry" depth="3" name="retry" sig="retry: RetryConfig" />
 
-<MemberMeta sourceHref="/source/src/transport/connection-ts/#L225" sourceLabel="connection.ts:225" />
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L227" sourceLabel="connection.ts:227" />
 
 <MemberHeading id="timeoutms" depth="3" name="timeoutMs" sig="timeoutMs: number" />
 
-<MemberMeta sourceHref="/source/src/transport/connection-ts/#L226" sourceLabel="connection.ts:226" />
+<MemberMeta sourceHref="/source/src/transport/connection-ts/#L228" sourceLabel="connection.ts:228" />

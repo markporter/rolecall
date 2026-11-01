@@ -13,7 +13,7 @@ longname: module:config.detectInventoryFormat
 ): InventoryFormat"
 />
 
-<SourceLink href="/source/src/config/loader-ts/#L890" label="loader.ts:890" />
+<SourceLink href="/source/src/config/loader-ts/#L895" label="loader.ts:895" />
 
 **Parameters**
 

@@ -16,6 +16,7 @@ longname: module:transport
 - [`HttpApiConnection`](/module/transport/httpapiconnection)
 - [`LocalConnection`](/module/transport/localconnection)
 - [`NetworkSshConnection`](/module/transport/networksshconnection)
+- [`SimNetworkConnection`](/module/transport/simnetworkconnection)
 - [`SshConnection`](/module/transport/sshconnection)
 - [`TimeoutError`](/module/transport/timeouterror)
 
@@ -38,6 +39,7 @@ longname: module:transport
 - [`NetworkConnectionOptions`](/module/transport/networkconnectionoptions)
 - [`ResilienceConfig`](/module/transport/resilienceconfig)
 - [`RetryConfig`](/module/transport/retryconfig)
+- [`SimNetworkConnectionOptions`](/module/transport/simnetworkconnectionoptions)
 - [`SshConnectionOptions`](/module/transport/sshconnectionoptions)
 - [`VendorDriver`](/module/transport/vendordriver)
 

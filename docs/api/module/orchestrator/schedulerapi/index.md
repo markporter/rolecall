@@ -13,7 +13,7 @@ description: Minimal scheduler hook invoked by schedule-management endpoints.
 }"
 />
 
-<SourceLink href="/source/src/orchestrator/types-ts/#L109" label="types.ts:109" />
+<SourceLink href="/source/src/orchestrator/types-ts/#L113" label="types.ts:113" />
 
 Minimal scheduler hook invoked by schedule-management endpoints.
 
@@ -27,7 +27,7 @@ Minimal scheduler hook invoked by schedule-management endpoints.
 
 <MemberHeading id="trigger" depth="3" name="trigger" sig="trigger(params: Record<string, unknown>): Promise<boolean>" />
 
-<MemberMeta badges="async" sourceHref="/source/src/orchestrator/types-ts/#L111" sourceLabel="types.ts:111" />
+<MemberMeta badges="async" sourceHref="/source/src/orchestrator/types-ts/#L115" sourceLabel="types.ts:115" />
 
 Trigger a scheduled job now; returns true if dispatched.
 

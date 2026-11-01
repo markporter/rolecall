@@ -9,7 +9,7 @@ description: Parse + validate raw playbook YAML text into a normalized array of 
 
 <Signature code="loadPlaybook(yaml: string): NormalizedPlaybook[]" />
 
-<SourceLink href="/source/src/config/loader-ts/#L271" label="loader.ts:271" />
+<SourceLink href="/source/src/config/loader-ts/#L276" label="loader.ts:276" />
 
 Parse + validate raw playbook YAML text into a normalized array of plays. The document root MUST be a top-level list of plays; a bare single-play object is rejected with a list-required error. Template-ref problems (`{{ }}` / unprefixed `$var`) are hard errors that fail closed; every expanded/imported file is linted at its own load.
 

@@ -14,7 +14,7 @@ description: Validate + coerce an arbitrary parsed body into a JobBody, or expla
 ): ValidationResult"
 />
 
-<SourceLink href="/source/src/orchestrator/job-validation-ts/#L96" label="job-validation.ts:96" />
+<SourceLink href="/source/src/orchestrator/job-validation-ts/#L97" label="job-validation.ts:97" />
 
 Validate + coerce an arbitrary parsed body into a JobBody, or explain why not. `forcedType` pre-fills `type` for typed shortcut routes (e.g. POST /webhooks/adhoc).
 

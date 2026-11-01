@@ -51,7 +51,7 @@ _Implementation of&#x20;_[`kind`](/module/transport/connection#kind)
 
 <MemberHeading id="connect" depth="3" name="connect" sig="connect(): Promise<void>" />
 
-<MemberMeta badges="async" sourceHref="/source/src/transport/http-ts/#L57" sourceLabel="http.ts:57" />
+<MemberMeta badges="async" sourceHref="/source/src/transport/http-ts/#L58" sourceLabel="http.ts:58" />
 
 _Implementation of&#x20;_[`connect`](/module/transport/connection#connect)
 
@@ -63,7 +63,7 @@ Establish the underlying transport (idempotent once connected).
 
 <MemberHeading id="disconnect" depth="3" name="disconnect" sig="disconnect(): Promise<void>" />
 
-<MemberMeta badges="async" sourceHref="/source/src/transport/http-ts/#L167" sourceLabel="http.ts:167" />
+<MemberMeta badges="async" sourceHref="/source/src/transport/http-ts/#L168" sourceLabel="http.ts:168" />
 
 _Implementation of&#x20;_[`disconnect`](/module/transport/connection#disconnect)
 
@@ -83,7 +83,7 @@ Tear down the underlying transport.
 ): Promise<ExecResult>"
 />
 
-<MemberMeta badges="async" sourceHref="/source/src/transport/http-ts/#L105" sourceLabel="http.ts:105" />
+<MemberMeta badges="async" sourceHref="/source/src/transport/http-ts/#L106" sourceLabel="http.ts:106" />
 
 _Implementation of&#x20;_[`exec`](/module/transport/connection#exec)
 
@@ -100,7 +100,7 @@ Run a command, returning captured stdout/stderr/exit code.
 
 <MemberHeading id="facts" depth="3" name="facts" sig="facts(): Promise<ConnectionFacts>" />
 
-<MemberMeta badges="async" sourceHref="/source/src/transport/http-ts/#L132" sourceLabel="http.ts:132" />
+<MemberMeta badges="async" sourceHref="/source/src/transport/http-ts/#L133" sourceLabel="http.ts:133" />
 
 _Implementation of&#x20;_[`facts`](/module/transport/connection#facts)
 
@@ -112,7 +112,7 @@ Best-effort targeted fact gathering for the target.
 
 <MemberHeading id="health" depth="3" name="health" sig="health(): Promise<HealthStatus>" />
 
-<MemberMeta badges="async" sourceHref="/source/src/transport/http-ts/#L138" sourceLabel="http.ts:138" />
+<MemberMeta badges="async" sourceHref="/source/src/transport/http-ts/#L139" sourceLabel="http.ts:139" />
 
 _Implementation of&#x20;_[`health`](/module/transport/connection#health)
 

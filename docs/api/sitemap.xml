@@ -760,6 +760,12 @@
     <loc>https://rolecall.example.com/module/transport/server/</loc>
   </url>
   <url>
+    <loc>https://rolecall.example.com/module/transport/simnetworkconnection/</loc>
+  </url>
+  <url>
+    <loc>https://rolecall.example.com/module/transport/simnetworkconnectionoptions/</loc>
+  </url>
+  <url>
     <loc>https://rolecall.example.com/module/transport/sshconnection/</loc>
   </url>
   <url>

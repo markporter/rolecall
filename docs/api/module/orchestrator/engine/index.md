@@ -6,7 +6,7 @@ longname: module:orchestrator.Engine
 
 # Engine
 
-<SourceLink href="/source/src/orchestrator/engine-ts/#L37" label="engine.ts:37" />
+<SourceLink href="/source/src/orchestrator/engine-ts/#L19" label="engine.ts:19" />
 
 ---
 
@@ -20,7 +20,7 @@ longname: module:orchestrator.Engine
 	store?: Store,
 	fleet?: TargetDescriptor[],
 	scheduler?: SchedulerApi,
-	_opts?: ServerOptions,
+	opts?: ServerOptions,
 ): Engine"
 />
 
@@ -29,7 +29,7 @@ longname: module:orchestrator.Engine
 - `store` ([Store](/module/store/store), optional)
 - `fleet` ([TargetDescriptor](/module/orchestrator/targetdescriptor)\[], optional)
 - `scheduler` ([SchedulerApi](/module/orchestrator/schedulerapi), optional)
-- `_opts` ([ServerOptions](/module/orchestrator/serveroptions), optional)
+- `opts` ([ServerOptions](/module/orchestrator/serveroptions), optional)
 
 **Returns**
 
@@ -41,7 +41,7 @@ longname: module:orchestrator.Engine
 
 <MemberHeading id="active" depth="3" name="active" sig="active(): number" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/engine-ts/#L60" sourceLabel="engine.ts:60" />
+<MemberMeta sourceHref="/source/src/orchestrator/engine-ts/#L46" sourceLabel="engine.ts:46" />
 
 Number of runs currently executing (for status/drain bookkeeping).
 
@@ -51,7 +51,7 @@ Number of runs currently executing (for status/drain bookkeeping).
 
 <MemberHeading id="enqueue" depth="3" name="enqueue" sig="enqueue(body: JobBody): string" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/engine-ts/#L74" sourceLabel="engine.ts:74" />
+<MemberMeta sourceHref="/source/src/orchestrator/engine-ts/#L60" sourceLabel="engine.ts:60" />
 
 **Parameters**
 
@@ -63,7 +63,7 @@ Number of runs currently executing (for status/drain bookkeeping).
 
 <MemberHeading id="get" depth="3" name="get" sig="get(id: string): RunRecord | undefined" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/engine-ts/#L64" sourceLabel="engine.ts:64" />
+<MemberMeta sourceHref="/source/src/orchestrator/engine-ts/#L50" sourceLabel="engine.ts:50" />
 
 **Parameters**
 
@@ -75,7 +75,7 @@ Number of runs currently executing (for status/drain bookkeeping).
 
 <MemberHeading id="isdraining" depth="3" name="isDraining" sig="isDraining(): boolean" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/engine-ts/#L53" sourceLabel="engine.ts:53" />
+<MemberMeta sourceHref="/source/src/orchestrator/engine-ts/#L39" sourceLabel="engine.ts:39" />
 
 **Returns**
 
@@ -83,7 +83,7 @@ Number of runs currently executing (for status/drain bookkeeping).
 
 <MemberHeading id="list" depth="3" name="list" sig="list(): RunRecord[]" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/engine-ts/#L68" sourceLabel="engine.ts:68" />
+<MemberMeta sourceHref="/source/src/orchestrator/engine-ts/#L54" sourceLabel="engine.ts:54" />
 
 **Returns**
 
@@ -91,7 +91,7 @@ Number of runs currently executing (for status/drain bookkeeping).
 
 <MemberHeading id="registerfleet" depth="3" name="registerFleet" sig="registerFleet(targets: TargetDescriptor[]): void" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/engine-ts/#L55" sourceLabel="engine.ts:55" />
+<MemberMeta sourceHref="/source/src/orchestrator/engine-ts/#L41" sourceLabel="engine.ts:41" />
 
 **Parameters**
 
@@ -103,7 +103,7 @@ Number of runs currently executing (for status/drain bookkeeping).
 
 <MemberHeading id="setdraining" depth="3" name="setDraining" sig="setDraining(v: boolean): void" />
 
-<MemberMeta sourceHref="/source/src/orchestrator/engine-ts/#L52" sourceLabel="engine.ts:52" />
+<MemberMeta sourceHref="/source/src/orchestrator/engine-ts/#L38" sourceLabel="engine.ts:38" />
 
 Drain flag: once true, new runs are rejected (set during graceful shutdown).
 

@@ -87,5 +87,6 @@ kind: guide
 - [src/transport/index.ts](/source/src/transport/index-ts/)
 - [src/transport/local.ts](/source/src/transport/local-ts/)
 - [src/transport/network.ts](/source/src/transport/network-ts/)
+- [src/transport/sim-network.ts](/source/src/transport/sim-network-ts/)
 - [src/transport/ssh.ts](/source/src/transport/ssh-ts/)
 - [src/util/runtime.ts](/source/src/util/runtime-ts/)

@@ -1535,6 +1535,14 @@ _source: builtin_
 
 > ≠ Ansible `pause`: `prompt` is ignored (RoleCall is non-interactive); only timed sleeps are supported.
 
+## ping
+
+ping
+
+**Args**
+
+_(none)_
+
 ## pip
 
 Install, upgrade, or remove Python packages idempotently via pip or a virtualenv's pip (Ansible `pip` alternate).
@@ -1743,6 +1751,14 @@ _(none)_
 
 
 > ≠ Ansible `service_facts`: systemd-only. `state` is the active state from `systemctl list-units` (running/exited/dead/…); `enabled` from `list-unit-files`. SysV/Upstart not enumerated.
+
+## set_config
+
+set_config
+
+**Args**
+
+_(none)_
 
 ## set_fact
 

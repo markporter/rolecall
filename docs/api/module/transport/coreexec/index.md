@@ -8,7 +8,7 @@ longname: module:transport.CoreExec
 
 <Signature code="CoreExec = (signal: AbortSignal) => Promise<ExecResult>" />
 
-<SourceLink href="/source/src/transport/connection-ts/#L221" label="connection.ts:221" />
+<SourceLink href="/source/src/transport/connection-ts/#L223" label="connection.ts:223" />
 
 **Parameters**
 
