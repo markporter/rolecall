@@ -83,12 +83,6 @@ export class LocalConnection implements Connection {
       );
       return;
     }
-    if (probe.selected === "docker" && options.egress?.length && (options.network ?? "module") !== "on") {
-      this.#isolationError = new IsolationUnavailableError(
-        "egress broker wiring is not implemented for the Docker backend yet; use --isolation namespace or --isolation-network all",
-      );
-      return;
-    }
     this.#isolation = { backend: probe.selected as "namespace" | "docker", options };
   }
 
@@ -198,7 +192,7 @@ export class LocalConnection implements Connection {
       network,
       ...(iso.mounts ? { mounts: iso.mounts } : {}),
       ...(iso.image ? { image: iso.image } : {}),
-      ...(this.#egress && this.#isolation.backend === "namespace"
+      ...(this.#egress
         ? {
             egress: {
               socketDir: this.#egress.dir,

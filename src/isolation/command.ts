@@ -194,6 +194,38 @@ export function buildDockerCommand(opts: BuildIsolationCommandOptions): Isolatio
   for (const [key, value] of Object.entries(env)) {
     args.push("-e", `${key}=${value}`);
   }
+
+  if (opts.egress) {
+    args.push("-v", `${opts.egress.socketDir}:/run/rolecall-egress`);
+    for (const bind of opts.egress.binds ?? []) {
+      args.push("-v", `${bind.source}:${bind.target}:ro`);
+    }
+    const proxy = `http://127.0.0.1:${opts.egress.proxyPort}`;
+    const egressEnv: Record<string, string> = {
+      ROLECALL_EGRESS_SOCKET: "/run/rolecall-egress/egress.sock",
+      ROLECALL_EGRESS_LISTEN: `127.0.0.1:${opts.egress.proxyPort}`,
+      ROLECALL_EGRESS_READY: "/run/rolecall-egress/ready",
+      ROLECALL_USER_COMMAND: opts.command,
+      HTTP_PROXY: proxy,
+      http_proxy: proxy,
+      HTTPS_PROXY: proxy,
+      https_proxy: proxy,
+      ALL_PROXY: proxy,
+      NO_PROXY: "localhost",
+    };
+    for (const [key, value] of Object.entries(egressEnv)) {
+      args.push("-e", `${key}=${value}`);
+    }
+    const shim = [opts.egress.shim.file, ...opts.egress.shim.args].map(shQuote).join(" ");
+    args.push(
+      image,
+      opts.shell,
+      "-c",
+      `ip link set lo up 2>/dev/null || true; ${shim} & i=0; while [ ! -e /run/rolecall-egress/ready ] && [ "$i" -lt 100 ]; do sleep 0.05; i=$((i+1)); done; exec /bin/sh -c "$ROLECALL_USER_COMMAND"`,
+    );
+    return { file: "docker", args, env };
+  }
+
   args.push(image, opts.shell, "-c", opts.command);
   return { file: "docker", args, env };
 }
