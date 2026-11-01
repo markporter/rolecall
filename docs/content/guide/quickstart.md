@@ -36,4 +36,4 @@ By default it listens on `127.0.0.1:8080`; override the port with `--port` (env 
 
 ## Where to go next
 
-Pair this with [Install](/guide/install) for setup details and [First Playbook](/guide/first-playbook) for writing valid YAML. Everything referenced here reflects implemented behavior: inventory resolution, live application over SSH/local transports, fact collection, and structured templating. Arguments do not auto-render Jinja `{{ }}` (a literal `{{ }}` is passed through verbatim); the one opt-in Jinja path is the `copy` module's `content` template spec with `engine: jinja`.
+Pair this with [Install](/guide/install) for setup details and [First Playbook](/guide/first-playbook) for writing valid YAML. Everything referenced here reflects implemented behavior: inventory resolution, live application over SSH/local transports, fact collection, and structured templating. Arguments do not auto-render Jinja `{{ }}`; an ordinary argument containing it is rejected by the playbook lint. The opt-in Jinja path is the `copy` module's `content` template spec with `engine: jinja`.

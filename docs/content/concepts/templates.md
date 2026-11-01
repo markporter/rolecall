@@ -6,7 +6,7 @@ RoleCall has three ways to inject dynamic content, in order of preference:
 
 1. **Structured refs** (`$var`, `$concat`, `$call`, `$if`, `$each`) — the safe, escapeless, type-checked default. Use these for argument values whenever possible. Covered in [Playbook operators](/concepts/playbook-operators).
 2. **EJS templates** — the default renderer for anything needing real string interpolation, whether inside a single value (the `$template` operator) or a whole file (`copy` with `engine: ejs`, which is the default). EJS uses `<%= %>` for output and `<% %>` for logic.
-3. **Jinja templates** — *opt-in only*, via `copy` with `engine: jinja`. Use Jinja when a template comes from an existing Ansible project (so you can drop it in with minimal changes) or when you want its sandboxed execution for untrusted template code.
+3. **Jinja templates** — *opt-in only*, via `copy` with `engine: jinja`. Use Jinja when a template comes from an existing Ansible project (so you can drop it in with minimal changes). The ADR 0025 sandboxed render worker is planned hardening for untrusted template code; it is not implemented yet.
 
 RoleCall deliberately does **not** auto-render <code v-pre>{{ }}</code> as a global template engine. An ordinary argument containing <code v-pre>{{ ... }}</code> is rejected by the playbook lint, not interpreted. Templating is *opt-in*: you either use a structured ref, wrap a value in `$template`, or use a `copy` content template spec with `engine: jinja`. The content spec is a runtime payload like EJS, so Jinja delimiters are allowed inside it.
 

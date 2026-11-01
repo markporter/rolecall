@@ -10,7 +10,7 @@ Templating binds dynamic values into task arguments, `when` guards, and `loop` s
 
 ## Why structured refs
 
-A bare <code v-pre>command: "echo {{ host }}"</code> stays a literal string — it is **never** interpolated. Structured refs make interpretation **opt-in**: a value is only dynamic when it is a `$`-prefixed node; everything else stays literal byte-for-byte. There is no `eval`/`new Function` anywhere — operators are a fixed, closed set that fails closed on an unknown key.
+A bare <code v-pre>command: "echo {{ host }}"</code> is **never** interpolated; the playbook lint rejects it. Use a structured ref or `$template`. Structured refs make interpretation **opt-in**: a value is only dynamic when it is a `$`-prefixed node; everything else stays literal byte-for-byte. There is no `eval`/`new Function` anywhere — operators are a fixed, closed set that fails closed on an unknown key.
 
 ## Reference & composite operators
 

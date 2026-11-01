@@ -120,15 +120,17 @@ Global flags (parsed once by `parseArgs`):
    converging; custom modules without either are skipped rather than run. `--diff` attaches an
    observed-vs-desired patch to checkable results.
 - `--forks <N>` concurrency fan-out, must be a number.
-- `--isolation <auto|namespace|docker|none>` opts local transports into the ADR 0025
-   sandbox (bwrap/userns or Docker). The current slice is opt-in; default-on `auto`
-   is the ADR target. `rolecall doctor` reports the probe and selected backend.
+- `--isolation <auto|namespace|docker|none>` controls the ADR 0025 sandbox for local
+   transports (default `auto`, overridable with `ROLECALL_ISOLATION`). `auto` selects
+   bwrap/userns, then Docker, then fails closed; `none` is a warned last resort.
+   `rolecall doctor` reports the probe and selected backend.
 - `--isolation-network <module|none|all>` controls sandbox egress (default `module`:
    trusted modules that declare `network: true` get network, shell/command/script/raw
    stay net-off). `--mount <src:dst[:ro|rw]>` adds an explicit filesystem grant and
    `--allow-egress <host[:port]>` adds an ephemeral destination rule (both repeatable,
-   both require `--isolation`). Module URL checks (`http`/`get_url`/`git`) enforce the
-   destination policy; the shell egress broker is wired for the namespace and Docker backends (Docker command construction is tested; live Docker requires a daemon).
+   both rejected with `--isolation none`). Module URL checks (`http`/`get_url`/`git`)
+   enforce the destination policy; the shell egress broker is wired for the namespace
+   and Docker backends (Docker construction is tested; live Docker needs a daemon).
 - `--tags <list>` / `--skip-tags <list>` (comma-separated) select/skip tasks by tag on
    `playbook run`; a task's own tags replace play tags, and tag-filtered tasks report
    as skipped.

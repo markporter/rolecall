@@ -170,7 +170,13 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
     }
     forks = n;
   }
-  const isolation = values["isolation"] as string | undefined;
+  const isolation =
+    (values["isolation"] as string | undefined) ??
+    process.env["ROLECALL_ISOLATION"] ??
+    "auto";
+  if (!["auto", "namespace", "docker", "none"].includes(isolation)) {
+    throw new CliError(true, `--isolation must be auto, namespace, docker, or none (got '${isolation}')`);
+  }
   const isolationNetwork = values["isolation-network"] as string | undefined;
   if (isolationNetwork !== undefined && !["module", "none", "all"].includes(isolationNetwork)) {
     throw new CliError(true, `--isolation-network must be module, none, or all (got '${isolationNetwork}')`);
@@ -182,8 +188,8 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
   } catch (err) {
     throw new CliError(true, err instanceof Error ? err.message : String(err));
   }
-  if ((mounts.length > 0 || allowEgress.length > 0) && isolation === undefined) {
-    throw new CliError(true, "--mount/--allow-egress require an explicit --isolation backend");
+  if ((mounts.length > 0 || allowEgress.length > 0) && isolation === "none") {
+    throw new CliError(true, "--mount/--allow-egress cannot be used with --isolation none");
   }
   return {
     limit: values["limit"] as string | undefined,
