@@ -36,7 +36,7 @@ See `examples/nginx-baseline/` in the repository for a copy-able sample.
 name: my-site
 ```
 
-`rolecall.yaml` names the project; it does not carry a dependency list. Dependencies are declared separately in `collections.yml` and hydrated with `rolecall collections install` — see the [Project Structure](/guide/project-structure) guide.
+`rolecall.yaml` names the project; it does not carry a dependency list. Vendor a dependency project under `collections/<org>/<coll>/` and its plugins are scanned alongside project-local ones — see the [Project Structure](/guide/project-structure) guide.
 
 ## Modules
 
@@ -48,7 +48,7 @@ A role is a full RoleCall project you reuse. Keep local roles in `roles/`. See [
 
 ## Where state lives
 
-Each project gets its own `state.db` colocated under `.rolecall/`. When `ROLECALL_DB_URL` is set, RoleCall uses a shared Postgres database instead.
+Each project gets its own `state.db` colocated under `.rolecall/`. Persistence is SQLite on both Node.js and Bun.
 
 ## Related concepts
 

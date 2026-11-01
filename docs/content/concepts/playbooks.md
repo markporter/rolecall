@@ -14,7 +14,7 @@ At the top level a playbook is a list of plays. Each play accepts:
 - `tasks` (required) — an ordered list of task entries.
 - `name` (optional) — a human label for the play.
 - `vars` (optional) — variables scoped to the play.
-- `trigger` (optional) — a schedule / cron / webhook descriptor, preserved on round-trip. The orchestrator's cron scheduler consumes schedules created through `/schedules`; a play-level `trigger:` is not auto-registered today. See [Serve Command](/reference/serve-command).
+- `trigger` (optional) — a schedule / cron / webhook descriptor, preserved on round-trip. Schedules that fire are created through `/schedules` and consumed by the orchestrator's cron scheduler. See [Serve Command](/reference/serve-command).
 - `serial` / `strategy` (optional, play-level) — `strategy` is `linear` (default: all hosts advance through tasks together) or `free` (each host runs independently).
 
 Every task needs at least a `name` and a module. RoleCall's shape is strict: unknown keys are rejected, so a typo fails fast at load time rather than silently being ignored.
@@ -104,7 +104,7 @@ Static strings are not enough — tasks branch, loop, and interpolate. RoleCall 
 - **Idempotency is by design.** The `shell` module requires a guard (or an explicit `run_mode`) instead of Ansible's `changed_when`. See [Shell & idempotency](./shell-idempotency.md).
 - **`register` works.** It stores a task result under a name you can read later via the `reg` namespace (e.g. `reg.myresult.data.stdout`).
 - **Strict shape.** Unknown keys are rejected, so a mistyped field fails at load time.
-- **`meta` control flags are partially honored.** `meta: end_play` / `end_host` are honored by the executor (they halt the play or current host); `end_batch` / `refresh_inventory` / `flush_handlers` are surfaced in `data.meta.deferred` and not yet acted on.
+- **`meta` control flags are honored.** `end_play`/`end_host` halt the play or current host, `flush_handlers` flushes pending handlers at the next task boundary, `end_batch` stops the current serial batch, and `refresh_inventory` re-reads the inventory source and re-resolves hosts.
 - **`serial` / `strategy` are play-level**, not task-level.
 
 ## Where to go next

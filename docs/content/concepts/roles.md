@@ -2,47 +2,61 @@
 title: Roles
 ---
 
-A **role** is a reusable RoleCall project you compose into a parent playbook. It ships its own modules, playbooks, and default variables, but it does not carry a real inventory — the parent project supplies the actual hosts.
+A **role** is a reusable bundle of tasks you compose into a parent playbook. It ships
+its own tasks, handlers, defaults, vars, templates, and files, but it does not carry a
+real inventory — the parent project supplies the actual hosts.
 
-Roles are the primary reuse mechanism: write a web-tier once, then drop it into many playbooks.
+Roles are the primary reuse mechanism: write a web-tier once, then drop it into many
+playbooks.
 
 ## Layout
+
+RoleCall resolves a role by name from `roles/` next to the playbook or at the
+project root. The role directory needs `tasks/main.yml`; every other file is
+optional:
 
 ```text
 my-site/
   roles/
-    web-tier/               # a local role
-      rolecall.yaml             # its own manifest
-      plugins/modules/
-        <namespace>/
-          enable-site.ts
-      playbooks/site.yaml  # its entry playbook
-      defaults/            # default var manifests
+    web-tier/
+      tasks/main.yml          # required: a YAML list of tasks
+      handlers/main.yml       # optional: handlers with `listen`
+      defaults/main.yml       # optional: lowest-precedence vars
+      vars/main.yml           # optional: role vars
+      templates/              # optional: role-relative templates
+      files/                  # optional: role-relative source files
 ```
 
-A role is host-agnostic: it can ship `group_vars/`/`host_vars/` *defaults*, but the resolved hosts come from the parent's inventory.
+A role is host-agnostic: its vars are merged into the play, but the resolved hosts
+come from the parent's inventory.
 
 ## Composing a role into a playbook
 
-List roles at the play level; RoleCall expands each into its tasks against the play's `hosts`:
+List roles at the play level; RoleCall expands each into its tasks against the
+play's `hosts`:
 
 ```yaml
 # playbooks/site.yaml
 - hosts: web
   roles:
     - web-tier                # local role (bare name)
-    - rolecall-nginx               # role provided by an installed collection
+    - roles/common            # or an explicit path
 ```
 
-Local roles resolve by bare name from `roles/`. Collections are declared in `collections.yml` and hydrated with `rolecall collections install`; reference their roles by collection name.
+Local roles resolve by bare name from `roles/`. A path-like name (containing `/` or
+starting with `.`) resolves relative to the playbook directory. Role tasks run in
+listed order, and role defaults merge below play vars; two roles setting the same var
+follow the same listed order (later wins).
 
 ## Sharing roles
 
-Promote a local role by factoring it into its own RoleCall project (with its own `rolecall.yaml`) and listing it in `collections.yml`. Consumers hydrate it with `rolecall collections install` and reference it by name from a play's `roles:` list. See [Project](./project.md) for the manifest format.
+A local role lives in a project's `roles/` tree. To reuse it across projects, copy or
+vendor the role directory into the other project's `roles/` tree. See
+[Project Structure](/guide/project-structure) for the on-disk layout.
 
 ## Related concepts
 
 - [Project](./project.md) — the layout a role lives inside.
 - [Playbooks](./playbooks.md) and [Plays](./plays.md) — where roles are expanded.
-- [Tasks](./tasks.md) — the work a role's playbooks describe.
-- [Modules](./modules.md) — the units a role can bundle.
+- [Tasks](./tasks.md) — the work a role's tasks describe.
+- [Modules](./modules.md) — the units a role can invoke.
