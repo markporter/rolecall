@@ -389,7 +389,7 @@ prefix, channel, and update URL. Update behaves accordingly:
   `isolation.yaml` are untouched. An optional `--with-bun` toolchain is updated separately;
   the embedded runtime updates with the binary.
 
-**Release integrity (ADR 0028 gap 11)**
+**Release integrity (ADR 0028 §3)**
 
 - The release pipeline publishes an **SBOM** and signed checksums; where feasible the build
   is reproducible, and `rolecall update` verifies the manifest before executing anything.

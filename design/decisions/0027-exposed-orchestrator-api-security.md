@@ -2,7 +2,7 @@
 
 - Status: **Proposed**
 - Date: 2026-11-01
-- Related: [ADR 0017](0017-execution-isolation-and-run-scope.md) (fork-per-run), [ADR 0020](0020-mcp-server-and-tool-surface.md) (MCP tools, including authoring), [ADR 0021](0021-remote-git-project-source.md) (remote project source: SSRF/code-execution surface), [ADR 0022](0022-secrets-vault-and-provider-chain.md) (secret handling), [ADR 0023](0023-installation-layout-and-service-model.md) (service/user/config), [ADR 0025](0025-local-execution-isolation.md) (local exec sandbox), [ADR 0026](0026-remote-execution-confinement.md) (targets), [ADR 0028](0028-security-threat-model-and-gap-register.md) (cross-cutting threat model, control map, and gap register)
+- Related: [ADR 0017](0017-execution-isolation-and-run-scope.md) (fork-per-run), [ADR 0020](0020-mcp-server-and-tool-surface.md) (MCP tools, including authoring), [ADR 0021](0021-remote-git-project-source.md) (remote project source: SSRF/code-execution surface), [ADR 0022](0022-secrets-vault-and-provider-chain.md) (secret handling), [ADR 0023](0023-installation-layout-and-service-model.md) (service/user/config), [ADR 0025](0025-local-execution-isolation.md) (local exec sandbox), [ADR 0026](0026-remote-execution-confinement.md) (targets), [ADR 0028](0028-security-control-index-and-gaps.md) (security control index and remaining gaps)
 
 ## Context
 
@@ -19,9 +19,9 @@ are unauthenticated, `/run` accepts arbitrary job fields, and there is no RBAC, 
 or path confinement. The default bind is loopback, which is the only reason this has been
 acceptable so far.
 
-The cross-cutting threat model, the Ansible/AWX prior art, the security control map, and
-the live gap register live in [ADR 0028](0028-security-threat-model-and-gap-register.md).
-This ADR owns the exposed-serve controls and the gaps assigned to it there.
+The security control index and remaining gaps live in
+[ADR 0028](0028-security-control-index-and-gaps.md). This ADR owns the exposed-serve
+controls and the remaining work assigned to it there.
 
 ## Decision
 
@@ -169,7 +169,7 @@ worker-per-tenant container) with their own credentials and network policy.
   lazy remote-only backend, `doctor` checks for namespace/Docker access under the service
 - [ ] Document and support the container/VM deployment (minimal mounts, no host home/agent/
   Docker socket) and specify the gateway/worker privilege split as the target architecture
-- [ ] Close the gaps assigned to this ADR in [ADR 0028 §5](0028-security-threat-model-and-gap-register.md): per-run event/state/cache isolation, tamper-evident audit shipping, argument/option-injection hardening (argv arrays, `--` separators, leading-`-` rejection), event-boundary secret masking, host-key/TLS verification, and MCP per-tool scopes
+- [ ] Implement the work assigned to this ADR in [ADR 0028 §2–3](0028-security-control-index-and-gaps.md): per-run event/state/cache security isolation, tamper-evident audit shipping, argument/option-injection hardening (argv arrays, `--` separators, leading-`-` rejection), event-boundary secret masking, host-key/TLS verification, and MCP per-tool scopes
 - [ ] Tests: auth bypass, path traversal, SSRF (metadata/loopback), restricted-route
   enforcement, non-loopback refusal, child-env scrub, and denial-to-trace propagation
 
