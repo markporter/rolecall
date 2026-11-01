@@ -139,10 +139,11 @@ export async function runPlaybookCommand(
   // AS it runs; other modes (human_summary/json) stay end-of-run summaries, so
   // the sink is left undefined and their events live only in the final CliResult.
   const eventSink: ((event: TaskEvent) => void) | undefined =
-    flags.output === "syslog"
+    flags.output === "syslog" || flags.output === "jsonl"
       ? (event) =>
           process.stdout.write(
             `${JSON.stringify({
+              ...(flags.output === "jsonl" ? { type: "event" } : {}),
               ts: event.ts,
               host: event.host,
               task: event.task,
@@ -229,6 +230,18 @@ export async function runPlaybookCommand(
           rendered.push({ task: o.task, host: o.host, engine, source: tpl, rendered: out });
         }
       }
+    }
+    for (const o of result.handlers) {
+      outcomes.push({
+        host: o.host,
+        task: o.handler,
+        module: "handler",
+        changed: o.changed,
+        failed: o.failed,
+        skipped: false,
+        iterations: 1,
+        msg: o.msg,
+      });
     }
   }
 
