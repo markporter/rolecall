@@ -1249,7 +1249,7 @@ _source: builtin_
 ```
 
 
-> `noop`, `reset_connection`, and `clear_facts` act immediately. `end_play` halts the play and `end_host` halts the current host (the executor honors the emitted halt signal). `flush_handlers` flushes pending handlers at that point, `end_batch` stops the current serial batch (the next batch continues), and `refresh_inventory` re-reads `ExecOptions.inventoryPath` and re-resolves hosts (a safe no-op with a clear note when no inventory source is available). All control flags are wired; `deferred` remains empty for backward compatibility.
+> `noop`, `reset_connection`, and `clear_facts` act immediately. `end_play` halts the play and `end_host` halts the current host (the executor honors the emitted halt signal). `flush_handlers` flushes pending handlers at that point, `end_batch` stops the current serial batch (the next batch continues), and `refresh_inventory` re-reads `ExecOptions.inventoryPath` and re-resolves hosts (a safe no-op with a clear note when no inventory source is available). All control flags are honored.
 
 ## modprobe
 
@@ -2157,7 +2157,7 @@ _source: builtin_
 ```
 
 
-> ≠ Ansible `tempfile`: the default filename prefix is `rolecall`; always creates a new node (`changed: true`); RoleCall does not yet track/clean it up automatically.
+> ≠ Ansible `tempfile`: the default filename prefix is `rolecall`; always creates a new node (`changed: true`); RoleCall does not track or clean it up automatically.
 
 ## timezone
 
