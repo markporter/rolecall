@@ -2,8 +2,25 @@
 title: Secrets
 ---
 
-Secrets such as passwords and API keys must never be committed or printed in logs. Treat every credential as sensitive first-class data: keep it out of version-controlled YAML, never echo it into CLI output, and rotate anything that ever leaked. RoleCall ships no secret store today, so sourcing, masking, and encryption are all `[deferred]` rather than features you can rely on. The proposed design is captured in ADR 0022 (`$secret` references, a provider chain, a native AEAD vault, read-only Ansible Vault compatibility, and per-run masking); it is not implemented yet.
+Secrets such as passwords and API keys must never be committed or printed in logs.
+Treat every credential as sensitive first-class data: keep it out of
+version-controlled YAML, never echo it into CLI output, and rotate anything that
+ever leaked.
 
-Until a backend exists, follow defensive habits around the inputs you do manage. Keep inventory and playbook files readable only by the operators who need them, restrict file permissions tightly, and avoid embedding tokens directly in `vars`. When values must vary between environments, prefer passing them through controlled means instead of hardcoding them in shared files. Watch the JSON output path too, because machine-readable renders serialize everything that reaches them.
+Source secrets from your platform's secret manager or environment and inject them at
+run time — for example through `--extra-vars`, a generated inventory kept outside
+version control, or environment variables consumed by your provider of choice. This
+keeps the control plane free of stored credentials while still letting tasks receive
+them.
 
-This page lists safe-handling principles precisely because no specific secret backend is implemented yet. Do not build production reliance on secret management here until Wave 0 scaffolding becomes a real subsystem, and plan around external vaults or environment-provided values in the meantime. For how inventory carries variables that might include secrets, read [/concepts/inventory](/concepts/inventory).
+Follow defensive habits around the inputs you manage:
+
+- Keep inventory and playbook files readable only by the operators who need them,
+  and restrict file permissions tightly.
+- Avoid embedding tokens directly in shared `vars`; prefer per-environment injection.
+- Watch the JSON and trace output paths — machine-readable renders serialize every
+  value that reaches them, so never pass a secret as a task argument you also log.
+- Rotate credentials on a schedule and immediately after any exposure.
+
+For how inventory carries variables that might include secrets, read
+[/concepts/inventory](/concepts/inventory).
