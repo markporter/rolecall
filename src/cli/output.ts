@@ -318,4 +318,18 @@ function renderSyslog(_data: CliResult): string {
 }
 
 registerOutputPlugin({ name: "syslog", render: renderSyslog });
+
+// ---------------------------------------------------------------------------
+// Built-in: jsonl plugin (newline-delimited child-run protocol).
+//
+// Like syslog, per-task events are written live by the playbook handler; unlike
+// syslog, each event is wrapped with `type: "event"`, and this terminal render
+// emits one final `{type:"result", result}` line. The serve orchestrator parses
+// this stream when it forks `rolecall playbook run -o jsonl`.
+// ---------------------------------------------------------------------------
+function renderJsonl(data: CliResult): string {
+  return `${JSON.stringify({ type: "result", result: data })}\n`;
+}
+
+registerOutputPlugin({ name: "jsonl", render: renderJsonl });
 registerOutputPlugin({ name: "json", render: renderJson });

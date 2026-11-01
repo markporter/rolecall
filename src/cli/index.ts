@@ -57,9 +57,10 @@ Usage:
   rolecall [global-flags] <command> [subcommand] [args]
 
 Global flags (parsed once, injected downward):
-  --output <plugin>   Output plugin: syslog (default for playbook runs) | human_summary | json
-                       syslog streams per-task JSON lines for playbook run; inspection
-                       commands fall back to human_summary unless -o is given
+  --output <plugin>   Output plugin: syslog (default for playbook runs) | human_summary | json | jsonl
+                       syslog streams per-task JSON lines; jsonl emits typed event + final-result
+                       lines for the serve child-run protocol; inspection commands fall back
+                       to human_summary unless -o is given
   --limit <hosts>     Restrict target hosts (single pattern)
   --inventory <file>  Inventory source (native YAML or Ansible INI/YAML, auto-detected)
   --extra-vars <kv>   Runtime vars: space-separated key=value pairs (highest precedence)
