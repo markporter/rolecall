@@ -236,14 +236,16 @@ test("fired runs execute targets and return a retrievable runId via the Engine",
 
   const s = new CronScheduler({ repo: store.schedules, engine });
   await s.runOnce();
-  await delay(60);
 
   const records = engine.list();
   expect(records).toHaveLength(1);
   const rec = records[0]!;
   expect(typeof rec.id).toBe("string");
   expect(engine.get(rec.id)).toBeDefined();
-  expect(["success", "running"]).toContain(rec.status);
+  for (let i = 0; i < 400 && rec.status !== "success" && rec.status !== "failed"; i++) {
+    await delay(10);
+  }
+  expect(rec.status).toBe("success");
   expect(rec.dispatchCount).toBe(1);
   expect(rec.outcomes.map((o) => o.host)).toContain("sw1");
   expect(dev.getState().running).toContain("sw2");

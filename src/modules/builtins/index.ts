@@ -77,6 +77,8 @@ import { getentModule } from "./getent";
 import { pipModule } from "./pip";
 import { snapModule } from "./snap";
 import { firewalldModule } from "./firewalld";
+import { pingModule } from "./ping";
+import { setConfigModule } from "./set_config";
 
 /**
  * Register all built-in modules with the executor registry (idempotent — safe to
@@ -266,6 +268,13 @@ export function registerAllModules(): void {
   registerModule(firewalldModule);
   if ((firewalldModule as Module & { meta?: ModuleSummary }).meta)
     setModuleMeta(firewalldModule.name, (firewalldModule as Module & { meta?: ModuleSummary }).meta!);
+  // Orchestrator-facing liveness + network-device configuration modules.
+  registerModule(pingModule);
+  if ((pingModule as Module & { meta?: ModuleSummary }).meta)
+    setModuleMeta(pingModule.name, (pingModule as Module & { meta?: ModuleSummary }).meta!);
+  registerModule(setConfigModule);
+  if ((setConfigModule as Module & { meta?: ModuleSummary }).meta)
+    setModuleMeta(setConfigModule.name, (setConfigModule as Module & { meta?: ModuleSummary }).meta!);
 }
 export {
   httpModule,
@@ -334,4 +343,6 @@ export {
   pipModule,
   snapModule,
   firewalldModule,
+  pingModule,
+  setConfigModule,
 };

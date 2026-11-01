@@ -23,6 +23,7 @@ export const RunJobSchema = z
     config: z.string().optional(),
     args: z.record(z.string(), z.unknown()).optional(),
     inventoryPath: z.string().optional(),
+    inventory: z.unknown().optional(),
     limit: z.string().optional(),
     force: z.boolean().optional(),
     check: z.boolean().optional(),
@@ -131,6 +132,7 @@ export function validateJobBody(input: unknown, forcedType?: ActionType): Valida
   if (typeof raw.diff === "boolean") value.diff = raw.diff;
   if (isNonEmptyString(raw.playbookPath)) value.playbookPath = raw.playbookPath;
   if (isNonEmptyString(raw.inventoryPath)) value.inventoryPath = raw.inventoryPath;
+  if (isObjectRecord(raw.inventory)) value.inventory = raw.inventory as unknown as JobBody["inventory"];
   if (isObjectRecord(raw.args)) value.args = raw.args;
   return { ok: true, value, type };
 }

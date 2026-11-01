@@ -144,6 +144,8 @@ export interface HttpApiRequest {
 
 export interface HttpApiConnectionOptions extends BaseConnectionOptions {
   kind: "http";
+  /** URL scheme (default http). */
+  protocol?: "http" | "https";
   /** Path prefix prepended to request.path (e.g. "/api/v1"). */
   basePath?: string;
   auth?: HttpAuth;
