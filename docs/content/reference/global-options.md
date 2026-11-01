@@ -18,6 +18,7 @@ They come directly from `GLOBAL_OPTS` in `src/cli/index.ts`, which passes them t
 | `--check` | none | Global dry-run: check-capable modules observe and report would-change without converging; custom modules without check support are skipped. Every shipped builtin supports check mode. | off |
 | `--diff` | none | Attach an observed-vs-desired patch to each checkable module result (human output prints it; JSON carries it in `iterationData[].diff`). | off |
 | `--forks` | `<N>` | Concurrency fan-out; must resolve to a finite number or RoleCall exits 2. | unset |
+| `--isolation` | `auto`\|`namespace`\|`docker`\|`none` | Opt local transports into the ADR 0025 sandbox. The current slice is opt-in; `rolecall doctor` reports bwrap/userns and Docker readiness. | unset (direct) |
 | `--help` | `-h` | Print usage and exit 0. | n/a |
 | `--version` | `-v` | Print `rolecall <version>`. | n/a |
 

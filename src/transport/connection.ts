@@ -95,6 +95,8 @@ export interface LocalConnectionOptions extends BaseConnectionOptions {
   kind: "local";
   /** Shell used to evaluate commands; defaults to /bin/sh. */
   shell?: string;
+  /** Optional ADR 0025 sandbox. Omit for direct, unsandboxed library execution. */
+  isolation?: import("../isolation/types").IsolationOptions;
 }
 
 /** Vendor CLI semantics for network switches: how to enter config mode, show/commit config, etc. */

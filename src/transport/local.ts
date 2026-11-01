@@ -7,6 +7,13 @@
 // callers fan out identically across SSH and Local targets.
 import { spawnSync } from "node:child_process";
 import {
+  buildDockerCommand,
+  buildNamespaceCommand,
+  IsolationUnavailableError,
+  probeIsolation,
+  type IsolationOptions,
+} from "../isolation";
+import {
   type Connection,
   type ConnectionFacts,
   type CoreExec,
@@ -29,6 +36,8 @@ export class LocalConnection implements Connection {
 
   #shell: string;
   #runner: (core: CoreExec, options?: ExecOptions) => Promise<ExecResult>;
+  #isolation?: { backend: "namespace" | "docker"; options: IsolationOptions };
+  #isolationError?: IsolationUnavailableError;
 
   constructor(options: LocalConnectionOptions) {
     this.options = options;
@@ -44,6 +53,20 @@ export class LocalConnection implements Connection {
       retry,
       timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
     });
+    this.#resolveIsolation(options.isolation);
+  }
+
+  #resolveIsolation(options: IsolationOptions | undefined): void {
+    if (!options || options.backend === undefined || options.backend === "none") return;
+    const probe = probeIsolation({ backend: options.backend, ...(options.image ? { image: options.image } : {}) });
+    if (probe.selected === "none") {
+      this.#isolationError = new IsolationUnavailableError(
+        `local isolation backend '${options.backend}' is unavailable: ${probe.warnings.join("; ") || "no usable backend"}. ` +
+          "Install bubblewrap (Linux) or Docker, or rerun with --isolation none as an explicit, warned last resort (ADR 0025).",
+      );
+      return;
+    }
+    this.#isolation = { backend: probe.selected as "namespace" | "docker", options };
   }
 
   async connect(): Promise<void> {
@@ -51,22 +74,49 @@ export class LocalConnection implements Connection {
   }
 
   async #rawExec(command: string, execOptions: ExecOptions | undefined, _signal: AbortSignal): Promise<ExecResult> {
+    if (this.#isolationError) throw this.#isolationError;
+
     const env = execOptions?.env
       ? (Object.fromEntries(
           Object.entries(execOptions.env).filter(([, v]) => v !== undefined),
         ) as Record<string, string>)
       : undefined;
+    const timeoutMs = execOptions?.timeoutMs ?? this.options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
-    const result = spawnSync(this.#shell, ["-c", command], {
-      cwd: execOptions?.cwd,
-      env,
+    if (!this.#isolation) {
+      const result = spawnSync(this.#shell, ["-c", command], {
+        cwd: execOptions?.cwd,
+        env,
+        encoding: "utf8",
+        timeout: timeoutMs,
+      });
+      if (result.error) throw result.error;
+      return { exitCode: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
+    }
+
+    const iso = this.#isolation.options;
+    const projectRoot = iso.projectRoot ?? process.cwd();
+    const network = iso.network === "on" ? "on" : "off";
+    const build = this.#isolation.backend === "namespace" ? buildNamespaceCommand : buildDockerCommand;
+    const built = build({
+      shell: this.#shell,
+      command,
+      ...(execOptions?.cwd ? { cwd: execOptions.cwd } : {}),
+      ...(env ? { env } : {}),
+      projectRoot,
+      network,
+      ...(iso.mounts ? { mounts: iso.mounts } : {}),
+      ...(iso.image ? { image: iso.image } : {}),
+      ...(typeof process.getuid === "function" ? { uid: process.getuid() } : {}),
+      ...(typeof process.getgid === "function" ? { gid: process.getgid() } : {}),
+    });
+    const result = spawnSync(built.file, built.args, {
+      env: built.env,
       encoding: "utf8",
+      timeout: timeoutMs,
     });
     if (result.error) throw result.error;
-
-    const stdout = result.stdout ?? "";
-    const stderr = result.stderr ?? "";
-    return { exitCode: result.status ?? 1, stdout, stderr };
+    return { exitCode: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
   }
 
   exec(command: string, options?: ExecOptions): Promise<ExecResult> {

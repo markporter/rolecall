@@ -50,6 +50,7 @@ rolecall inventory show <inv>
 rolecall inventory list <inv>
 rolecall vars list <play>               # declared var/fact by file + fact capability per connection kind
 rolecall vars trace <play> [--inventory <inv>] [--extra-vars <kv>] [--limit <host>]
+rolecall doctor                         # report isolated-execution backend readiness
 rolecall docs search <query>            # query RoleCall prose docs by substring
 rolecall plugin list                               # registered module/fact + built-in inventory plugins
 rolecall plugin register <name> --path <file> [--global]   # persist a module kept outside a project (project plugins in plugins/ need no registration)
@@ -119,6 +120,9 @@ Global flags (parsed once by `parseArgs`):
    converging; custom modules without either are skipped rather than run. `--diff` attaches an
    observed-vs-desired patch to checkable results.
 - `--forks <N>` concurrency fan-out, must be a number.
+- `--isolation <auto|namespace|docker|none>` opts local transports into the ADR 0025
+   sandbox (bwrap/userns or Docker). The current slice is opt-in; default-on `auto`
+   is the ADR target. `rolecall doctor` reports the probe and selected backend.
 - `--tags <list>` / `--skip-tags <list>` (comma-separated) select/skip tasks by tag on
    `playbook run`; a task's own tags replace play tags, and tag-filtered tasks report
    as skipped.

@@ -44,6 +44,9 @@ export async function runPlaybookCommand(
   const tags = flags.tags !== undefined ? parseTagList(flags.tags, "--tags") : undefined;
   const skipTags =
     flags.skipTags !== undefined ? parseTagList(flags.skipTags, "--skip-tags") : undefined;
+  const isolation = flags.isolation
+    ? { backend: flags.isolation, projectRoot: process.cwd() }
+    : undefined;
 
   const playbook = await loadPlaybookFile(file);
 
@@ -103,7 +106,7 @@ export async function runPlaybookCommand(
     const fByHost: Record<string, Record<string, unknown>> = {};
     for (const host of resolvedHosts) {
       try {
-        const conn = buildConnectionForHost(host, varsByHost[host] ?? {});
+        const conn = buildConnectionForHost(host, varsByHost[host] ?? {}, { isolation });
         await conn.connect();
         try {
           fByHost[host] = (await defaultFactsEngine.gatherFacts(conn, [], {})) as Record<string, unknown>;
@@ -165,12 +168,12 @@ export async function runPlaybookCommand(
       traceRunId = run.id;
     }
     result = await runPlaybook(playbook, inventory, {
-      connectionFor: (h) => buildConnectionForHost(h, varsByHost[h] ?? {}),
+      connectionFor: (h) => buildConnectionForHost(h, varsByHost[h] ?? {}, { isolation }),
       connectionForKind: (h, kind) =>
         buildConnectionForHost(h, {
           ...(varsByHost[h] ?? {}),
           rolecall_connection: kind,
-        }),
+        }, { isolation }),
       playbookDir: dirname(file),
       playbookPath: file,
       inventoryPath: flags.inventory,

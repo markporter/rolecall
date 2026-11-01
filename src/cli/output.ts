@@ -289,6 +289,20 @@ function formatHuman(data: CliResult): string {
       }
       break;
     }
+    case "doctor": {
+      const p = data.isolation;
+      lines.push(`Platform : ${p.platform}`);
+      lines.push(`Requested: ${p.requested}`);
+      lines.push(`Selected : ${p.selected}`);
+      lines.push(`bwrap    : ${p.bwrap ? "yes" : "no"}${p.bwrap ? ` (userns: ${p.userns ? "ok" : "unavailable"})` : ""}`);
+      lines.push(`unshare  : ${p.unshare ? "yes" : "no"}`);
+      lines.push(`docker   : ${p.dockerCli ? "cli" : "no"}${p.dockerCli ? ` (daemon: ${p.dockerDaemon ? "ok" : "unreachable"}${p.dockerRootless === false ? ", rootful" : ""})` : ""}`);
+      lines.push(`image    : ${p.image}`);
+      for (const reason of p.reasons) lines.push(`  - ${reason}`);
+      for (const warning of p.warnings) lines.push(`  ! ${warning}`);
+      lines.push(`Note     : ${data.note}`);
+      break;
+    }
     default: {
       // Exhaustiveness guard — every CliResult variant is handled above.
       lines.push(JSON.stringify(data));
