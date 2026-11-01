@@ -390,6 +390,41 @@ test("loadPlaybook rejects Jinja {{ }} as a load-time error", () => {
   expect(String((err as Error).message)).toContain("template-refs");
 });
 
+test("loadPlaybook allows Jinja inside a copy content template spec", () => {
+  const pb = loadPlaybook(`
+- hosts: web
+  tasks:
+    - name: t
+      module: copy
+      args:
+        dest: /etc/app.conf
+        content:
+          template: "listen {{ port }}"
+          engine: jinja
+`);
+  expect(pb).toHaveLength(1);
+  expect(lintTemplateRefs(pb[0]!)).toEqual([]);
+});
+
+test("loadPlaybook still rejects bare Jinja outside content templates", () => {
+  let err: unknown;
+  try {
+    loadPlaybook(`
+- hosts: web
+  tasks:
+    - name: t
+      module: copy
+      args:
+        dest: /etc/app.conf
+        content: "listen {{ port }}"
+`);
+  } catch (e) {
+    err = e;
+  }
+  expect(err).toBeInstanceOf(Error);
+  expect(String((err as Error).message)).toContain("template-refs");
+});
+
 test("loadPlaybook rejects a $var whose first segment is not a known namespace", () => {
   let err: unknown;
   try {
