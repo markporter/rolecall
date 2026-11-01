@@ -33,8 +33,8 @@ Facts are not limited to the built-ins. A fact plugin can declare gatherers, and
 module can own facts through a fact gatherer; modules are auto-wired as fact providers
 when registered. Declared fact schemas feed the same registry that `var_strict` uses to
 validate `$var: facts.*` references, so a declared fact is, by construction, one a gatherer
-can produce. This is the implemented core of the fact system; the richer Plugin SDK
-authoring surface remains partial (`plugin list`/`register` are implemented).
+can produce. Registered fact plugins also appear in `rolecall plugin list` and are
+loaded automatically at startup.
 
 See [/concepts/variables](/concepts/variables) for how declared variables and the
 `$var` operator and the `facts` namespace interact, and `design/architecture/facts.md` for the
