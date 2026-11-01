@@ -51,7 +51,7 @@ _Implementation of&#x20;_[`kind`](/module/transport/connection#kind)
 
 <MemberHeading id="connect" depth="3" name="connect" sig="connect(): Promise<void>" />
 
-<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L95" sourceLabel="local.ts:95" />
+<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L89" sourceLabel="local.ts:89" />
 
 _Implementation of&#x20;_[`connect`](/module/transport/connection#connect)
 
@@ -63,7 +63,7 @@ Establish the underlying transport (idempotent once connected).
 
 <MemberHeading id="disconnect" depth="3" name="disconnect" sig="disconnect(): Promise<void>" />
 
-<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L268" sourceLabel="local.ts:268" />
+<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L262" sourceLabel="local.ts:262" />
 
 _Implementation of&#x20;_[`disconnect`](/module/transport/connection#disconnect)
 
@@ -83,7 +83,7 @@ Tear down the underlying transport.
 ): Promise<ExecResult>"
 />
 
-<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L242" sourceLabel="local.ts:242" />
+<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L236" sourceLabel="local.ts:236" />
 
 _Implementation of&#x20;_[`exec`](/module/transport/connection#exec)
 
@@ -100,7 +100,7 @@ Run a command, returning captured stdout/stderr/exit code.
 
 <MemberHeading id="facts" depth="3" name="facts" sig="facts(): Promise<ConnectionFacts>" />
 
-<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L246" sourceLabel="local.ts:246" />
+<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L240" sourceLabel="local.ts:240" />
 
 _Implementation of&#x20;_[`facts`](/module/transport/connection#facts)
 
@@ -112,7 +112,7 @@ Best-effort targeted fact gathering for the target.
 
 <MemberHeading id="health" depth="3" name="health" sig="health(): Promise<HealthStatus>" />
 
-<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L256" sourceLabel="local.ts:256" />
+<MemberMeta badges="async" sourceHref="/source/src/transport/local-ts/#L250" sourceLabel="local.ts:250" />
 
 _Implementation of&#x20;_[`health`](/module/transport/connection#health)
 
