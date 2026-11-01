@@ -27,6 +27,8 @@ export interface IsolationOptions {
   image?: string;
   /** Extra approved mounts. */
   mounts?: IsolationMount[];
+  /** Destination whitelist rules (module-facing checks and, later, the shell broker). */
+  egress?: import("./egress").EgressRule[];
   /** Probe/exec timeout in ms. */
   timeoutMs?: number;
 }

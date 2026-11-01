@@ -11,6 +11,7 @@ import { resolveModule } from "../modules/resolver";
 import { applyIdempotent, type CheckableModule, type IdempotencyOptions } from "../idempotency";
 import { randomUUID } from "node:crypto";
 import { createTwoFilesPatch } from "diff";
+import { EgressPolicy } from "../isolation/egress";
 import type { RunTrace } from "../store/types";
 import {
   type ExecOptions,
@@ -426,9 +427,13 @@ export async function runTaskOnHost(
       emit("module-run", "failed", iterStartedAt, Date.now(), Math.round(performance.now() - iterStart), { error: msg }, index);
     } else {
       const mod = resolved.module;
+      const egress = state.options.isolation?.egress?.length
+        ? new EgressPolicy(state.options.isolation.egress)
+        : undefined;
       const moduleCtx: ModuleContext = {
         host,
         connection: profileConnection(conn, mod.network === true ? "networked" : "untrusted"),
+        ...(egress ? { egress } : {}),
         args,
         vars: vars.vars,
         facts: vars.facts,

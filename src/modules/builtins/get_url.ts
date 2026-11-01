@@ -81,6 +81,12 @@ export const getUrlModule: Module = {
     const args = ctx.args as unknown as GetUrlArgs;
     const url = String(args.url ?? "");
     if (!url) return { changed: false, failed: true, msg: "get_url: 'url' is required" } as ModuleResult;
+    if (ctx.egress) {
+      const decision = await ctx.egress.checkUrl(url, "module");
+      if (!decision.allowed) {
+        return { changed: false, failed: true, msg: `get_url: egress denied for ${url}: ${decision.reason}` } as ModuleResult;
+      }
+    }
     const dest = resolveDest(url, String(args.dest ?? ""));
     if (!dest) return { changed: false, failed: true, msg: "get_url: 'dest' is required" } as ModuleResult;
 

@@ -125,8 +125,10 @@ Global flags (parsed once by `parseArgs`):
    is the ADR target. `rolecall doctor` reports the probe and selected backend.
 - `--isolation-network <module|none|all>` controls sandbox egress (default `module`:
    trusted modules that declare `network: true` get network, shell/command/script/raw
-   stay net-off). `--mount <src:dst[:ro|rw]>` adds an explicit filesystem grant
-   (repeatable, requires `--isolation`).
+   stay net-off). `--mount <src:dst[:ro|rw]>` adds an explicit filesystem grant and
+   `--allow-egress <host[:port]>` adds an ephemeral destination rule (both repeatable,
+   both require `--isolation`). Module URL checks (`http`/`get_url`/`git`) enforce the
+   destination policy; the shell egress broker is still a follow-up.
 - `--tags <list>` / `--skip-tags <list>` (comma-separated) select/skip tasks by tag on
    `playbook run`; a task's own tags replace play tags, and tag-filtered tasks report
    as skipped.

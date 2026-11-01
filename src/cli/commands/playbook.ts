@@ -51,6 +51,7 @@ export async function runPlaybookCommand(
         projectRoot: process.cwd(),
         network: flags.isolationNetwork === "none" ? "off" : flags.isolationNetwork === "all" ? "on" : "module",
         ...(flags.mounts ? { mounts: flags.mounts } : {}),
+        ...(flags.allowEgress ? { egress: flags.allowEgress } : {}),
       }
     : undefined;
 
@@ -182,6 +183,7 @@ export async function runPlaybookCommand(
         }, { isolation }),
       playbookDir: dirname(file),
       playbookPath: file,
+      ...(isolation ? { isolation } : {}),
       inventoryPath: flags.inventory,
       ...(flags.limit !== undefined ? { limit: flags.limit } : {}),
       ...(flags.forks !== undefined ? { forks: flags.forks } : {}),

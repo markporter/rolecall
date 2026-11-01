@@ -52,6 +52,7 @@ export async function runFactsCommand(
         projectRoot: process.cwd(),
         network: flags.isolationNetwork === "none" ? "off" : flags.isolationNetwork === "all" ? "on" : "module",
         ...(flags.mounts ? { mounts: flags.mounts } : {}),
+        ...(flags.allowEgress ? { egress: flags.allowEgress } : {}),
       }
     : undefined;
   for (const host of matchedHosts) {

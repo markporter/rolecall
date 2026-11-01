@@ -33,6 +33,7 @@ import { runDocsCommand } from "./commands/docs";
 import { runVarsCommand } from "./commands/vars";
 import { runDoctorCommand } from "./commands/doctor";
 import { parseMounts } from "./parse-mounts";
+import { parseEgressSpecs } from "../isolation/egress";
 import { CliError, type CliResult, type GlobalFlags } from "./types";
 
 export { runPlaybookCommand } from "./commands/playbook";
@@ -74,6 +75,7 @@ Global flags (parsed once, injected downward):
   --isolation <mode>  Opt-in local isolation backend: auto | namespace | docker | none (doctor reports availability)
   --isolation-network <mode>  Network under isolation: module (default) | none | all
   --mount <src:dst[:ro|rw]>   Add an approved filesystem grant (requires --isolation; repeatable)
+  --allow-egress <host[:port]>  Add an ephemeral destination whitelist entry (requires --isolation; repeatable)
   --forks <N>         Concurrency fan-out (number)
   --trace             Emit + persist an execution-trace ledger for the run
   --profile           Print a per-host/per-task performance profile at run end
@@ -136,6 +138,7 @@ const GLOBAL_OPTS = {
   isolation: { type: "string" },
   "isolation-network": { type: "string" },
   mount: { type: "string", multiple: true },
+  "allow-egress": { type: "string", multiple: true },
 } as const;
 
 /** @summary Write rendered CLI output to stdout, stripping NUL/control chars from the `json` stream so a polluted data channel never breaks a downstream JSON parser. @param text Rendered text to emit. @param output Selected output plugin name; only `json` gets control-char scrubbing. */
@@ -173,8 +176,14 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
     throw new CliError(true, `--isolation-network must be module, none, or all (got '${isolationNetwork}')`);
   }
   const mounts = parseMounts(values["mount"] as string[] | undefined);
-  if (mounts.length > 0 && isolation === undefined) {
-    throw new CliError(true, "--mount requires an explicit --isolation backend");
+  let allowEgress: import("../isolation/egress").EgressRule[] = [];
+  try {
+    allowEgress = parseEgressSpecs(values["allow-egress"] as string[] | undefined);
+  } catch (err) {
+    throw new CliError(true, err instanceof Error ? err.message : String(err));
+  }
+  if ((mounts.length > 0 || allowEgress.length > 0) && isolation === undefined) {
+    throw new CliError(true, "--mount/--allow-egress require an explicit --isolation backend");
   }
   return {
     limit: values["limit"] as string | undefined,
@@ -192,6 +201,7 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
     isolation: isolation as GlobalFlags["isolation"],
     isolationNetwork: isolationNetwork as GlobalFlags["isolationNetwork"],
     ...(mounts.length > 0 ? { mounts } : {}),
+    ...(allowEgress.length > 0 ? { allowEgress } : {}),
     // --json is a convenience shorthand for --output json (used by the docs
     // subcommands and any other command the user wants structured output from).
     output: (values["json"] as boolean | undefined)

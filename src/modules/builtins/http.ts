@@ -172,6 +172,14 @@ function bodyToSend(a: HttpArgs): { body?: string; headers: Record<string, strin
   return { body: String(a.body), headers };
 }
 
+async function assertEgressAllowed(ctx: ModuleContext | undefined, url: string): Promise<void> {
+  if (!ctx?.egress || !url) return;
+  const decision = await ctx.egress.checkUrl(url, "module");
+  if (!decision.allowed) {
+    throw new Error(`egress denied for ${url}: ${decision.reason}`);
+  }
+}
+
 async function fetchText(
   a: HttpArgs,
   url: string,
@@ -222,10 +230,11 @@ function isSubset(actual: unknown, expected: unknown): boolean {
 /** @summary Idempotent HTTP/REST module: `describe` probes state via GET (or `check_url`), `converge` issues the mutating request. Safe methods (GET/HEAD/OPTIONS) are read-only and report changed:false. @param args HttpArgs (url, method, body, headers, expected_status, status_code, return_content, check_url, state_present, match). @returns Module & CheckableModule. */
 const baseHttpModule: Module & CheckableModule = resource({
   name: "http",
-  async describe(args) {
+  async describe(args, ctx) {
     const a = args as unknown as HttpArgs;
     const url = String(a.url ?? "");
     if (!url) return { current: null, inDesired: false };
+    await assertEgressAllowed(ctx, url);
     const method = String(a.method ?? "GET").toUpperCase();
     if (SAFE_METHODS.has(method)) {
       const st = await fetchText(a, url, method);
@@ -246,12 +255,13 @@ const baseHttpModule: Module & CheckableModule = resource({
       inDesired,
     };
   },
-  async converge(args) {
+  async converge(args, ctx) {
     const a = args as unknown as HttpArgs;
     const url = String(a.url ?? "");
     if (!url) {
       return { changed: false, failed: true, msg: "http: 'url' is required" };
     }
+    await assertEgressAllowed(ctx, url);
     const method = String(a.method ?? "GET").toUpperCase();
     const { body, headers } = bodyToSend(a);
     const res = await fetch(url, {
