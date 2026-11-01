@@ -11,7 +11,7 @@ longname: module:transport.ConnectionFacts
 	host: string;
 	os?: string;
 	shell?: string;
-	transport: 'ssh' | 'local' | 'network' | 'http';
+	transport: 'http' | 'ssh' | 'local' | 'network';
 	user: string;
 }"
 />
@@ -38,7 +38,7 @@ OS identifier (e.g. "Linux" / "Darwin" / vendor driver name), when known.
 
 Login shell path, when known.
 
-<MemberHeading id="transport" depth="3" name="transport" sig="transport: 'ssh' | 'local' | 'network' | 'http'" />
+<MemberHeading id="transport" depth="3" name="transport" sig="transport: 'http' | 'ssh' | 'local' | 'network'" />
 
 <MemberMeta sourceHref="/source/src/transport/connection-ts/#L31" sourceLabel="connection.ts:31" />
 

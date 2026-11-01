@@ -9,7 +9,7 @@ description: A gatherer produces a SUBSET of facts for a connection. It declares
 
 <Signature
   code="interface FactGatherer {
-	connectionKinds?: readonly ('ssh' | 'local' | 'network' | 'http')[];
+	connectionKinds?: readonly ('http' | 'ssh' | 'local' | 'network')[];
 	name: string;
 	provides: readonly string[];
 	gather(connection: Connection, opts?: GatherOptions): Promise<FactMap>;
@@ -24,7 +24,7 @@ A gatherer produces a SUBSET of facts for a connection. It declares the keys it 
 
 ## Properties
 
-<MemberHeading id="connectionkinds" depth="3" name="connectionKinds" sig="connectionKinds: readonly ('ssh' | 'local' | 'network' | 'http')[]" />
+<MemberHeading id="connectionkinds" depth="3" name="connectionKinds" sig="connectionKinds: readonly ('http' | 'ssh' | 'local' | 'network')[]" />
 
 <MemberMeta badges="readonly" sourceHref="/source/src/facts/types-ts/#L52" sourceLabel="types.ts:52" />
 

@@ -8,7 +8,7 @@ longname: module:transport.Connection
 
 <Signature
   code="interface Connection {
-	kind: 'ssh' | 'local' | 'network' | 'http';
+	kind: 'http' | 'ssh' | 'local' | 'network';
 	connect(): Promise<void>;
 	disconnect(): Promise<void>;
 	exec(command: string, options?: ExecOptions): Promise<ExecResult>;
@@ -31,7 +31,7 @@ longname: module:transport.Connection
 
 ## Properties
 
-<MemberHeading id="kind" depth="3" name="kind" sig="kind: 'ssh' | 'local' | 'network' | 'http'" />
+<MemberHeading id="kind" depth="3" name="kind" sig="kind: 'http' | 'ssh' | 'local' | 'network'" />
 
 <MemberMeta badges="readonly" sourceHref="/source/src/transport/connection-ts/#L305" sourceLabel="connection.ts:305" />
 
