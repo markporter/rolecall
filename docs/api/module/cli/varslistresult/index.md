@@ -14,7 +14,7 @@ longname: module:cli.VarsListResult
 }"
 />
 
-<SourceLink href="/source/src/cli/types-ts/#L195" label="types.ts:195" />
+<SourceLink href="/source/src/cli/types-ts/#L197" label="types.ts:197" />
 
 ---
 
@@ -22,16 +22,16 @@ longname: module:cli.VarsListResult
 
 <MemberHeading id="command" depth="3" name="command" sig="command: 'vars list'" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L196" sourceLabel="types.ts:196" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L198" sourceLabel="types.ts:198" />
 
 <MemberHeading id="declared" depth="3" name="declared" sig="declared: { entries: VarManifestEntry[]; file: string }[]" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L198" sourceLabel="types.ts:198" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L200" sourceLabel="types.ts:200" />
 
 Declared vars/facts grouped by the file that declared them.
 
 <MemberHeading id="factsbykind" depth="3" name="factsByKind" sig="factsByKind: Record<ConnectionKind, string[]>" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L200" sourceLabel="types.ts:200" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L202" sourceLabel="types.ts:202" />
 
 Observable fact keys available per connection kind (built-in + registered plugins).

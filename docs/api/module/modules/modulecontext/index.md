@@ -15,6 +15,7 @@ description: Per-invocation context handed to a module's run (ADR 0013). host st
 	become_user?: string;
 	clearFacts?: () => void;
 	connection: Connection;
+	egress?: EgressPolicy;
 	environment?: Record<string, string>;
 	facts: Record<string, unknown>;
 	host: string;
@@ -71,6 +72,12 @@ When set, clear all live facts for this host.
 <MemberHeading id="connection" depth="3" name="connection" sig="connection: Connection" />
 
 <MemberMeta badges="readonly" sourceHref="/source/src/executor/module-ts/#L26" sourceLabel="module.ts:26" />
+
+<MemberHeading id="egress" depth="3" name="egress" sig="egress: EgressPolicy" />
+
+<MemberMeta badges="readonly" sourceHref="/source/src/executor/module-ts/#L58" sourceLabel="module.ts:58" />
+
+ADR 0025 destination policy for modules that dispatch URLs (http/get_url/git).
 
 <MemberHeading id="environment" depth="3" name="environment" sig="environment: Record<string, string>" />
 

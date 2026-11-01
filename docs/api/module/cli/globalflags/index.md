@@ -8,6 +8,7 @@ longname: module:cli.GlobalFlags
 
 <Signature
   code="interface GlobalFlags {
+	allowEgress?: EgressRule[];
 	check: boolean;
 	diff: boolean;
 	extraVars?: string;
@@ -15,7 +16,7 @@ longname: module:cli.GlobalFlags
 	forks?: number;
 	inventory?: string;
 	isolation?: IsolationBackendName;
-	isolationNetwork?: 'none' | 'module' | 'all';
+	isolationNetwork?: 'module' | 'all' | 'none';
 	limit?: string;
 	mounts?: IsolationMount[];
 	output: string;
@@ -32,6 +33,12 @@ longname: module:cli.GlobalFlags
 ---
 
 ## Properties
+
+<MemberHeading id="allowegress" depth="3" name="allowEgress" sig="allowEgress: EgressRule[]" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L51" sourceLabel="types.ts:51" />
+
+Ephemeral destination whitelist entries (repeatable --allow-egress).
 
 <MemberHeading id="check" depth="3" name="check" sig="check: boolean" />
 
@@ -75,7 +82,7 @@ Optional inventory source for playbook run (resolves target patterns).
 
 Requested local isolation backend (--isolation; default auto).
 
-<MemberHeading id="isolationnetwork" depth="3" name="isolationNetwork" sig="isolationNetwork: 'none' | 'module' | 'all'" />
+<MemberHeading id="isolationnetwork" depth="3" name="isolationNetwork" sig="isolationNetwork: 'module' | 'all' | 'none'" />
 
 <MemberMeta sourceHref="/source/src/cli/types-ts/#L47" sourceLabel="types.ts:47" />
 

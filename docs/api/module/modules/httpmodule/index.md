@@ -8,7 +8,7 @@ longname: module:modules.httpModule
 
 <Signature code="httpModule: Module & CheckableModule" />
 
-<SourceLink href="/source/src/modules/builtins/http-ts/#L279" label="http.ts:279" />
+<SourceLink href="/source/src/modules/builtins/http-ts/#L289" label="http.ts:289" />
 
 **Returns**
 

@@ -8,8 +8,8 @@ longname: module:modules.gitModule
 
 <Signature code="gitModule: Module" />
 
-<SourceLink href="/source/src/modules/builtins/git-ts/#L126" label="git.ts:126" />
+<SourceLink href="/source/src/modules/builtins/git-ts/#L148" label="git.ts:148" />
 
-**Returns**
+**Type**
 
-- ModuleResult with changed/skipped/failed and data.
+[`Module`](/module/modules/module)
