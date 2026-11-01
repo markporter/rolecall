@@ -122,6 +122,7 @@ are present in code but do **not** apply real remote state.
 |---|---|---|
 | Vault / secret engine | ⏳ | designed in ADR 0022 (`$secret`, provider chain, native AEAD vault, Ansible Vault read, masking); not built |
 | Ansible analyzer / mechanical converter | ⏳ | designed in ADR 0024 (`rolecall convert ansible`, matrix-driven analysis, mechanical rewriter, LLM handoff bundle); not built |
+| Install layout + `rolecall.env` (ADR 0023) | 🟡 | resolver, env-file parser, and `doctor` reporting implemented; install/service/update commands not yet built |
 | GUI in core | ⏳ | promote the SPA to a first-class, core-shipped UI (`goals.md`) |
 
 ## Designed but not yet built (future)
