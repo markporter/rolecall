@@ -53,7 +53,7 @@ When a plugin name resolves, **project-local `plugins/` overrides a collection's
 
 ### 6. Pinning + lockfile
 
-`collections.yml` pins `version`/`ref`. `rolecall collections install` emits a `collections.lock` recording the resolved content hashes for reproducible, offline-safe builds.
+`collections.yml` pins `version`/`ref`. `rolecall collections install` emits a `collections.lock` recording the resolved content hashes for reproducible, offline-safe builds. Sources are allow-listed; where the operator requires it, a collection ref is a **signed tag/commit** and verification failure is fatal. `--frozen` installs only from the lockfile and refuses an unlocked/moved ref. Runtime hydration remains network-free (§8), so install-time verification is the trust point.
 
 ### 7. The two install commands (central runtime vs project hydration)
 

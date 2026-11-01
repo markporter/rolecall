@@ -76,6 +76,12 @@ A plugin whose dependency tree includes a native addon is emitted as a kept `nod
 
 JIT `bun install` executes package lifecycle scripts. Local project plugins (run from *your* directory) are trusted. A distributed/untrusted plugin must arrive **pre-bundled** (`_bundled.js`) so resolution never triggers an install. Keep that as the security boundary.
 
+**No runtime JIT by default.** Resolution is network-free and never runs a package
+installer implicitly. If an operator explicitly enables JIT install for development, it is
+a code-execution surface: it must be locked (lockfile/`--frozen`), sandboxed under the
+local isolation backend (ADR 0025), and subject to the egress whitelist — the same policy
+as shell/templates. Untrusted/remote projects never get JIT install (ADR 0021).
+
 ### 9. Bundling tooling
 
 Bundling uses the embedded/vendored bun (`Bun.build`) so RoleCall adds no new dependencies; under a Node runtime, esbuild is the fallback. This honors "batteries included / minimal extra deps."

@@ -389,6 +389,17 @@ prefix, channel, and update URL. Update behaves accordingly:
   `isolation.yaml` are untouched. An optional `--with-bun` toolchain is updated separately;
   the embedded runtime updates with the binary.
 
+**Release integrity (ADR 0028 gap 11)**
+
+- The release pipeline publishes an **SBOM** and signed checksums; where feasible the build
+  is reproducible, and `rolecall update` verifies the manifest before executing anything.
+- CI runs a dependency audit (lockfile + `npm audit` or equivalent), pins build tools, and
+  fails on an unexpected runtime/native dependency.
+- Signing keys have a documented rotation and revocation path; `rolecall doctor` reports the
+  key/artifact state for the installed version.
+- These are pipeline work, not installer code, but install/update must not be considered
+  complete without them.
+
 **Notifications and non-goals**
 
 - No telemetry or phone-home by default. `update --check` is on demand; `doctor` may include

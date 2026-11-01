@@ -288,6 +288,23 @@ Serve mode:
 - Provider credentials come from ambient identity (env, IAM role, service-account
   file, Vault token), never from the job body.
 
+**Credential scoping and transport trust:**
+
+- **Per-target scope.** Credentials are resolved per run and connection profile, never as a
+  single global vault unlock. Use separate keys per environment and do not reuse a
+  personal/agent key across targets.
+- **Short-lived and rotated.** Prefer short-lived/STS-style credentials or per-run keys, and
+  support rotation. The resolver is injected through `ExecOptions`/run scope (ADR 0017), so
+  the raw value stays inside the run.
+- **Transport trust.** SSH strict host-key checking is on by default (`known_hosts`), agent
+  forwarding is off by default, and TLS verification is never disabled behind an implicit
+  flag. Any `--insecure`/skip-verify path is explicit, warned, and traced.
+- **Child env allow-list.** Forked children receive an explicit environment allow-list, not
+  `process.env`, so the serve token, vault password, and unrelated credentials never reach
+  module subprocesses.
+- **Credential broker (open work).** A future broker mints and scopes target credentials per
+  run; until it lands, per-environment files/keys plus the defaults above are the boundary.
+
 ### 8. Non-goals
 
 - RBAC for the orchestrator.
