@@ -180,6 +180,11 @@ export function lintTemplateRefs(pb: NormalizedPlaybook): TemplateRefProblem[] {
 
   const walk = (value: unknown, path: string): void => {
     if (typeof value === "string") {
+      // `copy` content template specs are opaque runtime payloads (the module
+      // renders them on-host with the selected engine), not playbook scalar
+      // interpolation. They are exempt for the same reason EJS payloads are:
+      // they are interpreted only at execution time, by an explicit engine.
+      if (/\.args\.content\.(?:template|template_file)$/.test(path)) return;
       checkString(value, path);
       return;
     }
