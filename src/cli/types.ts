@@ -47,6 +47,8 @@ export interface GlobalFlags {
   isolationNetwork?: "module" | "none" | "all";
   /** Explicit filesystem grants (repeatable --mount). */
   mounts?: import("../isolation/types").IsolationMount[];
+  /** Ephemeral destination whitelist entries (repeatable --allow-egress). */
+  allowEgress?: import("../isolation/egress").EgressRule[];
 }
 
 // ---------------------------------------------------------------------------

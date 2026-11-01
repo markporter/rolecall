@@ -54,6 +54,8 @@ export interface ModuleContext {
   readonly resetConnection?: () => Promise<void>;
   /** When set, register a host into the run-level dynamic inventory (Ansible `add_host` alternate). */
   readonly addHost?: (name: string, groups: string[], vars: Record<string, unknown>) => void;
+  /** ADR 0025 destination policy for modules that dispatch URLs (http/get_url/git). */
+  readonly egress?: import("../isolation/egress").EgressPolicy;
 }
 
 /** Result returned by a module invocation. */

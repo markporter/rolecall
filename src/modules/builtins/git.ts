@@ -123,6 +123,28 @@ async function resolveRef(
 }
 
 /** @summary Clone a repo to the destination, or update a local checkout (stash/pull/reset/checkout) idempotently. @param ctx ModuleContext (connection, args, become). @returns ModuleResult with changed/skipped/failed and data. */
+function gitRemoteTarget(repo: string): { host: string; port: number } | undefined {
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(repo)) {
+    try {
+      const u = new URL(repo);
+      const port = u.port
+        ? Number(u.port)
+        : u.protocol === "https:"
+          ? 443
+          : u.protocol === "http:"
+            ? 80
+            : u.protocol === "git:"
+              ? 9418
+              : 22;
+      return { host: u.hostname, port };
+    } catch {
+      return undefined;
+    }
+  }
+  const scp = repo.match(/^(?:[^@/\s]+@)?([^:/\s]+):/);
+  return scp ? { host: scp[1]!, port: 22 } : undefined;
+}
+
 export const gitModule: Module = {
   name: MODULE_NAME,
   network: true,
@@ -131,6 +153,15 @@ export const gitModule: Module = {
     const args = ctx.args as unknown as GitArgs;
     const repo = String(args.repo ?? "");
     if (!repo) return { changed: false, failed: true, msg: "git: 'repo' is required" } as ModuleResult;
+    if (ctx.egress) {
+      const target = gitRemoteTarget(repo);
+      if (target) {
+        const decision = await ctx.egress.checkTarget(target.host, target.port, "module");
+        if (!decision.allowed) {
+          return { changed: false, failed: true, msg: `git: egress denied for ${repo}: ${decision.reason}` } as ModuleResult;
+        }
+      }
+    }
     const dest = String(args.dest ?? "");
     if (!dest) return { changed: false, failed: true, msg: "git: 'dest' is required" } as ModuleResult;
 

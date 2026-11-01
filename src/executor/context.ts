@@ -266,6 +266,8 @@ export interface ExecOptions {
   diff?: boolean;
   /** Global `--force`: bypass idempotency skips and force convergence (passed to modules as `force`). */
   force?: boolean;
+  /** ADR 0025 isolation options, including the destination whitelist used by module URL checks. */
+  isolation?: import("../isolation/types").IsolationOptions;
 }
 
 export interface IterationOutcome {
