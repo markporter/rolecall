@@ -1,3 +1,4 @@
 [test]
+preload = ["./tests/setup.ts"]
 # bun test discovers *.test.ts under test/ by default; be explicit for clarity.
 root = "."
