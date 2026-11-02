@@ -66,6 +66,7 @@ export default defineConfig({
         { text: 'Alternate modules', link: '/concepts/alternate-modules' },
         { text: 'Idempotency', link: '/concepts/idempotency' },
         { text: 'Transport', link: '/concepts/transport' },
+        { text: 'Isolation & Sandboxing', link: '/concepts/isolation' },
         { text: 'Facts', link: '/concepts/facts' },
         { text: 'Variables', link: '/concepts/variables' },
       ],
