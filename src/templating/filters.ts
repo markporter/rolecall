@@ -1,7 +1,7 @@
 // Shared filter registry — the SINGLE SOURCE OF TRUTH for template filters.
 //
 // Both the fast path (eta, this module's sibling `fast.ts`) and the Todo 7
-// LiquidJS Jinja-mode engine pull filters from here. Filters are plain callables
+// Nunjucks Jinja-mode engine pulls filters from here. Filters are plain callables
 // keyed by name; they are engine-agnostic so either engine can adapt them.
 //
 // A filter receives the interpolated argument(s) as `unknown` and returns

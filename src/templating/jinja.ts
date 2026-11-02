@@ -1,76 +1,66 @@
-// Jinja-mode templating — LiquidJS engine wrapper (Todo 7).
+// Jinja-mode templating — Nunjucks engine + Ansible compatibility layer.
 //
-// Renders Jinja2-style templates (`{% if %}` / `{% for %}` / `{{ x | filter }}`)
-// via LiquidJS. LiquidJS uses the SAME `{% %}` / `{{ }}` delimiters as Jinja2,
-// so Jinja2 control-flow + pipe-filter syntax works out of the box.
+// Nunjucks is a JS Jinja2 port: it gives us `{% if %}` / `{% for %}` /
+// `{{ x | filter }}`, macros, imports/extends, `loop.index`, and closer Jinja
+// semantics than the previous LiquidJS engine. It is still not byte-identical
+// to Jinja2; unsupported Ansible lookups/plugins fail loudly for the converter.
 //
-// SHARED FILTER REGISTRY (single source of truth): filters are NOT defined here.
-// They come from `./filters.ts` via `registerFilter`/`getFilter`/`listFilters`.
-// `syncFilters()` pushes every registered filter into the LiquidJS engine before
-// each render, so a filter registered ONCE works in BOTH fast (eta) and jinja
-// (LiquidJS) modes — and a filter registered after engine creation still applies
-// on the next render (live lookup, matching fast.ts).
+// SHARED FILTER REGISTRY: filters registered in `./filters.ts` are available in
+// both eta (fast) and Jinnja modes. Ansible-specific filters/tests/globals live in
+// `./ansible-filters.ts` and are synced before every render.
 //
-// LENIENT BY DEFAULT (H4 review fix, decisions.md #5): vault / secret placeholders
-// TODO(ROLECALL-PLACEHOLDER): Jinja vault/secret resolution deferred to server layer
-// are deferred to the server layer, so an UNDEFINED variable renders as "" and does
-// NOT throw. `strictVariables:false` is the engine default. Strict mode is OPT-IN
-// via `opts.strict = true` (sets `strictVariables:true` for that render call, which
-// throws on undefined).
-//
-// DETERMINISTIC: `parseAndRenderSync` renders synchronously; output is stable for
-// the same (template, vars) input.
+// LENIENT BY DEFAULT: undefined variables render as ""; `{ strict: true }` uses
+// a second Environment with `throwOnUndefined: true`.
 
-import { Liquid } from "liquidjs";
+import nunjucks from "nunjucks";
+
 import { getFilter, listFilters } from "./filters.js";
+import { ANSIBLE_FILTERS, ANSIBLE_GLOBALS, ANSIBLE_TESTS } from "./ansible-filters.js";
 
 export interface JinjaRenderOptions {
-  /** Opt into strict variable mode. When true, undefined variables throw instead
-   *  of rendering as "". Default false (lenient). */
+  /** Throw on undefined variables instead of rendering them as "". */
   strict?: boolean;
 }
 
-// Single engine, lenient by default. Strict mode is applied per-render via
-// renderOptions (no second engine needed). `strictFilters:false` means an
-// unregistered filter is skipped rather than throwing — but we sync the shared
-// registry before every render, so registered filters always resolve.
-const engine = new Liquid({
-  strictVariables: false,
-  strictFilters: false,
-  jsTruthy: true,
+const LENIENT = new nunjucks.Environment(undefined, {
+  autoescape: false,
+  throwOnUndefined: false,
+});
+const STRICT = new nunjucks.Environment(undefined, {
+  autoescape: false,
+  throwOnUndefined: true,
 });
 
-// Push every filter from the shared registry into the LiquidJS engine. Called
-// before each render so filters registered after engine creation still apply
-// (live lookup). `registerFilter` overwrites, so re-syncing is idempotent.
-function syncFilters(): void {
+let compatible = false;
+function ensureCompat(): void {
+  if (compatible) return;
+  // Adds True/False/None and Python-style list/dict/string helpers.
+  (nunjucks as unknown as { installJinjaCompat?: () => void }).installJinjaCompat?.();
+  compatible = true;
+}
+
+function sync(env: nunjucks.Environment): void {
+  ensureCompat();
   for (const name of listFilters()) {
     const fn = getFilter(name);
-    if (fn !== undefined) {
-      engine.registerFilter(name, fn as (value: unknown, ...args: unknown[]) => unknown);
-    }
+    if (fn) env.addFilter(name, fn as never);
   }
+  for (const [name, fn] of Object.entries(ANSIBLE_FILTERS)) env.addFilter(name, fn as never);
+  const withTests = env as unknown as { addTest: (name: string, fn: (...args: unknown[]) => boolean) => void };
+  for (const [name, fn] of Object.entries(ANSIBLE_TESTS)) withTests.addTest(name, fn);
+  for (const [name, value] of Object.entries(ANSIBLE_GLOBALS)) env.addGlobal(name, value);
 }
 
 /**
- * Render a Jinja2-style `template` with `vars`, returning deterministic output.
- *
- * TODO(ROLECALL-PLACEHOLDER): Jinja vault/secret resolution deferred to server layer
- * - Conditionals `{% if %}`, loops `{% for %}`, and pipe filters `{{ x | filter }}`
- * TODO(ROLECALL-PLACEHOLDER): Jinja vault/secret resolution deferred to server layer
- *   are supported (LiquidJS shares Jinja2's `{% %}` / `{{ }}` syntax).
- * - Filters resolve from the SHARED registry (`./filters.ts`) — register once, use
- *   in both fast and jinja modes.
- * - Undefined variables render leniently as "" by default (no throw). Pass
- *   `{ strict: true }` to throw on undefined variables.
+ * Render a Jinja/Nunjucks template with `vars`, returning deterministic output.
+ * Undefined variables are lenient unless `{ strict: true }` is set.
  */
 export function renderJinja(
   template: string,
   vars: Record<string, unknown> = {},
   opts: JinjaRenderOptions = {},
 ): string {
-  syncFilters();
-  return engine.parseAndRenderSync(template, vars, {
-    strictVariables: opts.strict === true,
-  }) as string;
+  const env = opts.strict === true ? STRICT : LENIENT;
+  sync(env);
+  return env.renderString(template, vars);
 }

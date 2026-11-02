@@ -78,8 +78,9 @@ Subcommand reality (from the HELP string):
    over SSH or local transports rather than merely printing a plan. The orchestrator
    cron scheduler and HTTP webhooks are implemented; the SPA UI remains scaffolded.
    Global Jinja `{{ }}` interpolation in playbook scalars is intentionally absent
-   (ordinary args are lint-rejected); Jinja renders only through explicit `copy`
-   content templates with `engine: jinja` or `.j2` files.
+   (ordinary args are lint-rejected); Jinja (Nunjucks + Ansible filters/tests)
+   renders only through explicit `copy` content templates with `engine: jinja` or
+   `.j2` files, in the ADR 0025 sandbox worker when isolation is enabled.
    The Plugin SDK now ships `plugin register`/`list` (module plugins persist and
    auto-load at startup); the richer SDK authoring/test harness is still partial.
    At startup it also scans project-local plugins under `plugins/<type>/<namespace>/`
@@ -159,7 +160,8 @@ is not built: `--ui-dist` only serves a static directory.
 
 Honest status note: the genuinely-scaffold subsystems are global Jinja `{{ }}`
 interpolation in playbook scalars (Jinja renders only through explicit content
-templates with `engine: jinja`), the SPA UI, Http transport (gRPC capability
+templates with `engine: jinja`, via Nunjucks + the sandbox worker), the SPA UI,
+Http transport (gRPC capability
 deferred), and the richer Plugin SDK authoring surface. The executor, the SSH/Local/Network/HTTP
 transports, the cron scheduler and webhooks, serve-side forked playbook execution,
 `facts gather`, `vars list`/`trace`, and `plugin

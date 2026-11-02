@@ -61,6 +61,7 @@ test("createSshSim: pubkey connect + exec/facts/host-key accept, plus health()",
 
 test("createHttpSim: GET/POST/PATCH round-trip + snapshot capture", async () => {
   const http = await createHttpSim({
+    port: 0,
     routes: {
       "GET /ping": () => ({ pong: true }),
       "POST /echo": async (_r, ctx) => JSON.parse(await ctx.text()),
@@ -86,6 +87,7 @@ test("createHttpSim: GET/POST/PATCH round-trip + snapshot capture", async () => 
 
 test("createHttpSim: enforces basic/token auth injection", async () => {
   const secured = await createHttpSim({
+    port: 0,
     auth: { type: "token", token: "secret-tok" },
     routes: { "GET /me": () => ({ ok: true }) },
   });

@@ -56,6 +56,8 @@ export interface ModuleContext {
   readonly addHost?: (name: string, groups: string[], vars: Record<string, unknown>) => void;
   /** ADR 0025 destination policy for modules that dispatch URLs (http/get_url/git). */
   readonly egress?: import("../isolation/egress").EgressPolicy;
+  /** ADR 0025 isolation options, for modules that must render code templates in a sandbox. */
+  readonly isolation?: import("../isolation/types").IsolationOptions;
 }
 
 /** Result returned by a module invocation. */

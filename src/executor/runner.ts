@@ -434,6 +434,7 @@ export async function runTaskOnHost(
         host,
         connection: profileConnection(conn, mod.network === true ? "networked" : "untrusted"),
         ...(egress ? { egress } : {}),
+        ...(state.options.isolation ? { isolation: state.options.isolation } : {}),
         args,
         vars: vars.vars,
         facts: vars.facts,
