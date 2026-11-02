@@ -8,7 +8,7 @@ longname: module:modules.copyModule
 
 <Signature code="copyModule: CheckableModule" />
 
-<SourceLink href="/source/src/modules/builtins/copy-ts/#L272" label="copy.ts:272" />
+<SourceLink href="/source/src/modules/builtins/copy-ts/#L274" label="copy.ts:274" />
 
 **Returns**
 
