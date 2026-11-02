@@ -87,9 +87,10 @@ server {{ site }}
 
 **EJS vs Jinja.** EJS is the default for a reason: it is much faster than Jinja and supports full JavaScript logic in templates. When isolation is enabled, EJS/Eta templates now render in the same sandbox worker as Jinja; Eta is executable JavaScript, so do not run untrusted Eta/EJS templates with `--isolation none`.
 
-Eta/EJS, `$template`, and `$call` helpers are **restricted code**: executable code that is
-allowed only inside the sandbox worker. A planned per-project operator policy
-(`templates.allow_restricted_code` / `templates.allow_restricted_helpers` in
-`isolation.yaml`) will gate them; Jinja is a bounded template language and is not gated.
-See [Isolation & Sandboxing](/concepts/isolation#restricted-code-and-approval) for the
-definition and current status. Jinja is the safer choice when templates come from untrusted sources — with isolation enabled it renders in a sandbox with no filesystem, network, or inherited environment — and it can often run existing Ansible templates with minimal changes. In short: use EJS for speed and flexibility; reach for Jinja when you need compatibility with Ansible templates or sandboxing of untrusted template code.
+Eta/EJS, `$template`, and `$call` helpers are **restricted code**: executable code that
+must be operator-approved per project (`templates.allow_restricted_code` /
+`allow_restricted_helpers` in `isolation.yaml`). `copy` Eta/EJS renders in the sandbox
+worker when isolation is enabled; `$template` and `$call` still run in-process and require
+`--allow-unsafe-template-code` until their worker path lands. Jinja is a bounded template
+language and is not gated. See [Isolation & Sandboxing](/concepts/isolation#restricted-code-and-approval)
+for the definition and current status. Jinja is the safer choice when templates come from untrusted sources — with isolation enabled it renders in a sandbox with no filesystem, network, or inherited environment — and it can often run existing Ansible templates with minimal changes. In short: use EJS for speed and flexibility; reach for Jinja when you need compatibility with Ansible templates or sandboxing of untrusted template code.

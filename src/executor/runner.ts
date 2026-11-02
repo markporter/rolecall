@@ -382,7 +382,18 @@ export async function runTaskOnHost(
     : task.notify !== undefined
       ? [task.notify]
       : [];
-  const loopItems = expandLoop(task.loop, buildVars(state, host, undefined, undefined, task));
+  const policy = state.options.approvals;
+  let loopItems: ReturnType<typeof expandLoop>;
+  try {
+    loopItems = expandLoop(task.loop, buildVars(state, host, undefined, undefined, task), policy);
+  } catch (err) {
+    outcome.failed = true;
+    outcome.msg = err instanceof Error ? err.message : String(err);
+    state.failed.add(host);
+    emit("end", "failed", taskStartedAt, Date.now(), Math.round(performance.now() - taskT0), { error: outcome.msg });
+    fireEvent(outcome);
+    return outcome;
+  }
   let anyChanged = false;
   let anyFailed = false;
 
@@ -395,13 +406,32 @@ export async function runTaskOnHost(
       failed: false,
       skipped: false,
     };
-    if (!evalWhen(task.when, vars)) {
+    let when = true;
+    try {
+      when = evalWhen(task.when, vars, policy);
+    } catch (err) {
+      iter.failed = true;
+      iter.msg = err instanceof Error ? err.message : String(err);
+      anyFailed = true;
+      outcome.iterations.push(iter);
+      continue;
+    }
+    if (!when) {
       iter.skipped = true;
       emit("when-eval", "skipped", Date.now(), Date.now(), 0, { reason: "when-false" }, index);
       outcome.iterations.push(iter);
       continue;
     }
-    const args = renderArgs(task.args, vars, {});
+    let args: Record<string, unknown>;
+    try {
+      args = renderArgs(task.args, vars, {}, policy);
+    } catch (err) {
+      iter.failed = true;
+      iter.msg = err instanceof Error ? err.message : String(err);
+      anyFailed = true;
+      outcome.iterations.push(iter);
+      continue;
+    }
     const checkMode = state.options.check === true;
     const diffMode = state.options.diff === true;
     if (state.options.force === true) {
@@ -435,6 +465,9 @@ export async function runTaskOnHost(
         connection: profileConnection(conn, mod.network === true ? "networked" : "untrusted"),
         ...(egress ? { egress } : {}),
         ...(state.options.isolation ? { isolation: state.options.isolation } : {}),
+        ...(state.options.projectUri ? { projectUri: state.options.projectUri } : {}),
+        ...(state.options.approvals ? { approvals: state.options.approvals } : {}),
+        ...(state.options.allowUnsafeTemplateCode ? { allowUnsafeTemplateCode: true } : {}),
         args,
         vars: vars.vars,
         facts: vars.facts,

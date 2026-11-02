@@ -85,8 +85,10 @@ Subcommand reality (from the HELP string):
    Eta/EJS, `$template`, and `$call` helpers are "restricted code" (executable code
    allowed only in the sandbox worker) and are planned to be gated per project by
    `templates.allow_restricted_code` / `templates.allow_restricted_helpers` in
-   `isolation.yaml` (not enforced yet; keys are canonical VFS URIs such as
-   `file:///home/me/infra`, not bare paths). Discover via
+   `isolation.yaml` (enforced; keys are canonical VFS URIs such as
+   `file:///home/me/infra`, not bare paths). `$template`/`$call` still lack a worker
+   path, so even approved they require `--allow-unsafe-template-code`; `copy` Eta/EJS
+   renders in the sandbox worker when isolation is enabled. Discover via
    `rolecall docs search "restricted code"` or `rolecall agent manifest`
    (`policy.templates`).
    The Plugin SDK now ships `plugin register`/`list` (module plugins persist and

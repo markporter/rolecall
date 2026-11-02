@@ -21,6 +21,7 @@ They come directly from `GLOBAL_OPTS` in `src/cli/index.ts`, which passes them t
 | `--isolation` | `auto`\|`namespace`\|`docker`\|`none` | ADR 0025 sandbox for local transports. `auto` selects bwrap/userns, then Docker, then fails closed; `none` is a warned last resort. Override with `ROLECALL_ISOLATION`. `rolecall doctor` reports readiness; see [Isolation & Sandboxing](/concepts/isolation). | `auto` |
 | `--isolation-network` | `module`\|`none`\|`all` | Sandbox egress policy: `module` (default) lets trusted modules that declare `network: true` use the network while shell/command/script/raw stay net-off; `none` denies all; `all` is ambient (warned). | `module` |
 | `--mount` | `<src:dst[:ro|rw]>` | Repeatable explicit filesystem grant; rejected with `--isolation none`. Source and target must be absolute; `ro` is the default. | none |
+| `--allow-unsafe-template-code` | none | Explicitly allow restricted code (`$template`/`$call`, or Eta/EJS with `--isolation none`) to run in-process. Required for `$template`/`$call` until their worker path lands; warned/unsafe. | off |
 | `--allow-egress` | `<host[:port]>` | Repeatable ephemeral destination whitelist entry; rejected with `--isolation none`. Module URL checks (`http`/`get_url`/`git`) enforce it; the broker is wired for the namespace and Docker backends (Docker command construction is tested; live Docker requires a daemon). | none |
 | `--help` | `-h` | Print usage and exit 0. | n/a |
 | `--version` | `-v` | Print `rolecall <version>`. | n/a |

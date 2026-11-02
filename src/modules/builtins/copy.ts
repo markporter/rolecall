@@ -23,6 +23,7 @@ import type { ModuleSummary } from "../search";
 import { render } from "../../templating/fast";
 import { renderJinja } from "../../templating/jinja";
 import { renderTemplateIsolated } from "../../isolation/template-worker";
+import { requirePolicy } from "../../templating/refs";
 
 /** Resolved source content plus its checksum, ready to ship to the target. */
 interface SourceBytes {
@@ -117,6 +118,7 @@ async function renderEngine(
   vars: Record<string, unknown>,
   ctx: ModuleContext,
 ): Promise<string> {
+  if (engine !== "jinja") requirePolicy(ctx.approvals, "code", !ctx.isolation || ctx.isolation.backend === "none");
   if (ctx.isolation && ctx.isolation.backend !== "none") {
     const isolatedEngine: "jinja" | "eta" | "ejs" =
       engine === "jinja" ? "jinja" : engine === "ejs" ? "ejs" : "eta";

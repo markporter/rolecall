@@ -41,6 +41,7 @@ are present in code but do **not** apply real remote state.
 | Facts reference (`$var: facts.key`) | ✅ | declared via `kind: fact` manifest or plugin/module `declares`; the `$fact` operator was removed in ADR 0013 |
 | Typed `when` / `loop` | ✅ | todo 24 |
 | Jinja-style `{{ }}` templating | 🟡 | global scalar interpolation absent; `$template` is EJS; Jinja is Nunjucks + Ansible filters/tests and renders through explicit `copy` content templates / `.j2` files with `engine: jinja`, in the ADR 0025 sandbox worker when isolation is enabled |
+| Restricted-code approvals | 🟡 | `isolation.yaml` loader with VFS-URI project keys and `allow_restricted_code`/`allow_restricted_helpers` enforcement; `copy` Eta/EJS is sandboxed, `$template`/`$call` still require `--allow-unsafe-template-code` until their worker path lands |
 
 ## Run model & safety
 

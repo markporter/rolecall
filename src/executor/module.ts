@@ -58,6 +58,12 @@ export interface ModuleContext {
   readonly egress?: import("../isolation/egress").EgressPolicy;
   /** ADR 0025 isolation options, for modules that must render code templates in a sandbox. */
   readonly isolation?: import("../isolation/types").IsolationOptions;
+  /** Canonical VFS URI for the project (approval key). */
+  readonly projectUri?: string;
+  /** Restricted-code approval policy for $template/$call/engine eta|ejs. */
+  readonly approvals?: import("../templating/refs").TemplateCodePolicy;
+  /** Explicit unsafe override for restricted code with --isolation none. */
+  readonly allowUnsafeTemplateCode?: boolean;
 }
 
 /** Result returned by a module invocation. */

@@ -77,6 +77,7 @@ Global flags (parsed once, injected downward):
   --isolation-network <mode>  Network under isolation: module (default) | none | all
   --mount <src:dst[:ro|rw]>   Add an approved filesystem grant (requires --isolation; repeatable)
   --allow-egress <host[:port]>  Add an ephemeral destination whitelist entry (requires --isolation; repeatable)
+  --allow-unsafe-template-code  Explicitly allow in-process restricted code ($template/$call; Eta/EJS with --isolation none)
   --forks <N>         Concurrency fan-out (number)
   --trace             Emit + persist an execution-trace ledger for the run
   --profile           Print a per-host/per-task performance profile at run end
@@ -140,6 +141,7 @@ const GLOBAL_OPTS = {
   "isolation-network": { type: "string" },
   mount: { type: "string", multiple: true },
   "allow-egress": { type: "string", multiple: true },
+  "allow-unsafe-template-code": { type: "boolean" },
 } as const;
 
 /** @summary Write rendered CLI output to stdout, stripping NUL/control chars from the `json` stream so a polluted data channel never breaks a downstream JSON parser. @param text Rendered text to emit. @param output Selected output plugin name; only `json` gets control-char scrubbing. */
@@ -209,6 +211,7 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
     isolationNetwork: isolationNetwork as GlobalFlags["isolationNetwork"],
     ...(mounts.length > 0 ? { mounts } : {}),
     ...(allowEgress.length > 0 ? { allowEgress } : {}),
+    allowUnsafeTemplateCode: values["allow-unsafe-template-code"] === true,
     // --json is a convenience shorthand for --output json (used by the docs
     // subcommands and any other command the user wants structured output from).
     output: (values["json"] as boolean | undefined)
