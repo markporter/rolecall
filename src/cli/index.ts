@@ -33,6 +33,7 @@ import { runDocsCommand } from "./commands/docs";
 import { runVarsCommand } from "./commands/vars";
 import { runDoctorCommand } from "./commands/doctor";
 import { runRenderTemplateWorker } from "./commands/render-template";
+import { runInstallCommand } from "./commands/install";
 import { parseMounts } from "./parse-mounts";
 import { parseEgressSpecs } from "../isolation/egress";
 import { CliError, type CliResult, type GlobalFlags } from "./types";
@@ -142,6 +143,15 @@ const GLOBAL_OPTS = {
   mount: { type: "string", multiple: true },
   "allow-egress": { type: "string", multiple: true },
   "allow-unsafe-template-code": { type: "boolean" },
+  system: { type: "boolean" },
+  user: { type: "boolean" },
+  "no-service": { type: "boolean" },
+  "dry-run": { type: "boolean" },
+  yes: { type: "boolean" },
+  "non-interactive": { type: "boolean" },
+  prefix: { type: "string" },
+  "config-dir": { type: "string" },
+  "state-dir": { type: "string" },
 } as const;
 
 /** @summary Write rendered CLI output to stdout, stripping NUL/control chars from the `json` stream so a polluted data channel never breaks a downstream JSON parser. @param text Rendered text to emit. @param output Selected output plugin name; only `json` gets control-char scrubbing. */
@@ -212,6 +222,15 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
     ...(mounts.length > 0 ? { mounts } : {}),
     ...(allowEgress.length > 0 ? { allowEgress } : {}),
     allowUnsafeTemplateCode: values["allow-unsafe-template-code"] === true,
+    system: values["system"] === true,
+    user: values["user"] === true,
+    noService: values["no-service"] === true,
+    dryRun: values["dry-run"] === true,
+    yes: values["yes"] === true,
+    nonInteractive: values["non-interactive"] === true,
+    prefix: values["prefix"] as string | undefined,
+    configDir: values["config-dir"] as string | undefined,
+    stateDir: values["state-dir"] as string | undefined,
     // --json is a convenience shorthand for --output json (used by the docs
     // subcommands and any other command the user wants structured output from).
     output: (values["json"] as boolean | undefined)
@@ -348,6 +367,9 @@ export async function main(argv: string[]): Promise<number> {
         break;
       case "doctor":
         result = await runDoctorCommand(flags, rest);
+        break;
+      case "install":
+        result = await runInstallCommand(flags, rest);
         break;
       case "docs":
         result = await runDocsCommand(sub, rest, flags);

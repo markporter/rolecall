@@ -22,6 +22,10 @@ They come directly from `GLOBAL_OPTS` in `src/cli/index.ts`, which passes them t
 | `--isolation-network` | `module`\|`none`\|`all` | Sandbox egress policy: `module` (default) lets trusted modules that declare `network: true` use the network while shell/command/script/raw stay net-off; `none` denies all; `all` is ambient (warned). | `module` |
 | `--mount` | `<src:dst[:ro|rw]>` | Repeatable explicit filesystem grant; rejected with `--isolation none`. Source and target must be absolute; `ro` is the default. | none |
 | `--allow-unsafe-template-code` | none | Explicitly allow restricted code (`$template`/`$call`, or Eta/EJS with `--isolation none`) to run in-process. Required for `$template`/`$call` until their worker path lands; warned/unsafe. | off |
+| `--system` / `--user` | none | Install scope for `rolecall install` (mutually exclusive; applies only to install). | root → system, else user |
+| `--prefix` / `--config-dir` / `--state-dir` | `<dir>` | Install-layout overrides for `rolecall install`. | platform defaults |
+| `--no-service` | none | Skip service unit generation during `rolecall install`. | off |
+| `--dry-run` / `--yes` | none | `rolecall install` plan-only (default) or apply. | dry-run unless `--yes` |
 | `--allow-egress` | `<host[:port]>` | Repeatable ephemeral destination whitelist entry; rejected with `--isolation none`. Module URL checks (`http`/`get_url`/`git`) enforce it; the broker is wired for the namespace and Docker backends (Docker command construction is tested; live Docker requires a daemon). | none |
 | `--help` | `-h` | Print usage and exit 0. | n/a |
 | `--version` | `-v` | Print `rolecall <version>`. | n/a |

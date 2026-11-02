@@ -289,6 +289,21 @@ function formatHuman(data: CliResult): string {
       }
       break;
     }
+    case "install": {
+      const p = data.plan;
+      lines.push(`Install  : ${p.scope} (${p.platform}) v${p.version}`);
+      lines.push(`Program  : ${p.layout.programDir}`);
+      lines.push(`Config   : ${p.layout.configDir}`);
+      lines.push(`State    : ${p.layout.stateDir}`);
+      lines.push(`Cache    : ${p.layout.cacheDir}`);
+      lines.push(`Service  : ${p.service.manager}${p.service.unitPath ? ` (${p.service.unitPath})` : ""}`);
+      lines.push(`Isolation: ${p.isolation.selected}`);
+      lines.push(data.applied ? "Applied  : yes" : "Applied  : no (dry-run; pass --yes to apply)");
+      for (const action of p.actions) lines.push(`  - ${action.description}`);
+      for (const written of data.written) lines.push(`  wrote: ${written}`);
+      for (const warning of data.warnings) lines.push(`  ! ${warning}`);
+      break;
+    }
     case "doctor": {
       const p = data.isolation;
       lines.push(`Platform : ${p.platform}`);
