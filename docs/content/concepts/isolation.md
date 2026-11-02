@@ -66,7 +66,7 @@ template in the hidden `__render-template` worker:
 - no project filesystem mounts;
 - no network;
 - no inherited environment;
-- only the runtime/CLI files are bound read-only;
+- only the runtime/CLI files and system runtime paths are bound read-only (no `/etc`);
 - output is returned as data.
 
 Templates are for **shaping data**, not acquiring it. If a template needs a file or an API
@@ -100,9 +100,11 @@ response, fetch it with a module first and pass the value into the template:
 For a file outside the project, use `slurp`/`stat`/`find`/`command` with an explicit
 `--mount`, then `set_fact`; the module gets the grant, the template gets only the value.
 
-`--isolation none` disables the worker boundary and renders in-process, but Nunjucks
-templates still have no filesystem or network APIs. Eta/EJS templates are executable
-JavaScript and remain in-process in this slice; do not use them for untrusted templates.
+`--isolation none` disables the worker boundary and renders in-process. Nunjucks still has
+no filesystem/network APIs, but Eta/EJS are executable JavaScript and must be treated as
+untrusted code; use the sandbox. Eta/EJS also render in the worker when isolation is
+enabled, with the same no-project/no-network boundary (system runtime files remain
+read-only).
 
 ## What is not covered
 
@@ -116,8 +118,8 @@ JavaScript and remain in-process in this slice; do not use them for untrusted te
   local isolation.
 - **Template-side I/O.** The worker does not receive `--mount` grants and is hardcoded
   network-off. Passing data in from a module is the supported pattern.
-- **Eta/EJS sandboxing.** Those code templates are approved/sandboxed in ADR 0025's target
-  model; the approval path is not implemented yet.
+- **Eta/EJS approval policy.** They now render in the worker when isolation is enabled, but
+  the per-project approval/config path (`templates.allow_code`) is not implemented yet.
 
 ## Failure behavior
 

@@ -9,6 +9,7 @@ import { probeIsolation } from "../src/isolation";
 import { renderTemplateIsolated } from "../src/isolation/template-worker";
 import { registerAllModules } from "../src/modules/builtins";
 import { runPlaybook } from "../src/executor";
+import { render as renderEta } from "../src/templating/fast";
 import { createConnection } from "../src/transport";
 
 const cleanup: string[] = [];
@@ -39,6 +40,22 @@ test("renderTemplateIsolated runs Nunjucks in the namespace sandbox", async () =
   });
   expect(out).toBe("1=a;2=b;");
 }, 30_000);
+
+test("renderTemplateIsolated runs EJS/Eta in the namespace sandbox", async () => {
+  const probe = probeIsolation({ backend: "namespace" });
+  if (probe.selected !== "namespace" || !probe.userns) return;
+  const out = await renderTemplateIsolated({
+    engine: "ejs",
+    template: "<%= name.toUpperCase() %>:<%= 2 + 2 %>",
+    vars: { name: "rolecall" },
+    isolation: { backend: "namespace", projectRoot: process.cwd() },
+  });
+  expect(out).toBe("ROLECALL:4");
+}, 30_000);
+
+test("in-process Eta does not expose process.env", () => {
+  expect(renderEta("<%= process.env.PATH %>", {})).toBe("");
+});
 
 test("copy renders engine:jinja through the worker when isolation is set", async () => {
   const probe = probeIsolation({ backend: "namespace" });
@@ -71,4 +88,37 @@ test("copy renders engine:jinja through the worker when isolation is set", async
   });
   expect(result.hosts["h1"]![0]!.failed).toBe(false);
   expect(readFileSync(dest, "utf8")).toBe("listen 8080;");
+}, 30_000);
+
+test("copy renders engine:ejs through the worker when isolation is set", async () => {
+  const probe = probeIsolation({ backend: "namespace" });
+  if (probe.selected !== "namespace" || !probe.userns) return;
+  registerAllModules();
+  const dir = mkdtempSync(join(tmpdir(), "rolecall-copy-ejs-"));
+  cleanup.push(dir);
+  const dest = join(dir, "rendered.conf");
+  const inventory = { groups: { all: { hosts: ["h1"], vars: { port: 9090 } } } };
+  const playbook = [
+    {
+      hosts: ["all"],
+      vars: {},
+      tasks: [
+        {
+          name: "render ejs",
+          module: "copy",
+          args: {
+            dest,
+            content: { template: "listen <%= port %>;", engine: "ejs" },
+          },
+          notify: [],
+        },
+      ],
+    },
+  ];
+  const result = await runPlaybook(playbook as never, inventory as never, {
+    connectionFor: () => createConnection({ kind: "local", host: "h1", user: "tester" }),
+    isolation: { backend: "namespace", projectRoot: process.cwd() },
+  });
+  expect(result.hosts["h1"]![0]!.failed).toBe(false);
+  expect(readFileSync(dest, "utf8")).toBe("listen 9090;");
 }, 30_000);

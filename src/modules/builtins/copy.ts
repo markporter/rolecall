@@ -117,8 +117,10 @@ async function renderEngine(
   vars: Record<string, unknown>,
   ctx: ModuleContext,
 ): Promise<string> {
-  if (engine === "jinja" && ctx.isolation && ctx.isolation.backend !== "none") {
-    return renderTemplateIsolated({ engine: "jinja", template: source, vars, isolation: ctx.isolation });
+  if (ctx.isolation && ctx.isolation.backend !== "none") {
+    const isolatedEngine: "jinja" | "eta" | "ejs" =
+      engine === "jinja" ? "jinja" : engine === "ejs" ? "ejs" : "eta";
+    return renderTemplateIsolated({ engine: isolatedEngine, template: source, vars, isolation: ctx.isolation });
   }
   return engine === "jinja" ? renderJinja(source, vars, { strict: false }) : render(source, vars);
 }

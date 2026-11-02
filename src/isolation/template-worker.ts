@@ -120,6 +120,8 @@ export async function renderTemplateIsolated(options: RenderTemplateOptions): Pr
       command,
       projectRoot: dir,
       network: "off",
+      // Runtime libs only; do not expose /etc or the host project.
+      systemPaths: ["/usr", "/lib", "/lib64", "/bin", "/sbin"],
       binds: invocation.binds,
       ...(options.isolation.image ? { image: options.isolation.image } : {}),
       ...(typeof process.getuid === "function" ? { uid: process.getuid() } : {}),

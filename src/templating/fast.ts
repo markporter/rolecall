@@ -38,6 +38,14 @@ const ENGINE_INTERNAL = new Set<string>([
   "options",
 ]);
 
+// Eta is executable JavaScript. Do not expose arbitrary host globals to a
+// template; only this allow-list of pure built-ins is available. The sandbox
+// worker also has no network/project mounts, but removing `process`/`require`/
+// `Bun`/`fetch` here hardens in-process rendering too.
+const SAFE_GLOBALS = new Map<string, unknown>(
+  Object.entries({ JSON, Math, Date, Number, String, Boolean, Object, Array, RegExp, parseInt, parseFloat, isNaN }),
+);
+
 // Lenient nil returned for missing variables. Safe for nested property access
 // (returns itself) and string coercion (returns ""), so `a.b.c` where `a` is
 // absent does not throw and renders as "".
@@ -94,9 +102,7 @@ function makeData(vars: Record<string, unknown>): object {
         if (Object.prototype.hasOwnProperty.call(vars, key)) return vars[key];
         const filter = getFilter(key);
         if (filter !== undefined) return filter;
-        if (typeof globalThis[key as keyof typeof globalThis] !== "undefined") {
-          return globalThis[key as keyof typeof globalThis];
-        }
+        if (SAFE_GLOBALS.has(key)) return SAFE_GLOBALS.get(key);
         return LENIENT_NIL; // lenient default for missing vars
       },
     },
