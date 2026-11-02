@@ -27,6 +27,7 @@ longname: module:cli.GlobalFlags
 	output: string;
 	prefix?: string;
 	profile: boolean;
+	purge?: boolean;
 	resume?: string;
 	skipTags?: string;
 	stateDir?: string;
@@ -157,6 +158,12 @@ Selected output plugin name (default "syslog").
 <MemberMeta sourceHref="/source/src/cli/types-ts/#L35" sourceLabel="types.ts:35" />
 
 Print a per-host/per-task performance profile at the end of the run (Todo 25).
+
+<MemberHeading id="purge" depth="3" name="purge" sig="purge: boolean" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L73" sourceLabel="types.ts:73" />
+
+\--purge: remove config/state/cache on uninstall.
 
 <MemberHeading id="resume" depth="3" name="resume" sig="resume: string" />
 

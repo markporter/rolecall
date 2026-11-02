@@ -36,6 +36,7 @@ longname: module:cli
 - [`RunReplayResult`](/module/cli/runreplayresult)
 - [`ServiceResult`](/module/cli/serviceresult)
 - [`TaskApplyOutcome`](/module/cli/taskapplyoutcome)
+- [`UninstallResult`](/module/cli/uninstallresult)
 - [`VarsListResult`](/module/cli/varslistresult)
 - [`VarsTraceResult`](/module/cli/varstraceresult)
 

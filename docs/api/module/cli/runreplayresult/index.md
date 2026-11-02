@@ -18,7 +18,7 @@ description: Result of replaying a stored run's execution-trace ledger (Todo 25)
 }"
 />
 
-<SourceLink href="/source/src/cli/types-ts/#L169" label="types.ts:169" />
+<SourceLink href="/source/src/cli/types-ts/#L171" label="types.ts:171" />
 
 Result of replaying a stored run's execution-trace ledger (Todo 25).
 
@@ -28,26 +28,26 @@ Result of replaying a stored run's execution-trace ledger (Todo 25).
 
 <MemberHeading id="command" depth="3" name="command" sig="command: 'run replay'" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L170" sourceLabel="types.ts:170" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L172" sourceLabel="types.ts:172" />
 
 <MemberHeading id="found" depth="3" name="found" sig="found: boolean" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L172" sourceLabel="types.ts:172" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L174" sourceLabel="types.ts:174" />
 
 <MemberHeading id="note" depth="3" name="note" sig="note: string" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L176" sourceLabel="types.ts:176" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L178" sourceLabel="types.ts:178" />
 
 <MemberHeading id="profile" depth="3" name="profile" sig="profile: Record<string, { failed: number; tasks: number; totalMs: number }>" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L175" sourceLabel="types.ts:175" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L177" sourceLabel="types.ts:177" />
 
 Per-host wall-clock aggregation (sum of end-trace duration_ms).
 
 <MemberHeading id="runid" depth="3" name="runId" sig="runId: string" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L171" sourceLabel="types.ts:171" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L173" sourceLabel="types.ts:173" />
 
 <MemberHeading id="traces" depth="3" name="traces" sig="traces: RunTrace[]" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L173" sourceLabel="types.ts:173" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L175" sourceLabel="types.ts:175" />

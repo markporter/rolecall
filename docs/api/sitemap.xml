@@ -115,6 +115,9 @@
     <loc>https://rolecall.example.com/module/cli/taskapplyoutcome/</loc>
   </url>
   <url>
+    <loc>https://rolecall.example.com/module/cli/uninstallresult/</loc>
+  </url>
+  <url>
     <loc>https://rolecall.example.com/module/cli/varslistresult/</loc>
   </url>
   <url>

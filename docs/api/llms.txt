@@ -27,6 +27,7 @@ Documentation for @rolecall/cli. Every page below links to its Markdown source; 
 - [RunReplayResult](https://rolecall.example.com/module/cli/runreplayresult/index.md)
 - [ServiceResult](https://rolecall.example.com/module/cli/serviceresult/index.md)
 - [TaskApplyOutcome](https://rolecall.example.com/module/cli/taskapplyoutcome/index.md)
+- [UninstallResult](https://rolecall.example.com/module/cli/uninstallresult/index.md)
 - [VarsListResult](https://rolecall.example.com/module/cli/varslistresult/index.md)
 - [VarsTraceResult](https://rolecall.example.com/module/cli/varstraceresult/index.md)
 - [CliResult](https://rolecall.example.com/module/cli/cliresult/index.md)
