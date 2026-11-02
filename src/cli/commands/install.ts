@@ -33,6 +33,7 @@ export async function runInstallCommand(
     layout,
     service: flags.noService !== true,
     isolationBackend: flags.isolation ?? "auto",
+    ...(flags.fromDir ? { fromDir: flags.fromDir } : {}),
   });
   const result = applyInstallPlan(plan, { dryRun: !apply, force: flags.force });
   return {

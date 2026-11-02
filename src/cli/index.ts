@@ -36,6 +36,7 @@ import { runRenderTemplateWorker } from "./commands/render-template";
 import { runInstallCommand } from "./commands/install";
 import { runServiceCommand } from "./commands/service";
 import { runUninstallCommand } from "./commands/uninstall";
+import { runUpdateCommand } from "./commands/update";
 import { parseMounts } from "./parse-mounts";
 import { parseEgressSpecs } from "../isolation/egress";
 import { CliError, type CliResult, type GlobalFlags } from "./types";
@@ -81,6 +82,7 @@ Global flags (parsed once, injected downward):
   --mount <src:dst[:ro|rw]>   Add an approved filesystem grant (requires --isolation; repeatable)
   --allow-egress <host[:port]>  Add an ephemeral destination whitelist entry (requires --isolation; repeatable)
   --allow-unsafe-template-code  Explicitly allow in-process restricted code ($template/$call; Eta/EJS with --isolation none)
+  --from-dir <dir>             With install, stage the binary from dir/rolecall + version.txt + SHA256SUMS
   --forks <N>         Concurrency fan-out (number)
   --trace             Emit + persist an execution-trace ledger for the run
   --profile           Print a per-host/per-task performance profile at run end
@@ -155,6 +157,9 @@ const GLOBAL_OPTS = {
   "config-dir": { type: "string" },
   "state-dir": { type: "string" },
   purge: { type: "boolean" },
+  "from-dir": { type: "string" },
+  rollback: { type: "boolean" },
+  "no-restart": { type: "boolean" },
 } as const;
 
 /** @summary Write rendered CLI output to stdout, stripping NUL/control chars from the `json` stream so a polluted data channel never breaks a downstream JSON parser. @param text Rendered text to emit. @param output Selected output plugin name; only `json` gets control-char scrubbing. */
@@ -235,6 +240,9 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
     configDir: values["config-dir"] as string | undefined,
     stateDir: values["state-dir"] as string | undefined,
     purge: values["purge"] === true,
+    fromDir: values["from-dir"] as string | undefined,
+    rollback: values["rollback"] === true,
+    noRestart: values["no-restart"] === true,
     // --json is a convenience shorthand for --output json (used by the docs
     // subcommands and any other command the user wants structured output from).
     output: (values["json"] as boolean | undefined)
@@ -380,6 +388,9 @@ export async function main(argv: string[]): Promise<number> {
         break;
       case "uninstall":
         result = await runUninstallCommand(flags, rest);
+        break;
+      case "update":
+        result = await runUpdateCommand(flags, rest);
         break;
       case "docs":
         result = await runDocsCommand(sub, rest, flags);
