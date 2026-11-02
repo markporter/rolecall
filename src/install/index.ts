@@ -2,3 +2,4 @@ export * from "./layout";
 export * from "./env-file";
 export * from "./plan";
 export * from "./service";
+export * from "./uninstall";

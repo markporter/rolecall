@@ -176,6 +176,8 @@ export function buildServicePlan(
 
 export interface RunServiceOptions {
   dryRun?: boolean;
+  /** Stop after the first nonzero command (default true). */
+  stopOnError?: boolean;
   /** Injectable executor for tests. */
   run?: (cmd: ServiceCommand) => { status: number | null; stdout?: string; stderr?: string };
 }
@@ -196,7 +198,7 @@ export function runServicePlan(plan: ServicePlan, options: RunServiceOptions = {
   for (const command of plan.commands) {
     const result = run(command);
     results.push({ command, ...result });
-    if (result.status !== 0) break;
+    if (result.status !== 0 && options.stopOnError !== false) break;
   }
   return { applied: true, results };
 }

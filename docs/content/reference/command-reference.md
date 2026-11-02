@@ -41,3 +41,7 @@ The handler lives in `src/cli/commands/docs.ts` and returns a `DocsModulesResult
 ### service
 
 `rolecall service install|uninstall|start|stop|restart|status` plans or executes the ADR 0023 service lifecycle. Changes are dry-run by default (`--yes` applies); `status` is read-only. See [/reference/install-command#service-lifecycle](/reference/install-command#service-lifecycle).
+
+### uninstall
+
+`rolecall uninstall` plans or applies the ADR 0023 reverse of install: stop/disable the service, remove the manifest and unit, and keep config/state unless `--purge`. It defaults to a dry-run; `--yes` applies. See [/reference/install-command#uninstall](/reference/install-command#uninstall).

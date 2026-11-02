@@ -26,6 +26,7 @@ They come directly from `GLOBAL_OPTS` in `src/cli/index.ts`, which passes them t
 | `--prefix` / `--config-dir` / `--state-dir` | `<dir>` | Install-layout overrides for `rolecall install`. | platform defaults |
 | `--no-service` | none | Skip service unit generation during `rolecall install`. | off |
 | `--dry-run` / `--yes` | none | `rolecall install` plan-only (default) or apply. | dry-run unless `--yes` |
+| `--purge` | none | With `rolecall uninstall`, remove the config/state/cache directories after removing the unit/manifest. | off |
 | `--allow-egress` | `<host[:port]>` | Repeatable ephemeral destination whitelist entry; rejected with `--isolation none`. Module URL checks (`http`/`get_url`/`git`) enforce it; the broker is wired for the namespace and Docker backends (Docker command construction is tested; live Docker requires a daemon). | none |
 | `--help` | `-h` | Print usage and exit 0. | n/a |
 | `--version` | `-v` | Print `rolecall <version>`. | n/a |

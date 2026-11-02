@@ -69,6 +69,8 @@ export interface GlobalFlags {
   configDir?: string;
   /** --state-dir override. */
   stateDir?: string;
+  /** --purge: remove config/state/cache on uninstall. */
+  purge?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -247,6 +249,16 @@ export interface ServiceResult {
   results: import("../install/service").RunServiceResult["results"];
 }
 
+/** Result of `rolecall uninstall`. */
+export interface UninstallResult {
+  command: "uninstall";
+  plan: import("../install/uninstall").UninstallPlan;
+  applied: boolean;
+  removed: string[];
+  kept: string[];
+  service: import("../install/service").RunServiceResult["results"];
+}
+
 export interface DoctorResult {
   command: "doctor";
   isolation: import("../isolation/types").IsolationProbe;
@@ -280,7 +292,8 @@ export type CliResult =
   | VarsTraceResult
   | DoctorResult
   | InstallResult
-  | ServiceResult;
+  | ServiceResult
+  | UninstallResult;
 
 // ---------------------------------------------------------------------------
 // Error class — `usage: true` => exit code 2 (unknown subcommand / bad args);

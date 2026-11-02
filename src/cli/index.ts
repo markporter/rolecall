@@ -35,6 +35,7 @@ import { runDoctorCommand } from "./commands/doctor";
 import { runRenderTemplateWorker } from "./commands/render-template";
 import { runInstallCommand } from "./commands/install";
 import { runServiceCommand } from "./commands/service";
+import { runUninstallCommand } from "./commands/uninstall";
 import { parseMounts } from "./parse-mounts";
 import { parseEgressSpecs } from "../isolation/egress";
 import { CliError, type CliResult, type GlobalFlags } from "./types";
@@ -153,6 +154,7 @@ const GLOBAL_OPTS = {
   prefix: { type: "string" },
   "config-dir": { type: "string" },
   "state-dir": { type: "string" },
+  purge: { type: "boolean" },
 } as const;
 
 /** @summary Write rendered CLI output to stdout, stripping NUL/control chars from the `json` stream so a polluted data channel never breaks a downstream JSON parser. @param text Rendered text to emit. @param output Selected output plugin name; only `json` gets control-char scrubbing. */
@@ -232,6 +234,7 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
     prefix: values["prefix"] as string | undefined,
     configDir: values["config-dir"] as string | undefined,
     stateDir: values["state-dir"] as string | undefined,
+    purge: values["purge"] === true,
     // --json is a convenience shorthand for --output json (used by the docs
     // subcommands and any other command the user wants structured output from).
     output: (values["json"] as boolean | undefined)
@@ -374,6 +377,9 @@ export async function main(argv: string[]): Promise<number> {
         break;
       case "service":
         result = await runServiceCommand(sub, rest, flags);
+        break;
+      case "uninstall":
+        result = await runUninstallCommand(flags, rest);
         break;
       case "docs":
         result = await runDocsCommand(sub, rest, flags);
