@@ -54,6 +54,23 @@ service unit, and keeps config/state/cache by default. `--purge` removes those
 directories too. The program directory/binary is never deleted by the
 self-installer. Like install, it plans by default; `--yes` applies.
 
+## Update and rollback
+
+```sh
+rolecall update --check [--from-dir DIR]
+rolecall update --from-dir DIR [--yes] [--no-restart]
+rolecall update --rollback [--yes] [--no-restart]
+```
+
+Versions live under `<programDir>/versions/<version>` and `current` is a symlink.
+`--check` is read-only. Applying stages a checksummed `--from-dir` artifact,
+atomically switches `current`, records `currentVersion`/`previousVersion` in
+`install.json`, and restarts the service unless `--no-restart`.
+`--rollback` switches back to the recorded previous version.
+
+Network/channel discovery and downloads are not implemented; updates require a
+local artifact directory containing `rolecall`, `version.txt`, and `SHA256SUMS`.
+
 ## Service lifecycle
 
 ```sh

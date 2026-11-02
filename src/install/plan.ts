@@ -3,7 +3,8 @@
 // writes only into the resolved config/state/cache dirs and (optionally) a
 // service unit file. It never installs packages or edits PATH.
 
-import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join } from "node:path";
 
 import { probeIsolation, type IsolationProbe } from "../isolation";
@@ -38,6 +39,15 @@ export interface InstallPlan {
     envFileExists: boolean;
     manifestPath: string;
   };
+  /** Optional versioned binary placement from --from-dir. */
+  binary?: {
+    version: string;
+    source: string;
+    target: string;
+    checksumManifest: string;
+    checksum: string;
+    currentLink: string;
+  };
 }
 
 export interface BuildInstallPlanOptions {
@@ -49,10 +59,32 @@ export interface BuildInstallPlanOptions {
   image?: string;
   version?: string;
   exists?: (path: string) => boolean;
+  /** `--from-dir`: stage a binary from a local artifact directory. */
+  fromDir?: string;
 }
 
 export function installManifestPath(layout: InstallLayout): string {
   return join(layout.configDir, "install.json");
+}
+
+/** Platform binary name inside a version directory. */
+export function programBinName(platform: string): string {
+  return platform === "win32" ? "rolecall.exe" : "rolecall";
+}
+
+/** Versioned program directories (`<programDir>/versions`). */
+export function versionsDir(layout: InstallLayout): string {
+  return join(layout.programDir, "versions");
+}
+
+/** `current` symlink that points at the active version directory. */
+export function currentLink(layout: InstallLayout): string {
+  return join(layout.programDir, "current");
+}
+
+/** Executable path the service unit launches. */
+export function programBinPath(layout: InstallLayout): string {
+  return join(currentLink(layout), programBinName(layout.platform));
 }
 
 export function serviceManagerFor(platform: string, enabled: boolean): ServiceManager {
@@ -78,7 +110,7 @@ export function serviceUnitPath(layout: InstallLayout, manager: ServiceManager):
 }
 
 function systemdUnit(layout: InstallLayout): string {
-  const exec = join(layout.programDir, "rolecall");
+  const exec = programBinPath(layout);
   const user = layout.scope === "system" ? "User=rolecall\nGroup=rolecall\n" : "";
   return `[Unit]
 Description=RoleCall orchestrator
@@ -106,7 +138,7 @@ WantedBy=${layout.scope === "system" ? "multi-user.target" : "default.target"}
 }
 
 function launchdPlist(layout: InstallLayout): string {
-  const exec = join(layout.programDir, "rolecall");
+  const exec = programBinPath(layout);
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -136,6 +168,63 @@ function launchdPlist(layout: InstallLayout): string {
 `;
 }
 
+/** Read and verify a `--from-dir` artifact (version.txt + SHA256SUMS). */
+export function readBinaryArtifact(layout: InstallLayout, fromDir: string): NonNullable<InstallPlan["binary"]> {
+  const artifact = join(fromDir, programBinName(layout.platform));
+  const versionFile = join(fromDir, "version.txt");
+  const checksumManifest = join(fromDir, "SHA256SUMS");
+  if (!existsSync(artifact) || !existsSync(versionFile) || !existsSync(checksumManifest)) {
+    throw new Error(`--from-dir requires ${programBinName(layout.platform)}, version.txt, and SHA256SUMS`);
+  }
+  const version = readFileSync(versionFile, "utf8").trim();
+  if (!/^[A-Za-z0-9._+-]+$/.test(version)) throw new Error(`--from-dir version.txt is invalid: '${version}'`);
+  const checksum = createHash("sha256").update(readFileSync(artifact)).digest("hex");
+  const lines = readFileSync(checksumManifest, "utf8").split(/\r?\n/);
+  const expected = lines
+    .map((line) => line.trim().split(/\s+/))
+    .find((parts) => parts[parts.length - 1] === programBinName(layout.platform))?.[0];
+  if (!expected) throw new Error(`--from-dir SHA256SUMS has no entry for ${programBinName(layout.platform)}`);
+  if (expected.toLowerCase() !== checksum) {
+    throw new Error(`--from-dir checksum mismatch for ${programBinName(layout.platform)}`);
+  }
+  return {
+    version,
+    source: artifact,
+    target: join(versionsDir(layout), version, programBinName(layout.platform)),
+    checksumManifest,
+    checksum,
+    currentLink: currentLink(layout),
+  };
+}
+
+/** Copy/verify a binary and atomically switch the `current` symlink. */
+export function activateBinary(
+  layout: InstallLayout,
+  binary: NonNullable<InstallPlan["binary"]>,
+): { currentVersion: string; previousVersion?: string; written: string[] } {
+  const written: string[] = [];
+  const actual = createHash("sha256").update(readFileSync(binary.source)).digest("hex");
+  if (actual !== binary.checksum) throw new Error("binary checksum changed after planning");
+  mkdirSync(join(versionsDir(layout), binary.version), { recursive: true, mode: 0o755 });
+  copyFileSync(binary.source, binary.target);
+  chmodSync(binary.target, 0o755);
+  written.push(binary.target);
+  let previousVersion: string | undefined;
+  if (existsSync(binary.currentLink)) {
+    try {
+      if (lstatSync(binary.currentLink).isSymbolicLink()) {
+        previousVersion = readlinkSync(binary.currentLink).split(/[\/]/).filter(Boolean).pop();
+      }
+    } catch { /* best-effort previous pointer */ }
+  }
+  const tmpLink = `${binary.currentLink}.tmp-${Date.now()}`;
+  try { rmSync(tmpLink, { force: true }); } catch { /* ignore */ }
+  symlinkSync(join("versions", binary.version), tmpLink, "dir");
+  renameSync(tmpLink, binary.currentLink);
+  written.push(binary.currentLink);
+  return { currentVersion: binary.version, ...(previousVersion ? { previousVersion } : {}), written };
+}
+
 /** Build a read-only install plan. */
 export function buildInstallPlan(options: BuildInstallPlanOptions): InstallPlan {
   const exists = options.exists ?? existsSync;
@@ -155,11 +244,20 @@ export function buildInstallPlan(options: BuildInstallPlanOptions): InstallPlan 
   });
   const envFileExists = exists(layout.envFile);
 
+  let binary: InstallPlan["binary"];
+  if (options.fromDir) binary = readBinaryArtifact(layout, options.fromDir);
+
   const actions: InstallAction[] = [
     { kind: "create-dir", path: layout.configDir, description: `create config dir ${layout.configDir}` },
     { kind: "create-dir", path: layout.stateDir, description: `create state dir ${layout.stateDir}` },
     { kind: "create-dir", path: layout.cacheDir, description: `create cache dir ${layout.cacheDir}` },
   ];
+  if (binary) {
+    actions.push(
+      { kind: "write-file", path: binary.target, description: `install binary ${binary.target} (v${binary.version})` },
+      { kind: "write-file", path: binary.currentLink, description: `switch ${binary.currentLink} -> versions/${binary.version}` },
+    );
+  }
   if (!exists(layout.programDir)) {
     actions.push({
       kind: "warn",
@@ -207,6 +305,7 @@ export function buildInstallPlan(options: BuildInstallPlanOptions): InstallPlan 
       envFileExists,
       manifestPath: installManifestPath(layout),
     },
+    ...(binary ? { binary } : {}),
   };
 }
 
@@ -244,12 +343,23 @@ export function applyInstallPlan(plan: InstallPlan, options: ApplyInstallOptions
     written.push(plan.layout.envFile);
   }
 
+  let currentVersion: string | undefined;
+  let previousVersion: string | undefined;
+  if (plan.binary) {
+    const activated = activateBinary(plan.layout, plan.binary);
+    currentVersion = activated.currentVersion;
+    previousVersion = activated.previousVersion;
+    written.push(...activated.written);
+  }
+
   const manifest = {
     schemaVersion: 1,
     scope: plan.scope,
     version: plan.version,
     runtime: "embedded",
     platform: plan.platform,
+    ...(currentVersion ? { currentVersion } : {}),
+    ...(previousVersion ? { previousVersion } : {}),
     paths: {
       programDir: plan.layout.programDir,
       configDir: plan.layout.configDir,

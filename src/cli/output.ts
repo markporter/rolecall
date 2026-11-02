@@ -289,6 +289,21 @@ function formatHuman(data: CliResult): string {
       }
       break;
     }
+    case "update": {
+      if (data.check) {
+        lines.push(`Current  : ${data.check.currentVersion ?? "unknown"}`);
+        lines.push(`Candidate: ${data.check.candidateVersion ?? "unknown"}`);
+        lines.push(`Update   : ${data.check.updateAvailable ? "available" : "not available"}`);
+        for (const warning of data.check.warnings) lines.push(`  ! ${warning}`);
+        break;
+      }
+      const p = data.plan;
+      lines.push(`Update   : ${p?.fromVersion ?? "unknown"} -> ${p?.toVersion ?? "unknown"}`);
+      lines.push(data.applied ? "Applied  : yes" : "Applied  : no (dry-run; pass --yes to apply)");
+      for (const action of p?.actions ?? []) lines.push(`  - ${action}`);
+      for (const written of data.written) lines.push(`  wrote: ${written}`);
+      break;
+    }
     case "uninstall": {
       const p = data.plan;
       lines.push(`Uninstall: ${p.scope}${p.purge ? " (purge)" : ""}`);

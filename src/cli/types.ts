@@ -71,6 +71,12 @@ export interface GlobalFlags {
   stateDir?: string;
   /** --purge: remove config/state/cache on uninstall. */
   purge?: boolean;
+  /** --from-dir: local artifact directory for install/update. */
+  fromDir?: string;
+  /** --rollback: switch back to the previous version. */
+  rollback?: boolean;
+  /** --no-restart: do not restart the service after an update. */
+  noRestart?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -259,6 +265,18 @@ export interface UninstallResult {
   service: import("../install/service").RunServiceResult["results"];
 }
 
+/** Result of `rolecall update`. */
+export interface UpdateResult {
+  command: "update";
+  check?: import("../install/update").UpdateCheck;
+  plan?: import("../install/update").UpdatePlan;
+  applied: boolean;
+  fromVersion?: string;
+  toVersion?: string;
+  written: string[];
+  service: import("../install/service").RunServiceResult["results"];
+}
+
 export interface DoctorResult {
   command: "doctor";
   isolation: import("../isolation/types").IsolationProbe;
@@ -293,7 +311,8 @@ export type CliResult =
   | DoctorResult
   | InstallResult
   | ServiceResult
-  | UninstallResult;
+  | UninstallResult
+  | UpdateResult;
 
 // ---------------------------------------------------------------------------
 // Error class — `usage: true` => exit code 2 (unknown subcommand / bad args);

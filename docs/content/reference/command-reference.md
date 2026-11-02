@@ -45,3 +45,7 @@ The handler lives in `src/cli/commands/docs.ts` and returns a `DocsModulesResult
 ### uninstall
 
 `rolecall uninstall` plans or applies the ADR 0023 reverse of install: stop/disable the service, remove the manifest and unit, and keep config/state unless `--purge`. It defaults to a dry-run; `--yes` applies. See [/reference/install-command#uninstall](/reference/install-command#uninstall).
+
+### update
+
+`rolecall update --check [--from-dir DIR]` reports the installed and candidate versions. `rolecall update --from-dir DIR` stages a checksummed binary under `versions/<version>`, switches the `current` symlink, updates the manifest, and restarts the service unless `--no-restart`. `--rollback` returns to the recorded previous version. See [/reference/install-command#update-and-rollback](/reference/install-command#update-and-rollback).

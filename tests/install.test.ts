@@ -1,5 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, rmSync, statSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { readlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { resolveInstallLayout } from "../src/install/layout";
@@ -119,4 +121,47 @@ test("system-scope apply requires root", async () => {
     configDir: "/tmp/rolecall-system-test/config",
     stateDir: "/tmp/rolecall-system-test/state",
   }), [])).rejects.toThrow(/requires root/);
+});
+
+test("install --from-dir stages a checksummed version and switches current", () => {
+  const dir = tmp();
+  const artifact = join(dir, "rolecall");
+  const version = "9.9.9";
+  writeFileSync(artifact, "#!/bin/sh\necho rolecall " + version + "\n", { mode: 0o755 });
+  writeFileSync(join(dir, "version.txt"), version + "\n");
+  const digest = createHash("sha256").update(readFileSync(artifact)).digest("hex");
+  writeFileSync(join(dir, "SHA256SUMS"), `${digest}  rolecall\n`);
+  const layout = resolveInstallLayout({
+    scope: "user",
+    platform: "linux",
+    home: dir,
+    prefix: join(dir, "lib"),
+    configDir: join(dir, "config"),
+    stateDir: join(dir, "state"),
+  });
+  const plan = buildInstallPlan({ layout, service: false, isolationBackend: "none", fromDir: dir });
+  expect(plan.binary?.version).toBe(version);
+  applyInstallPlan(plan, { dryRun: false });
+  const target = join(layout.programDir, "versions", version, "rolecall");
+  expect(existsSync(target)).toBe(true);
+  expect(statSync(target).mode & 0o111).not.toBe(0);
+  expect(readlinkSync(join(layout.programDir, "current"))).toBe(join("versions", version));
+  const manifest = JSON.parse(readFileSync(join(layout.configDir, "install.json"), "utf8"));
+  expect(manifest.currentVersion).toBe(version);
+});
+
+test("install --from-dir rejects a checksum mismatch", () => {
+  const dir = tmp();
+  writeFileSync(join(dir, "rolecall"), "#!/bin/sh\n", { mode: 0o755 });
+  writeFileSync(join(dir, "version.txt"), "1.0.0\n");
+  writeFileSync(join(dir, "SHA256SUMS"), "deadbeef  rolecall\n");
+  const layout = resolveInstallLayout({
+    scope: "user",
+    platform: "linux",
+    home: dir,
+    prefix: join(dir, "lib"),
+    configDir: join(dir, "config"),
+    stateDir: join(dir, "state"),
+  });
+  expect(() => buildInstallPlan({ layout, service: false, isolationBackend: "none", fromDir: dir })).toThrow(/checksum mismatch/);
 });
