@@ -196,14 +196,22 @@ Decision: classify templates explicitly instead of treating "template" as safe.
   own-property access.
 - **Jinja compatibility (code-capable, sandboxed by default, no per-template approval):**
   `engine: jinja` (Nunjucks) renders only in the hidden `__render-template` worker. It is
-  allowed without `templates.allow_code`; the isolation backend is the control. If no
+  allowed without `templates.allow_restricted_code`; the isolation backend is the control. If no
   backend exists, it fails closed with guidance unless the explicit unsafe override below.
 - **Code-capable (untrusted, denied by default):** Eta/EJS `<% %>` or `<%= %>`,
   `$template`, `engine: eta|ejs`, and project `$call` helpers. These are the template
   equivalent of `command`/`shell` and follow the same rule: **use a data template or a
-  module first; allow code explicitly if you must.** `templates.allow_code` /
-  `templates.allow_helpers` gate these; they do not gate `engine: jinja`.
-- **Approval:** code templates and project helpers are operator-approved per project (a
+  module first; allow code explicitly if you must.** `templates.allow_restricted_code` /
+  `templates.allow_restricted_helpers` gate these; they do not gate `engine: jinja`.
+- **What “restricted code” means:** executable code templates and helper modules — Eta/EJS
+  `<% %>`/`<%= %>`, `$template`, and `$call` helpers — that are permitted only inside the
+  sandbox worker. “Restricted” describes the execution envelope, not a claim that the code
+  is safe: no project filesystem, no network, no inherited environment, no `process`/
+  `require`/`globalThis`/`Bun`, minimal data-only context, and timeout/memory/output caps.
+  Nunjucks/Jinja is a bounded template language (fixed statement grammar + registered
+  filters/tests), not “restricted code” in this policy sense; it is always sandboxed and
+  does not need per-project approval.
+- **Approval:** restricted code and project helpers are operator-approved per project (a
   project may *request* them but cannot self-approve):
 
 ```yaml
@@ -211,8 +219,8 @@ version: 1
 projects:
   /home/me/infra:
     templates:
-      allow_code: false
-      allow_helpers: false
+      allow_restricted_code: false
+      allow_restricted_helpers: false
 ```
 
 - **Sandboxed render:** every `engine: jinja` template and every approved code template
@@ -241,8 +249,8 @@ projects:
 
 Errors point at the safe path: "`engine: jinja` requires a working isolation backend.
 Install bubblewrap (Linux) or Docker, or use `--isolation none --allow-unsafe-template-code`
-as a warned last resort. Eta/EJS/$template are code templates: approve them in
-`isolation.yaml` and run with isolation if you must. Helper `$call` modules are a separate
+as a warned last resort. Eta/EJS/$template are restricted code: approve them with
+`templates.allow_restricted_code` in `isolation.yaml` and run with isolation if you must. Helper `$call` modules are a separate
 approval."
 
 ### 8. Default-on errors steer to modules, then the whitelist, then opt-out
@@ -352,7 +360,7 @@ separate decision (ADR 0026).
 - [ ] Commands: `isolation allow|revoke|list`, `allow-egress|revoke-egress|list --egress`, run flags `--isolation` / `--isolation-network` / `--mount` / `--allow-egress`
 - [ ] Module `network` capability metadata (`Module`/`ModuleSummary`); mark `command`/`shell`/`script`/`raw` untrusted; plugin egress approval
 - [ ] Default-on guidance: module-first errors, whitelist hint, `none`/`all` warnings and trace tags
-- [ ] Template policy: add `templates.allow_code` / `templates.allow_helpers` to `isolation.yaml` (operator-approved, project requests only), with structured refs allowed in-process; `engine: jinja` is sandboxed by default and is not gated by `allow_code`
+- [ ] Template policy: add `templates.allow_restricted_code` / `templates.allow_restricted_helpers` to `isolation.yaml` (operator-approved, project requests only), with structured refs allowed in-process; `engine: jinja` is sandboxed by default and is not gated by `allow_restricted_code`
 - [ ] Hidden `rolecall __render-template` worker: JSON stdin/stdout, runs under the isolation backend, no fs/net/inherited env/globals, timeout/memory/output caps, persistent per run; `engine: jinja` and approved code templates fail if no backend unless the explicit unsafe override is given
 - [ ] Harden in-process structured refs and remove the Eta `globalThis` fallback; block `process`/`require`/`Bun`/`globalThis` in code templates
 - [ ] Confine `copy` `template_file`/`src` paths to the project root (canonicalize, reject `..`/symlink escapes) or require a filesystem grant

@@ -81,6 +81,13 @@ Subcommand reality (from the HELP string):
    (ordinary args are lint-rejected); Jinja (Nunjucks + Ansible filters/tests)
    renders only through explicit `copy` content templates with `engine: jinja` or
    `.j2` files, in the ADR 0025 sandbox worker when isolation is enabled.
+   Template policy: Nunjucks/Jinja is a bounded language and is not approval-gated;
+   Eta/EJS, `$template`, and `$call` helpers are "restricted code" (executable code
+   allowed only in the sandbox worker) and are planned to be gated per project by
+   `templates.allow_restricted_code` / `templates.allow_restricted_helpers` in
+   `isolation.yaml` (not enforced yet). Discover via
+   `rolecall docs search "restricted code"` or `rolecall agent manifest`
+   (`policy.templates`).
    The Plugin SDK now ships `plugin register`/`list` (module plugins persist and
    auto-load at startup); the richer SDK authoring/test harness is still partial.
    At startup it also scans project-local plugins under `plugins/<type>/<namespace>/`

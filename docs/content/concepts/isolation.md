@@ -106,6 +106,53 @@ untrusted code; use the sandbox. Eta/EJS also render in the worker when isolatio
 enabled, with the same no-project/no-network boundary (system runtime files remain
 read-only).
 
+## Restricted code and approval
+
+“Restricted code” means executable code templates and helper modules — Eta/EJS
+`<% %>`/`<%= %>`, `$template`, and `$call` helpers — that may run **only inside the
+sandbox worker**. “Restricted” describes the execution envelope, not a claim that the
+template is safe: no project filesystem, no network, no inherited environment, no
+`process`/`require`/`globalThis`/`Bun`, minimal data-only context, and time/memory/output
+caps.
+
+Nunjucks/Jinja is a **bounded template language**, not restricted code in this policy
+sense. It has a fixed statement grammar (`if`/`for`/`macro`/`set`) and registered
+filters/tests; it is always sandboxed and does not need per-project approval.
+
+The planned operator policy is per-project and lives outside the project:
+
+```yaml
+# /etc/rolecall/isolation.yaml (system) or $XDG_CONFIG_HOME/rolecall/isolation.yaml (user)
+version: 1
+projects:
+  /home/me/infra:
+    templates:
+      allow_restricted_code: false
+      allow_restricted_helpers: false
+```
+
+- A project may request restricted code, but cannot approve itself by editing its repo.
+- `allow_restricted_code` gates Eta/EJS, `engine: eta|ejs`, and `$template`.
+- `allow_restricted_helpers` gates project `$call` helpers.
+- `engine: jinja` is not gated.
+- Approval is not a sandbox; approved code still renders in the worker.
+- With no backend, approved code fails closed unless the operator uses the explicit,
+  warned `--isolation none --allow-unsafe-template-code` last resort.
+
+**Current status:** the approval config and `--allow-unsafe-template-code` flag are not
+implemented. Today `copy` with `engine: eta|ejs|jinja` renders in the worker when isolation
+is enabled, while `$template` and `$call` still render in-process and are not gated. Treat
+`--isolation none` as unsafe for untrusted Eta/EJS or `$call` helpers.
+
+**For agents:** discover this policy from the CLI with:
+
+```sh
+rolecall docs search "restricted code"
+rolecall docs search "allow_restricted_code"
+rolecall docs search "isolation"
+rolecall agent manifest | jq '.policy.templates'
+```
+
 ## What is not covered
 
 - **Remote targets.** SSH and remote-network execution are not wrapped by local isolation;
@@ -119,7 +166,8 @@ read-only).
 - **Template-side I/O.** The worker does not receive `--mount` grants and is hardcoded
   network-off. Passing data in from a module is the supported pattern.
 - **Eta/EJS approval policy.** They now render in the worker when isolation is enabled, but
-  the per-project approval/config path (`templates.allow_code`) is not implemented yet.
+  the per-project approval/config path (`templates.allow_restricted_code` /
+  `templates.allow_restricted_helpers`) is not implemented yet.
 
 ## Failure behavior
 

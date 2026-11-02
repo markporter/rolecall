@@ -109,6 +109,15 @@ export interface McpManifest {
   transport: "http";
   version: string;
   endpoints: { manifest: { method: "GET"; path: "/mcp" } };
+  /** Non-secret policy notes for agents authoring playbooks/templates. */
+  policy: {
+    templates: {
+      bounded: string;
+      restrictedCode: string;
+      approval: string;
+      docs: string;
+    };
+  };
   tools: McpToolSpec[];
 }
 
@@ -263,6 +272,17 @@ export function buildManifest(): McpManifest {
     transport: "http",
     version: MANIFEST_VERSION,
     endpoints: { manifest: { method: "GET", path: "/mcp" } },
+    policy: {
+      templates: {
+        bounded:
+          "Nunjucks/Jinja is a bounded template language (fixed if/for/macro/set grammar plus registered filters/tests); it always renders in the isolation worker and needs no per-project approval.",
+        restrictedCode:
+          "Eta/EJS, $template, and $call helpers are restricted code: executable code allowed only inside the isolation worker. Copy with engine eta/ejs/jinja is sandboxed when isolation is enabled; $template/$call are not yet gated.",
+        approval:
+          "Planned per-project operator policy: templates.allow_restricted_code and templates.allow_restricted_helpers in isolation.yaml. Not enforced yet; do not use --isolation none for untrusted code templates.",
+        docs: "rolecall docs search 'restricted code'; rolecall docs search isolation",
+      },
+    },
     tools: TOOL_DEFS.map((def) => ({
       name: def.name,
       description: def.description,
