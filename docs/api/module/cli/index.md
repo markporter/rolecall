@@ -37,6 +37,7 @@ longname: module:cli
 - [`ServiceResult`](/module/cli/serviceresult)
 - [`TaskApplyOutcome`](/module/cli/taskapplyoutcome)
 - [`UninstallResult`](/module/cli/uninstallresult)
+- [`UpdateResult`](/module/cli/updateresult)
 - [`VarsListResult`](/module/cli/varslistresult)
 - [`VarsTraceResult`](/module/cli/varstraceresult)
 

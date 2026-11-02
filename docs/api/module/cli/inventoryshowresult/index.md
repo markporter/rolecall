@@ -15,7 +15,7 @@ longname: module:cli.InventoryShowResult
 }"
 />
 
-<SourceLink href="/source/src/cli/types-ts/#L134" label="types.ts:134" />
+<SourceLink href="/source/src/cli/types-ts/#L140" label="types.ts:140" />
 
 ---
 
@@ -23,16 +23,16 @@ longname: module:cli.InventoryShowResult
 
 <MemberHeading id="command" depth="3" name="command" sig="command: 'inventory show'" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L135" sourceLabel="types.ts:135" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L141" sourceLabel="types.ts:141" />
 
 <MemberHeading id="hosts" depth="3" name="hosts" sig="hosts: Record<string, Record<string, unknown>>" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L138" sourceLabel="types.ts:138" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L144" sourceLabel="types.ts:144" />
 
 <MemberHeading id="inventory" depth="3" name="inventory" sig="inventory: string" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L136" sourceLabel="types.ts:136" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L142" sourceLabel="types.ts:142" />
 
 <MemberHeading id="matchedhosts" depth="3" name="matchedHosts" sig="matchedHosts: string[]" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L137" sourceLabel="types.ts:137" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L143" sourceLabel="types.ts:143" />

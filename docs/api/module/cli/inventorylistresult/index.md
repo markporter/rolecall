@@ -14,7 +14,7 @@ longname: module:cli.InventoryListResult
 }"
 />
 
-<SourceLink href="/source/src/cli/types-ts/#L141" label="types.ts:141" />
+<SourceLink href="/source/src/cli/types-ts/#L147" label="types.ts:147" />
 
 ---
 
@@ -22,12 +22,12 @@ longname: module:cli.InventoryListResult
 
 <MemberHeading id="command" depth="3" name="command" sig="command: 'inventory list'" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L142" sourceLabel="types.ts:142" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L148" sourceLabel="types.ts:148" />
 
 <MemberHeading id="groups" depth="3" name="groups" sig="groups: string[]" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L144" sourceLabel="types.ts:144" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L150" sourceLabel="types.ts:150" />
 
 <MemberHeading id="inventory" depth="3" name="inventory" sig="inventory: string" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L143" sourceLabel="types.ts:143" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L149" sourceLabel="types.ts:149" />

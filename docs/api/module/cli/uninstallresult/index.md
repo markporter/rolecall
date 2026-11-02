@@ -18,7 +18,7 @@ description: Result of rolecall uninstall .
 }"
 />
 
-<SourceLink href="/source/src/cli/types-ts/#L253" label="types.ts:253" />
+<SourceLink href="/source/src/cli/types-ts/#L259" label="types.ts:259" />
 
 Result of `rolecall uninstall`.
 
@@ -28,24 +28,24 @@ Result of `rolecall uninstall`.
 
 <MemberHeading id="applied" depth="3" name="applied" sig="applied: boolean" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L256" sourceLabel="types.ts:256" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L262" sourceLabel="types.ts:262" />
 
 <MemberHeading id="command" depth="3" name="command" sig="command: 'uninstall'" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L254" sourceLabel="types.ts:254" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L260" sourceLabel="types.ts:260" />
 
 <MemberHeading id="kept" depth="3" name="kept" sig="kept: string[]" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L258" sourceLabel="types.ts:258" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L264" sourceLabel="types.ts:264" />
 
 <MemberHeading id="plan" depth="3" name="plan" sig="plan: UninstallPlan" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L255" sourceLabel="types.ts:255" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L261" sourceLabel="types.ts:261" />
 
 <MemberHeading id="removed" depth="3" name="removed" sig="removed: string[]" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L257" sourceLabel="types.ts:257" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L263" sourceLabel="types.ts:263" />
 
 <MemberHeading id="service" depth="3" name="service" sig="service: { command: ServiceCommand; status: number | null; stderr?: string; stdout?: string }[]" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L259" sourceLabel="types.ts:259" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L265" sourceLabel="types.ts:265" />

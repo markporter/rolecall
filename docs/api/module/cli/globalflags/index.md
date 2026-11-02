@@ -17,18 +17,21 @@ longname: module:cli.GlobalFlags
 	extraVars?: string;
 	force: boolean;
 	forks?: number;
+	fromDir?: string;
 	inventory?: string;
 	isolation?: IsolationBackendName;
 	isolationNetwork?: 'module' | 'all' | 'none';
 	limit?: string;
 	mounts?: IsolationMount[];
 	nonInteractive?: boolean;
+	noRestart?: boolean;
 	noService?: boolean;
 	output: string;
 	prefix?: string;
 	profile: boolean;
 	purge?: boolean;
 	resume?: string;
+	rollback?: boolean;
 	skipTags?: string;
 	stateDir?: string;
 	system?: boolean;
@@ -99,6 +102,12 @@ Accepted flag; documented as compute-only (executor pending, Todo 12).
 
 Concurrency fan-out (--forks N). Parsed to a number by the dispatcher.
 
+<MemberHeading id="fromdir" depth="3" name="fromDir" sig="fromDir: string" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L75" sourceLabel="types.ts:75" />
+
+\--from-dir: local artifact directory for install/update.
+
 <MemberHeading id="inventory" depth="3" name="inventory" sig="inventory: string" />
 
 <MemberMeta sourceHref="/source/src/cli/types-ts/#L31" sourceLabel="types.ts:31" />
@@ -135,6 +144,12 @@ Explicit filesystem grants (repeatable --mount).
 
 \--non-interactive: never prompt.
 
+<MemberHeading id="norestart" depth="3" name="noRestart" sig="noRestart: boolean" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L79" sourceLabel="types.ts:79" />
+
+\--no-restart: do not restart the service after an update.
+
 <MemberHeading id="noservice" depth="3" name="noService" sig="noService: boolean" />
 
 <MemberMeta sourceHref="/source/src/cli/types-ts/#L59" sourceLabel="types.ts:59" />
@@ -170,6 +185,12 @@ Print a per-host/per-task performance profile at the end of the run (Todo 25).
 <MemberMeta sourceHref="/source/src/cli/types-ts/#L37" sourceLabel="types.ts:37" />
 
 Resume a prior run from a checkpoint: `<run_id>:<checkpoint>` (Todo 26).
+
+<MemberHeading id="rollback" depth="3" name="rollback" sig="rollback: boolean" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L77" sourceLabel="types.ts:77" />
+
+\--rollback: switch back to the previous version.
 
 <MemberHeading id="skiptags" depth="3" name="skipTags" sig="skipTags: string" />
 

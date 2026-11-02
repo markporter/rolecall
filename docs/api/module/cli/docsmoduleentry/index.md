@@ -17,7 +17,7 @@ longname: module:cli.DocsModuleEntry
 }"
 />
 
-<SourceLink href="/source/src/cli/types-ts/#L198" label="types.ts:198" />
+<SourceLink href="/source/src/cli/types-ts/#L204" label="types.ts:204" />
 
 ---
 
@@ -25,24 +25,24 @@ longname: module:cli.DocsModuleEntry
 
 <MemberHeading id="args" depth="3" name="args" sig="args: Record<string, { description: string; required: boolean; type: string }>" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L203" sourceLabel="types.ts:203" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L209" sourceLabel="types.ts:209" />
 
 <MemberHeading id="description" depth="3" name="description" sig="description: string" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L200" sourceLabel="types.ts:200" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L206" sourceLabel="types.ts:206" />
 
 <MemberHeading id="examples" depth="3" name="examples" sig="examples: string[]" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L204" sourceLabel="types.ts:204" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L210" sourceLabel="types.ts:210" />
 
 <MemberHeading id="idempotent" depth="3" name="idempotent" sig="idempotent: boolean" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L201" sourceLabel="types.ts:201" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L207" sourceLabel="types.ts:207" />
 
 <MemberHeading id="name" depth="3" name="name" sig="name: string" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L199" sourceLabel="types.ts:199" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L205" sourceLabel="types.ts:205" />
 
 <MemberHeading id="source" depth="3" name="source" sig="source: string" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L202" sourceLabel="types.ts:202" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L208" sourceLabel="types.ts:208" />
