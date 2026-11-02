@@ -106,6 +106,7 @@ test("GET /mcp returns the 8 mapped tool specs with JSON-schema inputSchema", as
   const res = await callRaw(handle.baseUrl + "/mcp", { method: "GET" });
   expect(res.status).toBe(200);
   expect(res.json.transport).toBe("http");
+  expect(res.json.policy.templates.approval).toContain("allow_restricted_code");
   expect(Array.isArray(res.json.tools)).toBe(true);
   const names = res.json.tools.map((t: any) => t.name).sort();
   expect(names).toEqual([...EXPECTED_TOOLS].sort());
