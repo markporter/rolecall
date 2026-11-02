@@ -211,15 +211,25 @@ Decision: classify templates explicitly instead of treating "template" as safe.
   Nunjucks/Jinja is a bounded template language (fixed statement grammar + registered
   filters/tests), not “restricted code” in this policy sense; it is always sandboxed and
   does not need per-project approval.
+- **Project identity is a VFS URI.** Approval and project-scoped config key on the
+  canonical VFS URI, never a bare filesystem path: local projects use
+  `file:///home/me/infra`; future transports use their own scheme (for example a pinned
+  `git+https://…@<commit>` or `s3://…`). The approval layer canonicalizes symlinks, `..`,
+  case, and percent-encoding before lookup, and a mutable remote ref must not inherit
+  approval meant for a different resolved commit.
 - **Approval:** restricted code and project helpers are operator-approved per project (a
   project may *request* them but cannot self-approve):
 
 ```yaml
 version: 1
 projects:
-  /home/me/infra:
+  "file:///home/me/infra":
     templates:
       allow_restricted_code: false
+      allow_restricted_helpers: false
+  "git+https://git.example.com/infra.git@9f3c2a1":
+    templates:
+      allow_restricted_code: true
       allow_restricted_helpers: false
 ```
 
