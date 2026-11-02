@@ -8,7 +8,7 @@ longname: module:cli.getVersion
 
 <Signature code="getVersion(): Promise<string>" />
 
-<SourceLink href="/source/src/cli/index-ts/#L160" label="index.ts:160" />
+<SourceLink href="/source/src/cli/index-ts/#L162" label="index.ts:162" />
 
 **Modifiers:** `async`
 

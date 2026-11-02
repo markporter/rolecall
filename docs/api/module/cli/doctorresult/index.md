@@ -16,7 +16,7 @@ description: "Result of rolecall doctor : local isolation backend discovery."
 }"
 />
 
-<SourceLink href="/source/src/cli/types-ts/#L213" label="types.ts:213" />
+<SourceLink href="/source/src/cli/types-ts/#L215" label="types.ts:215" />
 
 Result of `rolecall doctor`: local isolation backend discovery.
 
@@ -26,11 +26,11 @@ Result of `rolecall doctor`: local isolation backend discovery.
 
 <MemberHeading id="command" depth="3" name="command" sig="command: 'doctor'" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L214" sourceLabel="types.ts:214" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L216" sourceLabel="types.ts:216" />
 
 <MemberHeading id="install" depth="3" name="install" sig="install: { binDir: string; cacheDir: string; configDir: string; envFile: string; envFileExists: boolean; platform: string; programDir: string; scope: InstallScope; stateDir: string }" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L217" sourceLabel="types.ts:217" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L219" sourceLabel="types.ts:219" />
 
 ADR 0023 install layout that subsequent commands would use.
 
@@ -48,8 +48,8 @@ ADR 0023 install layout that subsequent commands would use.
 
 <MemberHeading id="isolation" depth="3" name="isolation" sig="isolation: IsolationProbe" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L215" sourceLabel="types.ts:215" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L217" sourceLabel="types.ts:217" />
 
 <MemberHeading id="note" depth="3" name="note" sig="note: string" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L228" sourceLabel="types.ts:228" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L230" sourceLabel="types.ts:230" />

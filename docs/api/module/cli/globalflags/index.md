@@ -9,6 +9,7 @@ longname: module:cli.GlobalFlags
 <Signature
   code="interface GlobalFlags {
 	allowEgress?: EgressRule[];
+	allowUnsafeTemplateCode?: boolean;
 	check: boolean;
 	diff: boolean;
 	extraVars?: string;
@@ -39,6 +40,12 @@ longname: module:cli.GlobalFlags
 <MemberMeta sourceHref="/source/src/cli/types-ts/#L51" sourceLabel="types.ts:51" />
 
 Ephemeral destination whitelist entries (repeatable --allow-egress).
+
+<MemberHeading id="allowunsafetemplatecode" depth="3" name="allowUnsafeTemplateCode" sig="allowUnsafeTemplateCode: boolean" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L53" sourceLabel="types.ts:53" />
+
+Explicit unsafe override for restricted code with --isolation none.
 
 <MemberHeading id="check" depth="3" name="check" sig="check: boolean" />
 

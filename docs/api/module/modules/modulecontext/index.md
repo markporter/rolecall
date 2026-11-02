@@ -10,6 +10,8 @@ description: Per-invocation context handed to a module's run (ADR 0013). host st
 <Signature
   code="interface ModuleContext {
 	addHost?: (name: string, groups: string[], vars: Record<string, unknown>) => void;
+	allowUnsafeTemplateCode?: boolean;
+	approvals?: TemplateCodePolicy;
 	args: Record<string, unknown>;
 	become?: boolean;
 	become_user?: string;
@@ -23,6 +25,7 @@ description: Per-invocation context handed to a module's run (ADR 0013). host st
 	loop?: { index?: number; item?: unknown };
 	no_log?: boolean;
 	playbookDir?: string;
+	projectUri?: string;
 	reg: Record<string, unknown>;
 	resetConnection?: () => Promise<void>;
 	roleDir?: string;
@@ -47,6 +50,18 @@ Per-invocation context handed to a module's `run` (ADR 0013). `host` stays a dir
 <MemberMeta badges="readonly" sourceHref="/source/src/executor/module-ts/#L56" sourceLabel="module.ts:56" />
 
 When set, register a host into the run-level dynamic inventory (Ansible `add_host` alternate).
+
+<MemberHeading id="allowunsafetemplatecode" depth="3" name="allowUnsafeTemplateCode" sig="allowUnsafeTemplateCode: boolean" />
+
+<MemberMeta badges="readonly" sourceHref="/source/src/executor/module-ts/#L66" sourceLabel="module.ts:66" />
+
+Explicit unsafe override for restricted code with --isolation none.
+
+<MemberHeading id="approvals" depth="3" name="approvals" sig="approvals: TemplateCodePolicy" />
+
+<MemberMeta badges="readonly" sourceHref="/source/src/executor/module-ts/#L64" sourceLabel="module.ts:64" />
+
+Restricted-code approval policy for $template/$call/engine eta|ejs.
 
 <MemberHeading id="args" depth="3" name="args" sig="args: Record<string, unknown>" />
 
@@ -120,6 +135,12 @@ When true, suppress logging of task args / stdout / stderr for this task.
 <MemberMeta badges="readonly" sourceHref="/source/src/executor/module-ts/#L44" sourceLabel="module.ts:44" />
 
 Absolute directory of the playbook file being executed; enables playbook-relative path resolution.
+
+<MemberHeading id="projecturi" depth="3" name="projectUri" sig="projectUri: string" />
+
+<MemberMeta badges="readonly" sourceHref="/source/src/executor/module-ts/#L62" sourceLabel="module.ts:62" />
+
+Canonical VFS URI for the project (approval key).
 
 <MemberHeading id="reg" depth="3" name="reg" sig="reg: Record<string, unknown>" />
 

@@ -15,7 +15,7 @@ longname: module:cli.ApplyTotals
 }"
 />
 
-<SourceLink href="/source/src/cli/types-ts/#L78" label="types.ts:78" />
+<SourceLink href="/source/src/cli/types-ts/#L80" label="types.ts:80" />
 
 ---
 
@@ -23,16 +23,16 @@ longname: module:cli.ApplyTotals
 
 <MemberHeading id="changed" depth="3" name="changed" sig="changed: number" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L80" sourceLabel="types.ts:80" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L82" sourceLabel="types.ts:82" />
 
 <MemberHeading id="failed" depth="3" name="failed" sig="failed: number" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L81" sourceLabel="types.ts:81" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L83" sourceLabel="types.ts:83" />
 
 <MemberHeading id="ok" depth="3" name="ok" sig="ok: number" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L79" sourceLabel="types.ts:79" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L81" sourceLabel="types.ts:81" />
 
 <MemberHeading id="skipped" depth="3" name="skipped" sig="skipped: number" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L82" sourceLabel="types.ts:82" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L84" sourceLabel="types.ts:84" />

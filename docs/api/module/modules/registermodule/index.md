@@ -9,7 +9,7 @@ description: Register (or overwrite) a module under its name. If the module decl
 
 <Signature code="registerModule(mod: Module): void" />
 
-<SourceLink href="/source/src/executor/module-ts/#L132" label="module.ts:132" />
+<SourceLink href="/source/src/executor/module-ts/#L138" label="module.ts:138" />
 
 Register (or overwrite) a module under its name. If the module declares [Module.facts](/module/modules/module#facts) and/or [Module.factGatherer](/module/modules/module#factgatherer), it is also registered as a fact plugin so its facts are gathered by the engine and validate under `var_strict`.
 
