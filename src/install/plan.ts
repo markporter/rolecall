@@ -63,7 +63,7 @@ export function serviceManagerFor(platform: string, enabled: boolean): ServiceMa
   return "none";
 }
 
-function serviceUnitPath(layout: InstallLayout, manager: ServiceManager): string | undefined {
+export function serviceUnitPath(layout: InstallLayout, manager: ServiceManager): string | undefined {
   if (manager === "systemd") {
     return layout.scope === "system"
       ? "/etc/systemd/system/rolecall.service"

@@ -239,6 +239,14 @@ export interface InstallResult {
   warnings: string[];
 }
 
+/** Result of `rolecall service`. */
+export interface ServiceResult {
+  command: "service";
+  plan: import("../install/service").ServicePlan;
+  applied: boolean;
+  results: import("../install/service").RunServiceResult["results"];
+}
+
 export interface DoctorResult {
   command: "doctor";
   isolation: import("../isolation/types").IsolationProbe;
@@ -271,7 +279,8 @@ export type CliResult =
   | VarsListResult
   | VarsTraceResult
   | DoctorResult
-  | InstallResult;
+  | InstallResult
+  | ServiceResult;
 
 // ---------------------------------------------------------------------------
 // Error class — `usage: true` => exit code 2 (unknown subcommand / bad args);

@@ -43,7 +43,16 @@ the `rolecall` binary there; the plan warns when it is missing.
 | macOS | launchd | `/Library/LaunchDaemons/com.rolecall.serve.plist` (system) or `<configDir>/LaunchAgents/...` (user) |
 | Windows | SCM | planned; no unit file |
 
-Enabling/starting the unit is a later `rolecall service` slice.
+## Service lifecycle
+
+```sh
+rolecall service install|uninstall|start|stop|restart|status [--system|--user] [--dry-run|--yes]
+```
+
+`install` writes the unit/manifest via the install helper before enabling it.
+Other operations plan by default; pass `--yes` to execute the printed
+`systemctl`/`launchctl`/`sc.exe` commands. `status` is read-only and always runs.
+System-scope changes require root/Administrator.
 
 ## Not yet implemented
 
