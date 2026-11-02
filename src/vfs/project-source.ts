@@ -37,4 +37,12 @@ export interface ProjectSource {
 
   /** Absolute filesystem root this source serves from. */
   readonly root: string;
+
+  /**
+   * VFS URI for this project source. Local disk uses `file:///abs/path`; future
+   * git/S3 sources use their own scheme. Approval policies and project-scoped
+   * config key on this URI, never on a bare path. The approval layer is
+   * responsible for canonicalizing symlinks before it uses the key.
+   */
+  readonly uri: string;
 }

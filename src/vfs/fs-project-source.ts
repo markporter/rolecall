@@ -6,6 +6,7 @@
  */
 import { readdirSync, statSync, readFileSync } from "node:fs";
 import { isAbsolute, join, normalize, relative, sep, basename } from "node:path";
+import { pathToFileURL } from "node:url";
 import type { ProjectSource } from "./project-source.js";
 
 /** Translate a small glob subset into an anchored RegExp (`*`,`**`,`?`; dots escaped). */
@@ -40,6 +41,8 @@ function looksRelative(spec: string): boolean {
 export class FsProjectSource implements ProjectSource {
   /** Absolute filesystem root this source serves from. Defaults to the current working directory. */
   public readonly root: string;
+  /** `file://` URI for the local project root. */
+  public readonly uri: string;
 
   /**
    * @param root Directory backing this source. Relative roots resolve against `process.cwd()`.
@@ -48,6 +51,7 @@ export class FsProjectSource implements ProjectSource {
    */
   constructor(root: string = process.cwd()) {
     this.root = isAbsolute(root) ? normalize(root) : join(process.cwd(), root);
+    this.uri = pathToFileURL(this.root).href;
   }
 
   private abs(relPath: string): string {

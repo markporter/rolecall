@@ -477,8 +477,10 @@ The install surfaces still own the prerequisites and defaults:
 - **Remote targets:** installation does not install anything on targets. Remote confinement
   is opt-in and may require `bwrap` or Docker on the target (ADR 0026); the control-node
   installer does not assume it.
-- **Config location:** isolation grants and egress entries live in the per-project
-  `isolation.yaml` under the config dir defined in §1–§2.
+- **Config location:** isolation grants, egress entries, and restricted-code approvals live
+  in `isolation.yaml` under the config dir defined in §1–§2. Project keys are canonical VFS
+  URIs (`file:///abs/path` for local, future schemes for git/S3) so approval follows the
+  source transport, not a bare folder path.
 
 ### 12. Relationship to ADR 0015
 

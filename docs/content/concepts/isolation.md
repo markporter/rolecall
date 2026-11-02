@@ -125,12 +125,13 @@ The planned operator policy is per-project and lives outside the project:
 # /etc/rolecall/isolation.yaml (system) or $XDG_CONFIG_HOME/rolecall/isolation.yaml (user)
 version: 1
 projects:
-  /home/me/infra:
+  "file:///home/me/infra":
     templates:
       allow_restricted_code: false
       allow_restricted_helpers: false
 ```
 
+- Project keys are **canonical VFS URIs** (`file:///home/me/infra`), not bare paths, so future git/S3 sources can use their own scheme. A mutable remote ref must not inherit approval for a different resolved commit.
 - A project may request restricted code, but cannot approve itself by editing its repo.
 - `allow_restricted_code` gates Eta/EJS, `engine: eta|ejs`, and `$template`.
 - `allow_restricted_helpers` gates project `$call` helpers.
