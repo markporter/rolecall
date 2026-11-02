@@ -8,7 +8,7 @@ longname: module:cli.main
 
 <Signature code="main(argv: string[]): Promise<number>" />
 
-<SourceLink href="/source/src/cli/index-ts/#L249" label="index.ts:249" />
+<SourceLink href="/source/src/cli/index-ts/#L250" label="index.ts:250" />
 
 **Modifiers:** `async`
 

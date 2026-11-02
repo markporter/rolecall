@@ -34,6 +34,7 @@ longname: module:cli
 - [`PluginRegisterResult`](/module/cli/pluginregisterresult)
 - [`RenderedTemplate`](/module/cli/renderedtemplate)
 - [`RunReplayResult`](/module/cli/runreplayresult)
+- [`ServiceResult`](/module/cli/serviceresult)
 - [`TaskApplyOutcome`](/module/cli/taskapplyoutcome)
 - [`VarsListResult`](/module/cli/varslistresult)
 - [`VarsTraceResult`](/module/cli/varstraceresult)

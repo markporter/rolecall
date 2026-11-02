@@ -6,6 +6,6 @@ longname: module:cli.CliResult
 
 # CliResult
 
-<Signature code="CliResult = PlaybookRunResult | FactsGatherResult | InventoryShowResult | InventoryListResult | PluginListResult | PluginRegisterResult | RunReplayResult | AgentManifestResult | DocsSearchResult | DocsModulesResult | VarsListResult | VarsTraceResult | DoctorResult | InstallResult" />
+<Signature code="CliResult = PlaybookRunResult | FactsGatherResult | InventoryShowResult | InventoryListResult | PluginListResult | PluginRegisterResult | RunReplayResult | AgentManifestResult | DocsSearchResult | DocsModulesResult | VarsListResult | VarsTraceResult | DoctorResult | InstallResult | ServiceResult" />
 
-<SourceLink href="/source/src/cli/types-ts/#L260" label="types.ts:260" />
+<SourceLink href="/source/src/cli/types-ts/#L268" label="types.ts:268" />

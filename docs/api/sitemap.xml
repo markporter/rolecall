@@ -109,6 +109,9 @@
     <loc>https://rolecall.example.com/module/cli/runvarscommand/</loc>
   </url>
   <url>
+    <loc>https://rolecall.example.com/module/cli/serviceresult/</loc>
+  </url>
+  <url>
     <loc>https://rolecall.example.com/module/cli/taskapplyoutcome/</loc>
   </url>
   <url>
