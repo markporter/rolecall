@@ -15,7 +15,7 @@ longname: module:cli.PluginEntryView
 }"
 />
 
-<SourceLink href="/source/src/cli/types-ts/#L128" label="types.ts:128" />
+<SourceLink href="/source/src/cli/types-ts/#L146" label="types.ts:146" />
 
 ---
 
@@ -23,16 +23,16 @@ longname: module:cli.PluginEntryView
 
 <MemberHeading id="name" depth="3" name="name" sig="name: string" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L129" sourceLabel="types.ts:129" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L147" sourceLabel="types.ts:147" />
 
 <MemberHeading id="path" depth="3" name="path" sig="path: string" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L132" sourceLabel="types.ts:132" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L150" sourceLabel="types.ts:150" />
 
 <MemberHeading id="source" depth="3" name="source" sig="source: 'inventory' | 'plugin'" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L131" sourceLabel="types.ts:131" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L149" sourceLabel="types.ts:149" />
 
 <MemberHeading id="type" depth="3" name="type" sig="type: 'module' | 'fact' | 'inventory'" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L130" sourceLabel="types.ts:130" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L148" sourceLabel="types.ts:148" />

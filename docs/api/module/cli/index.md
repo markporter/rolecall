@@ -24,6 +24,7 @@ longname: module:cli
 - [`DoctorResult`](/module/cli/doctorresult)
 - [`FactsGatherResult`](/module/cli/factsgatherresult)
 - [`GlobalFlags`](/module/cli/globalflags)
+- [`InstallResult`](/module/cli/installresult)
 - [`InventoryListResult`](/module/cli/inventorylistresult)
 - [`InventoryShowResult`](/module/cli/inventoryshowresult)
 - [`OutputPlugin`](/module/cli/outputplugin)

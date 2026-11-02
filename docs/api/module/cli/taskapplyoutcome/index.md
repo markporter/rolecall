@@ -20,7 +20,7 @@ longname: module:cli.TaskApplyOutcome
 }"
 />
 
-<SourceLink href="/source/src/cli/types-ts/#L59" label="types.ts:59" />
+<SourceLink href="/source/src/cli/types-ts/#L77" label="types.ts:77" />
 
 ---
 
@@ -28,38 +28,38 @@ longname: module:cli.TaskApplyOutcome
 
 <MemberHeading id="changed" depth="3" name="changed" sig="changed: boolean" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L63" sourceLabel="types.ts:63" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L81" sourceLabel="types.ts:81" />
 
 <MemberHeading id="failed" depth="3" name="failed" sig="failed: boolean" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L64" sourceLabel="types.ts:64" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L82" sourceLabel="types.ts:82" />
 
 <MemberHeading id="host" depth="3" name="host" sig="host: string" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L60" sourceLabel="types.ts:60" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L78" sourceLabel="types.ts:78" />
 
 <MemberHeading id="iterationdata" depth="3" name="iterationData" sig="iterationData: (Record<string, unknown> | undefined)[]" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L68" sourceLabel="types.ts:68" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L86" sourceLabel="types.ts:86" />
 
 Per-iteration module `data` (e.g. `{ idempotent: true }` for no-op applies); surface for idempotency visibility without a new status.
 
 <MemberHeading id="iterations" depth="3" name="iterations" sig="iterations: number" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L66" sourceLabel="types.ts:66" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L84" sourceLabel="types.ts:84" />
 
 <MemberHeading id="module" depth="3" name="module" sig="module: string" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L62" sourceLabel="types.ts:62" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L80" sourceLabel="types.ts:80" />
 
 <MemberHeading id="msg" depth="3" name="msg" sig="msg: string" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L69" sourceLabel="types.ts:69" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L87" sourceLabel="types.ts:87" />
 
 <MemberHeading id="skipped" depth="3" name="skipped" sig="skipped: boolean" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L65" sourceLabel="types.ts:65" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L83" sourceLabel="types.ts:83" />
 
 <MemberHeading id="task" depth="3" name="task" sig="task: string" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L61" sourceLabel="types.ts:61" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L79" sourceLabel="types.ts:79" />

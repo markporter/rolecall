@@ -11,7 +11,9 @@ longname: module:cli.GlobalFlags
 	allowEgress?: EgressRule[];
 	allowUnsafeTemplateCode?: boolean;
 	check: boolean;
+	configDir?: string;
 	diff: boolean;
+	dryRun?: boolean;
 	extraVars?: string;
 	force: boolean;
 	forks?: number;
@@ -20,12 +22,19 @@ longname: module:cli.GlobalFlags
 	isolationNetwork?: 'module' | 'all' | 'none';
 	limit?: string;
 	mounts?: IsolationMount[];
+	nonInteractive?: boolean;
+	noService?: boolean;
 	output: string;
+	prefix?: string;
 	profile: boolean;
 	resume?: string;
 	skipTags?: string;
+	stateDir?: string;
+	system?: boolean;
 	tags?: string;
 	trace: boolean;
+	user?: boolean;
+	yes?: boolean;
 }"
 />
 
@@ -53,11 +62,23 @@ Explicit unsafe override for restricted code with --isolation none.
 
 Accepted flag; documented as compute-only (executor pending, Todo 12).
 
+<MemberHeading id="configdir" depth="3" name="configDir" sig="configDir: string" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L69" sourceLabel="types.ts:69" />
+
+\--config-dir override.
+
 <MemberHeading id="diff" depth="3" name="diff" sig="diff: boolean" />
 
 <MemberMeta sourceHref="/source/src/cli/types-ts/#L25" sourceLabel="types.ts:25" />
 
 Accepted flag; documented as compute-only (executor pending, Todo 12).
+
+<MemberHeading id="dryrun" depth="3" name="dryRun" sig="dryRun: boolean" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L61" sourceLabel="types.ts:61" />
+
+\--dry-run: plan only.
 
 <MemberHeading id="extravars" depth="3" name="extraVars" sig="extraVars: string" />
 
@@ -107,11 +128,29 @@ Target pattern restricting hosts (single pattern; RoleCall-style).
 
 Explicit filesystem grants (repeatable --mount).
 
+<MemberHeading id="noninteractive" depth="3" name="nonInteractive" sig="nonInteractive: boolean" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L65" sourceLabel="types.ts:65" />
+
+\--non-interactive: never prompt.
+
+<MemberHeading id="noservice" depth="3" name="noService" sig="noService: boolean" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L59" sourceLabel="types.ts:59" />
+
+\--no-service: skip service unit generation.
+
 <MemberHeading id="output" depth="3" name="output" sig="output: string" />
 
 <MemberMeta sourceHref="/source/src/cli/types-ts/#L29" sourceLabel="types.ts:29" />
 
 Selected output plugin name (default "syslog").
+
+<MemberHeading id="prefix" depth="3" name="prefix" sig="prefix: string" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L67" sourceLabel="types.ts:67" />
+
+\--prefix: program directory override.
 
 <MemberHeading id="profile" depth="3" name="profile" sig="profile: boolean" />
 
@@ -131,6 +170,18 @@ Resume a prior run from a checkpoint: `<run_id>:<checkpoint>` (Todo 26).
 
 Raw `--skip-tags` string (comma-separated tag list); parsed into a filter by the playbook command.
 
+<MemberHeading id="statedir" depth="3" name="stateDir" sig="stateDir: string" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L71" sourceLabel="types.ts:71" />
+
+\--state-dir override.
+
+<MemberHeading id="system" depth="3" name="system" sig="system: boolean" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L55" sourceLabel="types.ts:55" />
+
+\--system install scope.
+
 <MemberHeading id="tags" depth="3" name="tags" sig="tags: string" />
 
 <MemberMeta sourceHref="/source/src/cli/types-ts/#L41" sourceLabel="types.ts:41" />
@@ -142,3 +193,15 @@ Raw `--tags` string (comma-separated tag list); parsed into a filter by the play
 <MemberMeta sourceHref="/source/src/cli/types-ts/#L33" sourceLabel="types.ts:33" />
 
 Emit + persist an execution-trace ledger for the run (Todo 25).
+
+<MemberHeading id="user" depth="3" name="user" sig="user: boolean" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L57" sourceLabel="types.ts:57" />
+
+\--user install scope.
+
+<MemberHeading id="yes" depth="3" name="yes" sig="yes: boolean" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L63" sourceLabel="types.ts:63" />
+
+\--yes: apply without prompting.

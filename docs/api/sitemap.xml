@@ -43,6 +43,9 @@
     <loc>https://rolecall.example.com/module/cli/globalflags/</loc>
   </url>
   <url>
+    <loc>https://rolecall.example.com/module/cli/installresult/</loc>
+  </url>
+  <url>
     <loc>https://rolecall.example.com/module/cli/inventorylistresult/</loc>
   </url>
   <url>
