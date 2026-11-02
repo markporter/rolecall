@@ -289,6 +289,19 @@ function formatHuman(data: CliResult): string {
       }
       break;
     }
+    case "service": {
+      const p = data.plan;
+      lines.push(`Service  : ${p.manager} ${p.operation}`);
+      lines.push(`Root     : ${p.requiresRoot ? "required" : "not required"}`);
+      lines.push(data.applied ? "Applied  : yes" : "Applied  : no (dry-run; pass --yes to apply)");
+      for (const action of p.actions) lines.push(`  - ${action}`);
+      for (const r of data.results) {
+        lines.push(`  $ ${r.command.file} ${r.command.args.join(" ")} -> ${r.status ?? "?"}`);
+        if (r.stdout?.trim()) lines.push(`    ${r.stdout.trim()}`);
+        if (r.stderr?.trim()) lines.push(`    ! ${r.stderr.trim()}`);
+      }
+      break;
+    }
     case "install": {
       const p = data.plan;
       lines.push(`Install  : ${p.scope} (${p.platform}) v${p.version}`);

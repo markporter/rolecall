@@ -34,6 +34,7 @@ import { runVarsCommand } from "./commands/vars";
 import { runDoctorCommand } from "./commands/doctor";
 import { runRenderTemplateWorker } from "./commands/render-template";
 import { runInstallCommand } from "./commands/install";
+import { runServiceCommand } from "./commands/service";
 import { parseMounts } from "./parse-mounts";
 import { parseEgressSpecs } from "../isolation/egress";
 import { CliError, type CliResult, type GlobalFlags } from "./types";
@@ -370,6 +371,9 @@ export async function main(argv: string[]): Promise<number> {
         break;
       case "install":
         result = await runInstallCommand(flags, rest);
+        break;
+      case "service":
+        result = await runServiceCommand(sub, rest, flags);
         break;
       case "docs":
         result = await runDocsCommand(sub, rest, flags);
