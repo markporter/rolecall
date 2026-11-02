@@ -6,7 +6,7 @@ RoleCall has three ways to inject dynamic content, in order of preference:
 
 1. **Structured refs** (`$var`, `$concat`, `$call`, `$if`, `$each`) — the safe, escapeless, type-checked default. Use these for argument values whenever possible. Covered in [Playbook operators](/concepts/playbook-operators).
 2. **EJS templates** — the default renderer for anything needing real string interpolation, whether inside a single value (the `$template` operator) or a whole file (`copy` with `engine: ejs`, which is the default). EJS uses `<%= %>` for output and `<% %>` for logic.
-3. **Jinja templates** — *opt-in only*, via `copy` with `engine: jinja`. Use Jinja when a template comes from an existing Ansible project (so you can drop it in with minimal changes). The ADR 0025 sandboxed render worker is planned hardening for untrusted template code; it is not implemented yet.
+3. **Jinja templates** — *opt-in only*, via `copy` with `engine: jinja`. Use Jinja when a template comes from an existing Ansible project (so you can drop it in with minimal changes). With default-on isolation, `engine: jinja` renders in the ADR 0025 sandbox worker; `--isolation none` falls back to in-process rendering as the explicit, warned last resort.
 
 RoleCall deliberately does **not** auto-render <code v-pre>{{ }}</code> as a global template engine. An ordinary argument containing <code v-pre>{{ ... }}</code> is rejected by the playbook lint, not interpreted. Templating is *opt-in*: you either use a structured ref, wrap a value in `$template`, or use a `copy` content template spec with `engine: jinja`. The content spec is a runtime payload like EJS, so Jinja delimiters are allowed inside it.
 
@@ -59,6 +59,8 @@ EJS uses two delimiters:
 
 Jinja uses <code v-pre>{{ expr }}</code> for output and `{% ... %}` for logic — the syntax Ansible users know. In RoleCall, Jinja is **only** available through `copy` via a `content` template spec with `engine: jinja` (or a `.j2` `template_file`); there is no global <code v-pre>{{ }}</code> auto-render, and an ordinary argument containing <code v-pre>{{ ... }}</code> is rejected by the playbook lint.
 
+The engine is **Nunjucks** plus an Ansible compatibility layer: common Ansible filters (`default`, `bool`, `combine`, `dict2items`, `items2dict`, `flatten`, `unique`, set operations, `regex_replace`/`regex_search`/`regex_findall`, `b64encode`/`b64decode`, `basename`/`dirname`, `to_json`/`from_json`, `to_yaml`/`from_yaml`, `ternary`, `type_debug`, `version_compare`, `quote`, `checksum`/`hash`) and tests (`is defined`, `is none`, `is match`, `is search`, `is version_compare`, …) are available. Macros, imports/extends, `loop.index`, and `{% set %}` blocks work. Ansible `lookup()`/`query()` are intentionally unsupported and fail with guidance; the converter hands those off.
+
 ```yaml
 - copy:
     dest: /etc/app/app.conf
@@ -81,4 +83,4 @@ server {{ site }}
 - One-off interpolated string in an argument → `$template` (EJS).
 - Rendering a whole config/file → `copy` with `content: { template_file }` and `engine: ejs` (EJS, the default). Reach for `engine: jinja` only when reusing an existing Ansible template or you need its sandbox.
 
-**EJS vs Jinja.** EJS is the default for a reason: it is much faster than Jinja and supports full JavaScript logic in templates. Jinja is the safer choice when templates come from untrusted sources — its sandbox limits what the template can do — and it can often run existing Ansible templates with minimal changes. In short: use EJS for speed and flexibility; reach for Jinja when you need compatibility with Ansible templates or sandboxing of untrusted template code.
+**EJS vs Jinja.** EJS is the default for a reason: it is much faster than Jinja and supports full JavaScript logic in templates. Jinja is the safer choice when templates come from untrusted sources — with isolation enabled it renders in a sandbox with no filesystem, network, or inherited environment — and it can often run existing Ansible templates with minimal changes. In short: use EJS for speed and flexibility; reach for Jinja when you need compatibility with Ansible templates or sandboxing of untrusted template code.

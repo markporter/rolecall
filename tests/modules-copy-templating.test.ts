@@ -140,8 +140,8 @@ test("(6) runner renders fast-mode (eta) string content before module sees it", 
   expect(second.hosts["h1"]![0]!.iterations[0]!.changed).toBe(false);
 });
 
-// jinja content object renders LiquidJS {%if%}/{%else%} syntax (module-rendered).
-test("(7) content renders LiquidJS control flow via renderJinja", async () => {
+// jinja content object renders Jinja/Nunjucks control flow (module-rendered).
+test("(7) content renders Jinja control flow via renderJinja", async () => {
   const off = here();
   const on = here();
   const tpl = "{% if enabled %}on{% else %}off{% endif %}";

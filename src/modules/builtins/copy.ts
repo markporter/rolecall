@@ -22,6 +22,7 @@ import type { CheckableModule } from "../../idempotency";
 import type { ModuleSummary } from "../search";
 import { render } from "../../templating/fast";
 import { renderJinja } from "../../templating/jinja";
+import { renderTemplateIsolated } from "../../isolation/template-worker";
 
 /** Resolved source content plus its checksum, ready to ship to the target. */
 interface SourceBytes {
@@ -88,7 +89,7 @@ function resolveTemplatePath(name: string, roleDir?: string, playbookDir?: strin
 }
 
 /** Render a template string or template_file on-host with the chosen engine (eta default). */
-function renderTemplate(spec: ContentSpec | undefined, ctx: ModuleContext): string {
+async function renderTemplate(spec: ContentSpec | undefined, ctx: ModuleContext): Promise<string> {
   const engine = String(spec?.engine ?? "eta");
   const vars: Record<string, unknown> = { ...ctx.vars, ...(ctx.facts || {}), item: ctx.loop?.item, index: ctx.loop?.index };
   const fileRef = spec?.template_file;
@@ -102,22 +103,34 @@ function renderTemplate(spec: ContentSpec | undefined, ctx: ModuleContext): stri
         `copy: cannot read template_file '${fileRef}' (resolved: ${abs}): ${e instanceof Error ? e.message : String(e)}`,
       );
     }
-    return engine === "jinja" ? renderJinja(src, vars, { strict: false }) : render(src, vars);
+    return await renderEngine(engine, src, vars, ctx);
   }
   if (spec && typeof spec.template === "string") {
-    return engine === "jinja" ? renderJinja(spec.template, vars, { strict: false }) : render(spec.template, vars);
+    return await renderEngine(engine, spec.template, vars, ctx);
   }
   return "";
 }
 
+async function renderEngine(
+  engine: string,
+  source: string,
+  vars: Record<string, unknown>,
+  ctx: ModuleContext,
+): Promise<string> {
+  if (engine === "jinja" && ctx.isolation && ctx.isolation.backend !== "none") {
+    return renderTemplateIsolated({ engine: "jinja", template: source, vars, isolation: ctx.isolation });
+  }
+  return engine === "jinja" ? renderJinja(source, vars, { strict: false }) : render(source, vars);
+}
+
 /** Read the desired bytes locally: from `src`, inline `content` (string), or a rendered `content` template spec. */
-function resolveSource(ctx: ModuleContext): SourceBytes {
+async function resolveSource(ctx: ModuleContext): Promise<SourceBytes> {
   const raw = ctx.args["content"];
   const spec = typeof raw === "object" && raw !== null ? (raw as ContentSpec) : undefined;
   const hasTemplate = spec !== undefined;
 
   if (hasTemplate) {
-    const s = renderTemplate(spec, ctx);
+    const s = await renderTemplate(spec, ctx);
     const buf = Buffer.from(s, "utf8");
     return {
       b64: buf.toString("base64"),
@@ -271,7 +284,7 @@ export const copyModule: CheckableModule = {
       return { changed: false, failed: true, msg: `${MODULE_NAME}: one of 'src' or 'content' is required` };
     }
 
-    const src = resolveSource(ctx);
+    const src = await resolveSource(ctx);
     const destB64 = Buffer.from(dest, "utf8").toString("base64");
 
     const opts = {
@@ -355,7 +368,7 @@ export const copyModule: CheckableModule = {
   },
   /** Report current target state for declarative reconciliation (used by applyIdempotent's skip-unchanged path). */
   async check(_args: Record<string, unknown>, ctx: ModuleContext): Promise<{ current: string | null; inDesired: boolean }> {
-    const src = resolveSource(ctx);
+    const src = await resolveSource(ctx);
     const destB64 = Buffer.from(String(ctx.args["dest"] ?? ctx.args["path"] ?? ""), "utf8").toString("base64");
     const cmpCmd = ctx.become ? `sudo ${buildCompareScript(destB64)}` : buildCompareScript(destB64);
     try {

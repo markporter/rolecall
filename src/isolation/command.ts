@@ -21,6 +21,8 @@ export interface BuildIsolationCommandOptions {
   gid?: number;
   /** Override for tests; defaults to the host's existing system paths. */
   systemPaths?: string[];
+  /** Extra read-only file binds (runtime/CLI for a worker). */
+  binds?: Array<{ source: string; target: string }>;
   /** Egress broker/shim wiring for the sandbox (namespace backend). */
   egress?: {
     /** Host directory containing the broker Unix socket. */
@@ -102,6 +104,7 @@ export function buildNamespaceCommand(opts: BuildIsolationCommandOptions): Isola
     const flag = mount.mode === "ro" ? "--ro-bind" : "--bind";
     args.push(flag, mount.source, mount.target);
   }
+  for (const bind of opts.binds ?? []) args.push("--ro-bind", bind.source, bind.target);
   for (const [key, value] of Object.entries(env)) {
     if (key === "PATH" || key === "HOME" || key === "LANG") continue;
     args.push("--setenv", key, value);
@@ -191,6 +194,7 @@ export function buildDockerCommand(opts: BuildIsolationCommandOptions): Isolatio
   for (const mount of mountArgs(opts.mounts)) {
     args.push("-v", `${mount.source}:${mount.target}:${mount.mode}`);
   }
+  for (const bind of opts.binds ?? []) args.push("-v", `${bind.source}:${bind.target}:ro`);
   for (const [key, value] of Object.entries(env)) {
     args.push("-e", `${key}=${value}`);
   }

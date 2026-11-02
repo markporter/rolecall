@@ -32,6 +32,7 @@ import { runAgentCommand } from "./commands/agent";
 import { runDocsCommand } from "./commands/docs";
 import { runVarsCommand } from "./commands/vars";
 import { runDoctorCommand } from "./commands/doctor";
+import { runRenderTemplateWorker } from "./commands/render-template";
 import { parseMounts } from "./parse-mounts";
 import { parseEgressSpecs } from "../isolation/egress";
 import { CliError, type CliResult, type GlobalFlags } from "./types";
@@ -224,6 +225,12 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
 
 /** @summary Unified entrypoint: boots the orchestrator server when --serve is set, otherwise parses global flags and dispatches the requested subcommand handler. @param argv Command-line arguments (runtime argv: Bun.argv or process.argv); slice(2) drops node/script paths. @returns Process exit code (0 ok, 1 runtime error, 2 usage/validation error). */
 export async function main(argv: string[]): Promise<number> {
+  // Internal template worker: render one template inside the sandbox. Kept out
+  // of HELP; the parent sends JSON on stdin and reads JSON on stdout.
+  if (argv.slice(2)[0] === "__render-template") {
+    return await runRenderTemplateWorker();
+  }
+
   // Internal sandbox shim: listens on sandbox loopback and forwards to the
   // host-side egress broker over a bind-mounted Unix socket. Kept out of HELP.
   if (argv.slice(2)[0] === "__egress-shim") {

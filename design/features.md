@@ -40,7 +40,7 @@ are present in code but do **not** apply real remote state.
 | Structured reference templating (`$var` / `$concat` / `$call` / `$if` / `$each` / `$template`) | ✅ | todo 24; `src/templating/refs.ts` |
 | Facts reference (`$var: facts.key`) | ✅ | declared via `kind: fact` manifest or plugin/module `declares`; the `$fact` operator was removed in ADR 0013 |
 | Typed `when` / `loop` | ✅ | todo 24 |
-| Jinja-style `{{ }}` templating | 🟡 | global scalar interpolation absent; `$template` is EJS; Jinja is Nunjucks and renders only through explicit `copy` content templates / `.j2` files with `engine: jinja`, always in the ADR 0025 sandbox worker |
+| Jinja-style `{{ }}` templating | 🟡 | global scalar interpolation absent; `$template` is EJS; Jinja is Nunjucks + Ansible filters/tests and renders through explicit `copy` content templates / `.j2` files with `engine: jinja`, in the ADR 0025 sandbox worker when isolation is enabled |
 
 ## Run model & safety
 
