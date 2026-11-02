@@ -137,13 +137,24 @@ projects:
 - `allow_restricted_helpers` gates project `$call` helpers.
 - `engine: jinja` is not gated.
 - Approval is not a sandbox; approved code still renders in the worker.
-- With no backend, approved code fails closed unless the operator uses the explicit,
+- With no backend, approved `copy` code fails closed unless the operator uses the explicit,
   warned `--isolation none --allow-unsafe-template-code` last resort.
+- `$template` / `$call` currently always need `--allow-unsafe-template-code` because their
+  worker path is not implemented yet.
 
-**Current status:** the approval config and `--allow-unsafe-template-code` flag are not
-implemented. Today `copy` with `engine: eta|ejs|jinja` renders in the worker when isolation
-is enabled, while `$template` and `$call` still render in-process and are not gated. Treat
-`--isolation none` as unsafe for untrusted Eta/EJS or `$call` helpers.
+**Current status:** the loader, VFS-URI keys, `allow_restricted_code` /
+`allow_restricted_helpers`, and `--allow-unsafe-template-code` are implemented. The policy is
+loaded from `templates.allow_restricted_code` / `allow_restricted_helpers` in
+`isolation.yaml` (`ROLECALL_ISOLATION_CONFIG` overrides the path).
+
+- `copy` with `engine: eta|ejs` renders in the worker when isolation is enabled; approval is
+  required.
+- `$template` and `$call` do **not** yet have a sandboxed worker path. Even when approved,
+  they require the explicit `--allow-unsafe-template-code` override and run in-process.
+  Without the override the task fails with guidance.
+- `engine: jinja` remains ungated and always sandboxed.
+
+Treat `--allow-unsafe-template-code` as unsafe for untrusted projects.
 
 **For agents:** discover this policy from the CLI with:
 

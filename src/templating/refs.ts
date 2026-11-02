@@ -31,6 +31,48 @@ export type HelperFn = (...args: any[]) => unknown;
 /** @summary Map of helper-name -> callable used to resolve `$call` nodes. */
 export type HelpersMap = Record<string, HelperFn>;
 
+/**
+ * Operator policy for restricted code. `allowRestrictedCode` gates `$template`
+ * (EJS); `allowRestrictedHelpers` gates `$call`. When omitted (library/test
+ * callers), the legacy permissive behavior is preserved; the CLI always supplies
+ * a policy from `isolation.yaml`.
+ */
+export interface TemplateCodePolicy {
+  allowRestrictedCode: boolean;
+  allowRestrictedHelpers: boolean;
+  /** Explicit operator override for in-process restricted code. */
+  allowUnsafeTemplateCode?: boolean;
+}
+
+/**
+ * Enforce the restricted-code policy; no-op when no policy is supplied (library
+ * callers). `inProcess` is true when this particular path has no sandboxed
+ * implementation yet (or `--isolation none`); it then requires the explicit
+ * `--allow-unsafe-template-code` override.
+ */
+export function requirePolicy(
+  policy: TemplateCodePolicy | undefined,
+  kind: "code" | "helper",
+  inProcess: boolean,
+): void {
+  if (!policy) return;
+  if (kind === "code" && !policy.allowRestrictedCode) {
+    throw new Error(
+      "restricted template code denied: $template requires templates.allow_restricted_code in isolation.yaml",
+    );
+  }
+  if (kind === "helper" && !policy.allowRestrictedHelpers) {
+    throw new Error(
+      "restricted helper code denied: $call requires templates.allow_restricted_helpers in isolation.yaml",
+    );
+  }
+  if (inProcess && policy.allowUnsafeTemplateCode !== true) {
+    throw new Error(
+      "restricted code has no sandboxed path here: pass --allow-unsafe-template-code to run it in-process explicitly",
+    );
+  }
+}
+
 /** @summary Any value expressible inside a structured node (scalar | nested node | array). */
 export type StructuredValue = unknown;
 
@@ -170,6 +212,7 @@ export function resolveNode(
   node: unknown,
   vars: Record<string, unknown>,
   helpers: HelpersMap = {},
+  policy?: TemplateCodePolicy,
 ): StructuredValue {
   if (!isStructured(node)) fail("expected a structured node object");
   const record = node as Record<string, unknown>;
@@ -182,7 +225,7 @@ export function resolveNode(
     }
     case "$concat": {
       if (!Array.isArray(operand)) fail("$concat requires an array of operands");
-      return operand.map((v) => String(resolveValue(v, vars, helpers))).join("");
+      return operand.map((v) => String(resolveValue(v, vars, helpers, policy))).join("");
     }
     case "$call": {
       // Shape: { $call: <helperName>, args: [<args>] }  OR  { $call: { call, args } }.
@@ -194,9 +237,10 @@ export function resolveNode(
         typeof spec.call === "string"
           ? spec.call
           : fail("$call requires a helper name ('call')");
+      requirePolicy(policy, "helper", true);
       const rawArgs = spec.args ?? [];
       if (!Array.isArray(rawArgs)) fail("$call args must be an array");
-      const resolvedArgs = rawArgs.map((a) => resolveValue(a, vars, helpers));
+      const resolvedArgs = rawArgs.map((a) => resolveValue(a, vars, helpers, policy));
       const fn = lookupHelper(name, helpers);
       if (fn === undefined) fail(`unregistered helper: '${name}' (register it before $call)`);
       return fn(...resolvedArgs);
@@ -207,18 +251,19 @@ export function resolveNode(
       }
       const block = operand as Record<string, unknown>;
       const cond = block.condition !== undefined
-        ? evaluatePredicate(block.condition, vars)
+        ? evaluatePredicate(block.condition, vars, policy)
         : true;
-      return cond ? resolveValue(block.then, vars, helpers) : resolveValue(block.else, vars, helpers);
+      return cond ? resolveValue(block.then, vars, helpers, policy) : resolveValue(block.else, vars, helpers, policy);
     }
     case "$each": {
       // List source for loops; resolves {$var:list} or returns a literal list.
-      return resolveValue(operand, vars, helpers);
+      return resolveValue(operand, vars, helpers, policy);
     }
     case "$template": {
       // Opt-in eta render of a literal string. Works in BOTH legacy and strict
       // modes (it is the structured escape hatch for legacy {{ }}/<% %> syntax).
       if (typeof operand !== "string") fail("$template requires a string template");
+      requirePolicy(policy, "code", true);
       return render(operand, vars);
     }
     default:
@@ -235,12 +280,13 @@ export function resolveValue(
   value: StructuredValue,
   vars: Record<string, unknown>,
   helpers: HelpersMap = {},
+  policy?: TemplateCodePolicy,
 ): StructuredValue {
-  if (isStructured(value)) return resolveNode(value, vars, helpers);
-  if (Array.isArray(value)) return value.map((v) => resolveValue(v, vars, helpers));
+  if (isStructured(value)) return resolveNode(value, vars, helpers, policy);
+  if (Array.isArray(value)) return value.map((v) => resolveValue(v, vars, helpers, policy));
   if (typeof value === "object" && value !== null) {
     const out: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(value)) out[k] = resolveValue(v, vars, helpers);
+    for (const [k, v] of Object.entries(value)) out[k] = resolveValue(v, vars, helpers, policy);
     return out;
   }
   return value;
@@ -297,7 +343,11 @@ function orderCheck(op: string, a: unknown, b: unknown): boolean {
 }
 
 /** Evaluate a structured predicate node to a boolean, throwing on structural/type errors. */
-export function evaluatePredicate(pred: unknown, vars: Record<string, unknown>): boolean {
+export function evaluatePredicate(
+  pred: unknown,
+  vars: Record<string, unknown>,
+  policy?: TemplateCodePolicy,
+): boolean {
   if (!isStructured(pred)) fail("when predicate must be a structured node like { $eq: [...] }");
   const record = pred as Record<string, unknown>;
   const op = Object.keys(record)[0]!;
@@ -305,34 +355,34 @@ export function evaluatePredicate(pred: unknown, vars: Record<string, unknown>):
 
   if (op === "$and" || op === "$or") {
     if (!Array.isArray(operand)) fail(`${op} requires an array of conditions`);
-    if (op === "$and") return operand.every((c) => evaluatePredicate(c, vars));
-    return operand.some((c) => evaluatePredicate(c, vars));
+    if (op === "$and") return operand.every((c) => evaluatePredicate(c, vars, policy));
+    return operand.some((c) => evaluatePredicate(c, vars, policy));
   }
 
   if (op === "$not") {
     const inner = Array.isArray(operand) ? operand[0] : operand;
     if (inner === undefined) fail("$not requires a condition");
-    return !evaluatePredicate(inner, vars);
+    return !evaluatePredicate(inner, vars, policy);
   }
 
   if (op === "$eq" || op === "$ne") {
     if (!Array.isArray(operand) || operand.length !== 2) fail(`${op} expects exactly two operands`);
-    const left = resolveValue(operand[0], vars);
-    const right = resolveValue(operand[1], vars);
+    const left = resolveValue(operand[0], vars, {}, policy);
+    const right = resolveValue(operand[1], vars, {}, policy);
     const result = eqValues(left, right);
     return op === "$eq" ? result : !result;
   }
 
   if (op === "$lt" || op === "$gt" || op === "$lte" || op === "$gte") {
     if (!Array.isArray(operand) || operand.length !== 2) fail(`${op} expects exactly two operands`);
-    return orderCheck(op, resolveValue(operand[0], vars), resolveValue(operand[1], vars));
+    return orderCheck(op, resolveValue(operand[0], vars, {}, policy), resolveValue(operand[1], vars, {}, policy));
   }
 
   if (op === "$in") {
     // $in: [element, collection]  -> collection contains element.
     if (!Array.isArray(operand) || operand.length !== 2) fail("$in expects [element, collection]");
-    const element = resolveValue(operand[0], vars);
-    const collection = resolveValue(operand[1], vars);
+    const element = resolveValue(operand[0], vars, {}, policy);
+    const collection = resolveValue(operand[1], vars, {}, policy);
     if (Array.isArray(collection)) return collection.some((c) => eqValues(c, element));
     if (typeof collection === "string") return String(element).includes(collection);
     fail(`$in collection must be an array or string, got ${describe(collection)}`);

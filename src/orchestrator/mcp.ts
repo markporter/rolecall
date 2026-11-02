@@ -279,7 +279,7 @@ export function buildManifest(): McpManifest {
         restrictedCode:
           "Eta/EJS, $template, and $call helpers are restricted code: executable code allowed only inside the isolation worker. Copy with engine eta/ejs/jinja is sandboxed when isolation is enabled; $template/$call are not yet gated.",
         approval:
-          "Planned per-project operator policy: templates.allow_restricted_code and templates.allow_restricted_helpers in isolation.yaml. Not enforced yet; do not use --isolation none for untrusted code templates.",
+          "Per-project operator policy: templates.allow_restricted_code and templates.allow_restricted_helpers in isolation.yaml. Enforced for copy Eta/EJS and $template/$call; $template/$call still require --allow-unsafe-template-code until their worker path lands.",
         docs: "rolecall docs search 'restricted code'; rolecall docs search isolation",
       },
     },

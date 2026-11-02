@@ -49,6 +49,8 @@ export interface GlobalFlags {
   mounts?: import("../isolation/types").IsolationMount[];
   /** Ephemeral destination whitelist entries (repeatable --allow-egress). */
   allowEgress?: import("../isolation/egress").EgressRule[];
+  /** Explicit unsafe override for restricted code with --isolation none. */
+  allowUnsafeTemplateCode?: boolean;
 }
 
 // ---------------------------------------------------------------------------

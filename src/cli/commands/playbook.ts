@@ -4,6 +4,7 @@ import { loadInventoryFile, resolveDirectoryVars, loadPlaybookFile } from "../..
 import { resolveTargets, type ResolveOptions } from "../../inventory/engine";
 import { runPlaybook } from "../../executor/engine";
 import { FsProjectSource } from "../../vfs/fs-project-source";
+import { approvalFor, loadIsolationConfig } from "../../isolation/config";
 import type { PlaybookResult } from "../../executor/context";
 import { registerAllModules } from "../../modules/builtins";
 import { scanAndRegister } from "../../modules/resolver";
@@ -70,6 +71,12 @@ export async function runPlaybookCommand(
     existsSync(join(d, "plugins")) || existsSync(join(d, "collections"));
   const projectRoot =
     !hasProjectDirs(playbookDir) && hasProjectDirs(parentDir) ? parentDir : playbookDir;
+  const projectUri = new FsProjectSource(projectRoot).uri;
+  const approval = approvalFor(loadIsolationConfig(), projectUri);
+  const approvals = {
+    ...approval,
+    allowUnsafeTemplateCode: flags.allowUnsafeTemplateCode === true,
+  };
   await scanAndRegister(projectRoot);
 
   // --resume <run_id>:<checkpoint> (Todo 26): the planner records/acknowledges it;
@@ -184,6 +191,9 @@ export async function runPlaybookCommand(
       playbookDir: dirname(file),
       playbookPath: file,
       ...(isolation ? { isolation } : {}),
+      projectUri,
+      approvals,
+      allowUnsafeTemplateCode: flags.allowUnsafeTemplateCode === true,
       inventoryPath: flags.inventory,
       ...(flags.limit !== undefined ? { limit: flags.limit } : {}),
       ...(flags.forks !== undefined ? { forks: flags.forks } : {}),

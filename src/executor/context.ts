@@ -12,6 +12,7 @@ import {
   isStructured,
   resolveNode,
   resolveValue,
+  type TemplateCodePolicy,
 } from "../templating/refs";
 
 export type { Module, ModuleContext, ModuleResult } from "./module";
@@ -87,12 +88,13 @@ export function renderArgs(
   args: Record<string, unknown>,
   vars: TemplateVars,
   helpers: HelpersMap = {},
+  policy?: TemplateCodePolicy,
 ): Record<string, unknown> {
   const scope = vars as unknown as Record<string, unknown>;
   const resolveArg = (value: unknown): unknown =>
     typeof value === "string"
       ? value
-      : resolveValue(value, scope, helpers);
+      : resolveValue(value, scope, helpers, policy);
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(args)) out[k] = resolveArg(v);
   return out;
@@ -122,7 +124,7 @@ function coerceScalar(value: unknown): boolean {
  * {@link resolveNode}, then coerce the resolved value like a scalar. Non-`$` objects
  * are left for the legacy scalar coercion (preserving prior behaviour).
  */
-export function evalWhen(when: unknown, vars: TemplateVars): boolean {
+export function evalWhen(when: unknown, vars: TemplateVars, policy?: TemplateCodePolicy): boolean {
   if (when === undefined) return true;
   const scope = vars as unknown as Record<string, unknown>;
   if (isStructured(when)) {
@@ -130,10 +132,10 @@ export function evalWhen(when: unknown, vars: TemplateVars): boolean {
     const op = Object.keys(record)[0];
     if (typeof op === "string" && op.startsWith("$")) {
       try {
-        return evaluatePredicate(when, scope);
+        return evaluatePredicate(when, scope, policy);
       } catch {
         // Reference/composite/opaque operator -> resolve to a value, then coerce.
-        return coerceScalar(resolveNode(when, scope));
+        return coerceScalar(resolveNode(when, scope, {}, policy));
       }
     }
   }
@@ -152,6 +154,7 @@ export function evalWhen(when: unknown, vars: TemplateVars): boolean {
 function expandValue(
   value: unknown,
   vars: TemplateVars,
+  _policy?: TemplateCodePolicy,
 ): { item: unknown; index: number }[] {
   if (value === undefined || value === null) return [{ item: undefined, index: 0 }];
   if (typeof value === "string") {
@@ -182,6 +185,7 @@ function expandValue(
 export function expandLoop(
   loop: unknown,
   vars: TemplateVars,
+  policy?: TemplateCodePolicy,
 ): { item: unknown; index: number }[] {
   if (loop === undefined || loop === null) return [{ item: undefined, index: 0 }];
   if (isStructured(loop)) {
@@ -189,10 +193,10 @@ export function expandLoop(
     const op = Object.keys(record)[0];
     if (op === "$each") {
       // Resolve the target (literal array OR {$var:list}) then reuse core logic.
-      return expandValue(resolveValue(record.$each, vars as unknown as Record<string, unknown>), vars);
+      return expandValue(resolveValue(record.$each, vars as unknown as Record<string, unknown>, {}, policy), vars, policy);
     }
   }
-  return expandValue(loop, vars);
+  return expandValue(loop, vars, policy);
 }
 
 /** Minimal connection that performs no I/O — fallback for transport-less modules. */
@@ -268,6 +272,12 @@ export interface ExecOptions {
   force?: boolean;
   /** ADR 0025 isolation options, including the destination whitelist used by module URL checks. */
   isolation?: import("../isolation/types").IsolationOptions;
+  /** Canonical VFS URI for the project (approval key). */
+  projectUri?: string;
+  /** Restricted-code approval policy loaded from isolation.yaml. */
+  approvals?: TemplateCodePolicy;
+  /** Explicit unsafe override for restricted code with --isolation none. */
+  allowUnsafeTemplateCode?: boolean;
 }
 
 export interface IterationOutcome {
