@@ -57,6 +57,8 @@ EJS uses two delimiters:
 
 ## Jinja templates
 
+See [Isolation & Sandboxing](/concepts/isolation) for what the renderer can and cannot access.
+
 Jinja uses <code v-pre>{{ expr }}</code> for output and `{% ... %}` for logic — the syntax Ansible users know. In RoleCall, Jinja is **only** available through `copy` via a `content` template spec with `engine: jinja` (or a `.j2` `template_file`); there is no global <code v-pre>{{ }}</code> auto-render, and an ordinary argument containing <code v-pre>{{ ... }}</code> is rejected by the playbook lint.
 
 The engine is **Nunjucks** plus an Ansible compatibility layer: common Ansible filters (`default`, `bool`, `combine`, `dict2items`, `items2dict`, `flatten`, `unique`, set operations, `regex_replace`/`regex_search`/`regex_findall`, `b64encode`/`b64decode`, `basename`/`dirname`, `to_json`/`from_json`, `to_yaml`/`from_yaml`, `ternary`, `type_debug`, `version_compare`, `quote`, `checksum`/`hash`) and tests (`is defined`, `is none`, `is match`, `is search`, `is version_compare`, …) are available. Macros, imports/extends, `loop.index`, and `{% set %}` blocks work. Ansible `lookup()`/`query()` are intentionally unsupported and fail with guidance; the converter hands those off.
