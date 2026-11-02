@@ -43,6 +43,17 @@ the `rolecall` binary there; the plan warns when it is missing.
 | macOS | launchd | `/Library/LaunchDaemons/com.rolecall.serve.plist` (system) or `<configDir>/LaunchAgents/...` (user) |
 | Windows | SCM | planned; no unit file |
 
+## Uninstall
+
+```sh
+rolecall uninstall [--system|--user] [--purge] [--dry-run|--yes]
+```
+
+Stops/disables the service when possible, removes `install.json` and the
+service unit, and keeps config/state/cache by default. `--purge` removes those
+directories too. The program directory/binary is never deleted by the
+self-installer. Like install, it plans by default; `--yes` applies.
+
 ## Service lifecycle
 
 ```sh

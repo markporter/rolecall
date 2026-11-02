@@ -289,6 +289,15 @@ function formatHuman(data: CliResult): string {
       }
       break;
     }
+    case "uninstall": {
+      const p = data.plan;
+      lines.push(`Uninstall: ${p.scope}${p.purge ? " (purge)" : ""}`);
+      lines.push(data.applied ? "Applied  : yes" : "Applied  : no (dry-run; pass --yes to apply)");
+      for (const action of p.actions) lines.push(`  - ${action}`);
+      for (const removed of data.removed) lines.push(`  removed: ${removed}`);
+      for (const kept of data.kept) lines.push(`  kept: ${kept}`);
+      break;
+    }
     case "service": {
       const p = data.plan;
       lines.push(`Service  : ${p.manager} ${p.operation}`);

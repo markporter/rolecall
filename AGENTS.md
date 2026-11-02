@@ -53,6 +53,7 @@ rolecall vars trace <play> [--inventory <inv>] [--extra-vars <kv>] [--limit <hos
 rolecall doctor                         # report isolation backend + ADR 0023 install layout readiness
 rolecall install [--user|--system] [--dry-run|--yes]  # plan/apply ADR 0023 layout, config, manifest, unit
 rolecall service install|start|stop|restart|status [--yes]  # plan/apply systemd/launchd/SCM lifecycle
+rolecall uninstall [--user|--system] [--purge] [--dry-run|--yes]  # remove unit/manifest; keep config/state unless purged
 rolecall docs search <query>            # query RoleCall prose docs by substring
 rolecall plugin list                               # registered module/fact + built-in inventory plugins
 rolecall plugin register <name> --path <file> [--global]   # persist a module kept outside a project (project plugins in plugins/ need no registration)
