@@ -19,6 +19,7 @@ description: Per-invocation context handed to a module's run (ADR 0013). host st
 	environment?: Record<string, string>;
 	facts: Record<string, unknown>;
 	host: string;
+	isolation?: IsolationOptions;
 	loop?: { index?: number; item?: unknown };
 	no_log?: boolean;
 	playbookDir?: string;
@@ -92,6 +93,12 @@ Environment variables to export for the module command (task-level).
 <MemberHeading id="host" depth="3" name="host" sig="host: string" />
 
 <MemberMeta badges="readonly" sourceHref="/source/src/executor/module-ts/#L25" sourceLabel="module.ts:25" />
+
+<MemberHeading id="isolation" depth="3" name="isolation" sig="isolation: IsolationOptions" />
+
+<MemberMeta badges="readonly" sourceHref="/source/src/executor/module-ts/#L60" sourceLabel="module.ts:60" />
+
+ADR 0025 isolation options, for modules that must render code templates in a sandbox.
 
 <MemberHeading id="loop" depth="3" name="loop" sig="loop: { index?: number; item?: unknown }" />
 

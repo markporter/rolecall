@@ -8,7 +8,7 @@ longname: module:cli.RenderedTemplate
 
 <Signature
   code="interface RenderedTemplate {
-	engine: 'eta' | 'jinja';
+	engine: 'jinja' | 'eta';
 	host: string;
 	rendered: string;
 	source: string;
@@ -22,7 +22,7 @@ longname: module:cli.RenderedTemplate
 
 ## Properties
 
-<MemberHeading id="engine" depth="3" name="engine" sig="engine: 'eta' | 'jinja'" />
+<MemberHeading id="engine" depth="3" name="engine" sig="engine: 'jinja' | 'eta'" />
 
 <MemberMeta sourceHref="/source/src/cli/types-ts/#L73" sourceLabel="types.ts:73" />
 
