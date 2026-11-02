@@ -51,6 +51,7 @@ rolecall inventory list <inv>
 rolecall vars list <play>               # declared var/fact by file + fact capability per connection kind
 rolecall vars trace <play> [--inventory <inv>] [--extra-vars <kv>] [--limit <host>]
 rolecall doctor                         # report isolation backend + ADR 0023 install layout readiness
+rolecall install [--user|--system] [--dry-run|--yes]  # plan/apply ADR 0023 layout, config, manifest, unit
 rolecall docs search <query>            # query RoleCall prose docs by substring
 rolecall plugin list                               # registered module/fact + built-in inventory plugins
 rolecall plugin register <name> --path <file> [--global]   # persist a module kept outside a project (project plugins in plugins/ need no registration)

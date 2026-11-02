@@ -51,6 +51,24 @@ export interface GlobalFlags {
   allowEgress?: import("../isolation/egress").EgressRule[];
   /** Explicit unsafe override for restricted code with --isolation none. */
   allowUnsafeTemplateCode?: boolean;
+  /** --system install scope. */
+  system?: boolean;
+  /** --user install scope. */
+  user?: boolean;
+  /** --no-service: skip service unit generation. */
+  noService?: boolean;
+  /** --dry-run: plan only. */
+  dryRun?: boolean;
+  /** --yes: apply without prompting. */
+  yes?: boolean;
+  /** --non-interactive: never prompt. */
+  nonInteractive?: boolean;
+  /** --prefix: program directory override. */
+  prefix?: string;
+  /** --config-dir override. */
+  configDir?: string;
+  /** --state-dir override. */
+  stateDir?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -212,6 +230,15 @@ export interface VarsTraceResult {
 }
 
 /** Result of `rolecall doctor`: local isolation backend discovery. */
+/** Result of `rolecall install`: plan plus what was (or would be) written. */
+export interface InstallResult {
+  command: "install";
+  plan: import("../install/plan").InstallPlan;
+  applied: boolean;
+  written: string[];
+  warnings: string[];
+}
+
 export interface DoctorResult {
   command: "doctor";
   isolation: import("../isolation/types").IsolationProbe;
@@ -243,7 +270,8 @@ export type CliResult =
   | DocsModulesResult
   | VarsListResult
   | VarsTraceResult
-  | DoctorResult;
+  | DoctorResult
+  | InstallResult;
 
 // ---------------------------------------------------------------------------
 // Error class — `usage: true` => exit code 2 (unknown subcommand / bad args);

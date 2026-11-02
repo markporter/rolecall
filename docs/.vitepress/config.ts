@@ -49,6 +49,7 @@ export default defineConfig({
         { text: 'Vars Commands', link: '/reference/vars-commands' },
         { text: 'Plugin Commands', link: '/reference/plugin-commands' },
         { text: 'Serve Command', link: '/reference/serve-command' },
+        { text: 'Install Command', link: '/reference/install-command' },
         { text: 'Module Reference', link: '/reference/module-reference' },
         { text: 'Writing a Plugin', link: '/reference/writing-a-plugin' },
       ],
