@@ -13,6 +13,7 @@ description: Result of rolecall update .
 	backup?: string;
 	check?: UpdateCheck;
 	command: 'update';
+	delegated?: PackageManagerCommand;
 	fromVersion?: string;
 	plan?: UpdatePlan;
 	rolledBack?: boolean;
@@ -45,6 +46,10 @@ Result of `rolecall update`.
 <MemberHeading id="command" depth="3" name="command" sig="command: 'update'" />
 
 <MemberMeta sourceHref="/source/src/cli/types-ts/#L274" sourceLabel="types.ts:274" />
+
+<MemberHeading id="delegated" depth="3" name="delegated" sig="delegated: PackageManagerCommand" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L284" sourceLabel="types.ts:284" />
 
 <MemberHeading id="fromversion" depth="3" name="fromVersion" sig="fromVersion: string" />
 

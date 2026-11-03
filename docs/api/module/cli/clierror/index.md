@@ -6,7 +6,7 @@ longname: module:cli.CliError
 
 # CliError
 
-<SourceLink href="/source/src/cli/types-ts/#L327" label="types.ts:327" />
+<SourceLink href="/source/src/cli/types-ts/#L328" label="types.ts:328" />
 
 ---
 
@@ -60,7 +60,7 @@ _Inherited from&#x20;_`stack`
 
 <MemberHeading id="usage" depth="3" name="usage" sig="usage: boolean" />
 
-<MemberMeta badges="readonly" sourceHref="/source/src/cli/types-ts/#L329" sourceLabel="types.ts:329" />
+<MemberMeta badges="readonly" sourceHref="/source/src/cli/types-ts/#L330" sourceLabel="types.ts:330" />
 
 ## Static Properties
 
