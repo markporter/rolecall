@@ -8,7 +8,7 @@ longname: module:cli.writeOut
 
 <Signature code="writeOut(text: string, output: string): void" />
 
-<SourceLink href="/source/src/cli/index-ts/#L168" label="index.ts:168" />
+<SourceLink href="/source/src/cli/index-ts/#L170" label="index.ts:170" />
 
 **Parameters**
 

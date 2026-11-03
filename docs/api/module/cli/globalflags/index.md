@@ -32,6 +32,7 @@ longname: module:cli.GlobalFlags
 	purge?: boolean;
 	resume?: string;
 	rollback?: boolean;
+	serviceUser?: string;
 	skipTags?: string;
 	stateDir?: string;
 	system?: boolean;
@@ -192,6 +193,12 @@ Resume a prior run from a checkpoint: `<run_id>:<checkpoint>` (Todo 26).
 <MemberMeta sourceHref="/source/src/cli/types-ts/#L77" sourceLabel="types.ts:77" />
 
 \--rollback: switch back to the previous version.
+
+<MemberHeading id="serviceuser" depth="3" name="serviceUser" sig="serviceUser: string" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L83" sourceLabel="types.ts:83" />
+
+\--service-user: account for the system-scope service unit (default rolecall).
 
 <MemberHeading id="skiptags" depth="3" name="skipTags" sig="skipTags: string" />
 
