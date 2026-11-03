@@ -84,6 +84,7 @@ Global flags (parsed once, injected downward):
   --allow-unsafe-template-code  Explicitly allow in-process restricted code ($template/$call; Eta/EJS with --isolation none)
   --from-dir <dir>             With install, stage the binary from dir/rolecall + version.txt + SHA256SUMS
   --update-url <url>           Update mirror serving release.json + release.json.sig
+  --service-user <name>        System-scope service account (default rolecall; must exist)
   --forks <N>         Concurrency fan-out (number)
   --trace             Emit + persist an execution-trace ledger for the run
   --profile           Print a per-host/per-task performance profile at run end
@@ -162,6 +163,7 @@ const GLOBAL_OPTS = {
   rollback: { type: "boolean" },
   "no-restart": { type: "boolean" },
   "update-url": { type: "string" },
+  "service-user": { type: "string" },
 } as const;
 
 /** @summary Write rendered CLI output to stdout, stripping NUL/control chars from the `json` stream so a polluted data channel never breaks a downstream JSON parser. @param text Rendered text to emit. @param output Selected output plugin name; only `json` gets control-char scrubbing. */
@@ -246,6 +248,7 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
     rollback: values["rollback"] === true,
     noRestart: values["no-restart"] === true,
     updateUrl: values["update-url"] as string | undefined,
+    serviceUser: values["service-user"] as string | undefined,
     // --json is a convenience shorthand for --output json (used by the docs
     // subcommands and any other command the user wants structured output from).
     output: (values["json"] as boolean | undefined)
@@ -262,6 +265,10 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
 
 /** @summary Unified entrypoint: boots the orchestrator server when --serve is set, otherwise parses global flags and dispatches the requested subcommand handler. @param argv Command-line arguments (runtime argv: Bun.argv or process.argv); slice(2) drops node/script paths. @returns Process exit code (0 ok, 1 runtime error, 2 usage/validation error). */
 export async function main(argv: string[]): Promise<number> {
+  // ADR 0023: one-shot CLI may run as root, but warn; --serve refuses separately.
+  if (typeof process.getuid === "function" && process.getuid() === 0 && !argv.includes("--serve")) {
+    writeErr("warning: running RoleCall as root; prefer an unprivileged account\n");
+  }
   // Internal template worker: render one template inside the sandbox. Kept out
   // of HELP; the parent sends JSON on stdin and reads JSON on stdout.
   if (argv.slice(2)[0] === "__render-template") {

@@ -9,6 +9,16 @@ import { readInstallManifest, serviceManagerFor, serviceUnitPath, type ServiceMa
 
 export type ServiceOperation = "install" | "uninstall" | "start" | "stop" | "restart" | "status";
 
+/** Validate a system-scope service account before writing/enabling a unit. */
+export function serviceUserProblem(scope: "user" | "system", user: string, enabled = true): string | undefined {
+  if (!enabled || scope !== "system") return undefined;
+  if (user === "root" || user === "0") return "system service account must not be root";
+  if (process.platform === "win32") return undefined;
+  const res = spawnSync("getent", ["passwd", user], { encoding: "utf8" });
+  if (res.status !== 0) return `service account '${user}' does not exist; create it or pass --service-user <account>`;
+  return undefined;
+}
+
 export interface ServiceCommand {
   file: string;
   args: string[];

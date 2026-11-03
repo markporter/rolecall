@@ -19,6 +19,7 @@ rolecall install [--system|--user] [--prefix DIR] [--config-dir DIR] [--state-di
 - Scope defaults to `system` when root, otherwise `user`. `--system` and
   `--user` are mutually exclusive; applying a system install requires root.
 - `--no-service` skips unit generation.
+- `--service-user <name>` sets the system service account (default `rolecall`). The account must already exist and must not be root; `rolecall install` and `rolecall service install` fail closed otherwise.
 - `--force` overwrites `rolecall.env` and the manifest (normally existing config
   is preserved).
 - `--isolation` participates in the preflight; `rolecall doctor` reports the

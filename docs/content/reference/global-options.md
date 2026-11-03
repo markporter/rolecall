@@ -29,6 +29,7 @@ They come directly from `GLOBAL_OPTS` in `src/cli/index.ts`, which passes them t
 | `--from-dir` | `<dir>` | With install/update, stage a local binary artifact (`rolecall`, `version.txt`, `SHA256SUMS`). | none |
 | `--rollback` | none | With `rolecall update`, switch to the recorded previous version. | off |
 | `--no-restart` | none | With `rolecall update`, do not restart the service after switching versions. | off |
+| `--service-user` | `<name>` | System-scope service account for `install`/`service install` (default `rolecall`; must exist, must not be root). | `rolecall` |
 | `--update-url` | `<url>` | With `rolecall update`, use a mirror that serves `release.json` + `release.json.sig` instead of GitHub Releases. | unset |
 | `--purge` | none | With `rolecall uninstall`, remove the config/state/cache directories after removing the unit/manifest. | off |
 | `--allow-egress` | `<host[:port]>` | Repeatable ephemeral destination whitelist entry; rejected with `--isolation none`. Module URL checks (`http`/`get_url`/`git`) enforce it; the broker is wired for the namespace and Docker backends (Docker command construction is tested; live Docker requires a daemon). | none |

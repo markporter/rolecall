@@ -27,6 +27,8 @@ export interface InstallPlan {
   service: {
     manager: ServiceManager;
     enabled: boolean;
+    /** System-scope service account (undefined for user installs). */
+    user?: string;
     /** Unit/plist path when the platform uses a file-based manager. */
     unitPath?: string;
     /** Rendered unit/plist content for review/apply. */
@@ -61,6 +63,8 @@ export interface BuildInstallPlanOptions {
   exists?: (path: string) => boolean;
   /** `--from-dir`: stage a binary from a local artifact directory. */
   fromDir?: string;
+  /** System-scope service account (default rolecall). */
+  serviceUser?: string;
 }
 
 export function installManifestPath(layout: InstallLayout): string {
@@ -109,9 +113,9 @@ export function serviceUnitPath(layout: InstallLayout, manager: ServiceManager):
   return undefined;
 }
 
-function systemdUnit(layout: InstallLayout): string {
+function systemdUnit(layout: InstallLayout, serviceUser = "rolecall"): string {
   const exec = programBinPath(layout);
-  const user = layout.scope === "system" ? "User=rolecall\nGroup=rolecall\n" : "";
+  const user = layout.scope === "system" ? `User=${serviceUser}\nGroup=${serviceUser}\n` : "";
   return `[Unit]
 Description=RoleCall orchestrator
 After=network-online.target
@@ -232,9 +236,13 @@ export function buildInstallPlan(options: BuildInstallPlanOptions): InstallPlan 
   const enabled = options.service !== false;
   const manager = serviceManagerFor(layout.platform, enabled);
   const unitPath = serviceUnitPath(layout, manager);
+  const serviceUser = options.serviceUser ?? "rolecall";
+  if (layout.scope === "system" && (serviceUser === "root" || serviceUser === "0")) {
+    throw new Error("system service account must not be root; pass --service-user <unprivileged-account>");
+  }
   const content =
     manager === "systemd"
-      ? systemdUnit(layout)
+      ? systemdUnit(layout, serviceUser)
       : manager === "launchd"
         ? launchdPlist(layout)
         : undefined;
@@ -295,6 +303,7 @@ export function buildInstallPlan(options: BuildInstallPlanOptions): InstallPlan 
     service: {
       manager,
       enabled,
+      ...(layout.scope === "system" ? { user: serviceUser } : {}),
       ...(unitPath ? { unitPath } : {}),
       ...(content ? { content } : {}),
     },
@@ -371,6 +380,7 @@ export function applyInstallPlan(plan: InstallPlan, options: ApplyInstallOptions
     service: {
       manager: plan.service.manager,
       enabled: plan.service.enabled,
+      ...(plan.service.user ? { user: plan.service.user } : {}),
       ...(plan.service.unitPath ? { unitPath: plan.service.unitPath } : {}),
     },
     installedAt: new Date().toISOString(),

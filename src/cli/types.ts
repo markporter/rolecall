@@ -79,6 +79,8 @@ export interface GlobalFlags {
   noRestart?: boolean;
   /** --update-url: mirror serving release.json + signature. */
   updateUrl?: string;
+  /** --service-user: account for the system-scope service unit (default rolecall). */
+  serviceUser?: string;
 }
 
 // ---------------------------------------------------------------------------

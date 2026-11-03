@@ -6,7 +6,7 @@
 
 import { resolveInstallLayout } from "../../install/layout";
 import { applyInstallPlan, buildInstallPlan } from "../../install/plan";
-import { buildServicePlan, runServicePlan, type ServiceOperation } from "../../install/service";
+import { buildServicePlan, runServicePlan, serviceUserProblem, type ServiceOperation } from "../../install/service";
 import { CliError, type CliResult, type GlobalFlags } from "../types";
 
 const OPS: readonly ServiceOperation[] = ["install", "uninstall", "start", "stop", "restart", "status"];
@@ -37,9 +37,14 @@ export async function runServiceCommand(
     throw new CliError(true, "system-scope service changes require root/Administrator");
   }
 
-  if (operation === "install" && !dryRun) {
-    const installPlan = buildInstallPlan({ layout, service: true, isolationBackend: flags.isolation ?? "auto" });
-    applyInstallPlan(installPlan, { dryRun: false, force: flags.force });
+  if (operation === "install") {
+    const serviceUser = flags.serviceUser ?? "rolecall";
+    const userProblem = serviceUserProblem(scope, serviceUser, true);
+    if (userProblem) throw new CliError(true, userProblem);
+    if (!dryRun) {
+      const installPlan = buildInstallPlan({ layout, service: true, isolationBackend: flags.isolation ?? "auto", serviceUser });
+      applyInstallPlan(installPlan, { dryRun: false, force: flags.force });
+    }
   }
 
   const plan = buildServicePlan(layout, operation);

@@ -6,6 +6,7 @@
 
 import { resolveInstallLayout } from "../../install/layout";
 import { applyInstallPlan, buildInstallPlan } from "../../install/plan";
+import { serviceUserProblem } from "../../install/service";
 import { CliError, type CliResult, type GlobalFlags } from "../types";
 
 /** @summary Plan (default) or apply an ADR 0023 install for the selected scope. */
@@ -23,6 +24,9 @@ export async function runInstallCommand(
     throw new CliError(true, "system-scope install requires root/Administrator; rerun with --user or as root");
   }
 
+  const serviceUser = flags.serviceUser ?? "rolecall";
+  const userProblem = serviceUserProblem(scope, serviceUser, flags.noService !== true);
+  if (userProblem) throw new CliError(true, userProblem);
   const layout = resolveInstallLayout({
     scope,
     ...(flags.prefix ? { prefix: flags.prefix } : {}),
@@ -33,6 +37,7 @@ export async function runInstallCommand(
     layout,
     service: flags.noService !== true,
     isolationBackend: flags.isolation ?? "auto",
+    serviceUser,
     ...(flags.fromDir ? { fromDir: flags.fromDir } : {}),
   });
   const result = applyInstallPlan(plan, { dryRun: !apply, force: flags.force });
