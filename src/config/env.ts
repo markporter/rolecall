@@ -11,7 +11,10 @@
 // ad-hoc reads — this is internal plumbing selected purely by env vars. See
 // .omo/notepads/vfs-db-abstractions/learnings.md for the inherited constraints.
 
+import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { readEnvFile } from "../install/env-file";
+import { resolveInstallLayout } from "../install/layout";
 
 /** Scratch-storage strategy resolved by loadConfig(). */
 export type ScratchStrategy = "fs" | "memory";
@@ -77,25 +80,60 @@ function resolveScratchDir(raw: string | undefined): string {
   return typeof raw === "string" && raw.length > 0 ? raw : tmpdir();
 }
 
+/** Options for loadConfig; file paths/env are injectable for tests and server child processes. */
+export interface LoadConfigOptions {
+  /** Project root for `<project>/.rolecall/rolecall.env` (defaults to cwd). */
+  projectRoot?: string;
+  /** Override system/user/project env-file paths (tests). */
+  systemEnvFile?: string;
+  userEnvFile?: string;
+  projectEnvFile?: string;
+  /** Environment overrides merged last (defaults to process.env). */
+  env?: Record<string, string | undefined>;
+}
+
+/** Resolve the system/user/project env files for the current install layout. */
+function envFiles(options: LoadConfigOptions): string[] {
+  const processEnv = process.env as Record<string, string | undefined>;
+  if (options.systemEnvFile || options.userEnvFile || options.projectEnvFile) {
+    return [options.systemEnvFile, options.userEnvFile, options.projectEnvFile].filter(
+      (p): p is string => typeof p === "string" && p.length > 0,
+    );
+  }
+  const platform = process.platform;
+  const system = resolveInstallLayout({ scope: "system", platform, env: processEnv }).envFile;
+  const user = resolveInstallLayout({ scope: "user", platform, env: processEnv }).envFile;
+  const project = join(options.projectRoot ?? process.cwd(), ".rolecall", "rolecall.env");
+  return [...new Set([system, user, project])];
+}
+
 /**
  * Read RoleCall's environment variables and merge them over safe built-in defaults.
+ *
+ * Precedence (low → high): system `rolecall.env` → user `rolecall.env` →
+ * project `.rolecall/rolecall.env` → process environment. Missing files are
+ * ignored; process environment always wins.
  * @returns A fully-typed Config in which every scalar field resolves without undefined even when all vars are unset.
  */
-export function loadConfig(): Config {
+export function loadConfig(options: LoadConfigOptions = {}): Config {
+  const base = options.env ?? (process.env as Record<string, string | undefined>);
+  const merged: Record<string, string | undefined> = {};
+  for (const file of envFiles(options)) Object.assign(merged, readEnvFile(file));
+  Object.assign(merged, base);
   return {
-    dbBackend: parseDbBackend(process.env.ROLECALL_DB_BACKEND),
-    dbUrl: strOrUndef(process.env.ROLECALL_DB_URL),
-    projectGitUrl: strOrUndef(process.env.ROLECALL_PROJECT_GIT_URL),
-    scratch: parseScratch(process.env.ROLECALL_SCRATCH),
-    scratchDir: resolveScratchDir(process.env.ROLECALL_SCRATCH_DIR),
+    dbBackend: parseDbBackend(merged["ROLECALL_DB_BACKEND"]),
+    dbUrl: strOrUndef(merged["ROLECALL_DB_URL"]),
+    projectGitUrl: strOrUndef(merged["ROLECALL_PROJECT_GIT_URL"]),
+    scratch: parseScratch(merged["ROLECALL_SCRATCH"]),
+    scratchDir: resolveScratchDir(merged["ROLECALL_SCRATCH_DIR"]),
     serve: {
-      port: parseIntEnv(process.env.ROLECALL_SERVE_PORT),
-      host: process.env.ROLECALL_SERVE_HOST,
+      port: parseIntEnv(merged["ROLECALL_SERVE_PORT"]),
+      host: merged["ROLECALL_SERVE_HOST"],
       // Preserve existing behavior (ROLECALL_UI_DIST takes priority) while also honoring the plan-named ROLECALL_SERVE_UI_DIST as a secondary.
-      uiDist: process.env.ROLECALL_UI_DIST ?? process.env.ROLECALL_SERVE_UI_DIST,
+      uiDist: merged["ROLECALL_UI_DIST"] ?? merged["ROLECALL_SERVE_UI_DIST"],
     },
-    home: process.env.ROLECALL_HOME,
-    projectState: process.env.ROLECALL_PROJECT_STATE,
-    runtime: process.env.ROLECALL_RUNTIME,
+    home: merged["ROLECALL_HOME"],
+    projectState: merged["ROLECALL_PROJECT_STATE"],
+    runtime: merged["ROLECALL_RUNTIME"],
   };
 }

@@ -25,6 +25,23 @@ bun add @rolecall/cli
 
 What npm ships is a Node bundle (`lib/cli.js`) built by `bun run build:js` (`node scripts/build-js.mjs`); `prepack` runs that build automatically so the baked version always matches the release. Either install route makes the `rolecall` command reachable wherever you call it. Head over to [Quickstart](/guide/quickstart) for what to type after installation finishes. The other channels, including standalone binaries attached to each GitHub Release, are covered in [Ways to run RoleCall](/deployment/ways-to-run).
 
+## Bootstrap the self-contained binary
+
+On a host without Node/npm/Bun, use the Node-free bootstrap:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/markporter/rolecall/main/install.sh | sh -s -- --user
+```
+
+It resolves the latest GitHub Release, downloads the platform binary and
+`SHA256SUMS`, verifies the checksum, and runs `<binary> install --from-dir ...`.
+Pass `--system` for a system install (run as root), or the install flags such as
+`--prefix`/`--config-dir`/`--state-dir`/`--no-service`/`--yes`. Windows uses
+`install.ps1` with the same flags.
+
+The bootstrap verifies the artifact checksum; the installed binary embeds the
+release verification key and enforces the signed update manifests (ADR 0029).
+
 ## Installing for local development
 
 If you are contributing or want to run RoleCall straight out of a checkout, install dependencies from the lockfile:

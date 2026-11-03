@@ -24,6 +24,18 @@ rolecall install [--system|--user] [--prefix DIR] [--config-dir DIR] [--state-di
 - `--isolation` participates in the preflight; `rolecall doctor` reports the
   same probe independently.
 
+## Config precedence
+
+`loadConfig()` reads, low → high:
+
+1. system `rolecall.env` (e.g. `/etc/rolecall/rolecall.env`),
+2. user `rolecall.env`,
+3. project `<project>/.rolecall/rolecall.env`,
+4. process environment (CLI flags layer on top).
+
+Missing files are ignored; process env always wins. The install command writes
+the user/system file with `0600`/`0640` permissions.
+
 ## What apply writes
 
 - the config, state, and cache directories;
