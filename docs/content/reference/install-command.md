@@ -93,10 +93,12 @@ Signature verification requires the release public key. Official builds embed it
 source/self-built binaries can set `ROLECALL_RELEASE_PUBLIC_KEY` (PEM) or
 `ROLECALL_RELEASE_PUBLIC_KEY_FILE`.
 
-Still pending: state-DB backup/migration guard, post-restart health rollback, and
-install-kind delegation. The current apply path verifies the artifact, runs the
-`--version` smoke check, stages/switches, updates the manifest, and restarts the
-service unless `--no-restart`.
+The apply path verifies the artifact, runs `<newbin> --version` as a smoke check,
+backs up `state.db` (plus WAL/SHM sidecars) when present, stages/switches,
+updates the manifest, and restarts the service unless `--no-restart`. If the
+restart commands fail, it switches `current` back to the previous version and
+updates the manifest. A full state-schema migration guard and `/health` probe are
+still pending, as is install-kind delegation (`npm`/`bun -g`/`os-package`).
 
 ## Service lifecycle
 

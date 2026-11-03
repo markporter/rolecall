@@ -4,7 +4,8 @@
 // from --from-dir. Versions live under <programDir>/versions/<version> and the
 // current symlink switches atomically. The service restarts unless --no-restart.
 
-import { existsSync, lstatSync, readFileSync, readlinkSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, lstatSync, readFileSync, readlinkSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 
 import type { InstallLayout } from "./layout";
@@ -123,6 +124,44 @@ export interface ApplyUpdateResult {
   toVersion?: string;
   written: string[];
   service: RunServiceResult["results"];
+  /** Backup path of the state DB taken before the swap. */
+  backup?: string;
+  /** True when a failed restart forced a switch back to the previous version. */
+  rolledBack?: boolean;
+}
+
+/** Switch the current symlink to a version directory. */
+function switchCurrent(layout: InstallLayout, version: string): string {
+  const link = join(layout.programDir, "current");
+  const tmp = `${link}.tmp-${Date.now()}`;
+  try { rmSync(tmp, { force: true }); } catch { /* ignore */ }
+  symlinkSync(join("versions", version), tmp, "dir");
+  renameSync(tmp, link);
+  return link;
+}
+
+/** Best-effort SQLite backup before a version swap (main DB + WAL/SHM sidecars). */
+function backupRegistry(layout: InstallLayout): string | undefined {
+  const db = join(layout.stateDir, "state.db");
+  if (!existsSync(db)) return undefined;
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const backup = `${db}.bak-${stamp}`;
+  copyFileSync(db, backup);
+  for (const suffix of ["-wal", "-shm"]) {
+    if (existsSync(`${db}${suffix}`)) copyFileSync(`${db}${suffix}`, `${backup}${suffix}`);
+  }
+  return backup;
+}
+
+/** Run `<newbin> --version` as a smoke check before swapping. */
+function smokeBinary(binary: NonNullable<UpdatePlan["binary"]>): void {
+  const res = spawnSync(binary.source, ["--version"], { encoding: "utf8", timeout: 15_000 });
+  if (res.error) throw new Error(`new binary smoke check failed: ${res.error.message}`);
+  if (res.status !== 0) throw new Error(`new binary --version failed (exit ${res.status ?? "?"})`);
+  const output = `${res.stdout ?? ""}${res.stderr ?? ""}`;
+  if (!output.includes(binary.version)) {
+    throw new Error(`new binary reported an unexpected version: ${output.trim() || "(empty)"}`);
+  }
 }
 
 function writeManifest(layout: InstallLayout, patch: Record<string, unknown>): string {
@@ -145,18 +184,16 @@ export function applyUpdatePlan(
   }
   const written: string[] = [];
   let previousVersion = plan.fromVersion;
+  const backup = backupRegistry(layout);
+  if (backup) written.push(backup);
   if (plan.operation === "rollback") {
     if (!plan.toVersion) throw new Error("rollback requires a target version");
     const bin = join(versionsDir(layout), plan.toVersion, programBinName(layout.platform));
     if (!existsSync(bin)) throw new Error(`rollback version ${plan.toVersion} is no longer installed`);
-    const link = join(layout.programDir, "current");
-    const tmp = `${link}.tmp-${Date.now()}`;
-    try { rmSync(tmp, { force: true }); } catch { /* ignore */ }
-    symlinkSync(join("versions", plan.toVersion), tmp, "dir");
-    renameSync(tmp, link);
-    written.push(link);
+    written.push(switchCurrent(layout, plan.toVersion));
   } else {
     if (!plan.binary) throw new Error("update plan has no binary");
+    smokeBinary(plan.binary);
     const activated = activateBinary(layout, plan.binary);
     previousVersion = activated.previousVersion;
     written.push(...activated.written);
@@ -174,6 +211,29 @@ export function applyUpdatePlan(
       stopOnError: false,
       ...(options.serviceRun ? { run: options.serviceRun } : {}),
     }).results;
+    const failed = service.some((r) => r.status !== 0);
+    if (failed && previousVersion) {
+      written.push(switchCurrent(layout, previousVersion));
+      written.push(writeManifest(layout, {
+        currentVersion: previousVersion,
+        previousVersion: plan.toVersion,
+      }));
+      const rollbackService = buildServicePlan(layout, "restart");
+      const rollbackResults = runServicePlan(rollbackService, {
+        dryRun: false,
+        stopOnError: false,
+        ...(options.serviceRun ? { run: options.serviceRun } : {}),
+      }).results;
+      return {
+        applied: true,
+        fromVersion: plan.fromVersion,
+        toVersion: previousVersion,
+        written,
+        service: [...service, ...rollbackResults],
+        ...(backup ? { backup } : {}),
+        rolledBack: true,
+      };
+    }
   }
-  return { applied: true, fromVersion: plan.fromVersion, toVersion: plan.toVersion, written, service };
+  return { applied: true, fromVersion: plan.fromVersion, toVersion: plan.toVersion, written, service, ...(backup ? { backup } : {}) };
 }

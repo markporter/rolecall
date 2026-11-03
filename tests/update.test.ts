@@ -113,3 +113,48 @@ test("update --check is read-only", async () => {
   expect(res.check?.updateAvailable).toBe(true);
   expect(readlinkSync(join(l.programDir, "current"))).toBe(join("versions", "1.0.0"));
 });
+
+test("update backs up the state DB and refuses a bad --version smoke check", () => {
+  const dir = tmp();
+  const l = layout(dir);
+  const v1 = artifact(dir, "1.0.0");
+  const v2 = artifact(dir, "2.0.0");
+  applyInstallPlan(buildInstallPlan({ layout: l, service: false, isolationBackend: "none", fromDir: v1 }), { dryRun: false });
+  mkdirSync(l.stateDir, { recursive: true });
+  writeFileSync(join(l.stateDir, "state.db"), "sqlite-bytes");
+
+  const badDir = join(dir, "bad");
+  mkdirSync(badDir, { recursive: true });
+  writeFileSync(join(badDir, "rolecall"), "#!/bin/sh\necho rolecall 9.9.9\n", { mode: 0o755 });
+  writeFileSync(join(badDir, "version.txt"), "3.0.0\n");
+  const badBytes = readFileSync(join(badDir, "rolecall"));
+  writeFileSync(join(badDir, "SHA256SUMS"), `${createHash("sha256").update(badBytes).digest("hex")}  rolecall\n`);
+
+  expect(() => {
+    const plan = buildUpdatePlan(l, { fromDir: badDir, restart: false });
+    applyUpdatePlan(l, plan, { dryRun: false, restart: false });
+  }).toThrow(/unexpected version/);
+
+  const good = buildUpdatePlan(l, { fromDir: v2, restart: false });
+  const result = applyUpdatePlan(l, good, { dryRun: false, restart: false });
+  expect(result.backup).toBeDefined();
+  expect(existsSync(result.backup!)).toBe(true);
+});
+
+test("a failed restart rolls the current symlink back", () => {
+  const dir = tmp();
+  const l = layout(dir);
+  const v1 = artifact(dir, "1.0.0");
+  const v2 = artifact(dir, "2.0.0");
+  applyInstallPlan(buildInstallPlan({ layout: l, service: true, isolationBackend: "none", fromDir: v1 }), { dryRun: false });
+  const plan = buildUpdatePlan(l, { fromDir: v2, restart: true });
+  const result = applyUpdatePlan(l, plan, {
+    dryRun: false,
+    restart: true,
+    serviceRun: () => ({ status: 1, stderr: "restart failed" }),
+  });
+  expect(result.rolledBack).toBe(true);
+  expect(readlinkSync(join(l.programDir, "current"))).toBe(join("versions", "1.0.0"));
+  const manifest = JSON.parse(readFileSync(join(l.configDir, "install.json"), "utf8"));
+  expect(manifest.currentVersion).toBe("1.0.0");
+});

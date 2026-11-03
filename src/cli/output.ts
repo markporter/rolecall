@@ -302,6 +302,8 @@ function formatHuman(data: CliResult): string {
       lines.push(data.applied ? "Applied  : yes" : "Applied  : no (dry-run; pass --yes to apply)");
       for (const action of p?.actions ?? []) lines.push(`  - ${action}`);
       for (const written of data.written) lines.push(`  wrote: ${written}`);
+      if (data.backup) lines.push(`  DB backup: ${data.backup}`);
+      if (data.rolledBack) lines.push("  ! restart failed; rolled back to the previous version");
       break;
     }
     case "uninstall": {

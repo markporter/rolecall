@@ -277,6 +277,8 @@ export interface UpdateResult {
   toVersion?: string;
   written: string[];
   service: import("../install/service").RunServiceResult["results"];
+  backup?: string;
+  rolledBack?: boolean;
 }
 
 export interface DoctorResult {
