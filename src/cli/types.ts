@@ -77,6 +77,8 @@ export interface GlobalFlags {
   rollback?: boolean;
   /** --no-restart: do not restart the service after an update. */
   noRestart?: boolean;
+  /** --update-url: mirror serving release.json + signature. */
+  updateUrl?: string;
 }
 
 // ---------------------------------------------------------------------------
