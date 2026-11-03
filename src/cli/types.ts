@@ -281,6 +281,7 @@ export interface UpdateResult {
   service: import("../install/service").RunServiceResult["results"];
   backup?: string;
   rolledBack?: boolean;
+  delegated?: import("../install/kind").PackageManagerCommand;
 }
 
 export interface DoctorResult {

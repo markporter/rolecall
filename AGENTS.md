@@ -55,7 +55,7 @@ rolecall install [--user|--system] [--service-user <acct>]  # TTY wizard; flags 
 install.sh / install.ps1                             # Node-free GitHub bootstrap -> install --from-dir
 rolecall service install|start|stop|restart|status [--yes]  # plan/apply systemd/launchd/SCM lifecycle; system units refuse root
 rolecall uninstall [--user|--system] [--purge] [--dry-run|--yes]  # remove unit/manifest; keep config/state unless purged
-rolecall update --check|--from-dir <dir>|--rollback [--yes] [--no-restart]  # GitHub signed manifest pre-beta; channels deferred to beta (ADR 0029)
+rolecall update --check|--from-dir <dir>|--rollback [--yes] [--no-restart]  # binary self-update; npm/bun/os-package delegate (ADR 0029 pre-beta)
 rolecall docs search <query>            # query RoleCall prose docs by substring
 rolecall plugin list                               # registered module/fact + built-in inventory plugins
 rolecall plugin register <name> --path <file> [--global]   # persist a module kept outside a project (project plugins in plugins/ need no registration)

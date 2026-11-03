@@ -301,6 +301,7 @@ function formatHuman(data: CliResult): string {
       lines.push(`Update   : ${p?.fromVersion ?? "unknown"} -> ${p?.toVersion ?? "unknown"}`);
       lines.push(data.applied ? "Applied  : yes" : "Applied  : no (dry-run; pass --yes to apply)");
       for (const action of p?.actions ?? []) lines.push(`  - ${action}`);
+      if (data.delegated) lines.push(`  delegate: ${data.delegated.file} ${data.delegated.args.join(" ")}`);
       for (const written of data.written) lines.push(`  wrote: ${written}`);
       if (data.backup) lines.push(`  DB backup: ${data.backup}`);
       if (data.rolledBack) lines.push("  ! restart failed; rolled back to the previous version");

@@ -106,6 +106,20 @@ restart commands fail, it switches `current` back to the previous version and
 updates the manifest. A full state-schema migration guard and `/health` probe are
 still pending, as is install-kind delegation (`npm`/`bun -g`/`os-package`).
 
+## Install kinds
+
+`install.json` records how RoleCall was installed:
+
+- `binary` — the self-installer; `update` uses the versioned binary layout.
+- `npm` — `update` delegates to `npm i -g @rolecall/cli@<version>`; with
+  `--yes` it runs the command, otherwise it prints it.
+- `bun-global` — delegates to `bun add -g @rolecall/cli@<version>`.
+- `os-package` — update through apt/dnf/brew/MSI; RoleCall refuses to replace
+  package-owned files.
+- `source` — update with git and rebuild; self-update is refused.
+
+If no manifest exists, the CLI infers the kind from how it was launched.
+
 ## Service lifecycle
 
 ```sh

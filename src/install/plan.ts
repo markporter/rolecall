@@ -12,6 +12,8 @@ import { ROLECALL_VERSION } from "../util/version";
 import type { InstallLayout, InstallScope } from "./layout";
 
 export type ServiceManager = "systemd" | "launchd" | "windows-scm" | "none";
+/** How this RoleCall installation is managed. */
+export type InstallKind = "binary" | "npm" | "bun-global" | "os-package" | "source";
 
 export interface InstallAction {
   kind: "create-dir" | "write-file" | "write-unit" | "warn";
@@ -23,6 +25,7 @@ export interface InstallPlan {
   scope: InstallScope;
   platform: string;
   version: string;
+  kind: InstallKind;
   layout: InstallLayout;
   service: {
     manager: ServiceManager;
@@ -65,6 +68,8 @@ export interface BuildInstallPlanOptions {
   fromDir?: string;
   /** System-scope service account (default rolecall). */
   serviceUser?: string;
+  /** Install kind recorded in the manifest (default binary). */
+  kind?: InstallKind;
 }
 
 export function installManifestPath(layout: InstallLayout): string {
@@ -299,6 +304,7 @@ export function buildInstallPlan(options: BuildInstallPlanOptions): InstallPlan 
     scope: layout.scope,
     platform: layout.platform,
     version: options.version ?? ROLECALL_VERSION,
+    kind: options.kind ?? "binary",
     layout,
     service: {
       manager,
@@ -366,6 +372,7 @@ export function applyInstallPlan(plan: InstallPlan, options: ApplyInstallOptions
     scope: plan.scope,
     version: plan.version,
     runtime: "embedded",
+    kind: plan.kind,
     platform: plan.platform,
     ...(currentVersion ? { currentVersion } : {}),
     ...(previousVersion ? { previousVersion } : {}),
