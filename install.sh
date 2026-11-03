@@ -1,7 +1,12 @@
 #!/bin/sh
 # RoleCall Node-free bootstrap (ADR 0023).
 #
+#   # interactive wizard
+#   curl -fsSL https://raw.githubusercontent.com/markporter/rolecall/main/install.sh | sh
+#   # pre-answer scope, still prompt for paths/service/confirmation
 #   curl -fsSL https://raw.githubusercontent.com/markporter/rolecall/main/install.sh | sh -s -- --user
+#   # unattended
+#   curl -fsSL https://raw.githubusercontent.com/markporter/rolecall/main/install.sh | sh -s -- --non-interactive --yes --user
 #
 # Downloads the platform binary + SHA256SUMS from GitHub Releases, verifies the
 # checksum, then runs `<binary> install --from-dir ...` so all layout/config/

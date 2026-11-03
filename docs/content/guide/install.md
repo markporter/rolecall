@@ -30,15 +30,20 @@ What npm ships is a Node bundle (`lib/cli.js`) built by `bun run build:js` (`nod
 On a host without Node/npm/Bun, use the Node-free bootstrap:
 
 ```sh
+# Interactive wizard
+curl -fsSL https://raw.githubusercontent.com/markporter/rolecall/main/install.sh | sh
+
+# Pre-answer the scope; paths/service/confirmation still prompt
 curl -fsSL https://raw.githubusercontent.com/markporter/rolecall/main/install.sh | sh -s -- --user
+
+# Unattended
+curl -fsSL https://raw.githubusercontent.com/markporter/rolecall/main/install.sh | sh -s -- --non-interactive --yes --user
 ```
 
 It resolves the latest GitHub Release, downloads the platform binary and
 `SHA256SUMS`, verifies the checksum, and runs `<binary> install --from-dir ...`.
 In an interactive terminal the CLI then walks through scope, paths, service, and
-confirmation. Pass `--system`/`--user` and other install flags to pre-answer, or
-`--non-interactive --yes` for unattended automation. Windows uses
-`install.ps1` with the same flags.
+confirmation. Windows uses `install.ps1` with the same flags.
 
 The bootstrap verifies the artifact checksum; the installed binary embeds the
 release verification key and enforces the signed update manifests (ADR 0029).
