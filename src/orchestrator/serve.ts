@@ -100,7 +100,20 @@ export async function createServer(opts: ServerOptions): Promise<ServerHandle> {
  * @param opts Optional overrides forwarded to createServer() (e.g. noSignalHandlers for tests). Defaults empty so normal invocations are unaffected.
  * @returns Exit code once a termination signal triggers graceful shutdown (always 0 today).
  */
+/** ADR 0023: refuse to serve as root unless explicitly allowed. */
+export function serveRootProblem(uid: number | undefined, allowRoot = process.env["ROLECALL_ALLOW_ROOT"]): string | undefined {
+  if (uid === 0 && allowRoot !== "1") {
+    return "refusing to run --serve as root; use an unprivileged account or set ROLECALL_ALLOW_ROOT=1 explicitly";
+  }
+  return undefined;
+}
+
 export async function startServe(argv?: string[], opts: Partial<ServerOptions> = {}): Promise<number> {
+  const rootProblem = serveRootProblem(typeof process.getuid === "function" ? process.getuid() : undefined);
+  if (rootProblem) {
+    process.stderr.write(`rolecall: ${rootProblem}\n`);
+    return 1;
+  }
   const args = argv ?? process.argv.slice(2);
   const portRaw = await readArg(args, "port", PORT_RE);
   const host = await readArg(args, "host", HOST_RE);

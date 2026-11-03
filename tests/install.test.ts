@@ -165,3 +165,20 @@ test("install --from-dir rejects a checksum mismatch", () => {
   });
   expect(() => buildInstallPlan({ layout, service: false, isolationBackend: "none", fromDir: dir })).toThrow(/checksum mismatch/);
 });
+
+test("system service units use the requested non-root account", () => {
+  const dir = tmp();
+  const l = resolveInstallLayout({
+    scope: "system",
+    platform: "linux",
+    home: "/root",
+    prefix: join(dir, "lib"),
+    configDir: join(dir, "config"),
+    stateDir: join(dir, "state"),
+  });
+  const plan = buildInstallPlan({ layout: l, service: true, isolationBackend: "none", serviceUser: "svc-rolecall" });
+  expect(plan.service.user).toBe("svc-rolecall");
+  expect(plan.service.content).toContain("User=svc-rolecall");
+  expect(plan.service.content).toContain("Group=svc-rolecall");
+  expect(() => buildInstallPlan({ layout: l, service: true, isolationBackend: "none", serviceUser: "root" })).toThrow(/must not be root/);
+});

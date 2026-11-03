@@ -223,7 +223,7 @@ interactive terminal window appears. For non-Windows hosts, prefer systemd
 
 RoleCall ships two distribution channels from one codebase. The **npm channel is
 Node.js**: `npm i -g @rolecall/cli` (or `npx @rolecall/cli`) works on a machine with Node
->= 22.19.0 and no Bun installed. The published bin is `lib/cli.js`, a
+`>= 22.19.0` and no Bun installed. The published bin is `lib/cli.js`, a
 `bun build --target=node --packages=external` bundle produced by `bun run build:js`
 (`node scripts/build-js.mjs`, run automatically by `prepack`). **Bun remains the
 batteries-included channel**: compiled binaries (`npm run build-bin`, untouched) and
