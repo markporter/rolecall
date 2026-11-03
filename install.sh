@@ -27,6 +27,7 @@ Usage: install.sh [options]
   --no-service             skip service unit generation
   --yes                    apply without an install prompt
   --dry-run                plan only
+  --non-interactive        never prompt (requires flags/--yes for an apply)
   --version TAG            release tag (default: latest GitHub release)
   --from-dir DIR           install from a pre-downloaded artifact directory
   -h, --help               this help
@@ -42,6 +43,7 @@ while [ $# -gt 0 ]; do
     --no-service) NO_SERVICE="--no-service" ;;
     --yes|-y) YES="--yes" ;;
     --dry-run) INSTALL_ARGS="$INSTALL_ARGS --dry-run" ;;
+    --non-interactive) INSTALL_ARGS="$INSTALL_ARGS --non-interactive" ;;
     --version)
       [ $# -ge 2 ] || { echo "install: --version needs a tag" >&2; exit 2; }
       TAG="$2"; shift ;;
@@ -68,10 +70,17 @@ sha256() {
   else echo "install: no SHA-256 tool available" >&2; exit 1; fi
 }
 
+run_install() {
+  if [ -z "$YES" ] && [ -r /dev/tty ]; then
+    exec "$1" install --from-dir "$2" $SCOPE_ARG $NO_SERVICE $YES $INSTALL_ARGS < /dev/tty
+  fi
+  exec "$1" install --from-dir "$2" $SCOPE_ARG $NO_SERVICE $YES $INSTALL_ARGS
+}
+
 if [ -n "$FROM_DIR" ]; then
   BIN="$FROM_DIR/rolecall"
   [ -x "$BIN" ] || { echo "install: $BIN is not executable" >&2; exit 1; }
-  exec "$BIN" install --from-dir "$FROM_DIR" $SCOPE_ARG $NO_SERVICE $YES $INSTALL_ARGS
+  run_install "$BIN" "$FROM_DIR"
 fi
 
 case "$(uname -s)" in
@@ -116,4 +125,4 @@ chmod 755 "$STAGE/rolecall"
 printf '%s\n' "${TAG#v}" > "$STAGE/version.txt"
 printf '%s  rolecall\n' "$ACTUAL" > "$STAGE/SHA256SUMS"
 
-exec "$STAGE/rolecall" install --from-dir "$STAGE" $SCOPE_ARG $NO_SERVICE $YES $INSTALL_ARGS
+run_install "$STAGE/rolecall" "$STAGE"

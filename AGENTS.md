@@ -51,7 +51,7 @@ rolecall inventory list <inv>
 rolecall vars list <play>               # declared var/fact by file + fact capability per connection kind
 rolecall vars trace <play> [--inventory <inv>] [--extra-vars <kv>] [--limit <host>]
 rolecall doctor                         # report isolation backend + ADR 0023 install layout readiness
-rolecall install [--user|--system] [--service-user <acct>] [--dry-run|--yes]  # plan/apply ADR 0023 layout/config/manifest/unit
+rolecall install [--user|--system] [--service-user <acct>]  # TTY wizard; flags pre-answer; --yes applies; --non-interactive for automation
 install.sh / install.ps1                             # Node-free GitHub bootstrap -> install --from-dir
 rolecall service install|start|stop|restart|status [--yes]  # plan/apply systemd/launchd/SCM lifecycle; system units refuse root
 rolecall uninstall [--user|--system] [--purge] [--dry-run|--yes]  # remove unit/manifest; keep config/state unless purged
