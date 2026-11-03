@@ -37,6 +37,7 @@ longname: module:cli.GlobalFlags
 	system?: boolean;
 	tags?: string;
 	trace: boolean;
+	updateUrl?: string;
 	user?: boolean;
 	yes?: boolean;
 }"
@@ -221,6 +222,12 @@ Raw `--tags` string (comma-separated tag list); parsed into a filter by the play
 <MemberMeta sourceHref="/source/src/cli/types-ts/#L33" sourceLabel="types.ts:33" />
 
 Emit + persist an execution-trace ledger for the run (Todo 25).
+
+<MemberHeading id="updateurl" depth="3" name="updateUrl" sig="updateUrl: string" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L81" sourceLabel="types.ts:81" />
+
+\--update-url: mirror serving release.json + signature.
 
 <MemberHeading id="user" depth="3" name="user" sig="user: boolean" />
 
