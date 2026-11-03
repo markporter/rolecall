@@ -10,7 +10,9 @@ import { join } from "node:path";
 import { resolveInstallLayout } from "../../install/layout";
 import { applyUpdatePlan, buildUpdatePlan, checkUpdate, type UpdatePlan } from "../../install/update";
 import { checkForUpdate, downloadReleaseArtifact } from "../../install/release";
-import { currentLink, programBinName, versionsDir } from "../../install/plan";
+import { currentLink, programBinName, readInstallManifest, versionsDir } from "../../install/plan";
+import { detectInstallKind, packageManagerUpdateCommand } from "../../install/kind";
+import { spawnSync } from "node:child_process";
 import { CliError, type CliResult, type GlobalFlags } from "../types";
 
 /** @summary Check, apply, or roll back a versioned ADR 0023 update. */
@@ -27,6 +29,8 @@ export async function runUpdateCommand(flags: GlobalFlags, _rest: string[]): Pro
     ...(flags.stateDir ? { stateDir: flags.stateDir } : {}),
   });
 
+  const manifest = readInstallManifest(layout) as { kind?: import("../../install/plan").InstallKind } | undefined;
+  const kind = detectInstallKind(manifest?.kind);
   if (flags.check === true) {
     if (flags.fromDir) {
       const check = checkUpdate(layout, flags.fromDir);
@@ -52,6 +56,34 @@ export async function runUpdateCommand(flags: GlobalFlags, _rest: string[]): Pro
   const dryRun = flags.dryRun === true || flags.yes !== true;
   if (!dryRun && scope === "system" && !root) {
     throw new CliError(true, "system-scope update requires root/Administrator");
+  }
+
+  if (kind !== "binary") {
+    if (flags.rollback) throw new CliError(true, "rollback is only supported for binary installs");
+    if (kind === "os-package") {
+      throw new CliError(false, "this RoleCall was installed by an OS package; use apt/dnf/brew/MSI to update it");
+    }
+    if (kind === "source") {
+      throw new CliError(false, "this is a source checkout; update it with git and rebuild");
+    }
+    const current = checkUpdate(layout).currentVersion;
+    const candidate = await checkForUpdate({ ...(current ? { currentVersion: current } : {}), ...(flags.updateUrl ? { updateUrl: flags.updateUrl } : {}) });
+    const command = packageManagerUpdateCommand(kind, candidate.manifest.version);
+    if (!command) throw new CliError(false, `no package-manager update path for install kind '${kind}'`);
+    let applied = false;
+    if (!dryRun) {
+      const res = spawnSync(command.file, command.args, { stdio: "inherit" });
+      if (res.error) throw new CliError(false, `package-manager update failed: ${res.error.message}`);
+      applied = res.status === 0;
+    }
+    return {
+      command: "update",
+      applied,
+      toVersion: candidate.manifest.version,
+      written: [],
+      service: [],
+      delegated: command,
+    };
   }
 
   let plan: UpdatePlan;
