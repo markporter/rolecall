@@ -9,6 +9,6 @@ description: Supported database backends. Only "sqlite" is wired today; "postgre
 
 <Signature code="DbBackend = 'sqlite' | 'postgres'" />
 
-<SourceLink href="/source/src/config/env-ts/#L19" label="env.ts:19" />
+<SourceLink href="/source/src/config/env-ts/#L22" label="env.ts:22" />
 
 Supported database backends. Only "sqlite" is wired today; "postgres" throws until its backend lands.

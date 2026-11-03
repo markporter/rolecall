@@ -53,6 +53,7 @@ Documentation for @rolecall/cli. Every page below links to its Markdown source; 
 - [Config](https://rolecall.example.com/module/config/config/index.md)
 - [DirectoryVars](https://rolecall.example.com/module/config/directoryvars/index.md)
 - [IdempotencyWarning](https://rolecall.example.com/module/config/idempotencywarning/index.md)
+- [LoadConfigOptions](https://rolecall.example.com/module/config/loadconfigoptions/index.md)
 - [NormalizedInventory](https://rolecall.example.com/module/config/normalizedinventory/index.md)
 - [NormalizedPlaybook](https://rolecall.example.com/module/config/normalizedplaybook/index.md)
 - [NormalizedTask](https://rolecall.example.com/module/config/normalizedtask/index.md)

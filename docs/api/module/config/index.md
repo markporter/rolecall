@@ -15,6 +15,7 @@ longname: module:config
 - [`Config`](/module/config/config)
 - [`DirectoryVars`](/module/config/directoryvars)
 - [`IdempotencyWarning`](/module/config/idempotencywarning)
+- [`LoadConfigOptions`](/module/config/loadconfigoptions)
 - [`NormalizedInventory`](/module/config/normalizedinventory)
 - [`NormalizedPlaybook`](/module/config/normalizedplaybook)
 - [`NormalizedTask`](/module/config/normalizedtask)

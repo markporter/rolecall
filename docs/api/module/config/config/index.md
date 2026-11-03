@@ -21,7 +21,7 @@ description: Merged, typed runtime configuration derived from the environment + 
 }"
 />
 
-<SourceLink href="/source/src/config/env-ts/#L32" label="env.ts:32" />
+<SourceLink href="/source/src/config/env-ts/#L35" label="env.ts:35" />
 
 Merged, typed runtime configuration derived from the environment + safe defaults.
 
@@ -31,54 +31,54 @@ Merged, typed runtime configuration derived from the environment + safe defaults
 
 <MemberHeading id="dbbackend" depth="3" name="dbBackend" sig="dbBackend: DbBackend" />
 
-<MemberMeta sourceHref="/source/src/config/env-ts/#L34" sourceLabel="env.ts:34" />
+<MemberMeta sourceHref="/source/src/config/env-ts/#L37" sourceLabel="env.ts:37" />
 
 Database backend selector. Default "sqlite". "postgres" is recorded only; wiring is deferred.
 
 <MemberHeading id="dburl" depth="3" name="dbUrl" sig="dbUrl: string" />
 
-<MemberMeta sourceHref="/source/src/config/env-ts/#L36" sourceLabel="env.ts:36" />
+<MemberMeta sourceHref="/source/src/config/env-ts/#L39" sourceLabel="env.ts:39" />
 
 Optional direct database URL (ROLECALL_DB_URL). Empty string normalizes to undefined.
 
 <MemberHeading id="home" depth="3" name="home" sig="home: string" />
 
-<MemberMeta sourceHref="/source/src/config/env-ts/#L46" sourceLabel="env.ts:46" />
+<MemberMeta sourceHref="/source/src/config/env-ts/#L49" sourceLabel="env.ts:49" />
 
 ROLECALL_HOME override (\~/.rolecall global home root when unset).
 
 <MemberHeading id="projectgiturl" depth="3" name="projectGitUrl" sig="projectGitUrl: string" />
 
-<MemberMeta sourceHref="/source/src/config/env-ts/#L38" sourceLabel="env.ts:38" />
+<MemberMeta sourceHref="/source/src/config/env-ts/#L41" sourceLabel="env.ts:41" />
 
 Optional git URL for a remote project source (ROLECALL_PROJECT_GIT_URL). Empty string normalizes to undefined.
 
 <MemberHeading id="projectstate" depth="3" name="projectState" sig="projectState: string" />
 
-<MemberMeta sourceHref="/source/src/config/env-ts/#L48" sourceLabel="env.ts:48" />
+<MemberMeta sourceHref="/source/src/config/env-ts/#L51" sourceLabel="env.ts:51" />
 
 ROLECALL_PROJECT_STATE override for the state-root precedence chain.
 
 <MemberHeading id="runtime" depth="3" name="runtime" sig="runtime: string" />
 
-<MemberMeta sourceHref="/source/src/config/env-ts/#L50" sourceLabel="env.ts:50" />
+<MemberMeta sourceHref="/source/src/config/env-ts/#L53" sourceLabel="env.ts:53" />
 
 ROLECALL_RUNTIME override consumed by detectRuntime().
 
 <MemberHeading id="scratch" depth="3" name="scratch" sig="scratch: ScratchStrategy" />
 
-<MemberMeta sourceHref="/source/src/config/env-ts/#L40" sourceLabel="env.ts:40" />
+<MemberMeta sourceHref="/source/src/config/env-ts/#L43" sourceLabel="env.ts:43" />
 
 Scratch-storage strategy. Default "fs".
 
 <MemberHeading id="scratchdir" depth="3" name="scratchDir" sig="scratchDir: string" />
 
-<MemberMeta sourceHref="/source/src/config/env-ts/#L42" sourceLabel="env.ts:42" />
+<MemberMeta sourceHref="/source/src/config/env-ts/#L45" sourceLabel="env.ts:45" />
 
 Directory backing fs scratch. Defaults to os.tmpdir(); empty/unset ROLECALL_SCRATCH_DIR falls back there too.
 
 <MemberHeading id="serve" depth="3" name="serve" sig="serve: ServeConfig" />
 
-<MemberMeta sourceHref="/source/src/config/env-ts/#L44" sourceLabel="env.ts:44" />
+<MemberMeta sourceHref="/source/src/config/env-ts/#L47" sourceLabel="env.ts:47" />
 
 Orchestrator bind settings.
