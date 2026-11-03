@@ -282,31 +282,6 @@ still exercise the **Node runtime through its own harness**, CI runs a small
 plus a `node-package-smoke` job that installs the packed npm tarball with no Bun on
 PATH and drives the CLI end to end. See `.github/workflows/ci.yml`.
 
-## Releasing
-
-Releases are tag-driven: bump `package.json`, commit, then push a matching
-`vX.Y.Z` tag. `.github/workflows/release.yml` verifies the tag, runs CI, builds the
-native binaries, generates release notes from Conventional Commits via
-[`cliff.toml`](cliff.toml) (`git-cliff`), attaches the binaries, and stages the npm
-package.
-
-The release job also generates `release.json`, a detached Ed25519
-`release.json.sig`, and `SHA256SUMS` for the update channel. It requires:
-
-- repository secret `ROLECALL_RELEASE_PRIVATE_KEY` — Ed25519 PKCS#8 PEM;
-- repository variable `ROLECALL_RELEASE_PUBLIC_KEY` — the matching public key,
-  embedded into binaries/npm bundles;
-- optional variable `ROLECALL_RELEASE_KEY_ID` (defaults to `rolecall-release`).
-
-Generate a keypair with `openssl genpkey -algorithm ED25519` and derive the public
-key with `openssl pkey -pubout`. Never commit the private key.
-
-Preview the latest tag's notes locally:
-
-```sh
-GITHUB_REPO=markporter/rolecall npx git-cliff@2.14.2 --latest --strip header
-```
-
 ## Security & packaging notes
 
 These inherited constraints affect how dependencies are installed and packaged:
