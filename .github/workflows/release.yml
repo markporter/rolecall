@@ -15,7 +15,7 @@ name: release
 #                    on the registry yet (the first publish is manual) or when
 #                    that version already exists (re-pushed tag).
 #
-# See the "Releasing" section in README.md for the operator flow.
+# See .local/RELEASING.md (maintainer-local, gitignored) for the operator flow.
 
 on:
   push:
