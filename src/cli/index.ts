@@ -83,6 +83,7 @@ Global flags (parsed once, injected downward):
   --allow-egress <host[:port]>  Add an ephemeral destination whitelist entry (requires --isolation; repeatable)
   --allow-unsafe-template-code  Explicitly allow in-process restricted code ($template/$call; Eta/EJS with --isolation none)
   --from-dir <dir>             With install, stage the binary from dir/rolecall + version.txt + SHA256SUMS
+  --update-url <url>           Update mirror serving release.json + release.json.sig
   --forks <N>         Concurrency fan-out (number)
   --trace             Emit + persist an execution-trace ledger for the run
   --profile           Print a per-host/per-task performance profile at run end
@@ -160,6 +161,7 @@ const GLOBAL_OPTS = {
   "from-dir": { type: "string" },
   rollback: { type: "boolean" },
   "no-restart": { type: "boolean" },
+  "update-url": { type: "string" },
 } as const;
 
 /** @summary Write rendered CLI output to stdout, stripping NUL/control chars from the `json` stream so a polluted data channel never breaks a downstream JSON parser. @param text Rendered text to emit. @param output Selected output plugin name; only `json` gets control-char scrubbing. */
@@ -243,6 +245,7 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
     fromDir: values["from-dir"] as string | undefined,
     rollback: values["rollback"] === true,
     noRestart: values["no-restart"] === true,
+    updateUrl: values["update-url"] as string | undefined,
     // --json is a convenience shorthand for --output json (used by the docs
     // subcommands and any other command the user wants structured output from).
     output: (values["json"] as boolean | undefined)

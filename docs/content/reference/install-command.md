@@ -68,13 +68,23 @@ atomically switches `current`, records `currentVersion`/`previousVersion` in
 `install.json`, and restarts the service unless `--no-restart`.
 `--rollback` switches back to the recorded previous version.
 
-Network/channel discovery and downloads are not implemented; updates require a
-local artifact directory containing `rolecall`, `version.txt`, and `SHA256SUMS`.
+Network updates use GitHub Releases (ADR 0029). Each release carries
+`release.json`, its Ed25519 signature, and `SHA256SUMS`; the client verifies the
+signature/checksum before staging. `--update-url` points at a mirror; `--from-dir`
+remains the offline path.
 
-The planned network source is GitHub Releases with a signed `release.json` and
-checksums (ADR 0029). Channels (`stable`/`alpha`/`beta`/`rc`/branch) are deferred
-until beta; pre-beta uses a single update stream. The signed manifest, staging,
-rollback, migration guard, and health check land before channels do.
+Pre-beta has a **single update stream**; channels (`stable`/`alpha`/`beta`/`rc`/
+branch) are deferred until beta. Use `update --check` to inspect the latest release
+without downloading it.
+
+Signature verification requires the release public key. Official builds embed it;
+source/self-built binaries can set `ROLECALL_RELEASE_PUBLIC_KEY` (PEM) or
+`ROLECALL_RELEASE_PUBLIC_KEY_FILE`.
+
+Still pending: state-DB backup/migration guard, post-restart health rollback, and
+install-kind delegation. The current apply path verifies the artifact, runs the
+`--version` smoke check, stages/switches, updates the manifest, and restarts the
+service unless `--no-restart`.
 
 ## Service lifecycle
 

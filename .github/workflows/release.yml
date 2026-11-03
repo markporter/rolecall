@@ -77,6 +77,11 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Embed release public key
+        run: node scripts/embed-release-key.mjs
+        env:
+          ROLECALL_RELEASE_PUBLIC_KEY: ${{ vars.ROLECALL_RELEASE_PUBLIC_KEY }}
+
       - name: Build binary (${{ matrix.target }})
         run: node scripts/build-bin.mjs --target ${{ matrix.target }}
 
@@ -118,15 +123,23 @@ jobs:
           OUTPUT: RELEASE_NOTES.md
           GITHUB_REPO: ${{ github.repository }}
 
+      - name: Generate signed release manifest
+        run: node scripts/build-release-manifest.mjs --dir dist/bin --version "${GITHUB_REF_NAME#v}" --tag "$GITHUB_REF_NAME" --repo "${{ github.repository }}" --out dist/release
+        env:
+          ROLECALL_RELEASE_PRIVATE_KEY: ${{ secrets.ROLECALL_RELEASE_PRIVATE_KEY }}
+          ROLECALL_RELEASE_KEY_ID: ${{ vars.ROLECALL_RELEASE_KEY_ID }}
+
       - name: List release assets
-        run: ls -l dist/bin
+        run: ls -l dist/bin dist/release
 
       - name: Create Release (git-cliff notes + binaries)
         uses: softprops/action-gh-release@v2
         with:
           body_path: RELEASE_NOTES.md
           generate_release_notes: false
-          files: dist/bin/*
+          files: |
+            dist/bin/*
+            dist/release/*
           fail_on_unmatched_files: true
 
   # ---- 4. npm STAGED publish via Trusted Publishing (OIDC) ----------------
@@ -203,6 +216,11 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Embed release public key
+        run: node scripts/embed-release-key.mjs
+        env:
+          ROLECALL_RELEASE_PUBLIC_KEY: ${{ vars.ROLECALL_RELEASE_PUBLIC_KEY }}
 
       # The Node bundle (lib/cli.js) is built by `prepack` (npm run build:js),
       # which runs as part of the stage step and shells out to Bun.

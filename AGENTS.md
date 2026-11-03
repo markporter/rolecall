@@ -54,7 +54,7 @@ rolecall doctor                         # report isolation backend + ADR 0023 in
 rolecall install [--user|--system] [--dry-run|--yes]  # plan/apply ADR 0023 layout, config, manifest, unit
 rolecall service install|start|stop|restart|status [--yes]  # plan/apply systemd/launchd/SCM lifecycle
 rolecall uninstall [--user|--system] [--purge] [--dry-run|--yes]  # remove unit/manifest; keep config/state unless purged
-rolecall update --check|--from-dir <dir>|--rollback [--yes] [--no-restart]  # versioned update/rollback (GitHub/signed channels: ADR 0029)
+rolecall update --check|--from-dir <dir>|--rollback [--yes] [--no-restart]  # GitHub signed manifest pre-beta; channels deferred to beta (ADR 0029)
 rolecall docs search <query>            # query RoleCall prose docs by substring
 rolecall plugin list                               # registered module/fact + built-in inventory plugins
 rolecall plugin register <name> --path <file> [--global]   # persist a module kept outside a project (project plugins in plugins/ need no registration)

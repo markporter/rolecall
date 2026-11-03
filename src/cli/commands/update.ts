@@ -4,8 +4,13 @@
 // the current symlink, updates the manifest, and restarts the service unless
 // --no-restart. Network/channel discovery is not implemented.
 
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { resolveInstallLayout } from "../../install/layout";
-import { applyUpdatePlan, buildUpdatePlan, checkUpdate } from "../../install/update";
+import { applyUpdatePlan, buildUpdatePlan, checkUpdate, type UpdatePlan } from "../../install/update";
+import { checkForUpdate, downloadReleaseArtifact } from "../../install/release";
+import { currentLink, programBinName, versionsDir } from "../../install/plan";
 import { CliError, type CliResult, type GlobalFlags } from "../types";
 
 /** @summary Check, apply, or roll back a versioned ADR 0023 update. */
@@ -23,27 +28,94 @@ export async function runUpdateCommand(flags: GlobalFlags, _rest: string[]): Pro
   });
 
   if (flags.check === true) {
-    const check = checkUpdate(layout, flags.fromDir);
-    return { command: "update", check, applied: false, written: [], service: [] };
+    if (flags.fromDir) {
+      const check = checkUpdate(layout, flags.fromDir);
+      return { command: "update", check, applied: false, written: [], service: [] };
+    }
+    const current = checkUpdate(layout).currentVersion;
+    const candidate = await checkForUpdate({ ...(current ? { currentVersion: current } : {}), ...(flags.updateUrl ? { updateUrl: flags.updateUrl } : {}) });
+    return {
+      command: "update",
+      check: {
+        currentVersion: candidate.currentVersion,
+        currentLink: join(layout.programDir, "current"),
+        candidateVersion: candidate.manifest.version,
+        updateAvailable: candidate.updateAvailable,
+        warnings: [],
+      },
+      applied: false,
+      written: [],
+      service: [],
+    };
   }
 
-  const plan = buildUpdatePlan(layout, {
-    ...(flags.fromDir ? { fromDir: flags.fromDir } : {}),
-    rollback: flags.rollback === true,
-    restart: flags.noRestart !== true,
-  });
   const dryRun = flags.dryRun === true || flags.yes !== true;
   if (!dryRun && scope === "system" && !root) {
     throw new CliError(true, "system-scope update requires root/Administrator");
   }
-  const result = applyUpdatePlan(layout, plan, { dryRun, restart: flags.noRestart !== true });
-  return {
-    command: "update",
-    plan,
-    applied: result.applied,
-    ...(result.fromVersion ? { fromVersion: result.fromVersion } : {}),
-    ...(result.toVersion ? { toVersion: result.toVersion } : {}),
-    written: result.written,
-    service: result.service,
-  };
+
+  let plan: UpdatePlan;
+  let cleanup: (() => void) | undefined;
+  if (flags.fromDir || flags.rollback === true) {
+    plan = buildUpdatePlan(layout, {
+      ...(flags.fromDir ? { fromDir: flags.fromDir } : {}),
+      rollback: flags.rollback === true,
+      restart: flags.noRestart !== true,
+    });
+  } else {
+    const current = checkUpdate(layout).currentVersion;
+    const candidate = await checkForUpdate({ ...(current ? { currentVersion: current } : {}), ...(flags.updateUrl ? { updateUrl: flags.updateUrl } : {}) });
+    if (!candidate.updateAvailable && flags.force !== true) {
+      throw new CliError(false, `already up to date (${candidate.manifest.version})`);
+    }
+    if (dryRun) {
+      plan = {
+        operation: "update",
+        ...(current ? { fromVersion: current } : {}),
+        toVersion: candidate.manifest.version,
+        restart: flags.noRestart !== true,
+        actions: [
+          `download ${candidate.artifactKey} from ${candidate.source}`,
+          `install versions/${candidate.manifest.version}`,
+          `switch current -> versions/${candidate.manifest.version}`,
+          ...(flags.noRestart !== true ? ["restart service"] : []),
+        ],
+      };
+    } else {
+      const dir = mkdtempSync(join(tmpdir(), "rolecall-update-"));
+      cleanup = () => rmSync(dir, { recursive: true, force: true });
+      const downloaded = join(dir, programBinName(layout.platform));
+      await downloadReleaseArtifact(candidate, downloaded);
+      plan = {
+        operation: "update",
+        ...(current ? { fromVersion: current } : {}),
+        toVersion: candidate.manifest.version,
+        binary: {
+          version: candidate.manifest.version,
+          source: downloaded,
+          target: join(versionsDir(layout), candidate.manifest.version, programBinName(layout.platform)),
+          checksumManifest: "",
+          checksum: candidate.artifact.sha256,
+          currentLink: currentLink(layout),
+        },
+        restart: flags.noRestart !== true,
+        actions: [`install versions/${candidate.manifest.version}`, `switch current -> versions/${candidate.manifest.version}`],
+      };
+    }
+  }
+
+  try {
+    const result = applyUpdatePlan(layout, plan, { dryRun, restart: flags.noRestart !== true });
+    return {
+      command: "update",
+      plan,
+      applied: result.applied,
+      ...(result.fromVersion ? { fromVersion: result.fromVersion } : {}),
+      ...(result.toVersion ? { toVersion: result.toVersion } : {}),
+      written: result.written,
+      service: result.service,
+    };
+  } finally {
+    cleanup?.();
+  }
 }
