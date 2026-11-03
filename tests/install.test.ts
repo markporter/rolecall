@@ -182,3 +182,40 @@ test("system service units use the requested non-root account", () => {
   expect(plan.service.content).toContain("Group=svc-rolecall");
   expect(() => buildInstallPlan({ layout: l, service: true, isolationBackend: "none", serviceUser: "root" })).toThrow(/must not be root/);
 });
+
+test("interactive install prompts for paths/service and applies on confirmation", async () => {
+  const dir = tmp();
+  const answers = (q: string): string => {
+    if (q.startsWith("Program directory")) return join(dir, "lib");
+    if (q.startsWith("Config directory")) return join(dir, "config");
+    if (q.startsWith("State directory")) return join(dir, "state");
+    if (q.startsWith("Install a service")) return "n";
+    if (q.startsWith("Apply this install")) return "y";
+    throw new Error(`unexpected prompt: ${q}`);
+  };
+  const res = await runInstallCommand(flags({ user: true, isolation: "none" }), [], {
+    interactive: true,
+    ask: async (q, fallback) => answers(q) || fallback,
+  });
+  if (res.command !== "install") throw new Error("unexpected");
+  expect(res.applied).toBe(true);
+  expect(existsSync(join(dir, "config", "install.json"))).toBe(true);
+});
+
+test("interactive install can decline and stays a dry-run", async () => {
+  const dir = tmp();
+  const res = await runInstallCommand(flags({ user: true, isolation: "none" }), [], {
+    interactive: true,
+    ask: async (q, fallback) => {
+      if (q.startsWith("Program directory")) return join(dir, "lib");
+      if (q.startsWith("Config directory")) return join(dir, "config");
+      if (q.startsWith("State directory")) return join(dir, "state");
+      if (q.startsWith("Install a service")) return "n";
+      if (q.startsWith("Apply this install")) return "n";
+      return fallback;
+    },
+  });
+  if (res.command !== "install") throw new Error("unexpected");
+  expect(res.applied).toBe(false);
+  expect(existsSync(join(dir, "config"))).toBe(false);
+});

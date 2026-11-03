@@ -14,8 +14,13 @@ rolecall install [--system|--user] [--prefix DIR] [--config-dir DIR] [--state-di
                  [--no-service] [--dry-run] [--yes] [--non-interactive] [--force]
 ```
 
-- **Default is a dry-run.** It prints the resolved layout, service manager,
-  isolation preflight, and every planned action. Pass `--yes` to apply.
+- **Bare invocation in a TTY starts a wizard**: scope, program/config/state
+  directories, whether to install a service, the system service account, and a
+  final apply confirmation. Flags pre-answer prompts; `--non-interactive` and
+  `--yes` skip them.
+- **Default is a dry-run outside the wizard.** It prints the resolved layout,
+  service manager, isolation preflight, and every planned action. Pass `--yes`
+  (or confirm in the wizard) to apply.
 - Scope defaults to `system` when root, otherwise `user`. `--system` and
   `--user` are mutually exclusive; applying a system install requires root.
 - `--no-service` skips unit generation.

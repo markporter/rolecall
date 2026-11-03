@@ -35,8 +35,9 @@ curl -fsSL https://raw.githubusercontent.com/markporter/rolecall/main/install.sh
 
 It resolves the latest GitHub Release, downloads the platform binary and
 `SHA256SUMS`, verifies the checksum, and runs `<binary> install --from-dir ...`.
-Pass `--system` for a system install (run as root), or the install flags such as
-`--prefix`/`--config-dir`/`--state-dir`/`--no-service`/`--yes`. Windows uses
+In an interactive terminal the CLI then walks through scope, paths, service, and
+confirmation. Pass `--system`/`--user` and other install flags to pre-answer, or
+`--non-interactive --yes` for unattended automation. Windows uses
 `install.ps1` with the same flags.
 
 The bootstrap verifies the artifact checksum; the installed binary embeds the
