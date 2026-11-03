@@ -114,6 +114,8 @@ export async function runUpdateCommand(flags: GlobalFlags, _rest: string[]): Pro
       ...(result.toVersion ? { toVersion: result.toVersion } : {}),
       written: result.written,
       service: result.service,
+      ...(result.backup ? { backup: result.backup } : {}),
+      ...(result.rolledBack ? { rolledBack: true } : {}),
     };
   } finally {
     cleanup?.();
