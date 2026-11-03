@@ -71,6 +71,11 @@ atomically switches `current`, records `currentVersion`/`previousVersion` in
 Network/channel discovery and downloads are not implemented; updates require a
 local artifact directory containing `rolecall`, `version.txt`, and `SHA256SUMS`.
 
+The planned network source is GitHub Releases with a signed `release.json` and
+checksums (ADR 0029). Channels (`stable`/`alpha`/`beta`/`rc`/branch) are deferred
+until beta; pre-beta uses a single update stream. The signed manifest, staging,
+rollback, migration guard, and health check land before channels do.
+
 ## Service lifecycle
 
 ```sh
