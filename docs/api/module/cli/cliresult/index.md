@@ -8,4 +8,4 @@ longname: module:cli.CliResult
 
 <Signature code="CliResult = PlaybookRunResult | FactsGatherResult | InventoryShowResult | InventoryListResult | PluginListResult | PluginRegisterResult | RunReplayResult | AgentManifestResult | DocsSearchResult | DocsModulesResult | VarsListResult | VarsTraceResult | DoctorResult | InstallResult | ServiceResult | UninstallResult | UpdateResult" />
 
-<SourceLink href="/source/src/cli/types-ts/#L305" label="types.ts:305" />
+<SourceLink href="/source/src/cli/types-ts/#L311" label="types.ts:311" />

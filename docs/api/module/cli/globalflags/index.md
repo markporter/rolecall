@@ -8,6 +8,7 @@ longname: module:cli.GlobalFlags
 
 <Signature
   code="interface GlobalFlags {
+	addToPath?: boolean;
 	allowEgress?: EgressRule[];
 	allowUnsafeTemplateCode?: boolean;
 	check: boolean;
@@ -23,9 +24,11 @@ longname: module:cli.GlobalFlags
 	isolationNetwork?: 'module' | 'all' | 'none';
 	limit?: string;
 	mounts?: IsolationMount[];
+	noAddToPath?: boolean;
 	nonInteractive?: boolean;
 	noRestart?: boolean;
 	noService?: boolean;
+	offline?: boolean;
 	output: string;
 	prefix?: string;
 	profile: boolean;
@@ -49,6 +52,12 @@ longname: module:cli.GlobalFlags
 ---
 
 ## Properties
+
+<MemberHeading id="addtopath" depth="3" name="addToPath" sig="addToPath: boolean" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L85" sourceLabel="types.ts:85" />
+
+\--add-to-path (: default true).
 
 <MemberHeading id="allowegress" depth="3" name="allowEgress" sig="allowEgress: EgressRule[]" />
 
@@ -140,6 +149,12 @@ Target pattern restricting hosts (single pattern; RoleCall-style).
 
 Explicit filesystem grants (repeatable --mount).
 
+<MemberHeading id="noaddtopath" depth="3" name="noAddToPath" sig="noAddToPath: boolean" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L87" sourceLabel="types.ts:87" />
+
+\--no-add-to-path.
+
 <MemberHeading id="noninteractive" depth="3" name="nonInteractive" sig="nonInteractive: boolean" />
 
 <MemberMeta sourceHref="/source/src/cli/types-ts/#L65" sourceLabel="types.ts:65" />
@@ -157,6 +172,12 @@ Explicit filesystem grants (repeatable --mount).
 <MemberMeta sourceHref="/source/src/cli/types-ts/#L59" sourceLabel="types.ts:59" />
 
 \--no-service: skip service unit generation.
+
+<MemberHeading id="offline" depth="3" name="offline" sig="offline: boolean" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L89" sourceLabel="types.ts:89" />
+
+\--offline: require a local artifact (install/update).
 
 <MemberHeading id="output" depth="3" name="output" sig="output: string" />
 

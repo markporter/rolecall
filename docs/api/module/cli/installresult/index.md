@@ -17,7 +17,7 @@ description: "Result of rolecall install : plan plus what was (or would be) writ
 }"
 />
 
-<SourceLink href="/source/src/cli/types-ts/#L246" label="types.ts:246" />
+<SourceLink href="/source/src/cli/types-ts/#L252" label="types.ts:252" />
 
 Result of `rolecall install`: plan plus what was (or would be) written.
 
@@ -27,20 +27,20 @@ Result of `rolecall install`: plan plus what was (or would be) written.
 
 <MemberHeading id="applied" depth="3" name="applied" sig="applied: boolean" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L249" sourceLabel="types.ts:249" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L255" sourceLabel="types.ts:255" />
 
 <MemberHeading id="command" depth="3" name="command" sig="command: 'install'" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L247" sourceLabel="types.ts:247" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L253" sourceLabel="types.ts:253" />
 
 <MemberHeading id="plan" depth="3" name="plan" sig="plan: InstallPlan" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L248" sourceLabel="types.ts:248" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L254" sourceLabel="types.ts:254" />
 
 <MemberHeading id="warnings" depth="3" name="warnings" sig="warnings: string[]" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L251" sourceLabel="types.ts:251" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L257" sourceLabel="types.ts:257" />
 
 <MemberHeading id="written" depth="3" name="written" sig="written: string[]" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L250" sourceLabel="types.ts:250" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L256" sourceLabel="types.ts:256" />

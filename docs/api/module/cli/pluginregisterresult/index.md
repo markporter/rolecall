@@ -17,7 +17,7 @@ longname: module:cli.PluginRegisterResult
 }"
 />
 
-<SourceLink href="/source/src/cli/types-ts/#L171" label="types.ts:171" />
+<SourceLink href="/source/src/cli/types-ts/#L177" label="types.ts:177" />
 
 ---
 
@@ -25,24 +25,24 @@ longname: module:cli.PluginRegisterResult
 
 <MemberHeading id="command" depth="3" name="command" sig="command: 'plugin register'" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L172" sourceLabel="types.ts:172" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L178" sourceLabel="types.ts:178" />
 
 <MemberHeading id="name" depth="3" name="name" sig="name: string" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L173" sourceLabel="types.ts:173" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L179" sourceLabel="types.ts:179" />
 
 <MemberHeading id="note" depth="3" name="note" sig="note: string" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L177" sourceLabel="types.ts:177" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L183" sourceLabel="types.ts:183" />
 
 <MemberHeading id="path" depth="3" name="path" sig="path: string" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L175" sourceLabel="types.ts:175" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L181" sourceLabel="types.ts:181" />
 
 <MemberHeading id="registered" depth="3" name="registered" sig="registered: true" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L176" sourceLabel="types.ts:176" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L182" sourceLabel="types.ts:182" />
 
 <MemberHeading id="type" depth="3" name="type" sig="type: 'module' | 'fact'" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L174" sourceLabel="types.ts:174" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L180" sourceLabel="types.ts:180" />

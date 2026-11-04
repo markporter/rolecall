@@ -16,7 +16,7 @@ description: Result of rolecall service .
 }"
 />
 
-<SourceLink href="/source/src/cli/types-ts/#L255" label="types.ts:255" />
+<SourceLink href="/source/src/cli/types-ts/#L261" label="types.ts:261" />
 
 Result of `rolecall service`.
 
@@ -26,16 +26,16 @@ Result of `rolecall service`.
 
 <MemberHeading id="applied" depth="3" name="applied" sig="applied: boolean" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L258" sourceLabel="types.ts:258" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L264" sourceLabel="types.ts:264" />
 
 <MemberHeading id="command" depth="3" name="command" sig="command: 'service'" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L256" sourceLabel="types.ts:256" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L262" sourceLabel="types.ts:262" />
 
 <MemberHeading id="plan" depth="3" name="plan" sig="plan: ServicePlan" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L257" sourceLabel="types.ts:257" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L263" sourceLabel="types.ts:263" />
 
 <MemberHeading id="results" depth="3" name="results" sig="results: { command: ServiceCommand; status: number | null; stderr?: string; stdout?: string }[]" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L259" sourceLabel="types.ts:259" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L265" sourceLabel="types.ts:265" />
