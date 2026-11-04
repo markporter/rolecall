@@ -342,6 +342,12 @@ function formatHuman(data: CliResult): string {
       for (const action of p.actions) lines.push(`  - ${action.description}`);
       for (const written of data.written) lines.push(`  wrote: ${written}`);
       for (const warning of data.warnings) lines.push(`  ! ${warning}`);
+      if (data.migration) {
+        lines.push(`Migration: ${data.migration.applied ? "applied" : "planned"}`);
+        for (const p of data.migration.migrated) lines.push(`  migrated: ${p}`);
+        for (const p of data.migration.skipped) lines.push(`  skipped: ${p}`);
+        if (data.migration.note) lines.push(`  note: ${data.migration.note}`);
+      }
       break;
     }
     case "doctor": {

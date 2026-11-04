@@ -26,6 +26,7 @@ rolecall install [--system|--user] [--prefix DIR] [--config-dir DIR] [--state-di
 - `--no-service` skips unit generation.
 - `--add-to-path` / `--no-add-to-path` controls the `binDir/rolecall` symlink (default: add).
 - `--offline` requires `--from-dir`; update also accepts it with `--rollback`.
+- `--migrate` moves legacy `~/.rolecall` state (`state.db`, WAL/SHM, `plugins.json`) into the XDG state root, never overwrites, and leaves `MIGRATED.md` behind. The resolver ignores the legacy fallback during this install.
 - `--service-user <name>` sets the system service account (default `rolecall`). The account must already exist and must not be root; `rolecall install` and `rolecall service install` fail closed otherwise.
 - `--force` overwrites `rolecall.env` and the manifest (normally existing config
   is preserved).

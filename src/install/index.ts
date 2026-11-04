@@ -6,3 +6,4 @@ export * from "./uninstall";
 export * from "./update";
 export * from "./release";
 export * from "./kind";
+export * from "./migrate";
