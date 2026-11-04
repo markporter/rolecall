@@ -81,6 +81,12 @@ export interface GlobalFlags {
   updateUrl?: string;
   /** --service-user: account for the system-scope service unit (default rolecall). */
   serviceUser?: string;
+  /** --add-to-path (: default true). */
+  addToPath?: boolean;
+  /** --no-add-to-path. */
+  noAddToPath?: boolean;
+  /** --offline: require a local artifact (install/update). */
+  offline?: boolean;
 }
 
 // ---------------------------------------------------------------------------

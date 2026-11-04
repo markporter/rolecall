@@ -29,6 +29,9 @@ export async function runUpdateCommand(flags: GlobalFlags, _rest: string[]): Pro
     ...(flags.stateDir ? { stateDir: flags.stateDir } : {}),
   });
 
+  if (flags.offline === true && !flags.fromDir && flags.rollback !== true) {
+    throw new CliError(true, "--offline requires --from-dir or --rollback");
+  }
   const manifest = readInstallManifest(layout) as { kind?: import("../../install/plan").InstallKind } | undefined;
   const kind = detectInstallKind(manifest?.kind);
   if (flags.check === true) {

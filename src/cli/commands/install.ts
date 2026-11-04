@@ -40,6 +40,12 @@ export async function runInstallCommand(
   if (flags.system === true && flags.user === true) {
     throw new CliError(true, "--system and --user are mutually exclusive");
   }
+  if (flags.addToPath === true && flags.noAddToPath === true) {
+    throw new CliError(true, "--add-to-path and --no-add-to-path are mutually exclusive");
+  }
+  if (flags.offline === true && !flags.fromDir) {
+    throw new CliError(true, "--offline requires --from-dir");
+  }
   const root = typeof process.getuid === "function" && process.getuid() === 0;
   const tty = process.stdin.isTTY === true && process.stdout.isTTY === true;
   const interactive =
@@ -63,6 +69,7 @@ export async function runInstallCommand(
   let stateDir = flags.stateDir;
   let service = flags.noService !== true;
   let serviceUser = flags.serviceUser ?? "rolecall";
+  let addToPath = flags.noAddToPath !== true;
   let apply = flags.yes === true && flags.dryRun !== true;
 
   if (interactive) {
@@ -77,6 +84,7 @@ export async function runInstallCommand(
     if (!stateDir) stateDir = await ask("State directory", defaults.stateDir);
     service = await confirm(ask, "Install a service?", service);
     if (service && scope === "system") serviceUser = await ask("System service account", serviceUser);
+    addToPath = await confirm(ask, "Add rolecall to PATH (bin symlink)?", addToPath);
     apply = await confirm(ask, "Apply this install?", true);
     if (!apply) {
       // Show the plan and exit without writing.
@@ -100,6 +108,7 @@ export async function runInstallCommand(
     service,
     isolationBackend: flags.isolation ?? "auto",
     serviceUser,
+    addToPath,
     ...(flags.fromDir ? { fromDir: flags.fromDir } : {}),
   });
   const result = applyInstallPlan(plan, { dryRun: !apply, force: flags.force });

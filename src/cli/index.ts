@@ -85,6 +85,8 @@ Global flags (parsed once, injected downward):
   --from-dir <dir>             With install, stage the binary from dir/rolecall + version.txt + SHA256SUMS
   --update-url <url>           Update mirror serving release.json + release.json.sig
   --service-user <name>        System-scope service account (default rolecall; must exist)
+  --add-to-path / --no-add-to-path  Add/remove the binDir/rolecall symlink on install (default add)
+  --offline                    Install/update only from a local --from-dir/rollback artifact
   --forks <N>         Concurrency fan-out (number)
   --trace             Emit + persist an execution-trace ledger for the run
   --profile           Print a per-host/per-task performance profile at run end
@@ -164,6 +166,9 @@ const GLOBAL_OPTS = {
   "no-restart": { type: "boolean" },
   "update-url": { type: "string" },
   "service-user": { type: "string" },
+  "add-to-path": { type: "boolean" },
+  "no-add-to-path": { type: "boolean" },
+  offline: { type: "boolean" },
 } as const;
 
 /** @summary Write rendered CLI output to stdout, stripping NUL/control chars from the `json` stream so a polluted data channel never breaks a downstream JSON parser. @param text Rendered text to emit. @param output Selected output plugin name; only `json` gets control-char scrubbing. */
@@ -249,6 +254,9 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
     noRestart: values["no-restart"] === true,
     updateUrl: values["update-url"] as string | undefined,
     serviceUser: values["service-user"] as string | undefined,
+    addToPath: values["add-to-path"] === true,
+    noAddToPath: values["no-add-to-path"] === true,
+    offline: values["offline"] === true,
     // --json is a convenience shorthand for --output json (used by the docs
     // subcommands and any other command the user wants structured output from).
     output: (values["json"] as boolean | undefined)

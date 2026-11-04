@@ -2,7 +2,8 @@
 // the service when possible, and keeps config/state unless --purge. It never
 // deletes the program directory or the binary.
 
-import { existsSync, rmSync } from "node:fs";
+import { existsSync, lstatSync, readlinkSync, rmSync } from "node:fs";
+import { join } from "node:path";
 
 import type { InstallLayout } from "./layout";
 import { installManifestPath, readInstallManifest, serviceUnitPath, type ServiceManager } from "./plan";
@@ -36,6 +37,13 @@ export function buildUninstallPlan(layout: InstallLayout, options: BuildUninstal
     ...(unitPath ? { unitPath } : {}),
   });
   const remove = [installManifestPath(layout), ...(unitPath ? [unitPath] : [])];
+  const pathLink = join(layout.binDir, layout.platform === "win32" ? "rolecall.exe" : "rolecall");
+  try {
+    if (existsSync(pathLink) && lstatSync(pathLink).isSymbolicLink()) {
+      const target = readlinkSync(pathLink);
+      if (target.includes(layout.programDir)) remove.push(pathLink);
+    }
+  } catch { /* leave non-rolecall links alone */ }
   if (options.purge === true) {
     remove.push(layout.configDir, layout.stateDir, layout.cacheDir);
   }

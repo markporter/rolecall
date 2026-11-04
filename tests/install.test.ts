@@ -190,6 +190,7 @@ test("interactive install prompts for paths/service and applies on confirmation"
     if (q.startsWith("Config directory")) return join(dir, "config");
     if (q.startsWith("State directory")) return join(dir, "state");
     if (q.startsWith("Install a service")) return "n";
+    if (q.startsWith("Add rolecall to PATH")) return "y";
     if (q.startsWith("Apply this install")) return "y";
     throw new Error(`unexpected prompt: ${q}`);
   };
@@ -211,6 +212,7 @@ test("interactive install can decline and stays a dry-run", async () => {
       if (q.startsWith("Config directory")) return join(dir, "config");
       if (q.startsWith("State directory")) return join(dir, "state");
       if (q.startsWith("Install a service")) return "n";
+      if (q.startsWith("Add rolecall to PATH")) return "n";
       if (q.startsWith("Apply this install")) return "n";
       return fallback;
     },
@@ -218,4 +220,24 @@ test("interactive install can decline and stays a dry-run", async () => {
   if (res.command !== "install") throw new Error("unexpected");
   expect(res.applied).toBe(false);
   expect(existsSync(join(dir, "config"))).toBe(false);
+});
+
+test("install plans the binDir symlink unless --no-add-to-path", () => {
+  const dir = tmp();
+  const l = resolveInstallLayout({
+    scope: "user",
+    platform: "linux",
+    home: dir,
+    prefix: join(dir, "lib"),
+    configDir: join(dir, "config"),
+    stateDir: join(dir, "state"),
+  });
+  const withLink = buildInstallPlan({ layout: l, service: false, isolationBackend: "none" });
+  expect(withLink.pathLink?.path).toBe(join(dir, "lib", "bin", "rolecall"));
+  const without = buildInstallPlan({ layout: l, service: false, isolationBackend: "none", addToPath: false });
+  expect(without.pathLink).toBeUndefined();
+});
+
+test("install --offline requires --from-dir", async () => {
+  await expect(runInstallCommand(flags({ user: true, offline: true }), [])).rejects.toThrow(/--offline requires/);
 });
