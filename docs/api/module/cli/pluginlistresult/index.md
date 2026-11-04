@@ -14,7 +14,7 @@ longname: module:cli.PluginListResult
 }"
 />
 
-<SourceLink href="/source/src/cli/types-ts/#L171" label="types.ts:171" />
+<SourceLink href="/source/src/cli/types-ts/#L173" label="types.ts:173" />
 
 ---
 
@@ -22,12 +22,12 @@ longname: module:cli.PluginListResult
 
 <MemberHeading id="command" depth="3" name="command" sig="command: 'plugin list'" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L172" sourceLabel="types.ts:172" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L174" sourceLabel="types.ts:174" />
 
 <MemberHeading id="note" depth="3" name="note" sig="note: string" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L174" sourceLabel="types.ts:174" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L176" sourceLabel="types.ts:176" />
 
 <MemberHeading id="plugins" depth="3" name="plugins" sig="plugins: PluginEntryView[]" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L173" sourceLabel="types.ts:173" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L175" sourceLabel="types.ts:175" />

@@ -15,7 +15,7 @@ longname: module:cli.DoctorResult
 }"
 />
 
-<SourceLink href="/source/src/cli/types-ts/#L293" label="types.ts:293" />
+<SourceLink href="/source/src/cli/types-ts/#L296" label="types.ts:296" />
 
 ---
 
@@ -23,11 +23,11 @@ longname: module:cli.DoctorResult
 
 <MemberHeading id="command" depth="3" name="command" sig="command: 'doctor'" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L294" sourceLabel="types.ts:294" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L297" sourceLabel="types.ts:297" />
 
 <MemberHeading id="install" depth="3" name="install" sig="install: { binDir: string; cacheDir: string; configDir: string; envFile: string; envFileExists: boolean; platform: string; programDir: string; scope: InstallScope; stateDir: string }" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L297" sourceLabel="types.ts:297" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L300" sourceLabel="types.ts:300" />
 
 ADR 0023 install layout that subsequent commands would use.
 
@@ -45,8 +45,8 @@ ADR 0023 install layout that subsequent commands would use.
 
 <MemberHeading id="isolation" depth="3" name="isolation" sig="isolation: IsolationProbe" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L295" sourceLabel="types.ts:295" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L298" sourceLabel="types.ts:298" />
 
 <MemberHeading id="note" depth="3" name="note" sig="note: string" />
 
-<MemberMeta sourceHref="/source/src/cli/types-ts/#L308" sourceLabel="types.ts:308" />
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L311" sourceLabel="types.ts:311" />

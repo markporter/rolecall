@@ -23,6 +23,7 @@ longname: module:cli.GlobalFlags
 	isolation?: IsolationBackendName;
 	isolationNetwork?: 'module' | 'all' | 'none';
 	limit?: string;
+	migrate?: boolean;
 	mounts?: IsolationMount[];
 	noAddToPath?: boolean;
 	nonInteractive?: boolean;
@@ -142,6 +143,12 @@ Network policy under isolation (--isolation-network; default module).
 <MemberMeta sourceHref="/source/src/cli/types-ts/#L19" sourceLabel="types.ts:19" />
 
 Target pattern restricting hosts (single pattern; RoleCall-style).
+
+<MemberHeading id="migrate" depth="3" name="migrate" sig="migrate: boolean" />
+
+<MemberMeta sourceHref="/source/src/cli/types-ts/#L91" sourceLabel="types.ts:91" />
+
+\--migrate: move legacy \~/.rolecall state to the XDG state root.
 
 <MemberHeading id="mounts" depth="3" name="mounts" sig="mounts: IsolationMount[]" />
 
