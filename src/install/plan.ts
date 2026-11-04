@@ -44,6 +44,8 @@ export interface InstallPlan {
     envFileExists: boolean;
     manifestPath: string;
   };
+  /** Optional binDir/rolecall -> current/rolecall symlink. */
+  pathLink?: { path: string; target: string };
   /** Optional versioned binary placement from --from-dir. */
   binary?: {
     version: string;
@@ -70,6 +72,8 @@ export interface BuildInstallPlanOptions {
   serviceUser?: string;
   /** Install kind recorded in the manifest (default binary). */
   kind?: InstallKind;
+  /** Add the binDir/rolecall symlink (default true). */
+  addToPath?: boolean;
 }
 
 export function installManifestPath(layout: InstallLayout): string {
@@ -265,6 +269,12 @@ export function buildInstallPlan(options: BuildInstallPlanOptions): InstallPlan 
     { kind: "create-dir", path: layout.stateDir, description: `create state dir ${layout.stateDir}` },
     { kind: "create-dir", path: layout.cacheDir, description: `create cache dir ${layout.cacheDir}` },
   ];
+  const pathLink = options.addToPath === false
+    ? undefined
+    : { path: join(layout.binDir, programBinName(layout.platform)), target: programBinPath(layout) };
+  if (pathLink) {
+    actions.push({ kind: "write-file", path: pathLink.path, description: `link ${pathLink.path} -> ${pathLink.target}` });
+  }
   if (binary) {
     actions.push(
       { kind: "write-file", path: binary.target, description: `install binary ${binary.target} (v${binary.version})` },
@@ -321,6 +331,7 @@ export function buildInstallPlan(options: BuildInstallPlanOptions): InstallPlan 
       manifestPath: installManifestPath(layout),
     },
     ...(binary ? { binary } : {}),
+    ...(pathLink ? { pathLink } : {}),
   };
 }
 
@@ -399,6 +410,27 @@ export function applyInstallPlan(plan: InstallPlan, options: ApplyInstallOptions
     mkdirSync(plan.service.unitPath.replace(/\/[^/]+$/, ""), { recursive: true, mode: 0o755 });
     writeFileSync(plan.service.unitPath, plan.service.content, { mode: 0o644 });
     written.push(plan.service.unitPath);
+  }
+
+  if (plan.pathLink) {
+    mkdirSync(plan.pathLink.path.replace(/\/[^/]+$/, ""), { recursive: true, mode: 0o755 });
+    let replace = true;
+    try {
+      if (lstatSync(plan.pathLink.path).isSymbolicLink() && readlinkSync(plan.pathLink.path) === plan.pathLink.target) {
+        replace = false;
+      }
+    } catch { /* missing is fine */ }
+    if (replace && (existsSync(plan.pathLink.path) || lstatSync(plan.pathLink.path, { throwIfNoEntry: false }))) {
+      if (options.force !== true) {
+        warnings.push(`PATH link ${plan.pathLink.path} already exists; rerun with --force to replace it`);
+        return { applied: true, written, warnings };
+      }
+      rmSync(plan.pathLink.path, { force: true });
+    }
+    if (replace) {
+      symlinkSync(plan.pathLink.target, plan.pathLink.path);
+      written.push(plan.pathLink.path);
+    }
   }
   return { applied: true, written, warnings };
 }

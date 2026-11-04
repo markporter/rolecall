@@ -24,6 +24,8 @@ rolecall install [--system|--user] [--prefix DIR] [--config-dir DIR] [--state-di
 - Scope defaults to `system` when root, otherwise `user`. `--system` and
   `--user` are mutually exclusive; applying a system install requires root.
 - `--no-service` skips unit generation.
+- `--add-to-path` / `--no-add-to-path` controls the `binDir/rolecall` symlink (default: add).
+- `--offline` requires `--from-dir`; update also accepts it with `--rollback`.
 - `--service-user <name>` sets the system service account (default `rolecall`). The account must already exist and must not be root; `rolecall install` and `rolecall service install` fail closed otherwise.
 - `--force` overwrites `rolecall.env` and the manifest (normally existing config
   is preserved).
@@ -134,6 +136,5 @@ System-scope changes require root/Administrator.
 ## Not yet implemented
 
 The interactive wizard, bootstrap scripts, binary placement, service
-enable/start/stop/status, update/uninstall, `--with-bun`, `--from-dir`,
-`--offline`, and the `rolecall runtime`/`rolecall isolation` management commands
+enable/start/stop/status, update/uninstall, `--with-bun` and the `rolecall runtime`/`rolecall isolation` management commands
 are still pending.
