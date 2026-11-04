@@ -8,6 +8,7 @@ import { createInterface } from "node:readline/promises";
 import { resolveInstallLayout, type InstallScope } from "../../install/layout";
 import { applyInstallPlan, buildInstallPlan } from "../../install/plan";
 import { serviceUserProblem } from "../../install/service";
+import { migrateLegacyState, type MigrationResult } from "../../install/migrate";
 import { CliError, type CliResult, type GlobalFlags } from "../types";
 
 export interface InstallWizardOptions {
@@ -102,7 +103,12 @@ export async function runInstallCommand(
     ...(prefix ? { prefix } : {}),
     ...(configDir ? { configDir } : {}),
     ...(stateDir ? { stateDir } : {}),
+    ...(flags.migrate ? { ignoreLegacy: true } : {}),
   });
+  let migration: MigrationResult | undefined;
+  if (flags.migrate) {
+    migration = migrateLegacyState(layout, { dryRun: !apply, force: flags.force });
+  }
   const plan = buildInstallPlan({
     layout,
     service,
@@ -118,5 +124,6 @@ export async function runInstallCommand(
     applied: result.applied,
     written: result.written,
     warnings: result.warnings,
+    ...(migration ? { migration } : {}),
   };
 }

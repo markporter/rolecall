@@ -30,6 +30,7 @@ They come directly from `GLOBAL_OPTS` in `src/cli/index.ts`, which passes them t
 | `--rollback` | none | With `rolecall update`, switch to the recorded previous version. | off |
 | `--no-restart` | none | With `rolecall update`, do not restart the service after switching versions. | off |
 | `--add-to-path` / `--no-add-to-path` | none | Add/remove the `binDir/rolecall` symlink during install (default add). | add |
+| `--migrate` | none | Move legacy `~/.rolecall` state into the XDG state root during a user install. | off |
 | `--offline` | none | Require a local artifact: install uses `--from-dir`; update uses `--from-dir` or `--rollback`. | off |
 | `--service-user` | `<name>` | System-scope service account for `install`/`service install` (default `rolecall`; must exist, must not be root). | `rolecall` |
 | `--update-url` | `<url>` | With `rolecall update`, use a mirror that serves `release.json` + `release.json.sig` instead of GitHub Releases. | unset |

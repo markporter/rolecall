@@ -87,6 +87,8 @@ export interface GlobalFlags {
   noAddToPath?: boolean;
   /** --offline: require a local artifact (install/update). */
   offline?: boolean;
+  /** --migrate: move legacy ~/.rolecall state to the XDG state root. */
+  migrate?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -255,6 +257,7 @@ export interface InstallResult {
   applied: boolean;
   written: string[];
   warnings: string[];
+  migration?: import("../install/migrate").MigrationResult;
 }
 
 /** Result of `rolecall service`. */

@@ -37,6 +37,8 @@ export interface ResolveInstallLayoutOptions {
   stateDir?: string;
   /** Injectable existence check (tests). */
   exists?: (path: string) => boolean;
+  /** Ignore the legacy ~/.rolecall state fallback (used by --migrate). */
+  ignoreLegacy?: boolean;
 }
 
 function envPath(env: Record<string, string | undefined>, key: string): string | undefined {
@@ -126,7 +128,7 @@ export function resolveInstallLayout(options: ResolveInstallLayoutOptions = {}):
 
   // Backward compatibility: honor an existing ~/.rolecall for user scope unless
   // the new XDG state path already exists.
-  if (user && !options.stateDir && !envState) {
+  if (user && !options.stateDir && !envState && options.ignoreLegacy !== true) {
     const legacy = join(home, ".rolecall");
     if (exists(legacy) && !exists(stateDir)) stateDir = legacy;
   }
