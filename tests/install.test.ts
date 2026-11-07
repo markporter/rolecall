@@ -87,7 +87,7 @@ test("install command defaults to a dry-run plan", async () => {
     configDir: join(dir, "config"),
     stateDir: join(dir, "state"),
     isolation: "none",
-  }), []);
+  }), [], { interactive: false });
   if (res.command !== "install") throw new Error("unexpected");
   expect(res.applied).toBe(false);
   expect(res.plan.scope).toBe("user");
