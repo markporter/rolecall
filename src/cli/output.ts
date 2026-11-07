@@ -338,10 +338,14 @@ function formatHuman(data: CliResult): string {
       lines.push(`Cache    : ${p.layout.cacheDir}`);
       lines.push(`Service  : ${p.service.manager}${p.service.unitPath ? ` (${p.service.unitPath})` : ""}`);
       lines.push(`Isolation: ${p.isolation.selected}`);
+      lines.push(`Exposed  : ${p.serve.exposed ? "yes (token required)" : "no"}`);
       lines.push(data.applied ? "Applied  : yes" : "Applied  : no (dry-run; pass --yes to apply)");
       for (const action of p.actions) lines.push(`  - ${action.description}`);
       for (const written of data.written) lines.push(`  wrote: ${written}`);
       for (const warning of data.warnings) lines.push(`  ! ${warning}`);
+      if (p.serve.tokenGenerated && p.serve.token) {
+        lines.push(`Token    : ${p.serve.token} (shown once; stored in ${p.config.envFile})`);
+      }
       if (data.migration) {
         lines.push(`Migration: ${data.migration.applied ? "applied" : "planned"}`);
         for (const p of data.migration.migrated) lines.push(`  migrated: ${p}`);
