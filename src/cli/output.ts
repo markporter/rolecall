@@ -338,6 +338,7 @@ function formatHuman(data: CliResult): string {
       lines.push(`Cache    : ${p.layout.cacheDir}`);
       lines.push(`Service  : ${p.service.manager}${p.service.unitPath ? ` (${p.service.unitPath})` : ""}`);
       lines.push(`Isolation: ${p.isolation.selected}`);
+      lines.push(`Runtime  : ${p.runtime.kind === "bun" ? `Bun ${p.runtime.version} (${p.runtime.bin})` : "embedded"}`);
       lines.push(`Exposed  : ${p.serve.exposed ? "yes (token required)" : "no"}`);
       lines.push(data.applied ? "Applied  : yes" : "Applied  : no (dry-run; pass --yes to apply)");
       for (const action of p.actions) lines.push(`  - ${action.description}`);
@@ -372,6 +373,21 @@ function formatHuman(data: CliResult): string {
       lines.push(`  bin    : ${i.binDir}`);
       for (const reason of p.reasons) lines.push(`  - ${reason}`);
       for (const warning of p.warnings) lines.push(`  ! ${warning}`);
+      lines.push(`Note     : ${data.note}`);
+      break;
+    }
+    case "runtime": {
+      const status = data.status;
+      lines.push(`Runtime  : ${data.operation}`);
+      lines.push(`Mode     : ${status.kind}${status.version ? ` (Bun ${status.version})` : status.embeddedVersion ? ` (Bun ${status.embeddedVersion})` : ""}`);
+      lines.push(`Root     : ${status.root}`);
+      if (status.installed.length > 0) lines.push(`Installed: ${status.installed.join(", ")}`);
+      if (data.version) lines.push(`Version  : ${data.version} (${data.source ?? "?"})`);
+      if (data.bin) lines.push(`Binary   : ${data.bin}`);
+      if (data.pathLink) lines.push(`PATH link: ${data.pathLink}`);
+      lines.push(data.applied ? "Applied  : yes" : "Applied  : no");
+      for (const written of data.written) lines.push(`  wrote: ${written}`);
+      for (const removed of data.removed) lines.push(`  removed: ${removed}`);
       lines.push(`Note     : ${data.note}`);
       break;
     }

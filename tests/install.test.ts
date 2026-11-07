@@ -190,6 +190,7 @@ test("interactive install prompts for paths/service and applies on confirmation"
     if (q.startsWith("Config directory")) return join(dir, "config");
     if (q.startsWith("State directory")) return join(dir, "state");
     if (q.startsWith("Install a service")) return "n";
+    if (q.startsWith("Install a standalone Bun toolchain")) return "n";
     if (q.startsWith("Add rolecall to PATH")) return "y";
     if (q.startsWith("Apply this install")) return "y";
     throw new Error(`unexpected prompt: ${q}`);
@@ -212,6 +213,7 @@ test("interactive install can decline and stays a dry-run", async () => {
       if (q.startsWith("Config directory")) return join(dir, "config");
       if (q.startsWith("State directory")) return join(dir, "state");
       if (q.startsWith("Install a service")) return "n";
+      if (q.startsWith("Install a standalone Bun toolchain")) return "n";
       if (q.startsWith("Add rolecall to PATH")) return "n";
       if (q.startsWith("Apply this install")) return "n";
       return fallback;
