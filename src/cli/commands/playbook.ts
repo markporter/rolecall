@@ -4,7 +4,7 @@ import { loadInventoryFile, resolveDirectoryVars, loadPlaybookFile } from "../..
 import { resolveTargets, type ResolveOptions } from "../../inventory/engine";
 import { runPlaybook } from "../../executor/engine";
 import { FsProjectSource } from "../../vfs/fs-project-source";
-import { approvalFor, loadIsolationConfig } from "../../isolation/config";
+import { approvalFor, loadIsolationConfig, mergeEgress, mergeMounts, policyFor } from "../../isolation/config";
 import type { PlaybookResult } from "../../executor/context";
 import { registerAllModules } from "../../modules/builtins";
 import { scanAndRegister } from "../../modules/resolver";
@@ -72,7 +72,13 @@ export async function runPlaybookCommand(
   const projectRoot =
     !hasProjectDirs(playbookDir) && hasProjectDirs(parentDir) ? parentDir : playbookDir;
   const projectUri = new FsProjectSource(projectRoot).uri;
-  const approval = approvalFor(loadIsolationConfig(), projectUri);
+  const isolationConfig = loadIsolationConfig();
+  const approval = approvalFor(isolationConfig, projectUri);
+  const projectPolicy = policyFor(isolationConfig, projectUri);
+  if (isolation && isolation.backend !== "none") {
+    isolation.mounts = mergeMounts(isolation.mounts, projectPolicy);
+    isolation.egress = mergeEgress(isolation.egress, projectPolicy);
+  }
   const approvals = {
     ...approval,
     allowUnsafeTemplateCode: flags.allowUnsafeTemplateCode === true,

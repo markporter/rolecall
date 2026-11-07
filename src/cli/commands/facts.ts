@@ -11,6 +11,7 @@ import { loadInventoryFile, resolveDirectoryVars } from "../../config/loader";
 import { resolveTargets } from "../../inventory/engine";
 import { defaultFactsEngine } from "../../facts/engine";
 import { FsProjectSource } from "../../vfs/fs-project-source";
+import { loadIsolationConfig, mergeEgress, mergeMounts, policyFor } from "../../isolation/config";
 import type { FactMap } from "../../facts/types";
 import { buildConnectionForHost } from "../connections";
 import type { IsolationOptions } from "../../isolation/types";
@@ -55,6 +56,11 @@ export async function runFactsCommand(
         ...(flags.allowEgress ? { egress: flags.allowEgress } : {}),
       }
     : undefined;
+  if (isolation && isolation.backend !== "none") {
+    const projectPolicy = policyFor(loadIsolationConfig(), source.uri);
+    isolation.mounts = mergeMounts(isolation.mounts, projectPolicy);
+    isolation.egress = mergeEgress(isolation.egress, projectPolicy);
+  }
   for (const host of matchedHosts) {
     try {
       const conn = buildConnectionForHost(host, varsByHost[host] ?? {}, { isolation });

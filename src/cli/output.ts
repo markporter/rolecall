@@ -375,6 +375,38 @@ function formatHuman(data: CliResult): string {
       lines.push(`Note     : ${data.note}`);
       break;
     }
+    case "isolation": {
+      lines.push(`Isolation: ${data.operation} ${data.project}`);
+      lines.push(`Config   : ${data.configPath}`);
+      lines.push(data.changed ? "Changed  : yes" : "Changed  : no");
+      if (data.grants.length > 0) {
+        lines.push("Grants:");
+        for (const g of data.grants) {
+          const optional = g.optional ? ", optional" : "";
+          lines.push(`  - ${g.source} -> ${g.target} (${g.mode}, ${g.type}${optional})`);
+        }
+      } else {
+        lines.push("Grants   : none");
+      }
+      if (data.egress.length > 0) {
+        lines.push("Egress:");
+        for (const e of data.egress) {
+          const ports = e.ports?.length ? `:${e.ports.join(",")}` : "";
+          lines.push(`  - ${e.host}${ports} (${e.scope ?? "shell"})`);
+        }
+      }
+      if (data.requests) {
+        if (data.requests.grants.length === 0 && data.requests.egress.length === 0) {
+          lines.push("Requests : none unapproved");
+        } else {
+          lines.push("Unapproved requests:");
+          for (const g of data.requests.grants) lines.push(`  - grant ${g.source} -> ${g.target} (${g.mode})`);
+          for (const e of data.requests.egress) lines.push(`  - egress ${e.host}`);
+        }
+      }
+      lines.push(`Note     : ${data.note}`);
+      break;
+    }
     default: {
       // Exhaustiveness guard — every CliResult variant is handled above.
       lines.push(JSON.stringify(data));
