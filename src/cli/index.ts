@@ -38,6 +38,7 @@ import { runServiceCommand } from "./commands/service";
 import { runUninstallCommand } from "./commands/uninstall";
 import { runUpdateCommand } from "./commands/update";
 import { runIsolationCommand } from "./commands/isolation";
+import { runRuntimeCommand } from "./commands/runtime";
 import { parseMounts } from "./parse-mounts";
 import { parseEgressSpecs } from "../isolation/egress";
 import { CliError, type CliResult, type GlobalFlags } from "./types";
@@ -89,6 +90,9 @@ Global flags (parsed once, injected downward):
   --add-to-path / --no-add-to-path  Add/remove the binDir/rolecall symlink on install (default add)
   --offline                    Install/update only from a local --from-dir/rollback artifact
   --migrate                    Move legacy ~/.rolecall state into the XDG state root (user install)
+  --with-bun                   Install the optional standalone Bun toolchain (binary embeds Bun)
+  --bun-version <ver>          Pin the Bun version for --with-bun / runtime install
+  --add-bun-to-path            Symlink the external Bun into the install bin dir
   --forks <N>         Concurrency fan-out (number)
   --trace             Emit + persist an execution-trace ledger for the run
   --profile           Print a per-host/per-task performance profile at run end
@@ -195,6 +199,9 @@ const GLOBAL_OPTS = {
   scope: { type: "string" },
   explain: { type: "boolean" },
   egress: { type: "boolean" },
+  "with-bun": { type: "boolean" },
+  "bun-version": { type: "string" },
+  "add-bun-to-path": { type: "boolean" },
 } as const;
 
 /** @summary Write rendered CLI output to stdout, stripping NUL/control chars from the `json` stream so a polluted data channel never breaks a downstream JSON parser. @param text Rendered text to emit. @param output Selected output plugin name; only `json` gets control-char scrubbing. */
@@ -295,6 +302,9 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
     scope: values["scope"] as string | undefined,
     explain: values["explain"] === true,
     egress: values["egress"] === true,
+    withBun: values["with-bun"] === true,
+    bunVersion: values["bun-version"] as string | undefined,
+    addBunToPath: values["add-bun-to-path"] === true,
     // --json is a convenience shorthand for --output json (used by the docs
     // subcommands and any other command the user wants structured output from).
     output: (values["json"] as boolean | undefined)
@@ -450,6 +460,9 @@ export async function main(argv: string[]): Promise<number> {
         break;
       case "isolation":
         result = await runIsolationCommand(sub, rest, flags);
+        break;
+      case "runtime":
+        result = await runRuntimeCommand(sub, rest, flags);
         break;
       case "docs":
         result = await runDocsCommand(sub, rest, flags);

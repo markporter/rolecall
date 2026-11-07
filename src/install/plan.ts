@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { probeIsolation, type IsolationProbe } from "../isolation";
 import { ROLECALL_VERSION } from "../util/version";
 import { readEnvFile } from "./env-file";
+import { bunRuntimeBin, bunRuntimeDir, embeddedBunVersion } from "./runtime";
 import type { InstallLayout, InstallScope } from "./layout";
 
 export type ServiceManager = "systemd" | "launchd" | "windows-scm" | "none";
@@ -54,6 +55,10 @@ export interface InstallPlan {
     /** True when this plan generated a new token that must be shown once. */
     tokenGenerated: boolean;
   };
+  /** Embedded runtime or the optional standalone Bun toolchain. */
+  runtime:
+    | { kind: "embedded"; version?: string }
+    | { kind: "bun"; version: string; dir: string; bin: string };
   /** Optional binDir/rolecall -> current/rolecall symlink. */
   pathLink?: { path: string; target: string };
   /** Optional versioned binary placement from --from-dir. */
@@ -90,6 +95,10 @@ export interface BuildInstallPlanOptions {
   serveHost?: string;
   /** Explicit Bearer token; generated when exposed and omitted. */
   serveToken?: string;
+  /** Install the optional standalone Bun toolchain (ADR 0023 §5). */
+  withBun?: boolean;
+  /** Pinned Bun version; required when withBun is true. */
+  bunVersion?: string;
 }
 
 export function installManifestPath(layout: InstallLayout): string {
@@ -294,6 +303,19 @@ export function buildInstallPlan(options: BuildInstallPlanOptions): InstallPlan 
     }
   }
 
+  let runtime: InstallPlan["runtime"];
+  if (options.withBun === true) {
+    if (!options.bunVersion) throw new Error("--with-bun requires a resolved --bun-version");
+    runtime = {
+      kind: "bun",
+      version: options.bunVersion,
+      dir: bunRuntimeDir(layout, options.bunVersion),
+      bin: bunRuntimeBin(layout, options.bunVersion),
+    };
+  } else {
+    runtime = { kind: "embedded", ...(embeddedBunVersion() ? { version: embeddedBunVersion() } : {}) };
+  }
+
   let binary: InstallPlan["binary"];
   if (options.fromDir) binary = readBinaryArtifact(layout, options.fromDir);
 
@@ -313,6 +335,9 @@ export function buildInstallPlan(options: BuildInstallPlanOptions): InstallPlan 
       { kind: "write-file", path: binary.target, description: `install binary ${binary.target} (v${binary.version})` },
       { kind: "write-file", path: binary.currentLink, description: `switch ${binary.currentLink} -> versions/${binary.version}` },
     );
+  }
+  if (runtime.kind === "bun") {
+    actions.push({ kind: "write-file", path: runtime.bin, description: `install Bun ${runtime.version} at ${runtime.bin}` });
   }
   if (!exists(layout.programDir)) {
     actions.push({
@@ -378,6 +403,7 @@ export function buildInstallPlan(options: BuildInstallPlanOptions): InstallPlan 
       ...(serveToken ? { token: serveToken } : {}),
       tokenGenerated,
     },
+    runtime,
     ...(binary ? { binary } : {}),
     ...(pathLink ? { pathLink } : {}),
   };
@@ -463,7 +489,8 @@ export function applyInstallPlan(plan: InstallPlan, options: ApplyInstallOptions
     schemaVersion: 1,
     scope: plan.scope,
     version: plan.version,
-    runtime: "embedded",
+    runtime: plan.runtime.kind === "bun" ? plan.runtime.version : "embedded",
+    ...(plan.runtime.kind === "bun" ? { runtimePath: plan.runtime.bin } : {}),
     kind: plan.kind,
     platform: plan.platform,
     ...(currentVersion ? { currentVersion } : {}),
@@ -514,6 +541,18 @@ export function applyInstallPlan(plan: InstallPlan, options: ApplyInstallOptions
     }
   }
   return { applied: true, written, warnings };
+}
+
+/** Patch the install manifest when it exists; returns the updated object (or undefined). */
+export function updateInstallManifest(
+  layout: InstallLayout,
+  patch: Record<string, unknown>,
+): Record<string, unknown> | undefined {
+  const current = readInstallManifest(layout);
+  if (!current) return undefined;
+  const next = { ...current, ...patch };
+  writeFileSync(installManifestPath(layout), `${JSON.stringify(next, null, 2)}\n`, { mode: 0o644 });
+  return next;
 }
 
 /** Read the install manifest if present (used by doctor/service later). */

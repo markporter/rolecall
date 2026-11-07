@@ -68,6 +68,12 @@ export interface GlobalFlags {
   explain?: boolean;
   /** --egress: include egress entries in isolation list. */
   egress?: boolean;
+  /** --with-bun: install the optional standalone Bun toolchain. */
+  withBun?: boolean;
+  /** --bun-version: pinned Bun version for --with-bun / runtime install. */
+  bunVersion?: string;
+  /** --add-bun-to-path: symlink the external Bun into binDir. */
+  addBunToPath?: boolean;
   /** --system install scope. */
   system?: boolean;
   /** --user install scope. */
@@ -332,6 +338,22 @@ export interface DoctorResult {
   note: string;
 }
 
+/** Result of `rolecall runtime`. */
+export interface RuntimeResult {
+  command: "runtime";
+  operation: "install" | "status" | "remove";
+  status: import("../install/runtime").BunRuntimeStatus;
+  applied: boolean;
+  version?: string;
+  dir?: string;
+  bin?: string;
+  source?: "local" | "network";
+  written: string[];
+  removed: string[];
+  pathLink?: string;
+  note: string;
+}
+
 /** Result of `rolecall isolation`. */
 export interface IsolationResult {
   command: "isolation";
@@ -365,7 +387,8 @@ export type CliResult =
   | ServiceResult
   | UninstallResult
   | UpdateResult
-  | IsolationResult;
+  | IsolationResult
+  | RuntimeResult;
 
 // ---------------------------------------------------------------------------
 // Error class — `usage: true` => exit code 2 (unknown subcommand / bad args);

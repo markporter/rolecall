@@ -9,6 +9,7 @@ import { resolveInstallLayout, type InstallScope } from "../../install/layout";
 import { applyInstallPlan, buildInstallPlan } from "../../install/plan";
 import { serviceUserProblem } from "../../install/service";
 import { migrateLegacyState, type MigrationResult } from "../../install/migrate";
+import { hasLocalBun, installBunRuntime, readLocalBunVersion, resolveLatestBunVersion } from "../../install/runtime";
 import { CliError, type CliResult, type GlobalFlags } from "../types";
 
 export interface InstallWizardOptions {
@@ -71,6 +72,7 @@ export async function runInstallCommand(
   let service = flags.noService !== true;
   let serviceUser = flags.serviceUser ?? "rolecall";
   let exposed = flags.exposed === true;
+  let withBun = flags.withBun === true;
   let addToPath = flags.noAddToPath !== true;
   let apply = flags.yes === true && flags.dryRun !== true;
 
@@ -87,6 +89,7 @@ export async function runInstallCommand(
     service = await confirm(ask, "Install a service?", service);
     if (service && scope === "system") serviceUser = await ask("System service account", serviceUser);
     if (service) exposed = await confirm(ask, "Expose the server beyond loopback? (requires a token)", exposed);
+    withBun = await confirm(ask, "Install a standalone Bun toolchain? (the binary already embeds Bun)", withBun);
     addToPath = await confirm(ask, "Add rolecall to PATH (bin symlink)?", addToPath);
     apply = await confirm(ask, "Apply this install?", true);
     if (!apply) {
@@ -111,6 +114,11 @@ export async function runInstallCommand(
   if (flags.migrate) {
     migration = migrateLegacyState(layout, { dryRun: !apply, force: flags.force });
   }
+  const bunFromDir = flags.fromDir && hasLocalBun(flags.fromDir) ? flags.fromDir : undefined;
+  let bunVersion = flags.bunVersion;
+  if (withBun && !bunVersion) {
+    bunVersion = bunFromDir ? readLocalBunVersion(bunFromDir) : await resolveLatestBunVersion();
+  }
   const plan = buildInstallPlan({
     layout,
     service,
@@ -118,8 +126,18 @@ export async function runInstallCommand(
     serviceUser,
     addToPath,
     exposed,
+    withBun,
+    ...(bunVersion ? { bunVersion } : {}),
     ...(flags.fromDir ? { fromDir: flags.fromDir } : {}),
   });
+  if (apply && withBun && bunVersion) {
+    await installBunRuntime(layout, {
+      version: bunVersion,
+      ...(bunFromDir ? { fromDir: bunFromDir } : {}),
+      addToPath: flags.addBunToPath === true,
+      dryRun: false,
+    });
+  }
   const result = applyInstallPlan(plan, { dryRun: !apply, force: flags.force });
   return {
     command: "install",
