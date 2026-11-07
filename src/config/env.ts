@@ -29,6 +29,10 @@ export interface ServeConfig {
   host?: string;
   /** Static UI directory to serve (ROLECALL_UI_DIST, plus legacy ROLECALL_SERVE_UI_DIST fallback). Undefined => zero-build mode. */
   uiDist?: string;
+  /** Bearer token required by `--exposed` mode (ROLECALL_SERVE_TOKEN). */
+  token?: string;
+  /** True when the exposed profile is enabled by config (ROLECALL_SERVE_EXPOSED=1). */
+  exposed?: boolean;
 }
 
 /** Merged, typed runtime configuration derived from the environment + safe defaults. */
@@ -73,6 +77,14 @@ function parseIntEnv(raw: string | undefined): number | undefined {
 /** Normalize an optional string env var: empty strings become undefined so downstream sees "unset". */
 function strOrUndef(raw: string | undefined): string | undefined {
   return typeof raw === "string" && raw.length > 0 ? raw : undefined;
+}
+
+/** Parse a boolean-ish env var; only `1`/`true`/`yes`/`on` enable it. */
+function parseBoolEnv(raw: string | undefined): boolean | undefined {
+  if (raw === undefined) return undefined;
+  const v = raw.trim().toLowerCase();
+  if (v === "") return undefined;
+  return v === "1" || v === "true" || v === "yes" || v === "on";
 }
 
 /** Resolve the scratch directory: empty or unset ROLECALL_SCRATCH_DIR falls back to os.tmpdir() without throwing. */
@@ -131,6 +143,8 @@ export function loadConfig(options: LoadConfigOptions = {}): Config {
       host: merged["ROLECALL_SERVE_HOST"],
       // Preserve existing behavior (ROLECALL_UI_DIST takes priority) while also honoring the plan-named ROLECALL_SERVE_UI_DIST as a secondary.
       uiDist: merged["ROLECALL_UI_DIST"] ?? merged["ROLECALL_SERVE_UI_DIST"],
+      token: strOrUndef(merged["ROLECALL_SERVE_TOKEN"]),
+      exposed: parseBoolEnv(merged["ROLECALL_SERVE_EXPOSED"]),
     },
     home: merged["ROLECALL_HOME"],
     projectState: merged["ROLECALL_PROJECT_STATE"],

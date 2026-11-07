@@ -142,6 +142,10 @@ export interface ServerOptions {
   // TODO(ROLECALL-PLACEHOLDER): authToken is a placeholder only — RBAC/multi-user deferred
   /** Optional single-token Bearer guard for run-trigger endpoints (webhook/REST). When set, requests must send `Authorization: Bearer <token>` else 401. Placeholder ONLY — RBAC/multi-user is deferred. Unset => open. */
   authToken?: string;
+  /** ADR 0023/0027 exposed profile: require the Bearer token on every route except `/health`. */
+  exposed?: boolean;
+  /** Test-only escape hatch: allow `--exposed` without a token. Never use in production. */
+  allowAnonymous?: boolean;
   /** Directory whose contents are served as a pluggable static UI (Todo 23). UNSET => zero-build mode (GET "/" stays health JSON). SET + exists => express.static(dir); SET + missing => deterministic plain-text guidance. */
   uiDist?: string;
 }

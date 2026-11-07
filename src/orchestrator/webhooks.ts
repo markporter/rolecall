@@ -20,6 +20,7 @@ interface AppLike {
 
 import type { Engine } from "./engine";
 import { validateJobBody, type ValidationResult } from "./job-validation";
+import { authorizationHeader, bearerMatches } from "./auth";
 
 export interface WebhookRouteContext {
   engine: Engine;
@@ -28,10 +29,7 @@ export interface WebhookRouteContext {
 
 /** Open when token unset; else require exactly `Authorization: Bearer <token>`. */
 function authorize(req: Request, token?: string): boolean {
-  if (!token) return true;
-  const raw = req.headers["authorization"];
-  const provided = Array.isArray(raw) ? (raw[0] ?? "") : (raw ?? "");
-  return provided === `Bearer ${token}`;
+  return bearerMatches(authorizationHeader(req.headers), token);
 }
 
 /** Shared trigger used by both endpoints — mirrors POST /run's enqueue + envelope. Exported so routes.ts registers POST /webhook + /api/run through the single shared ROUTE_DEFINITIONS registry. */
