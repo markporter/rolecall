@@ -1,14 +1,15 @@
 name: CI
 
-# Dual-runtime, multi-OS pipeline for RoleCall.
+# Dual-runtime pipeline for RoleCall (Linux first, then Windows).
 #
 #   * job "unit"     : Bun-native assertion suite (`bun test`) + type-check,
-#                      run across Linux/macOS/Windows with ROLECALL_RUNTIME forced to
-#                      both "bun" and "node" to exercise every code branch.
-#   * job "native"   : Builds ONE native binary per OS using the Node-invoked
-#                      builder (`node scripts/build-bin.mjs`), smoke-tests it,
-#                      and validates cross-runtime compatibility by importing
-#                      product source and running it under BOTH `bun` and `node`.
+#                      run on Linux with ROLECALL_RUNTIME forced to both "bun"
+#                      and "node" to exercise every code branch.
+#   * job "native"   : Builds ONE native binary per supported OS using the
+#                      Node-invoked builder (`node scripts/build-bin.mjs`),
+#                      smoke-tests it, and validates cross-runtime compatibility
+#                      by importing product source and running it under BOTH
+#                      `bun` and `node`.
 #   * job "node-package-smoke" : Builds the Node-target JS bundle (`bun run
 #                      build:js`), packs it with `npm pack`, then proves the
 #                      published tarball installs and runs on a machine with Node
@@ -46,11 +47,9 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-          - os: macos-latest
-          # Windows is intentionally excluded from the unit matrix: the module
-          # suite runs real POSIX shell commands (sh -c, stat, chmod) and there
-          # is no Windows module surface yet. The native job still builds and
-          # smoke-tests the Windows binary.
+          # Windows and macOS are intentionally excluded from the unit matrix for
+          # now: the module suite runs real POSIX shell commands (sh -c, stat,
+          # chmod). The native job still builds and smoke-tests the Windows binary.
     steps:
       - uses: actions/checkout@v4
 
@@ -125,8 +124,6 @@ jobs:
         include:
           - os: ubuntu-latest
             hostTarget: linux-x64-musl
-          - os: macos-latest
-            hostTarget: darwin-arm64-musl
           - os: windows-latest
             hostTarget: windows-x64
     steps:
@@ -185,7 +182,8 @@ jobs:
   # Acceptance gate that `npx @rolecall/cli` works on a machine with Node and no Bun:
   # build the Node-target JS bundle, pack it, then install and run the published
   # tarball with Bun removed from PATH. Packaging is OS-independent, so it runs on
-  # a single Linux runner; the 3-OS "unit" matrix already covers cross-platform.
+  # a single Linux runner; the Linux/Windows native matrix already covers the
+  # supported build targets.
   node-package-smoke:
     name: npm package smoke (Node, no Bun)
     runs-on: ubuntu-latest

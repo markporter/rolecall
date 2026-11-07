@@ -2,10 +2,10 @@ name: release
 
 # Tag-driven release pipeline. Push a `v*` tag to publish:
 #
-#   1. `ci`        — reuses the full CI workflow (3-OS test matrix + native builds
-#                    + npm-tarball smoke) as a hard gate.
-#   2. `binaries`  — builds one real, smoke-tested Bun-compiled binary per OS and
-#                    uploads it as a workflow artifact.
+#   1. `ci`        — reuses the full CI workflow (Linux/Windows native builds +
+#                    npm-tarball smoke) as a hard gate.
+#   2. `binaries`  — builds one real, smoke-tested Bun-compiled binary per
+#                    supported OS and uploads it as a workflow artifact.
 #   3. `release`   — collects every binary, generates notes from Conventional
 #                    Commits with git-cliff (`cliff.toml`), creates the GitHub
 #                    Release, and attaches the binaries.
@@ -50,7 +50,7 @@ jobs:
     needs: verify-tag
     uses: ./.github/workflows/ci.yml
 
-  # ---- 2. Per-OS native binaries -------------------------------------------
+  # ---- 2. Per-supported-OS native binaries ----------------------------------
   binaries:
     name: binary (${{ matrix.target }})
     needs: ci
@@ -59,9 +59,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Host target per OS: compiled AND smoke-tested on the matching runner.
+          # Host target per supported OS: compiled AND smoke-tested on the matching runner.
           - { os: ubuntu-latest,  target: linux-x64-musl }
-          - { os: macos-latest,   target: darwin-arm64-musl }
           - { os: windows-latest, target: windows-x64 }
           # Cross-built distribution artifact (Bun fetches the remote runtime;
           # generated but not executed on the x64 host — see README).
