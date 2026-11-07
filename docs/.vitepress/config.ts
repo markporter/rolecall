@@ -50,6 +50,7 @@ export default defineConfig({
         { text: 'Plugin Commands', link: '/reference/plugin-commands' },
         { text: 'Serve Command', link: '/reference/serve-command' },
         { text: 'Install Command', link: '/reference/install-command' },
+        { text: 'Isolation Commands', link: '/reference/isolation-commands' },
         { text: 'Module Reference', link: '/reference/module-reference' },
         { text: 'Writing a Plugin', link: '/reference/writing-a-plugin' },
       ],

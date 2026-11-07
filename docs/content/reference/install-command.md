@@ -151,5 +151,6 @@ bootstrap, `--from-dir` binary placement, `uninstall`, `service` lifecycle plans
 
 Still pending: the optional `--with-bun` toolchain and `rolecall runtime`
 commands, network/channel update discovery (offline `--from-dir` is the current
-path), `rolecall isolation allow|revoke|list`, and the native Windows SCM service
-host (Windows remains on the third-party wrapper path for now).
+path), and the native Windows SCM service host (Windows remains on the
+third-party wrapper path for now). Isolation grants/egress are managed by
+`rolecall isolation`; see [/reference/isolation-commands](/reference/isolation-commands).

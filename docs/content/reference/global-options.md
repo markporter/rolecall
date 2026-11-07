@@ -38,6 +38,13 @@ They come directly from `GLOBAL_OPTS` in `src/cli/index.ts`, which passes them t
 | `--update-url` | `<url>` | With `rolecall update`, use a mirror that serves `release.json` + `release.json.sig` instead of GitHub Releases. | unset |
 | `--purge` | none | With `rolecall uninstall`, remove the config/state/cache directories after removing the unit/manifest. | off |
 | `--allow-egress` | `<host[:port]>` | Repeatable ephemeral destination whitelist entry; rejected with `--isolation none`. Module URL checks (`http`/`get_url`/`git`) enforce it; the broker is wired for the namespace and Docker backends (Docker command construction is tested; live Docker requires a daemon). | none |
+| `--project` | `<dir>` | Project directory for `rolecall isolation` management (default: cwd). | cwd |
+| `--target` | `<dir>` | Sandbox target path for `rolecall isolation allow` (default `/mnt/<basename>`). | derived |
+| `--ro` / `--rw` | none | Grant mode for `rolecall isolation allow` (mutually exclusive; `ro` default). | `ro` |
+| `--from-request` | none | Promote an advisory grant from the project's `.rolecall/isolation.yaml`. | off |
+| `--port` | `<N>` | Egress port for `rolecall isolation allow-egress`/`revoke-egress` (also the serve listen port when `--serve` is present). | none |
+| `--scope` | `shell`\|`module`\|`all` | Egress scope for `rolecall isolation allow-egress`. | `shell` |
+| `--explain` / `--egress` | none | `rolecall isolation list` modifiers: show unapproved project requests and/or egress entries. | off |
 | `--help` | `-h` | Print usage and exit 0. | n/a |
 | `--version` | `-v` | Print `rolecall <version>`. | n/a |
 

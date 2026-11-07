@@ -43,8 +43,9 @@ child CLI gets fresh resolver/facts/module state, so roles/phases/`when`/`loop`/
 handlers/tx all apply). The ADR 0023 install/service/update surface is implemented (layout,
 `rolecall.env`, wizard, Linux systemd/macOS launchd, offline updates, and the
 `--exposed` token gate; `--with-bun`, network update discovery, and the native
-Windows SCM host remain pending). The SPA UI (static `--ui-dist` serving only), the
-richer plugin SDK authoring surface, global Jinja `{{ }}` interpolation in playbook
+Windows SCM host remain pending). Operator-owned isolation grants/egress in
+`isolation.yaml` are implemented through `rolecall isolation`. The SPA UI (static
+`--ui-dist` serving only), the richer plugin SDK authoring surface, global Jinja `{{ }}` interpolation in playbook
 scalars (Jinja renders only through explicit `copy` content templates with
 `engine: jinja`), and the Postgres backend remain scaffolded. The Node-runtime PAL is implemented (npm channel = Node.js;
 see ADR 0018); the durable SQLite store runs on both runtimes over the PAL SqliteDb

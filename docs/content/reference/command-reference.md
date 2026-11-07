@@ -38,6 +38,10 @@ The handler lives in `src/cli/commands/docs.ts` and returns a `DocsModulesResult
 
 `rolecall install` plans the ADR 0023 install layout. It defaults to a dry-run; `--yes` applies by creating config/state/cache directories, `rolecall.env`, `install.json`, and a service unit/plist. `--exposed` writes a generated serve token and exposure settings to `rolecall.env`. It does not place the binary, enable the service, or edit PATH. See [/reference/install-command](/reference/install-command).
 
+### isolation
+
+`rolecall isolation allow|revoke|list|allow-egress|revoke-egress` manages the operator-owned filesystem grants and egress destinations in `isolation.yaml` (ADR 0023/0025). Grants are keyed by canonical `file://` project URI; `--from-request` promotes an advisory request from the project's `.rolecall/isolation.yaml` instead of self-approving it. Durable grants merge below one-off `--mount`/`--allow-egress` flags for `playbook run` and `facts gather`. See [/reference/isolation-commands](/reference/isolation-commands).
+
 ### service
 
 `rolecall service install|uninstall|start|stop|restart|status` plans or executes the ADR 0023 service lifecycle. Changes are dry-run by default (`--yes` applies); `status` is read-only. See [/reference/install-command#service-lifecycle](/reference/install-command#service-lifecycle).

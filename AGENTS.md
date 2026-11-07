@@ -56,6 +56,7 @@ install.sh / install.ps1                             # Node-free GitHub bootstra
 rolecall service install|start|stop|restart|status [--yes]  # plan/apply systemd/launchd lifecycle (Windows SCM deferred); system units refuse root
 rolecall uninstall [--user|--system] [--purge] [--dry-run|--yes]  # remove unit/manifest; keep config/state unless purged
 rolecall update --check|--from-dir <dir>|--rollback [--yes] [--no-restart]  # binary self-update; npm/bun/os-package delegate (ADR 0029 pre-beta)
+rolecall isolation allow|revoke|list|allow-egress|revoke-egress  # operator-owned isolation.yaml grants/egress (ADR 0025)
 rolecall docs search <query>            # query RoleCall prose docs by substring
 rolecall plugin list                               # registered module/fact + built-in inventory plugins
 rolecall plugin register <name> --path <file> [--global]   # persist a module kept outside a project (project plugins in plugins/ need no registration)
@@ -147,6 +148,10 @@ Global flags (parsed once by `parseArgs`):
    both rejected with `--isolation none`). Module URL checks (`http`/`get_url`/`git`)
    enforce the destination policy; the shell egress broker is wired for the namespace
    and Docker backends (Docker construction is tested; live Docker needs a daemon).
+- `rolecall isolation allow|revoke|list|allow-egress|revoke-egress` persists
+   operator-owned grants/egress in `isolation.yaml` (canonical project URIs, 0600);
+   one-off `--mount`/`--allow-egress` flags take precedence. Project
+   `.rolecall/isolation.yaml` requests stay advisory (`list --explain`, `allow --from-request`).
 - `--tags <list>` / `--skip-tags <list>` (comma-separated) select/skip tasks by tag on
    `playbook run`; a task's own tags replace play tags, and tag-filtered tasks report
    as skipped.
