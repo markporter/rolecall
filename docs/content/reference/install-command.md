@@ -11,7 +11,8 @@ enable/start the service, or edit `PATH` yet.
 
 ```sh
 rolecall install [--system|--user] [--prefix DIR] [--config-dir DIR] [--state-dir DIR]
-                 [--no-service] [--exposed] [--dry-run] [--yes] [--non-interactive] [--force]
+                 [--no-service] [--exposed] [--with-bun [--bun-version X]] [--add-bun-to-path]
+                 [--dry-run] [--yes] [--non-interactive] [--force]
 ```
 
 - **Bare invocation in a TTY starts a wizard**: scope, program/config/state
@@ -30,6 +31,9 @@ rolecall install [--system|--user] [--prefix DIR] [--config-dir DIR] [--state-di
   without these values is refused at serve time. System-scope service installs
   provision a token even without `--exposed`, so a later exposure cannot start
   unauthenticated.
+- `--with-bun [--bun-version X]` installs the optional standalone Bun toolchain
+  (the native binary already embeds Bun). `--add-bun-to-path` symlinks it into the
+  install bin dir. See [/reference/runtime-commands](/reference/runtime-commands).
 - `--add-to-path` / `--no-add-to-path` controls the `binDir/rolecall` symlink (default: add).
 - `--offline` requires `--from-dir`; update also accepts it with `--rollback`.
 - `--migrate` moves legacy `~/.rolecall` state (`state.db`, WAL/SHM, `plugins.json`) into the XDG state root, never overwrites, and leaves `MIGRATED.md` behind. The resolver ignores the legacy fallback during this install.
@@ -57,7 +61,8 @@ the user/system file with `0600`/`0640` permissions.
 - `rolecall.env` (0600 user / 0640 system) if absent; with `--exposed` it also
   receives `ROLECALL_SERVE_EXPOSED=1`, `ROLECALL_SERVE_HOST`, and a generated
   `ROLECALL_SERVE_TOKEN` (an existing token is reused, never echoed);
-- `install.json` (scope, version, runtime, paths, service manager, installedAt);
+- `install.json` (scope, version, runtime — `embedded` or the external Bun
+  version plus `runtimePath` — paths, service manager, installedAt);
 - the service unit/plist under the config dir for user scope, or the system path
   for system scope (for package/bootstrap installs).
 
@@ -71,6 +76,13 @@ the `rolecall` binary there; the plan warns when it is missing.
 | Linux | systemd | `/etc/systemd/system/rolecall.service` (system) or `<configDir>/systemd/rolecall.service` (user) |
 | macOS | launchd | `/Library/LaunchDaemons/com.rolecall.serve.plist` (system) or `<configDir>/LaunchAgents/...` (user) |
 | Windows | SCM | planned; no unit file |
+
+## Optional Bun runtime
+
+The native binary embeds Bun; `--with-bun` opts into a separate toolchain under
+`<programDir>/runtime/bun/<version>/`. Manage it independently with
+`rolecall runtime install|status|remove`; `status` reports `embedded` when no
+external runtime is present. See [/reference/runtime-commands](/reference/runtime-commands).
 
 ## Uninstall
 
@@ -149,7 +161,7 @@ bootstrap, `--from-dir` binary placement, `uninstall`, `service` lifecycle plans
 (systemd/launchd), `update --from-dir`/`--rollback`, `doctor`, `--migrate`,
 `--add-to-path`, and `--exposed` token generation.
 
-Still pending: the optional `--with-bun` toolchain and `rolecall runtime`
-commands, and the native Windows SCM service host (Windows remains on the
-third-party wrapper path for now). Isolation grants/egress are managed by
+Still pending: the native Windows SCM service host (Windows remains on the
+third-party wrapper path for now). The optional Bun toolchain is implemented via
+`--with-bun` / `rolecall runtime`; see [/reference/runtime-commands](/reference/runtime-commands). Isolation grants/egress are managed by
 `rolecall isolation`; see [/reference/isolation-commands](/reference/isolation-commands).

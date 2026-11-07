@@ -51,12 +51,13 @@ rolecall inventory list <inv>
 rolecall vars list <play>               # declared var/fact by file + fact capability per connection kind
 rolecall vars trace <play> [--inventory <inv>] [--extra-vars <kv>] [--limit <host>]
 rolecall doctor                         # report isolation backend + ADR 0023 install layout readiness
-rolecall install [--user|--system] [--exposed] [--migrate] [--add-to-path|--no-add-to-path]  # TTY wizard; --offline requires --from-dir
+rolecall install [--user|--system] [--exposed] [--with-bun] [--migrate] [--add-to-path|--no-add-to-path]  # TTY wizard; --offline requires --from-dir
 install.sh / install.ps1                             # Node-free GitHub bootstrap -> install --from-dir
 rolecall service install|start|stop|restart|status [--yes]  # plan/apply systemd/launchd lifecycle (Windows SCM deferred); system units refuse root
 rolecall uninstall [--user|--system] [--purge] [--dry-run|--yes]  # remove unit/manifest; keep config/state unless purged
 rolecall update --check|--from-dir <dir>|--rollback [--yes] [--no-restart]  # binary self-update; npm/bun/os-package delegate (ADR 0029 pre-beta)
 rolecall isolation allow|revoke|list|allow-egress|revoke-egress  # operator-owned isolation.yaml grants/egress (ADR 0025)
+rolecall runtime install|status|remove [--bun-version <ver>] [--from-dir <dir>]  # optional standalone Bun toolchain (embedded by default)
 rolecall docs search <query>            # query RoleCall prose docs by substring
 rolecall plugin list                               # registered module/fact + built-in inventory plugins
 rolecall plugin register <name> --path <file> [--global]   # persist a module kept outside a project (project plugins in plugins/ need no registration)
@@ -159,6 +160,9 @@ Global flags (parsed once by `parseArgs`):
    token); with `install` it writes `ROLECALL_SERVE_EXPOSED`, `ROLECALL_SERVE_HOST`,
    and a generated `ROLECALL_SERVE_TOKEN` to `rolecall.env`. `--allow-anonymous`
    bypasses the token requirement for tests only.
+- `--with-bun` / `--bun-version` / `--add-bun-to-path` opt into the standalone Bun
+   toolchain (the native binary already embeds Bun); `rolecall runtime
+   install|status|remove` manages it under `<programDir>/runtime/bun/<version>`.
 - `-h/--help`, `-v/--version`.
 
 Serve mode (`rolecall --serve`, see `src/orchestrator`; works on both runtimes —

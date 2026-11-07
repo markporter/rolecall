@@ -95,6 +95,7 @@ are present in code but do **not** apply real remote state.
 | Feature | Status | Notes |
 |---|---|---|
 | Dual-runtime (Bun / Node) PAL | ✅ | `detectRuntime()` |
+| Optional standalone Bun toolchain (ADR 0023 §5) | ✅ | `--with-bun` / `rolecall runtime install|status|remove`; versioned under `<programDir>/runtime/bun/<ver>`, embedded by default, PATH opt-in |
 | Single-file `bun build --compile` binary | ✅ | `bb7041a`; embedded docs + version |
 | VitePress documentation site | ✅ | built from `docs/content` |
 | Auto-generated API reference | ✅ | `documentation` skill |
@@ -125,7 +126,7 @@ are present in code but do **not** apply real remote state.
 |---|---|---|
 | Vault / secret engine | ⏳ | designed in ADR 0022 (`$secret`, provider chain, native AEAD vault, Ansible Vault read, masking); not built |
 | Ansible analyzer / mechanical converter | ⏳ | designed in ADR 0024 (`rolecall convert ansible`, matrix-driven analysis, mechanical rewriter, LLM handoff bundle); not built |
-| Install layout + `rolecall.env` (ADR 0023) | ✅ | layout, env-file precedence, install/uninstall/service/update/doctor, Node-free bootstrap, `--from-dir`/rollback, and `--exposed` token generation implemented. Pending: `--with-bun`/`rolecall runtime` and the native Windows SCM host (Windows stays on the unsupported wrapper path) |
+| Install layout + `rolecall.env` (ADR 0023) | ✅ | layout, env-file precedence, install/uninstall/service/update/doctor, Node-free bootstrap, `--from-dir`/rollback, and `--exposed` token generation implemented. Pending: the native Windows SCM host (Windows stays on the unsupported wrapper path) |
 | GUI in core | ⏳ | promote the SPA to a first-class, core-shipped UI (`goals.md`) |
 
 ## Designed but not yet built (future)

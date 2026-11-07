@@ -28,7 +28,9 @@ server (`rolecall --serve`).
 > Install/service/update (ADR 0023) ship with a Node-free bootstrap, `rolecall.env`,
 > Linux systemd/macOS launchd plans, and offline `--from-dir` updates; the native
 > Windows SCM host is deferred. Durable isolation grants and egress entries are
-> managed with `rolecall isolation allow|revoke|list|allow-egress|revoke-egress`.
+> managed with `rolecall isolation allow|revoke|list|allow-egress|revoke-egress`,
+> and the optional standalone Bun toolchain with `--with-bun` / `rolecall runtime`
+> (the native binary already embeds Bun).
 > Still
 > scaffolded (do not treat as functional): the SPA UI (only static `--ui-dist` serving),
 > the richer Plugin SDK
