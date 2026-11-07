@@ -36,7 +36,7 @@ The handler lives in `src/cli/commands/docs.ts` and returns a `DocsModulesResult
 
 ### install
 
-`rolecall install` plans the ADR 0023 install layout. It defaults to a dry-run; `--yes` applies by creating config/state/cache directories, `rolecall.env`, `install.json`, and a service unit/plist. It does not place the binary, enable the service, or edit PATH. See [/reference/install-command](/reference/install-command).
+`rolecall install` plans the ADR 0023 install layout. It defaults to a dry-run; `--yes` applies by creating config/state/cache directories, `rolecall.env`, `install.json`, and a service unit/plist. `--exposed` writes a generated serve token and exposure settings to `rolecall.env`. It does not place the binary, enable the service, or edit PATH. See [/reference/install-command](/reference/install-command).
 
 ### service
 

@@ -11,7 +11,7 @@ enable/start the service, or edit `PATH` yet.
 
 ```sh
 rolecall install [--system|--user] [--prefix DIR] [--config-dir DIR] [--state-dir DIR]
-                 [--no-service] [--dry-run] [--yes] [--non-interactive] [--force]
+                 [--no-service] [--exposed] [--dry-run] [--yes] [--non-interactive] [--force]
 ```
 
 - **Bare invocation in a TTY starts a wizard**: scope, program/config/state
@@ -24,6 +24,12 @@ rolecall install [--system|--user] [--prefix DIR] [--config-dir DIR] [--state-di
 - Scope defaults to `system` when root, otherwise `user`. `--system` and
   `--user` are mutually exclusive; applying a system install requires root.
 - `--no-service` skips unit generation.
+- `--exposed` enables the exposed serve profile: it writes `ROLECALL_SERVE_EXPOSED=1`,
+  `ROLECALL_SERVE_HOST`, and a generated `ROLECALL_SERVE_TOKEN` to `rolecall.env`
+  (shown once), and adds `--exposed` to the service unit. A non-loopback bind
+  without these values is refused at serve time. System-scope service installs
+  provision a token even without `--exposed`, so a later exposure cannot start
+  unauthenticated.
 - `--add-to-path` / `--no-add-to-path` controls the `binDir/rolecall` symlink (default: add).
 - `--offline` requires `--from-dir`; update also accepts it with `--rollback`.
 - `--migrate` moves legacy `~/.rolecall` state (`state.db`, WAL/SHM, `plugins.json`) into the XDG state root, never overwrites, and leaves `MIGRATED.md` behind. The resolver ignores the legacy fallback during this install.
@@ -48,7 +54,9 @@ the user/system file with `0600`/`0640` permissions.
 ## What apply writes
 
 - the config, state, and cache directories;
-- `rolecall.env` (0600 user / 0640 system) if absent;
+- `rolecall.env` (0600 user / 0640 system) if absent; with `--exposed` it also
+  receives `ROLECALL_SERVE_EXPOSED=1`, `ROLECALL_SERVE_HOST`, and a generated
+  `ROLECALL_SERVE_TOKEN` (an existing token is reused, never echoed);
 - `install.json` (scope, version, runtime, paths, service manager, installedAt);
 - the service unit/plist under the config dir for user scope, or the system path
   for system scope (for package/bootstrap installs).
@@ -134,8 +142,14 @@ Other operations plan by default; pass `--yes` to execute the printed
 `systemctl`/`launchctl`/`sc.exe` commands. `status` is read-only and always runs.
 System-scope changes require root/Administrator.
 
-## Not yet implemented
+## Implemented vs pending
 
-The interactive wizard, bootstrap scripts, binary placement, service
-enable/start/stop/status, update/uninstall, `--with-bun` and the `rolecall runtime`/`rolecall isolation` management commands
-are still pending.
+Implemented: the interactive wizard, `install.sh`/`install.ps1` Node-free
+bootstrap, `--from-dir` binary placement, `uninstall`, `service` lifecycle plans
+(systemd/launchd), `update --from-dir`/`--rollback`, `doctor`, `--migrate`,
+`--add-to-path`, and `--exposed` token generation.
+
+Still pending: the optional `--with-bun` toolchain and `rolecall runtime`
+commands, network/channel update discovery (offline `--from-dir` is the current
+path), `rolecall isolation allow|revoke|list`, and the native Windows SCM service
+host (Windows remains on the third-party wrapper path for now).

@@ -40,6 +40,7 @@ both runtimes over the PAL SqliteDb seam (ADR 0019 — drizzle-orm removed), so
 | `--serve` stays bound | `src/orchestrator/serve.ts` | fix `25208bf`: block until signal |
 | Single-file binary | `scripts/embed-docs.ts`, `src/docs/embedded-content.ts` | `bun run compile` → embedded docs+version |
 | Node.js npm channel | `scripts/build-js.mjs`, `lib/cli.js` | `bun build --target=node --packages=external` via non-entry shim (ADR 0018); `prepack` auto-builds; Node PAL real for sqlite/crypto/dns/spawn/file/http/observability |
+| Install/service/update (ADR 0023) | `src/install/*`, `src/cli/commands/{install,service,uninstall,update,doctor}.ts`, `install.sh`, `install.ps1` | layout + `rolecall.env` precedence, wizard/flag install, Linux systemd + macOS launchd plans, uninstall, offline `--from-dir` update + rollback, `--migrate`, `doctor`; `--exposed` generates a token and non-loopback `--serve` refuses without it. Pending: `--with-bun`/`rolecall runtime`, network update discovery, `rolecall isolation` subcommands, native Windows SCM host |
 | API reference + VitePress + OpenAPI | `docs/` | TypeDoc + VitePress + route-synced OpenAPI |
 
 ## Scaffolded / deferred (designed, typed, "not yet implemented")
