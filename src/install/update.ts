@@ -1,8 +1,10 @@
-// ADR 0023 update/rollback (local --from-dir slice).
+// ADR 0023 update/rollback plans.
 //
-// Network/channel discovery is not implemented; updates stage a verified artifact
-// from --from-dir. Versions live under <programDir>/versions/<version> and the
-// current symlink switches atomically. The service restarts unless --no-restart.
+// This module builds local --from-dir/rollback plans and applies them. Network
+// discovery and download live in src/cli/commands/update.ts + src/install/release.ts;
+// both paths converge on the same plan/apply logic here. Versions live under
+// <programDir>/versions/<version> and the current symlink switches atomically.
+// The service restarts unless --no-restart.
 
 import { copyFileSync, existsSync, lstatSync, readFileSync, readlinkSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
@@ -66,7 +68,7 @@ export function checkUpdate(layout: InstallLayout, fromDir?: string): UpdateChec
       warnings.push(err instanceof Error ? err.message : String(err));
     }
   } else {
-    warnings.push("network/channel update discovery is not implemented; pass --from-dir");
+    warnings.push("no local candidate: pass --from-dir, or use the CLI update path for network discovery");
   }
   return {
     currentVersion,
@@ -96,7 +98,7 @@ export function buildUpdatePlan(layout: InstallLayout, options: BuildUpdatePlanO
       actions: [`switch current -> versions/${previous}`, ...(options.restart !== false ? ["restart service"] : [])],
     };
   }
-  if (!options.fromDir) throw new Error("update requires --from-dir (network/channel discovery is not implemented)");
+  if (!options.fromDir) throw new Error("local update plan requires --from-dir");
   const binary = readBinaryArtifact(layout, options.fromDir);
   return {
     operation: "update",

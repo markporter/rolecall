@@ -1,8 +1,8 @@
-// `rolecall update` — ADR 0023 versioned update/rollback (local --from-dir).
+// `rolecall update` — ADR 0023/0029 versioned update/rollback.
 //
-// `--check` is read-only. Applying stages a verified binary, atomically switches
-// the current symlink, updates the manifest, and restarts the service unless
-// --no-restart. Network/channel discovery is not implemented.
+// `--check` is read-only. Applying stages a verified binary (network discovery or
+// --from-dir), atomically switches the current symlink, updates the manifest, and
+// restarts the service unless --no-restart.
 
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";

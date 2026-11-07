@@ -115,7 +115,7 @@ backs up `state.db` (plus WAL/SHM sidecars) when present, stages/switches,
 updates the manifest, and restarts the service unless `--no-restart`. If the
 restart commands fail, it switches `current` back to the previous version and
 updates the manifest. A full state-schema migration guard and `/health` probe are
-still pending, as is install-kind delegation (`npm`/`bun -g`/`os-package`).
+still pending.
 
 ## Install kinds
 
@@ -150,7 +150,6 @@ bootstrap, `--from-dir` binary placement, `uninstall`, `service` lifecycle plans
 `--add-to-path`, and `--exposed` token generation.
 
 Still pending: the optional `--with-bun` toolchain and `rolecall runtime`
-commands, network/channel update discovery (offline `--from-dir` is the current
-path), and the native Windows SCM service host (Windows remains on the
+commands, and the native Windows SCM service host (Windows remains on the
 third-party wrapper path for now). Isolation grants/egress are managed by
 `rolecall isolation`; see [/reference/isolation-commands](/reference/isolation-commands).

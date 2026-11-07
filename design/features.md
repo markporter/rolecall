@@ -125,7 +125,7 @@ are present in code but do **not** apply real remote state.
 |---|---|---|
 | Vault / secret engine | ⏳ | designed in ADR 0022 (`$secret`, provider chain, native AEAD vault, Ansible Vault read, masking); not built |
 | Ansible analyzer / mechanical converter | ⏳ | designed in ADR 0024 (`rolecall convert ansible`, matrix-driven analysis, mechanical rewriter, LLM handoff bundle); not built |
-| Install layout + `rolecall.env` (ADR 0023) | ✅ | layout, env-file precedence, install/uninstall/service/update/doctor, Node-free bootstrap, `--from-dir`/rollback, and `--exposed` token generation implemented. Pending: `--with-bun`/`rolecall runtime`, network/channel update discovery, and the native Windows SCM host (Windows stays on the unsupported wrapper path) |
+| Install layout + `rolecall.env` (ADR 0023) | ✅ | layout, env-file precedence, install/uninstall/service/update/doctor, Node-free bootstrap, `--from-dir`/rollback, and `--exposed` token generation implemented. Pending: `--with-bun`/`rolecall runtime` and the native Windows SCM host (Windows stays on the unsupported wrapper path) |
 | GUI in core | ⏳ | promote the SPA to a first-class, core-shipped UI (`goals.md`) |
 
 ## Designed but not yet built (future)
