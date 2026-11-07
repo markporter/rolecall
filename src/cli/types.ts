@@ -89,6 +89,10 @@ export interface GlobalFlags {
   offline?: boolean;
   /** --migrate: move legacy ~/.rolecall state to the XDG state root. */
   migrate?: boolean;
+  /** --exposed: enable the ADR 0027 exposed serve profile (non-loopback requires a token). */
+  exposed?: boolean;
+  /** --allow-anonymous: test-only escape hatch that bypasses the exposed-mode token requirement. */
+  allowAnonymous?: boolean;
 }
 
 // ---------------------------------------------------------------------------

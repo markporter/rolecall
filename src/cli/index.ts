@@ -102,6 +102,9 @@ Serve mode (rolecall --serve, see src/orchestrator):
                        Unset => zero-build health JSON on GET /; set+missing => guidance.
    --port <N>          Listen port (env ROLECALL_SERVE_PORT, default 8080)
    --host <H>          Listen host (env ROLECALL_SERVE_HOST, default 127.0.0.1)
+   --exposed           Enable the exposed profile; non-loopback binds require a token
+                       (env ROLECALL_SERVE_TOKEN). Install --exposed generates one.
+   --allow-anonymous   Test-only escape hatch: allow --exposed without a token (unsafe)
 
 Subcommands:
    playbook run <file> [--inventory <inv>] [--limit] [--force] [--check] [--diff] [--forks N] [--extra-vars <kv>] [--tags <list>] [--skip-tags <list>] [--trace] [--profile]
@@ -171,6 +174,8 @@ const GLOBAL_OPTS = {
   "no-add-to-path": { type: "boolean" },
   offline: { type: "boolean" },
   migrate: { type: "boolean" },
+  exposed: { type: "boolean" },
+  "allow-anonymous": { type: "boolean" },
 } as const;
 
 /** @summary Write rendered CLI output to stdout, stripping NUL/control chars from the `json` stream so a polluted data channel never breaks a downstream JSON parser. @param text Rendered text to emit. @param output Selected output plugin name; only `json` gets control-char scrubbing. */
@@ -260,6 +265,8 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
     noAddToPath: values["no-add-to-path"] === true,
     offline: values["offline"] === true,
     migrate: values["migrate"] === true,
+    exposed: values["exposed"] === true,
+    allowAnonymous: values["allow-anonymous"] === true,
     // --json is a convenience shorthand for --output json (used by the docs
     // subcommands and any other command the user wants structured output from).
     output: (values["json"] as boolean | undefined)

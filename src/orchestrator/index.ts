@@ -3,8 +3,8 @@
 // Exported so bin/rolecall.js / src/cli/index.ts can boot the HTTP server via
 // `rolecall --serve`, and so tests can construct a server directly against live sims.
 
-export { createServer, startServe } from "./serve";
-export type { ServerHandle } from "./serve";
+export { createServer, startServe, isLoopbackHost, serveExposureProblem, serveRootProblem } from "./serve";
+export type { ServerHandle, ServeExposureInput } from "./serve";
 export { Engine } from "./engine";
 export { mountRoutes } from "./routes";
 export type { RouteContext } from "./routes";

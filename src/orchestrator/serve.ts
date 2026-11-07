@@ -13,6 +13,7 @@ import { openStore } from "../store";
 import type { Store } from "../store";
 import { Engine } from "./engine";
 import { mountRoutes } from "./routes";
+import { makeExposedAuthMiddleware } from "./auth";
 import { installStaticUi } from "./static-ui";
 import { installSignalHandlers } from "./shutdown";
 import { CronScheduler } from "./scheduler";
@@ -39,6 +40,8 @@ export interface ServerHandle {
 const PORT_RE = /^--?(?:port|p)(?:=|$)/;
 const HOST_RE = /^--?(?:host|h)(?:=|$)/;
 const UI_DIST_RE = /^--?(?:ui-dist)(?:=|$)/;
+const EXPOSED_RE = /^--exposed(?:=|$)/;
+const ALLOW_ANONYMOUS_RE = /^--allow-anonymous(?:=|$)/;
 
 async function readArg(args: string[], key: string, re: RegExp): Promise<string | undefined> {
   const i = args.findIndex((a) => re.test(a));
@@ -54,6 +57,14 @@ export async function createServer(opts: ServerOptions): Promise<ServerHandle> {
   const scheduler = new CronScheduler({ tickMs: opts.tickMs, repo: store.schedules, engine });
   const api: SchedulerApi = opts.scheduler ?? scheduler;
   const app = express();
+  if (opts.exposed === true && opts.allowAnonymous !== true) {
+    if (!opts.authToken) {
+      throw new Error("exposed serve mode requires a Bearer token (set ROLECALL_SERVE_TOKEN)");
+    }
+    // ADR 0027: exposed mode authenticates every route except /health. Keep this
+    // ahead of body parsing so unauthenticated payloads are never decoded.
+    app.use(makeExposedAuthMiddleware(opts.authToken));
+  }
   app.use(express.json({ limit: "4mb" }));
   // Pluggable static UI must precede mountRoutes so it shadows GET "/" when active.
   installStaticUi(app, opts.uiDist);
@@ -108,6 +119,39 @@ export function serveRootProblem(uid: number | undefined, allowRoot = process.en
   return undefined;
 }
 
+/** @summary Test whether a listen host resolves to loopback (localhost, 127.0.0.0/8, ::1). @param hostname Listen host from `--host` or config. @returns True for loopback-only hosts. */
+export function isLoopbackHost(hostname: string): boolean {
+  const h = hostname.trim().toLowerCase().replace(/^\[/, "").replace(/\]$/, "");
+  return h === "localhost" || h === "::1" || h === "0:0:0:0:0:0:0:1" || h.startsWith("127.");
+}
+
+export interface ServeExposureInput {
+  /** Resolved listen hostname. */
+  hostname: string;
+  /** True when the exposed profile is active. */
+  exposed?: boolean;
+  /** Configured Bearer token. */
+  token?: string;
+  /** Test-only escape hatch that bypasses the token requirement. */
+  allowAnonymous?: boolean;
+}
+
+/** @summary ADR 0023/0027 exposure gate: non-loopback binds require `--exposed` plus a Bearer token. @param input Resolved host, exposed flag, token, and the test-only allow-anonymous escape hatch. @returns An actionable error message, or undefined when the bind is allowed. */
+export function serveExposureProblem(input: ServeExposureInput): string | undefined {
+  const loopback = isLoopbackHost(input.hostname);
+  if (input.exposed === true && !input.token && input.allowAnonymous !== true) {
+    return "refusing --exposed without a Bearer token; set ROLECALL_SERVE_TOKEN or pass --allow-anonymous for tests only";
+  }
+  if (loopback) return undefined;
+  if (input.exposed !== true) {
+    return `refusing to bind non-loopback host '${input.hostname}' without --exposed; use 127.0.0.1 or pass --exposed with ROLECALL_SERVE_TOKEN`;
+  }
+  if (!input.token && input.allowAnonymous !== true) {
+    return `refusing to bind non-loopback host '${input.hostname}' without a Bearer token; set ROLECALL_SERVE_TOKEN or pass --allow-anonymous for tests only`;
+  }
+  return undefined;
+}
+
 export async function startServe(argv?: string[], opts: Partial<ServerOptions> = {}): Promise<number> {
   const rootProblem = serveRootProblem(typeof process.getuid === "function" ? process.getuid() : undefined);
   if (rootProblem) {
@@ -118,6 +162,8 @@ export async function startServe(argv?: string[], opts: Partial<ServerOptions> =
   const portRaw = await readArg(args, "port", PORT_RE);
   const host = await readArg(args, "host", HOST_RE);
   const uiDistRaw = await readArg(args, "ui-dist", UI_DIST_RE);
+  const exposedFlag = args.some((a) => EXPOSED_RE.test(a));
+  const allowAnonymous = args.some((a) => ALLOW_ANONYMOUS_RE.test(a)) || opts.allowAnonymous === true;
   // Flag > env > default precedence preserved: CLI arg wins, else the value
   // resolved by loadConfig(), else the hard-coded fallback. Behavior matches the
   // prior ad-hoc process.env reads exactly for every real input.
@@ -125,8 +171,27 @@ export async function startServe(argv?: string[], opts: Partial<ServerOptions> =
   const port = portRaw ? Number(portRaw) : (cfg.serve.port ?? 8080);
   const hostname = host ?? cfg.serve.host ?? "127.0.0.1";
   const uiDist = uiDistRaw ?? cfg.serve.uiDist;
+  const token = opts.authToken ?? cfg.serve.token;
+  const exposed = exposedFlag || cfg.serve.exposed === true || opts.exposed === true;
 
-  const handle = await createServer({ port, hostname, uiDist, ...opts });
+  const exposureProblem = serveExposureProblem({ hostname, exposed, token, allowAnonymous });
+  if (exposureProblem) {
+    process.stderr.write(`rolecall: ${exposureProblem}\n`);
+    return 1;
+  }
+  if (allowAnonymous) {
+    process.stderr.write("warning: --allow-anonymous disables serve authentication; tests only\n");
+  }
+
+  const handle = await createServer({
+    ...opts,
+    port,
+    hostname,
+    uiDist,
+    authToken: token,
+    exposed,
+    allowAnonymous,
+  });
   await handle.schedulerStart();
   const log = typeof Bun !== "undefined" && typeof Bun.stdout === "object" ? (s: string) => Bun.stdout.write(s + "\n") : (s: string) => console.log(s);
   log(`rolecall --serve listening on ${handle.baseUrl} (pid ${process.pid})`);
