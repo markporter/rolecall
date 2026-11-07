@@ -70,6 +70,7 @@ export async function runInstallCommand(
   let stateDir = flags.stateDir;
   let service = flags.noService !== true;
   let serviceUser = flags.serviceUser ?? "rolecall";
+  let exposed = flags.exposed === true;
   let addToPath = flags.noAddToPath !== true;
   let apply = flags.yes === true && flags.dryRun !== true;
 
@@ -85,6 +86,7 @@ export async function runInstallCommand(
     if (!stateDir) stateDir = await ask("State directory", defaults.stateDir);
     service = await confirm(ask, "Install a service?", service);
     if (service && scope === "system") serviceUser = await ask("System service account", serviceUser);
+    if (service) exposed = await confirm(ask, "Expose the server beyond loopback? (requires a token)", exposed);
     addToPath = await confirm(ask, "Add rolecall to PATH (bin symlink)?", addToPath);
     apply = await confirm(ask, "Apply this install?", true);
     if (!apply) {
@@ -115,6 +117,7 @@ export async function runInstallCommand(
     isolationBackend: flags.isolation ?? "auto",
     serviceUser,
     addToPath,
+    exposed,
     ...(flags.fromDir ? { fromDir: flags.fromDir } : {}),
   });
   const result = applyInstallPlan(plan, { dryRun: !apply, force: flags.force });

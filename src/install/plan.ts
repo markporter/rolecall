@@ -4,11 +4,12 @@
 // service unit file. It never installs packages or edits PATH.
 
 import { chmodSync, copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { join } from "node:path";
 
 import { probeIsolation, type IsolationProbe } from "../isolation";
 import { ROLECALL_VERSION } from "../util/version";
+import { readEnvFile } from "./env-file";
 import type { InstallLayout, InstallScope } from "./layout";
 
 export type ServiceManager = "systemd" | "launchd" | "windows-scm" | "none";
@@ -44,6 +45,15 @@ export interface InstallPlan {
     envFileExists: boolean;
     manifestPath: string;
   };
+  /** ADR 0023/0027 serve exposure settings written to rolecall.env. */
+  serve: {
+    host: string;
+    exposed: boolean;
+    /** Token to write; omitted when one already exists (never echoed back). */
+    token?: string;
+    /** True when this plan generated a new token that must be shown once. */
+    tokenGenerated: boolean;
+  };
   /** Optional binDir/rolecall -> current/rolecall symlink. */
   pathLink?: { path: string; target: string };
   /** Optional versioned binary placement from --from-dir. */
@@ -74,6 +84,12 @@ export interface BuildInstallPlanOptions {
   kind?: InstallKind;
   /** Add the binDir/rolecall symlink (default true). */
   addToPath?: boolean;
+  /** Enable the ADR 0027 exposed serve profile. */
+  exposed?: boolean;
+  /** Listen host recorded in rolecall.env (default 127.0.0.1). */
+  serveHost?: string;
+  /** Explicit Bearer token; generated when exposed and omitted. */
+  serveToken?: string;
 }
 
 export function installManifestPath(layout: InstallLayout): string {
@@ -122,9 +138,10 @@ export function serviceUnitPath(layout: InstallLayout, manager: ServiceManager):
   return undefined;
 }
 
-function systemdUnit(layout: InstallLayout, serviceUser = "rolecall"): string {
+function systemdUnit(layout: InstallLayout, serviceUser = "rolecall", exposed = false): string {
   const exec = programBinPath(layout);
   const user = layout.scope === "system" ? `User=${serviceUser}\nGroup=${serviceUser}\n` : "";
+  const execArgs = exposed ? " --serve --exposed" : " --serve";
   return `[Unit]
 Description=RoleCall orchestrator
 After=network-online.target
@@ -132,7 +149,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-${user}ExecStart=${exec} --serve
+${user}ExecStart=${exec}${execArgs}
 EnvironmentFile=-${layout.envFile}
 WorkingDirectory=${layout.stateDir}
 StateDirectory=rolecall
@@ -150,8 +167,9 @@ WantedBy=${layout.scope === "system" ? "multi-user.target" : "default.target"}
 `;
 }
 
-function launchdPlist(layout: InstallLayout): string {
+function launchdPlist(layout: InstallLayout, exposed = false): string {
   const exec = programBinPath(layout);
+  const exposedArg = exposed ? "\n    <string>--exposed</string>" : "";
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -161,7 +179,7 @@ function launchdPlist(layout: InstallLayout): string {
   <key>ProgramArguments</key>
   <array>
     <string>${exec}</string>
-    <string>--serve</string>
+    <string>--serve</string>${exposedArg}
   </array>
   <key>EnvironmentVariables</key>
   <dict>
@@ -249,17 +267,32 @@ export function buildInstallPlan(options: BuildInstallPlanOptions): InstallPlan 
   if (layout.scope === "system" && (serviceUser === "root" || serviceUser === "0")) {
     throw new Error("system service account must not be root; pass --service-user <unprivileged-account>");
   }
+  const exposed = options.exposed === true;
+  const serveHost = options.serveHost ?? "127.0.0.1";
   const content =
     manager === "systemd"
-      ? systemdUnit(layout, serviceUser)
+      ? systemdUnit(layout, serviceUser, exposed)
       : manager === "launchd"
-        ? launchdPlist(layout)
+        ? launchdPlist(layout, exposed)
         : undefined;
   const isolation = probeIsolation({
     backend: options.isolationBackend ?? "auto",
     ...(options.image ? { image: options.image } : {}),
   });
   const envFileExists = exists(layout.envFile);
+
+  let serveToken = options.serveToken;
+  let tokenGenerated = false;
+  // ADR 0023 §9: a system service install always provisions a token so a later
+  // non-loopback bind cannot accidentally run unauthenticated.
+  const wantsToken = exposed || (enabled && layout.scope === "system");
+  if (wantsToken && !serveToken) {
+    const existing = envFileExists ? readEnvFile(layout.envFile)["ROLECALL_SERVE_TOKEN"] : undefined;
+    if (!existing) {
+      serveToken = randomBytes(32).toString("base64url");
+      tokenGenerated = true;
+    }
+  }
 
   let binary: InstallPlan["binary"];
   if (options.fromDir) binary = readBinaryArtifact(layout, options.fromDir);
@@ -293,6 +326,15 @@ export function buildInstallPlan(options: BuildInstallPlanOptions): InstallPlan 
       kind: "write-file",
       path: layout.envFile,
       description: `create ${layout.envFile} (0600 user / 0640 system)`,
+    });
+  }
+  if (envFileExists && (exposed || tokenGenerated)) {
+    actions.push({
+      kind: "write-file",
+      path: layout.envFile,
+      description: tokenGenerated
+        ? `add generated ROLECALL_SERVE_TOKEN${exposed ? " and exposure settings" : ""} to ${layout.envFile}`
+        : `ensure exposure settings in ${layout.envFile}`,
     });
   }
   actions.push({
@@ -330,9 +372,29 @@ export function buildInstallPlan(options: BuildInstallPlanOptions): InstallPlan 
       envFileExists,
       manifestPath: installManifestPath(layout),
     },
+    serve: {
+      host: serveHost,
+      exposed,
+      ...(serveToken ? { token: serveToken } : {}),
+      tokenGenerated,
+    },
     ...(binary ? { binary } : {}),
     ...(pathLink ? { pathLink } : {}),
   };
+}
+
+/** Insert or replace KEY=VALUE lines while preserving comments and unknown keys. */
+function upsertEnvLines(existing: string, entries: Record<string, string>): string {
+  const lines = existing.length > 0 ? existing.split(/\r?\n/) : [];
+  for (const [key, value] of Object.entries(entries)) {
+    const re = new RegExp(`^\\s*(?:export\\s+)?${key}\\s*=`);
+    const index = lines.findIndex((line) => re.test(line));
+    if (index >= 0) lines[index] = `${key}=${value}`;
+    else lines.push(`${key}=${value}`);
+  }
+  let body = lines.join("\n");
+  if (!body.endsWith("\n")) body += "\n";
+  return body;
 }
 
 export interface ApplyInstallOptions {
@@ -356,17 +418,36 @@ export function applyInstallPlan(plan: InstallPlan, options: ApplyInstallOptions
   const dirs = [plan.layout.configDir, plan.layout.stateDir, plan.layout.cacheDir];
   for (const dir of dirs) mkdirSync(dir, { recursive: true, mode: 0o755 });
 
+  const serveEntries: Record<string, string> = {};
+  if (plan.serve.exposed) {
+    serveEntries["ROLECALL_SERVE_EXPOSED"] = "1";
+    serveEntries["ROLECALL_SERVE_HOST"] = plan.serve.host;
+  }
+  // --force rewrites the file; never drop a token that the plan deliberately
+  // did not echo back.
+  const existingToken = existsSync(plan.layout.envFile)
+    ? readEnvFile(plan.layout.envFile)["ROLECALL_SERVE_TOKEN"]
+    : undefined;
+  const serveToken = plan.serve.token ?? existingToken;
+  if (serveToken) serveEntries["ROLECALL_SERVE_TOKEN"] = serveToken;
   if (!existsSync(plan.layout.envFile) || options.force === true) {
-    const body = [
+    const body = upsertEnvLines([
       "# RoleCall runtime configuration (KEY=VALUE).",
       "# Process environment and CLI flags override these values.",
       "# ROLECALL_SERVE_PORT=8080",
       "# ROLECALL_SERVE_HOST=127.0.0.1",
       "",
-    ].join("\n");
+    ].join("\n"), serveEntries);
     writeFileSync(plan.layout.envFile, body, { mode: plan.scope === "user" ? 0o600 : 0o640 });
     chmodSync(plan.layout.envFile, plan.scope === "user" ? 0o600 : 0o640);
     written.push(plan.layout.envFile);
+  } else if (Object.keys(serveEntries).length > 0) {
+    const current = readFileSync(plan.layout.envFile, "utf8");
+    const merged = upsertEnvLines(current, serveEntries);
+    if (merged !== current) {
+      writeFileSync(plan.layout.envFile, merged, { mode: plan.scope === "user" ? 0o600 : 0o640 });
+      written.push(plan.layout.envFile);
+    }
   }
 
   let currentVersion: string | undefined;
