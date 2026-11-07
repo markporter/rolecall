@@ -51,6 +51,23 @@ export interface GlobalFlags {
   allowEgress?: import("../isolation/egress").EgressRule[];
   /** Explicit unsafe override for restricted code with --isolation none. */
   allowUnsafeTemplateCode?: boolean;
+  /** --target: sandbox path for an isolation grant. */
+  target?: string;
+  /** --ro / --rw: grant mode (mutually exclusive; ro default). */
+  ro?: boolean;
+  rw?: boolean;
+  /** --project: project directory for isolation management. */
+  project?: string;
+  /** --from-request: promote an entry from the project's advisory request. */
+  fromRequest?: boolean;
+  /** --port: egress port for isolation allow-egress. */
+  port?: string;
+  /** --scope: egress scope (shell|module|all). */
+  scope?: string;
+  /** --explain: include unapproved project requests in isolation list. */
+  explain?: boolean;
+  /** --egress: include egress entries in isolation list. */
+  egress?: boolean;
   /** --system install scope. */
   system?: boolean;
   /** --user install scope. */
@@ -315,6 +332,21 @@ export interface DoctorResult {
   note: string;
 }
 
+/** Result of `rolecall isolation`. */
+export interface IsolationResult {
+  command: "isolation";
+  operation: "allow" | "revoke" | "list" | "allow-egress" | "revoke-egress";
+  /** Canonical file:// project URI. */
+  project: string;
+  configPath: string;
+  changed: boolean;
+  grants: import("../isolation/config").ProjectGrant[];
+  egress: import("../isolation/egress").EgressRule[];
+  /** Present for `list --explain`: project-requested entries not yet approved. */
+  requests?: { grants: import("../isolation/config").ProjectGrant[]; egress: import("../isolation/egress").EgressRule[] };
+  note: string;
+}
+
 export type CliResult =
   | PlaybookRunResult
   | FactsGatherResult
@@ -332,7 +364,8 @@ export type CliResult =
   | InstallResult
   | ServiceResult
   | UninstallResult
-  | UpdateResult;
+  | UpdateResult
+  | IsolationResult;
 
 // ---------------------------------------------------------------------------
 // Error class — `usage: true` => exit code 2 (unknown subcommand / bad args);
