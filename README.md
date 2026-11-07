@@ -27,7 +27,9 @@ server (`rolecall --serve`).
 > `when`/`loop`, handlers, modules, and `--check`/`--diff`/`--force` all apply.
 > Install/service/update (ADR 0023) ship with a Node-free bootstrap, `rolecall.env`,
 > Linux systemd/macOS launchd plans, and offline `--from-dir` updates; the native
-> Windows SCM host is deferred. Still
+> Windows SCM host is deferred. Durable isolation grants and egress entries are
+> managed with `rolecall isolation allow|revoke|list|allow-egress|revoke-egress`.
+> Still
 > scaffolded (do not treat as functional): the SPA UI (only static `--ui-dist` serving),
 > the richer Plugin SDK
 > authoring surface, global Jinja `{{ }}` interpolation in playbook scalars (Jinja

@@ -44,6 +44,23 @@ rolecall playbook run site.yaml --inventory inv.yaml \
   --allow-egress api.example.com:443
 ```
 
+### Durable grants and egress
+
+One-off `--mount` and `--allow-egress` flags are ephemeral. Durable access belongs
+in the operator-owned `isolation.yaml`, managed through the CLI so it is auditable:
+
+```sh
+rolecall isolation allow /srv/shared/certs --target /mnt/certs --ro
+rolecall isolation allow-egress api.example.com --port 443 --scope all
+rolecall isolation list --egress --explain
+```
+
+Grants are keyed by canonical `file://` project URI and merged below one-off CLI
+flags for `playbook run` and `facts gather`. A project may declare advisory
+requests in `.rolecall/isolation.yaml`; `rolecall isolation list --explain` shows
+them unapproved and `--from-request` promotes one. A project can never
+self-approve. See [/reference/isolation-commands](/reference/isolation-commands).
+
 ### Network modes
 
 | Mode | Meaning |
@@ -119,7 +136,7 @@ Nunjucks/Jinja is a **bounded template language**, not restricted code in this p
 sense. It has a fixed statement grammar (`if`/`for`/`macro`/`set`) and registered
 filters/tests; it is always sandboxed and does not need per-project approval.
 
-The planned operator policy is per-project and lives outside the project:
+The operator policy is per-project and lives outside the project:
 
 ```yaml
 # /etc/rolecall/isolation.yaml (system) or $XDG_CONFIG_HOME/rolecall/isolation.yaml (user)
@@ -177,9 +194,9 @@ rolecall agent manifest | jq '.policy.templates'
   local isolation.
 - **Template-side I/O.** The worker does not receive `--mount` grants and is hardcoded
   network-off. Passing data in from a module is the supported pattern.
-- **Eta/EJS approval policy.** They now render in the worker when isolation is enabled, but
-  the per-project approval/config path (`templates.allow_restricted_code` /
-  `templates.allow_restricted_helpers`) is not implemented yet.
+- **Eta/EJS approval policy.** They render in the worker when isolation is enabled; the
+  per-project approval path (`templates.allow_restricted_code` /
+  `templates.allow_restricted_helpers`) gates them.
 
 ## Failure behavior
 
