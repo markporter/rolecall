@@ -208,7 +208,7 @@ rolecall agent manifest | jq '.policy.templates'
 
 ## Testing
 
-Linux test runs default to `ROLECALL_ISOLATION=auto`; macOS/Windows use `none` because
+Linux test runs default to `ROLECALL_ISOLATION=auto`; non-Linux hosts use `none` because
 bwrap is Linux-only and Docker is not guaranteed. CI installs bubblewrap on Linux and has a
 separate Docker job with `ROLECALL_REQUIRE_DOCKER=1`. The checked-in
 `examples/local-smoke` playbook runs under the default backend, and

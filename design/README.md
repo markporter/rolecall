@@ -41,7 +41,7 @@ clientless agent interface. The orchestrator implements run dispatch over real
 transports, a cron scheduler, webhooks, and forked full-executor playbook runs (the
 child CLI gets fresh resolver/facts/module state, so roles/phases/`when`/`loop`/
 handlers/tx all apply). The ADR 0023 install/service/update surface is implemented (layout,
-`rolecall.env`, wizard, Linux systemd/macOS launchd, offline updates, and the
+`rolecall.env`, wizard, Linux systemd plans (macOS deferred), offline updates, and the
 `--exposed` token gate; `--with-bun`, network update discovery, and the native
 Windows SCM host remain pending). Operator-owned isolation grants/egress in
 `isolation.yaml` are implemented through `rolecall isolation`, and the optional

@@ -34,11 +34,10 @@ bunx @rolecall/cli --help
 
 ## Standalone binaries
 
-Each GitHub Release attaches prebuilt executables that embed their runtime, so the host needs nothing else installed, not Node and not Bun. The four artifacts are:
+Each GitHub Release attaches prebuilt executables that embed their runtime, so the host needs nothing else installed, not Node and not Bun. The three artifacts are:
 
 - `rolecall-linux-x64-musl`
 - `rolecall-linux-arm64-musl`
-- `rolecall-darwin-arm64-musl`
 - `rolecall-windows-x64`
 
 Download the matching asset from the [Releases page](https://github.com/markporter/rolecall/releases), make it executable, and run it directly:

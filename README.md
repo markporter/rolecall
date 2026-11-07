@@ -1,6 +1,7 @@
 # RoleCall
 
-RoleCall is config management and orchestration for Linux and macOS. One
+RoleCall is config management and orchestration for Linux, with Windows builds
+available. macOS is not supported yet. One
 executable runs as a CLI (`rolecall playbook run …`) and as an orchestrator
 server (`rolecall --serve`). It reads Ansible inventories, applies playbooks over
 SSH or local transports, and can run on either Node.js or Bun.
