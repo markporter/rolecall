@@ -46,7 +46,8 @@ const ENTRY = resolve(ROOT, "scripts/cli-native-entry.mjs");
 const DEFAULT_OUTDIR = resolve(ROOT, "dist", "bin");
 
 // Platform id -> the value passed to bun's BUN_TARGET_OVERRIDE for cross builds.
-// bun emits static musl Linux binaries, hence the `-musl` suffix on linux/darwin.
+// bun emits static musl Linux binaries, hence the `-musl` suffix on linux.
+// darwin mappings stay dormant until macOS support returns.
 const BUN_TARGETS = {
   "linux-x64": "bun-linux-x64",
   "linux-arm64": "bun-linux-aarch64",
@@ -60,8 +61,6 @@ const BUN_TARGETS = {
 const KNOWN_PLATFORMS = [
   "linux-x64-musl",
   "linux-arm64-musl",
-  "darwin-arm64-musl",
-  "darwin-x64-musl",
   "windows-x64",
   "freebsd-x64-musl",
 ];
@@ -164,7 +163,12 @@ function main() {
   let chosen;
   if (targets.length > 0) chosen = targets;
   else if (all) chosen = KNOWN_PLATFORMS;
-  else chosen = [hostId, "linux-arm64-musl", "darwin-arm64-musl", "windows-x64"];
+  else {
+    // Default distribution set is Linux + Windows. macOS builds are dormant
+    // until macOS support returns, even when the builder runs on a Mac.
+    const defaults = ["linux-x64-musl", "linux-arm64-musl", "windows-x64"];
+    chosen = hostId.startsWith("darwin") ? defaults : [hostId, ...defaults.filter((t) => t !== hostId)];
+  }
 
   console.log(`RoleCall native builder`);
   console.log(`  project     : ${NAME}@${VERSION}`);
