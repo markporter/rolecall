@@ -74,7 +74,6 @@ the `rolecall` binary there; the plan warns when it is missing.
 | Platform | Manager | Unit path |
 |---|---|---|
 | Linux | systemd | `/etc/systemd/system/rolecall.service` (system) or `<configDir>/systemd/rolecall.service` (user) |
-| macOS | launchd | `/Library/LaunchDaemons/com.rolecall.serve.plist` (system) or `<configDir>/LaunchAgents/...` (user) |
 | Windows | SCM | planned; no unit file |
 
 ## Optional Bun runtime
