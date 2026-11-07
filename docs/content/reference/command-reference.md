@@ -42,6 +42,10 @@ The handler lives in `src/cli/commands/docs.ts` and returns a `DocsModulesResult
 
 `rolecall isolation allow|revoke|list|allow-egress|revoke-egress` manages the operator-owned filesystem grants and egress destinations in `isolation.yaml` (ADR 0023/0025). Grants are keyed by canonical `file://` project URI; `--from-request` promotes an advisory request from the project's `.rolecall/isolation.yaml` instead of self-approving it. Durable grants merge below one-off `--mount`/`--allow-egress` flags for `playbook run` and `facts gather`. See [/reference/isolation-commands](/reference/isolation-commands).
 
+### runtime
+
+`rolecall runtime install|status|remove` manages the optional standalone Bun toolchain (ADR 0023 §5). The native binary already embeds Bun; `status` reports `embedded` until an external toolchain is installed. See [/reference/runtime-commands](/reference/runtime-commands).
+
 ### service
 
 `rolecall service install|uninstall|start|stop|restart|status` plans or executes the ADR 0023 service lifecycle. Changes are dry-run by default (`--yes` applies); `status` is read-only. See [/reference/install-command#service-lifecycle](/reference/install-command#service-lifecycle).

@@ -51,6 +51,11 @@ Pass `--exposed` to the wizard/flags to enable the exposed serve profile: it
 generates a Bearer token into `rolecall.env` and adds `--exposed` to the service
 unit. Without a token, `rolecall --serve` refuses a non-loopback bind.
 
+The native binary embeds Bun, so no runtime download is needed. If you want a
+standalone Bun toolchain for source-mode work, pass `--with-bun` (optionally
+`--bun-version`) or run `rolecall runtime install` later; see
+[/reference/runtime-commands](/reference/runtime-commands).
+
 ## Installing for local development
 
 If you are contributing or want to run RoleCall straight out of a checkout, install dependencies from the lockfile:
