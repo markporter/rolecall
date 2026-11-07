@@ -51,9 +51,9 @@ rolecall inventory list <inv>
 rolecall vars list <play>               # declared var/fact by file + fact capability per connection kind
 rolecall vars trace <play> [--inventory <inv>] [--extra-vars <kv>] [--limit <host>]
 rolecall doctor                         # report isolation backend + ADR 0023 install layout readiness
-rolecall install [--user|--system] [--migrate] [--add-to-path|--no-add-to-path]  # TTY wizard; --offline requires --from-dir
+rolecall install [--user|--system] [--exposed] [--migrate] [--add-to-path|--no-add-to-path]  # TTY wizard; --offline requires --from-dir
 install.sh / install.ps1                             # Node-free GitHub bootstrap -> install --from-dir
-rolecall service install|start|stop|restart|status [--yes]  # plan/apply systemd/launchd/SCM lifecycle; system units refuse root
+rolecall service install|start|stop|restart|status [--yes]  # plan/apply systemd/launchd lifecycle (Windows SCM deferred); system units refuse root
 rolecall uninstall [--user|--system] [--purge] [--dry-run|--yes]  # remove unit/manifest; keep config/state unless purged
 rolecall update --check|--from-dir <dir>|--rollback [--yes] [--no-restart]  # binary self-update; npm/bun/os-package delegate (ADR 0029 pre-beta)
 rolecall docs search <query>            # query RoleCall prose docs by substring
@@ -150,6 +150,10 @@ Global flags (parsed once by `parseArgs`):
 - `--tags <list>` / `--skip-tags <list>` (comma-separated) select/skip tasks by tag on
    `playbook run`; a task's own tags replace play tags, and tag-filtered tasks report
    as skipped.
+- `--exposed` enables the ADR 0027 exposed serve profile (non-loopback requires a
+   token); with `install` it writes `ROLECALL_SERVE_EXPOSED`, `ROLECALL_SERVE_HOST`,
+   and a generated `ROLECALL_SERVE_TOKEN` to `rolecall.env`. `--allow-anonymous`
+   bypasses the token requirement for tests only.
 - `-h/--help`, `-v/--version`.
 
 Serve mode (`rolecall --serve`, see `src/orchestrator`; works on both runtimes —
@@ -158,9 +162,15 @@ the durable SQLite store it boots opens through the PAL):
 ```sh
 rolecall --serve                         # boot the Express orchestrator
 rolecall --serve --port 9090             # env ROLECALL_SERVE_PORT default 8080
-rolecall --serve --host 0.0.0.0          # env ROLECALL_SERVE_HOST default 127.0.0.1
+rolecall --serve --host 0.0.0.0 --exposed  # non-loopback requires --exposed + token
 rolecall --serve --ui-dist ./build       # serve static UI dir (env ROLECALL_UI_DIST)
 ```
+
+A non-loopback bind is refused unless `--exposed` and `ROLECALL_SERVE_TOKEN` are
+both set (`rolecall install --exposed` generates/stores the token). In exposed mode
+every route except `GET /health` requires `Authorization: Bearer <token>`;
+`--allow-anonymous` is a test-only escape hatch that prints an unsafe warning.
+`--serve` also refuses to run as uid 0 unless `ROLECALL_ALLOW_ROOT=1`.
 
 With no UI dist set, `GET /` returns a zero-build health JSON object instead of
 serving pages. The server implements run dispatch, project/schedule CRUD, a cron

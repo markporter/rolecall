@@ -20,9 +20,14 @@ server (`rolecall --serve`).
 > Ansible-style selection and notifications. Transport + the executor are implemented,
 > on Node.js (>=22.19, via npm) as well as Bun. The orchestrator boots a real HTTP
 > server with run dispatch over real transports, project/schedule CRUD, a working cron
-> scheduler, and Bearer-gated webhooks. Each server run is forked to the one-shot CLI
+> scheduler, and Bearer-gated webhooks. A non-loopback `--serve` bind requires
+> `--exposed` plus `ROLECALL_SERVE_TOKEN`; exposed mode authenticates every route
+> except `/health`, and `rolecall install --exposed` generates the token. Each server run is forked to the one-shot CLI
 > (`playbook run -o jsonl`) against a materialized playbook/inventory, so roles, phases,
-> `when`/`loop`, handlers, modules, and `--check`/`--diff`/`--force` all apply. Still
+> `when`/`loop`, handlers, modules, and `--check`/`--diff`/`--force` all apply.
+> Install/service/update (ADR 0023) ship with a Node-free bootstrap, `rolecall.env`,
+> Linux systemd/macOS launchd plans, and offline `--from-dir` updates; the native
+> Windows SCM host is deferred. Still
 > scaffolded (do not treat as functional): the SPA UI (only static `--ui-dist` serving),
 > the richer Plugin SDK
 > authoring surface, global Jinja `{{ }}` interpolation in playbook scalars (Jinja

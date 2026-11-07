@@ -40,10 +40,13 @@ applies state to remote hosts over SSH/local transports, exposing a discoverable
 clientless agent interface. The orchestrator implements run dispatch over real
 transports, a cron scheduler, webhooks, and forked full-executor playbook runs (the
 child CLI gets fresh resolver/facts/module state, so roles/phases/`when`/`loop`/
-handlers/tx all apply). The SPA UI (static `--ui-dist` serving only), the richer plugin
-SDK authoring surface, global Jinja `{{ }}` interpolation in playbook scalars (Jinja
-renders only through explicit `copy` content templates with `engine: jinja`), and the
-Postgres backend remain scaffolded. The Node-runtime PAL is implemented (npm channel = Node.js;
+handlers/tx all apply). The ADR 0023 install/service/update surface is implemented (layout,
+`rolecall.env`, wizard, Linux systemd/macOS launchd, offline updates, and the
+`--exposed` token gate; `--with-bun`, network update discovery, and the native
+Windows SCM host remain pending). The SPA UI (static `--ui-dist` serving only), the
+richer plugin SDK authoring surface, global Jinja `{{ }}` interpolation in playbook
+scalars (Jinja renders only through explicit `copy` content templates with
+`engine: jinja`), and the Postgres backend remain scaffolded. The Node-runtime PAL is implemented (npm channel = Node.js;
 see ADR 0018); the durable SQLite store runs on both runtimes over the PAL SqliteDb
 seam (ADR 0019 — drizzle-orm removed), so `--serve`, `--trace`, `--profile`, and
 `run replay` work on Node too. Postgres stays the future enterprise backend

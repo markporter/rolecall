@@ -47,6 +47,9 @@ confirmation. Windows uses `install.ps1` with the same flags.
 
 The bootstrap verifies the artifact checksum; the installed binary embeds the
 release verification key and enforces the signed update manifests (ADR 0029).
+Pass `--exposed` to the wizard/flags to enable the exposed serve profile: it
+generates a Bearer token into `rolecall.env` and adds `--exposed` to the service
+unit. Without a token, `rolecall --serve` refuses a non-loopback bind.
 
 ## Installing for local development
 

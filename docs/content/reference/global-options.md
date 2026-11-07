@@ -33,6 +33,8 @@ They come directly from `GLOBAL_OPTS` in `src/cli/index.ts`, which passes them t
 | `--migrate` | none | Move legacy `~/.rolecall` state into the XDG state root during a user install. | off |
 | `--offline` | none | Require a local artifact: install uses `--from-dir`; update uses `--from-dir` or `--rollback`. | off |
 | `--service-user` | `<name>` | System-scope service account for `install`/`service install` (default `rolecall`; must exist, must not be root). | `rolecall` |
+| `--exposed` | none | Enable the ADR 0027 exposed serve profile. Non-loopback binds require a token (`ROLECALL_SERVE_TOKEN`); `rolecall install --exposed` generates and stores one. | off |
+| `--allow-anonymous` | none | Test-only escape hatch: allow `--exposed` without a token. Prints an unsafe warning. | off |
 | `--update-url` | `<url>` | With `rolecall update`, use a mirror that serves `release.json` + `release.json.sig` instead of GitHub Releases. | unset |
 | `--purge` | none | With `rolecall uninstall`, remove the config/state/cache directories after removing the unit/manifest. | off |
 | `--allow-egress` | `<host[:port]>` | Repeatable ephemeral destination whitelist entry; rejected with `--isolation none`. Module URL checks (`http`/`get_url`/`git`) enforce it; the broker is wired for the namespace and Docker backends (Docker command construction is tested; live Docker requires a daemon). | none |
@@ -43,4 +45,4 @@ Two behaviors are worth calling out. The default `syslog` plugin streams one JSO
 
 `--tags` and `--skip-tags` are validated eagerly too: a present-but-empty value (e.g. `--tags ""`) exits 2 with a usage error rather than silently filtering nothing. Both flags only affect `playbook run` and are applied to the fully-resolved task list (after role composition and `include_tasks` expansion). A task's own `tags:` replace its play's `tags:` (no union), handlers are exempt from `--tags` inclusion and are excluded by `--skip-tags` only when they explicitly declare a skipped tag, and a tag-skipped task is reported as skipped with reason `tag-filtered`. See [Tasks](../concepts/tasks.md#tags) for the full rules.
 
-Serve-mode flags (`--serve`, `--port`, `--host`, `--dist`, `--ui-dist`) appear at the bottom of the help text but are handled separately, before the shared parser, so they only take effect inside `rolecall --serve`. Those live in [/reference/serve-command](/reference/serve-command), alongside the endpoints those flags bring online.
+Serve-mode flags (`--serve`, `--port`, `--host`, `--dist`, `--ui-dist`, `--exposed`, `--allow-anonymous`) appear at the bottom of the help text but are handled separately, before the shared parser, so they only take effect inside `rolecall --serve`. Those live in [/reference/serve-command](/reference/serve-command), alongside the endpoints those flags bring online.
