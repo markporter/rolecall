@@ -206,6 +206,17 @@ describe("convert ansible MVP", () => {
     expect(result.findings.some((f) => f.construct === "serial" && f.disposition === "handoff")).toBe(false);
   });
 
+  test("with_together and with_nested map to zip/product", () => {
+    const dir = tmp("together");
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- hosts: web\n  vars:\n    a: [1, 2]\n    b: [3, 4]\n  tasks:\n    - name: together\n      debug:\n        msg: "{{ item[0] }}-{{ item[1] }}"\n      with_together:\n        - "{{ a }}"\n        - "{{ b }}"\n    - name: nested\n      debug:\n        msg: "{{ item[0] }}-{{ item[1] }}"\n      with_nested:\n        - "{{ a }}"\n        - "{{ b }}"\n`, "utf8");
+    const result = convertAnsible(file, { write: true, out: join(dir, "out") });
+    const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
+    const tasks = converted[0]!.tasks as Array<Record<string, unknown>>;
+    expect(tasks[0]!.loop).toEqual({ $each: { $jinja: "{{ vars.a | zip(vars.b) | to_json }}" } });
+    expect(tasks[1]!.loop).toEqual({ $each: { $jinja: "{{ vars.a | product(vars.b) | to_json }}" } });
+  });
+
   test("strict mode flags remaining handoff items", () => {
     const dir = tmp("strict");
     const file = join(dir, "site.yml");

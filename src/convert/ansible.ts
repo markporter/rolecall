@@ -559,9 +559,32 @@ function convertTask(
         finding(state, file, `${path}.with_dict`, "with_dict", "handoff", "with_dict form has no mechanical $each equivalent");
       }
     }
-  } else if (task.with_first_found !== undefined || task.with_together !== undefined || task.with_nested !== undefined) {
-    const key = task.with_first_found !== undefined ? "with_first_found" : task.with_together !== undefined ? "with_together" : "with_nested";
-    finding(state, file, `${path}.${key}`, key, "handoff", "loop form has no mechanical $each equivalent");
+  } else if (task.with_together !== undefined || task.with_nested !== undefined) {
+    const key = task.with_together !== undefined ? "with_together" : "with_nested";
+    const filter = key === "with_together" ? "zip" : "product";
+    const value = task[key];
+    if (!Array.isArray(value) || value.length === 0) {
+      finding(state, file, `${path}.${key}`, key, "handoff", "loop form needs a literal list of operands");
+    } else {
+      const operands = value.map((entry) => {
+        if (typeof entry === "string" && hasJinja(entry)) {
+          const { text } = rewriteAnsibleExpr(entry, state.knownVars);
+          const match = text.match(/^\s*\{\{([\s\S]*)\}\}\s*$/);
+          return match?.[1]?.trim();
+        }
+        if (typeof entry === "string") return qualifyVars(entry, state.knownVars);
+        if (Array.isArray(entry) || typeof entry === "object") return JSON.stringify(entry);
+        return JSON.stringify(entry);
+      });
+      if (operands.some((operand) => operand === undefined)) {
+        finding(state, file, `${path}.${key}`, key, "handoff", "could not build a mechanical zip/product expression");
+      } else {
+        out.loop = { $each: { $jinja: `{{ ${operands[0]} | ${filter}(${operands.slice(1).join(", ")}) | to_json }}` } };
+        finding(state, file, `${path}.${key}`, key, "mapped", `mapped to $each + ${filter}`);
+      }
+    }
+  } else if (task.with_first_found !== undefined) {
+    finding(state, file, `${path}.with_first_found`, "with_first_found", "handoff", "file-search loops have no mechanical $each equivalent");
   }
 
   for (const key of ["register", "delegate_to", "run_once", "become", "become_user", "no_log"]) {
