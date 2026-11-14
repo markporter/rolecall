@@ -122,8 +122,8 @@ export function lintPlaybookIdempotency(pb: NormalizedPlaybook): IdempotencyWarn
 export interface TemplateRefProblem {
   /** Dot/bracket path to the offending value within the playbook. */
   path: string;
-  /** `jinja` = raw `{{ }}` delimiter; `namespace-unknown` = `$var` whose first segment is not one of the 9 reserved namespaces; `undeclared-var`/`undeclared-fact` = var_strict enforcement (vars./facts. leaves only). */
-  kind: "jinja" | "namespace-unknown" | "undeclared-var" | "undeclared-fact";
+  /** `jinja` = raw Jinja delimiters; `when-not-structured` = bare/non-structured `when`; `namespace-unknown` = `$var` whose first segment is not one of the 9 reserved namespaces; `undeclared-var`/`undeclared-fact` = var_strict enforcement (vars./facts. leaves only). */
+  kind: "jinja" | "when-not-structured" | "namespace-unknown" | "undeclared-var" | "undeclared-fact";
   /** Human-readable explanation of the problem. */
   message: string;
 }
@@ -169,22 +169,17 @@ export function lintTemplateRefs(pb: NormalizedPlaybook): TemplateRefProblem[] {
   const strict = (pb.var_strict ?? true) && (pb.varManifests?.length ?? 0) > 0;
 
   const checkString = (value: string, path: string): void => {
-    if (value.includes("{{") || value.includes("}}")) {
+    if (/\{\{|\}\}|\{%|%\}|\{#|#\}/.test(value)) {
       problems.push({
         path,
         kind: "jinja",
-        message: `Jinja-style '{{ }}' interpolation is not supported; use a structured ref node such as { $var: vars.foo } (found: ${JSON.stringify(value)})`,
+        message: `Jinja is only allowed inside { $jinja: "<template>" }; raw Jinja delimiters in playbook scalars are rejected (found: ${JSON.stringify(value)})`,
       });
     }
   };
 
   const walk = (value: unknown, path: string): void => {
     if (typeof value === "string") {
-      // `copy` content template specs are opaque runtime payloads (the module
-      // renders them on-host with the selected engine), not playbook scalar
-      // interpolation. They are exempt for the same reason EJS payloads are:
-      // they are interpreted only at execution time, by an explicit engine.
-      if (/\.args\.content\.(?:template|template_file)$/.test(path)) return;
       checkString(value, path);
       return;
     }
@@ -196,6 +191,9 @@ export function lintTemplateRefs(pb: NormalizedPlaybook): TemplateRefProblem[] {
       const record = value as Record<string, unknown>;
       if (isStructured(value)) {
         const op = Object.keys(record)[0];
+        // `$jinja` is the sole Jinja escape hatch: its payload is an explicit
+        // template, not a playbook scalar. Do not scan it for Jinja delimiters.
+        if (op === "$jinja") return;
         if (op === "$var") {
           const ref = record.$var;
           if (typeof ref === "string") {
@@ -237,13 +235,32 @@ export function lintTemplateRefs(pb: NormalizedPlaybook): TemplateRefProblem[] {
     }
   };
 
+  const lintWhen = (when: unknown, path: string): void => {
+    if (when === undefined || typeof when === "boolean" || when === null) return;
+    if (Array.isArray(when)) {
+      when.forEach((entry, i) => lintWhen(entry, `${path}[${i}]`));
+      return;
+    }
+    if (isStructured(when)) {
+      walk(when, path);
+      return;
+    }
+    problems.push({
+      path,
+      kind: "when-not-structured",
+      message: `when must be a boolean or a structured predicate/ref (e.g. { $eq: [ { $var: vars.x }, "value" ] }); bare ${typeof when} guards are not truthy-coerced`,
+    });
+  };
+
   if (pb.name !== undefined) walk(pb.name, "name");
+  if (pb.vars !== undefined) walk(pb.vars, "vars");
+  if (pb.roleDefaults !== undefined) walk(pb.roleDefaults, "roleDefaults");
   const lintTasks = (tasks: NormalizedTask[], prefix: string): void => {
     for (const t of tasks) {
       walk(t.name, `${prefix}[].name`);
       walk(t.module, `${prefix}[].module`);
       walk(t.args, `${prefix}[].args`);
-      if (t.when !== undefined) walk(t.when, `${prefix}[].when`);
+      if (t.when !== undefined) lintWhen(t.when, `${prefix}[].when`);
       if (t.loop !== undefined) walk(t.loop, `${prefix}[].loop`);
       for (const n of t.notify) walk(n, `${prefix}[].notify`);
       if (t.register !== undefined) walk(t.register, `${prefix}[].register`);

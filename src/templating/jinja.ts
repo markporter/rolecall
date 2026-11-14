@@ -9,8 +9,8 @@
 // both eta (fast) and Jinnja modes. Ansible-specific filters/tests/globals live in
 // `./ansible-filters.ts` and are synced before every render.
 //
-// LENIENT BY DEFAULT: undefined variables render as ""; `{ strict: true }` uses
-// a second Environment with `throwOnUndefined: true`.
+// STRICT BY DEFAULT: undefined variables throw; pass `{ strict: false }` to opt
+// into the lenient environment that renders them as "".
 
 import nunjucks from "nunjucks";
 
@@ -18,7 +18,7 @@ import { getFilter, listFilters } from "./filters.js";
 import { ANSIBLE_FILTERS, ANSIBLE_GLOBALS, ANSIBLE_TESTS } from "./ansible-filters.js";
 
 export interface JinjaRenderOptions {
-  /** Throw on undefined variables instead of rendering them as "". */
+  /** Set false to render undefined variables as "" instead of throwing (default strict). */
   strict?: boolean;
 }
 
@@ -53,14 +53,14 @@ function sync(env: nunjucks.Environment): void {
 
 /**
  * Render a Jinja/Nunjucks template with `vars`, returning deterministic output.
- * Undefined variables are lenient unless `{ strict: true }` is set.
+ * Undefined variables throw by default; pass `{ strict: false }` for lenient rendering.
  */
 export function renderJinja(
   template: string,
   vars: Record<string, unknown> = {},
   opts: JinjaRenderOptions = {},
 ): string {
-  const env = opts.strict === true ? STRICT : LENIENT;
+  const env = opts.strict === false ? LENIENT : STRICT;
   sync(env);
   return env.renderString(template, vars);
 }

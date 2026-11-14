@@ -29,17 +29,15 @@ describe("jinja mode (Nunjucks + Ansible compatibility)", () => {
     expect(out).toBe("ROLECALL!");
   });
 
-  it("(c) renders undefined variables leniently (no throw) by default", () => {
-    // Undefined top-level var -> empty string, no exception.
-    expect(renderJinja(`{{ missing }}`)).toBe("");
-    // Undefined nested path -> empty string, no exception.
-    expect(renderJinja(`{{ a.b.c }}`, {})).toBe("");
-    // Undefined var inside a conditional does not throw in lenient mode.
-    expect(renderJinja(`{% if ghost %}yes{% else %}no{% endif %}`)).toBe("no");
+  it("(c) renders undefined variables leniently when strict:false", () => {
+    expect(renderJinja(`{{ missing }}`, {}, { strict: false })).toBe("");
+    expect(renderJinja(`{{ a.b.c }}`, {}, { strict: false })).toBe("");
+    expect(renderJinja(`{% if ghost %}yes{% else %}no{% endif %}`, {}, { strict: false })).toBe("no");
   });
 
-  it("(d) strict opt-in throws on undefined variable", () => {
-    expect(() => renderJinja(`{{ missing }}`, {}, { strict: true })).toThrow();
+  it("(d) is strict by default and throws on undefined variables", () => {
+    expect(() => renderJinja(`{{ missing }}`)).toThrow();
+    expect(() => renderJinja(`{{ a.b.c }}`, {})).toThrow();
   });
 
   it("supports Jinja macros and loop.index", () => {

@@ -16,6 +16,5 @@
       args:
         dest: /tmp/rolecall-greeting.txt
         content:
-          template: |
-            Hello from {{ app_name }}, host={{ hostname }}, port={{ http_port }}
-          engine: jinja
+          $jinja: |
+            Hello from {{ vars.app_name }}, host={{ facts.hostname }}, port={{ vars.http_port }}

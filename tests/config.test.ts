@@ -390,8 +390,9 @@ test("loadPlaybook rejects Jinja {{ }} as a load-time error", () => {
   expect(String((err as Error).message)).toContain("template-refs");
 });
 
-test("loadPlaybook allows Jinja inside a copy content template spec", () => {
-  const pb = loadPlaybook(`
+test("loadPlaybook rejects Jinja in a copy content template spec", () => {
+  expect(() =>
+    loadPlaybook(`
 - hosts: web
   tasks:
     - name: t
@@ -401,6 +402,20 @@ test("loadPlaybook allows Jinja inside a copy content template spec", () => {
         content:
           template: "listen {{ port }}"
           engine: jinja
+`),
+  ).toThrow(/Jinja is only allowed inside/);
+});
+
+test("loadPlaybook allows Jinja inside $jinja", () => {
+  const pb = loadPlaybook(`
+- hosts: web
+  tasks:
+    - name: t
+      module: copy
+      args:
+        dest: /etc/app.conf
+        content:
+          $jinja: "listen {{ vars.http_port }}"
 `);
   expect(pb).toHaveLength(1);
   expect(lintTemplateRefs(pb[0]!)).toEqual([]);
@@ -773,10 +788,11 @@ test("$template operator renders an opt-in EJS string", () => {
   expect(out.cmd).toBe("echo web1");
 });
 
-test("evalWhen treats a bare string literally and resolves structured predicates", () => {
+test("evalWhen rejects bare strings and resolves structured predicates", () => {
   const vars = varsScope({ flag: false });
-  expect(evalWhen("<%= vars.flag %>", vars)).toBe(true);
+  expect(() => evalWhen("<%= vars.flag %>", vars)).toThrow(/bare string/);
   expect(evalWhen({ $eq: [{ $var: "vars.host" }, "web1"] }, vars)).toBe(true);
+  expect(evalWhen({ $jinja: "{{ vars.flag }}" }, vars)).toBe(false);
 });
 
 test("expandLoop treats a bare string literally; $each resolves", () => {

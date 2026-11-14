@@ -131,7 +131,7 @@ export async function renderTemplateIsolated(options: RenderTemplateOptions): Pr
       engine: options.engine,
       template: options.template,
       vars: options.vars,
-      strict: false,
+      strict: true,
     });
     const result = await runProcess(
       built.file,

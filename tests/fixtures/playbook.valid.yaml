@@ -19,7 +19,10 @@
       args:
         src: nginx.conf
         dest: /etc/nginx/nginx.conf
-      when: rolecall_os_family == "Debian"
+      when:
+        $eq:
+          - $var: vars.http_port
+          - 80
       loop:
         - a
         - b

@@ -24,6 +24,7 @@
 import { pathToFileURL } from "node:url";
 import { resolve as pathResolve } from "node:path";
 import { render } from "./fast";
+import { renderJinja } from "./jinja";
 
 /** @summary Callable helper loaded from a project-local TS module; invoked by `$call`. */
 export type HelperFn = (...args: any[]) => unknown;
@@ -76,8 +77,8 @@ export function requirePolicy(
 /** @summary Any value expressible inside a structured node (scalar | nested node | array). */
 export type StructuredValue = unknown;
 
-/** @summary Recognised reference/composite/control operators ($var/$concat/$call/$if/$each/$template). `$fact` was removed by ADR 0013 — facts are reached via `$var: "facts.key"`. */
-export const REFERENCE_OPS = new Set<string>(["$var", "$concat", "$call", "$if", "$each", "$template"]);
+/** @summary Recognised reference/composite/control operators ($var/$concat/$call/$if/$each/$template/$jinja/$exists/$length). `$fact` was removed by ADR 0013 — facts are reached via `$var: "facts.key"`. */
+export const REFERENCE_OPS = new Set<string>(["$var", "$concat", "$call", "$if", "$each", "$template", "$jinja", "$exists", "$length"]);
 
 /** @summary Recognised comparison/logical predicate operators (fail-closed on mismatch). */
 export const PREDICATE_OPS = new Set<string>([
@@ -88,6 +89,7 @@ export const PREDICATE_OPS = new Set<string>([
   "$lte",
   "$gte",
   "$in",
+  "$exists",
   "$and",
   "$or",
   "$not",
@@ -113,8 +115,14 @@ export interface IfNode { condition?: StructuredValue; then: StructuredValue; el
 export interface EachNode { $each: StructuredValue; }
 /** @summary `{ $template: "<eta string>" }` — opt-in eta template render of a literal string; the escape hatch for `<%= %>`/`<% %>` syntax. Bare strings are never auto-rendered. */
 export interface TemplateNode { $template: string; }
+/** @summary `{ $jinja: "<jinja string>" }` — the only Jinja escape hatch; rendered with the strict Nunjucks environment. */
+export interface JinjaNode { $jinja: string; }
+/** @summary `{ $exists: <operand> }` — true when the resolved value is neither undefined nor null. */
+export interface ExistsNode { $exists: StructuredValue; }
+/** @summary `{ $length: <operand> }` — length of an array/string/object. */
+export interface LengthNode { $length: StructuredValue; }
 /** @summary Any ref/composite/control node (ADR 0013 removed `FactNode`; facts use `VarNode` with `facts.` paths). */
-export type RefNode = VarNode | ConcatNode | CallNode | IfNode | EachNode | TemplateNode;
+export type RefNode = VarNode | ConcatNode | CallNode | IfNode | EachNode | TemplateNode | JinjaNode | ExistsNode | LengthNode;
 
 /** @summary A value usable inside a predicate operand (scalar | nested node | array). */
 export type PredicateOperand = StructuredValue;
@@ -178,22 +186,83 @@ export function isReferenceNode(node: unknown): boolean {
   return op !== undefined && REFERENCE_OPS.has(op);
 }
 
+let structuredVarDepth = 0;
+let scopeResolveDepth = 0;
+
+/** Shallow-resolve structured values in the `vars` namespace for template engines. */
+function resolveScopeVars(
+  scope: Record<string, unknown>,
+  helpers: HelpersMap,
+  policy?: TemplateCodePolicy,
+): Record<string, unknown> {
+  const source = scope["vars"];
+  if (source === null || typeof source !== "object" || Array.isArray(source)) return scope;
+  if (scopeResolveDepth > 4) return scope;
+  scopeResolveDepth += 1;
+  try {
+    const resolved: Record<string, unknown> = { ...(source as Record<string, unknown>) };
+    const proxyScope = { ...scope, vars: resolved };
+    for (const [key, value] of Object.entries(resolved)) {
+      if (!containsStructured(value)) continue;
+      try {
+        resolved[key] = resolveValue(value, proxyScope, helpers, policy);
+      } catch {
+        // Leave the raw node in place; a direct `$var` lookup will surface the
+        // error with a more precise path.
+      }
+    }
+    return proxyScope;
+  } finally {
+    scopeResolveDepth -= 1;
+  }
+}
+
+/** True when a value contains any structured node at any depth. */
+function containsStructured(value: unknown): boolean {
+  if (isStructured(value)) return true;
+  if (Array.isArray(value)) return value.some(containsStructured);
+  if (value !== null && typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).some(containsStructured);
+  }
+  return false;
+}
+
 /**
  * Resolve a dotted variable path against the render scope. Supports the top-level
  * aliases exposed to templates (`host`, `item`, `index`) plus `vars`/`facts`
  * namespaces and arbitrary dotted paths into them. Missing paths yield undefined.
  */
-function resolvePath(vars: Record<string, unknown>, name: string): unknown {
+function resolvePath(
+  vars: Record<string, unknown>,
+  name: string,
+  helpers: HelpersMap = {},
+  policy?: TemplateCodePolicy,
+): unknown {
   if (typeof name !== "string") return undefined;
   // Top-level scalar aliases resolve directly against the scope object.
-  if (!name.includes(".")) {
+  if (!name.includes(".") && !name.includes("[")) {
     if (Object.prototype.hasOwnProperty.call(vars, name)) return (vars as Record<string, unknown>)[name];
   }
-  const segments = name.split(".");
+  // Support array indexing (`vars.items[0]`) and `.length` by normalizing
+  // bracket segments into dotted numeric keys (arrays index like objects).
+  const segments = name.replace(/\[(\d+)\]/g, ".$1").split(".");
   let cur: unknown = vars;
   for (const seg of segments) {
-    if (cur == null || typeof cur !== "object") return undefined;
+    if (cur == null) return undefined;
+    if (typeof cur !== "object" && typeof cur !== "string") return undefined;
     cur = (cur as Record<string, unknown>)[seg];
+  }
+  // Lazy structured-var resolution: a play/task var may itself be a `$jinja`,
+  // `$concat`, or `$var` node. Resolve it at reference time so derived vars work
+  // without eagerly resolving the whole scope (facts may not exist yet).
+  if (isStructured(cur)) {
+    if (structuredVarDepth > 32) fail("cyclic structured variable resolution");
+    structuredVarDepth += 1;
+    try {
+      return resolveValue(cur, vars, helpers, policy);
+    } finally {
+      structuredVarDepth -= 1;
+    }
   }
   return cur;
 }
@@ -221,7 +290,7 @@ export function resolveNode(
   switch (op) {
     case "$var": {
       if (typeof operand !== "string") fail("$var requires a string variable name");
-      return resolvePath(vars, operand);
+      return resolvePath(vars, operand, helpers, policy);
     }
     case "$concat": {
       if (!Array.isArray(operand)) fail("$concat requires an array of operands");
@@ -264,7 +333,23 @@ export function resolveNode(
       // modes (it is the structured escape hatch for legacy {{ }}/<% %> syntax).
       if (typeof operand !== "string") fail("$template requires a string template");
       requirePolicy(policy, "code", true);
-      return render(operand, vars);
+      return render(operand, resolveScopeVars(vars, helpers, policy));
+    }
+    case "$jinja": {
+      // The ONLY Jinja escape hatch. Nunjucks is a bounded language, so it is not
+      // restricted code; render with the strict environment so missing names throw.
+      if (typeof operand !== "string") fail("$jinja requires a string template");
+      return renderJinja(operand, resolveScopeVars(vars, helpers, policy));
+    }
+    case "$exists": {
+      const value = resolveValue(operand, vars, helpers, policy);
+      return value !== undefined && value !== null;
+    }
+    case "$length": {
+      const value = resolveValue(operand, vars, helpers, policy);
+      if (Array.isArray(value) || typeof value === "string") return value.length;
+      if (typeof value === "object" && value !== null) return Object.keys(value).length;
+      fail(`$length requires an array, string, or object, got ${describe(value)}`);
     }
     default:
       fail(`unknown reference operator '${op}'`);
@@ -295,6 +380,19 @@ export function resolveValue(
 // ---------------------------------------------------------------------------
 // Predicate evaluation — typed, fail-closed on mismatch.
 // ---------------------------------------------------------------------------
+
+/** Coerce a resolved reference value to a boolean using RoleCall truthiness. */
+function coerceTruthy(value: unknown): boolean {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "string") {
+    const s = value.trim();
+    if (s === "true") return true;
+    if (s === "false") return false;
+    return s.length > 0;
+  }
+  return Boolean(value);
+}
 
 /** True when two primitives are equal (deep-ish fallback for containers). */
 function eqValues(a: unknown, b: unknown): boolean {
@@ -365,6 +463,11 @@ export function evaluatePredicate(
     return !evaluatePredicate(inner, vars, policy);
   }
 
+  if (op === "$exists") {
+    const value = resolveValue(operand, vars, {}, policy);
+    return value !== undefined && value !== null;
+  }
+
   if (op === "$eq" || op === "$ne") {
     if (!Array.isArray(operand) || operand.length !== 2) fail(`${op} expects exactly two operands`);
     const left = resolveValue(operand[0], vars, {}, policy);
@@ -386,6 +489,10 @@ export function evaluatePredicate(
     if (Array.isArray(collection)) return collection.some((c) => eqValues(c, element));
     if (typeof collection === "string") return String(element).includes(collection);
     fail(`$in collection must be an array or string, got ${describe(collection)}`);
+  }
+
+  if (REFERENCE_OPS.has(op)) {
+    return coerceTruthy(resolveValue(pred, vars, {}, policy));
   }
 
   fail(`unknown or unsupported predicate operator '${op}'`);

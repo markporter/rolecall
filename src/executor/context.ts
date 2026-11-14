@@ -8,7 +8,9 @@ import type { NormalizedInventory, NormalizedPlaybook } from "../config/schema";
 import type { RunTrace } from "../store/types";
 import {
   type HelpersMap,
+  REFERENCE_OPS,
   evaluatePredicate,
+  isPredicate,
   isStructured,
   resolveNode,
   resolveValue,
@@ -114,35 +116,42 @@ function coerceScalar(value: unknown): boolean {
 }
 
 /**
- * Evaluate a `when` guard. Accepts BOTH legacy scalars AND structured predicate
- * nodes. Missing `when` => always true. Legacy path: a bare boolean/number is
- * coerced directly; a bare string is treated literally then coerced ("true"/"false"
- * literals map to booleans, else non-empty is truthy). Structured path: an operator node whose
- * key starts with `$` tries {@link evaluatePredicate} first — predicate operators
- * (`{$eq,$ne,...}`) evaluate typedly and FAIL CLOSED (throw on type mismatch), while
- * reference/composite control ops (`{$var,$concat,$call,$if,$each}`) fall back to
- * {@link resolveNode}, then coerce the resolved value like a scalar. Non-`$` objects
- * are left for the legacy scalar coercion (preserving prior behaviour).
+ * Evaluate a `when` guard. Missing `when` => true; booleans are used directly;
+ * an array is an implicit AND (each element evaluated recursively); a structured
+ * operator node whose key starts with `$` tries {@link evaluatePredicate} first —
+ * predicate operators (`{$eq,$ne,...}`) evaluate typedly and FAIL CLOSED (throw on
+ * type mismatch), while reference/composite control ops (`{$var,$concat,$call,
+ * $if,$each,$jinja,$exists,$length}`) fall back to {@link resolveNode}, then coerce
+ * the resolved value. Bare strings, numbers, and non-structured objects throw:
+ * they are never truthy-coerced, so an unconverted Ansible `when: foo == "bar"`
+ * fails loudly instead of silently running.
  */
 export function evalWhen(when: unknown, vars: TemplateVars, policy?: TemplateCodePolicy): boolean {
   if (when === undefined) return true;
+  if (typeof when === "boolean") return when;
+  if (when === null) return false;
+  if (Array.isArray(when)) return when.every((entry) => evalWhen(entry, vars, policy));
   const scope = vars as unknown as Record<string, unknown>;
   if (isStructured(when)) {
     const record = when as Record<string, unknown>;
     const op = Object.keys(record)[0];
     if (typeof op === "string" && op.startsWith("$")) {
-      try {
-        return evaluatePredicate(when, scope, policy);
-      } catch {
-        // Reference/composite/opaque operator -> resolve to a value, then coerce.
-        return coerceScalar(resolveNode(when, scope, {}, policy));
+      if (isPredicate(when) || REFERENCE_OPS.has(op)) {
+        try {
+          return evaluatePredicate(when, scope, policy);
+        } catch {
+          // Reference/composite/opaque operator -> resolve to a value, then coerce.
+          return coerceScalar(resolveNode(when, scope, {}, policy));
+        }
       }
+      throw new Error(
+        `when: unknown structured operator '${op}'; use a predicate ($eq/$in/$exists/...) or a reference ($var/$jinja/...)`,
+      );
     }
   }
-  if (typeof when === "string") {
-    return coerceScalar(when);
-  }
-  return coerceScalar(when);
+  throw new Error(
+    `when: bare ${typeof when} guards are not truthy-coerced; use a structured predicate (e.g. { $eq: [ { $var: vars.x }, "value" ] }) or convert it with \`rolecall convert ansible\``,
+  );
 }
 
 /**

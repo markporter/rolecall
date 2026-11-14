@@ -99,7 +99,7 @@ function isBarePlayObject(parsed: unknown): boolean {
 }
 
 function hardProblems(pb: NormalizedPlaybook) {
-  return lintTemplateRefs(pb).filter((p) => p.kind === "jinja" || p.kind === "namespace-unknown");
+  return lintTemplateRefs(pb).filter((p) => p.kind === "jinja" || p.kind === "when-not-structured" || p.kind === "namespace-unknown");
 }
 
 interface Check {
@@ -124,6 +124,12 @@ for (const root of ["docs/content", "design"]) {
     // is scoped to the executable examples where real ref mistakes would ship.
     const lint = enforceModules;
     for (const block of extractYamlBlocks(text)) {
+      // Comment-only placeholders (e.g. a commented-out manifest template) are
+      // documentation, not executable YAML; js-yaml parses them to `undefined`.
+      const meaningful = block
+        .split("\n")
+        .some((line) => line.trim().length > 0 && !line.trim().startsWith("#"));
+      if (!meaningful) continue;
       checks.push({ source: f, yaml: block, enforceModules, lint });
     }
   }
