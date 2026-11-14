@@ -319,7 +319,13 @@ async function runLinear(
     if (playHalted) break;
     const target = effectiveHosts(task, baseHostsFor(task)).filter((h) => !haltedHosts.has(h));
     if (target.length === 0) continue;
-    const batches = playbook.serial ? chunk(target, playbook.serial) : [target];
+    const serialSize =
+      typeof playbook.serial === "number"
+        ? playbook.serial
+        : typeof playbook.serial === "string"
+          ? Math.max(1, Math.ceil((target.length * Number.parseInt(playbook.serial, 10)) / 100))
+          : undefined;
+    const batches = serialSize !== undefined ? chunk(target, serialSize) : [target];
     for (let index = 0; index < batches.length; index++) {
       if (endedBatches.has(index)) continue;
       const batch = batches[index]!;

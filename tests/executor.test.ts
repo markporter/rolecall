@@ -211,6 +211,27 @@ test("(h) serial processes hosts sequentially (batches of 1)", async () => {
   ]);
 });
 
+test("(h2) percentage serial batches by the resolved host count", async () => {
+  const m = recordingModule();
+  const pb: NormalizedPlaybook = {
+    hosts: ["all"],
+    serial: "50%",
+    tasks: [mkTask({ name: "t", module: m.name, args: {} })],
+    vars: {},
+  };
+  await runPlaybook([pb], inventory(["h1", "h2", "h3", "h4"]));
+  expect(m.events).toEqual([
+    "start:h1",
+    "start:h2",
+    "end:h1",
+    "end:h2",
+    "start:h3",
+    "start:h4",
+    "end:h3",
+    "end:h4",
+  ]);
+});
+
 // (i) strategy:free runs un-gated parallel with isolated failures.
 test("(i) strategy:free isolates failures across hosts", async () => {
   const pb: NormalizedPlaybook = {

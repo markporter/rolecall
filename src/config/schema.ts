@@ -209,8 +209,8 @@ export const PlaybookObject = z
     tags: z.array(z.string()).optional(),
     trigger: TriggerSchema.optional(),
     // --- Executor play-level control-flow fields (Todo 12) ---
-    // serial: process matched hosts in batches of N sequentially.
-    serial: z.number().int().positive().optional(),
+    // serial: process matched hosts in batches of N (or "N%") sequentially.
+    serial: z.union([z.number().int().positive(), z.string().regex(/^\d+%$/)]).optional(),
     // strategy: "linear" (default, task-by-task gated) or "free" (per-host un-gated).
     strategy: z.enum(["linear", "free"]).optional(),
     // --- Transaction + checkpoint grouping (Todo 26) ---
@@ -405,7 +405,7 @@ export interface NormalizedPlaybook {
   /** Play-wide tags inherited by every task lacking its own `tags:`; selected at run time by the global `--tags` / `--skip-tags` flags. */
   tags?: string[];
   trigger?: TriggerSpec;
-  serial?: number;
+  serial?: number | string;
   strategy?: "linear" | "free";
   /** Transaction id grouping dependent plays for rollback (Todo 26). */
   tx?: string;
