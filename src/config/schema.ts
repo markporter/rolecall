@@ -213,6 +213,8 @@ export const PlaybookObject = z
     serial: z.union([z.number().int().positive(), z.string().regex(/^\d+%$/)]).optional(),
     // strategy: "linear" (default, task-by-task gated) or "free" (per-host un-gated).
     strategy: z.enum(["linear", "free"]).optional(),
+    // order: host ordering within each serial batch (inventory/sorted/reverse_sorted/reverse_inventory/shuffle).
+    order: z.enum(["inventory", "sorted", "reverse_sorted", "reverse_inventory", "shuffle"]).optional(),
     // --- Transaction + checkpoint grouping (Todo 26) ---
     // tx: when set, this play's deltas join the named transaction; a later member
     //     failure reverse-walks the tx's ledger rows and undoes each reversible one.
@@ -407,6 +409,7 @@ export interface NormalizedPlaybook {
   trigger?: TriggerSpec;
   serial?: number | string;
   strategy?: "linear" | "free";
+  order?: "inventory" | "sorted" | "reverse_sorted" | "reverse_inventory" | "shuffle";
   /** Transaction id grouping dependent plays for rollback (Todo 26). */
   tx?: string;
   /** Checkpoint id this play applies under (Todo 26). */
@@ -520,6 +523,7 @@ function normalizeOnePlay(raw: RawPlaybook): NormalizedPlaybook {
     ...(raw.trigger !== undefined ? { trigger: raw.trigger } : {}),
     ...(raw.serial !== undefined ? { serial: raw.serial } : {}),
     ...(raw.strategy !== undefined ? { strategy: raw.strategy } : {}),
+    ...(raw.order !== undefined ? { order: raw.order } : {}),
     ...(raw.tx !== undefined ? { tx: raw.tx } : {}),
     ...(raw.checkpoint !== undefined ? { checkpoint: raw.checkpoint } : {}),
   };
@@ -586,6 +590,7 @@ export function serializePlaybook(
   if (playbook.appliedRoleNames !== undefined) out.appliedRoleNames = playbook.appliedRoleNames;
   if (playbook.tags !== undefined) out.tags = playbook.tags;
   if (playbook.trigger !== undefined) out.trigger = playbook.trigger;
+  if (playbook.order !== undefined) out.order = playbook.order;
   return out;
 }
 

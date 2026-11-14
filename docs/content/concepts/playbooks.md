@@ -15,7 +15,7 @@ At the top level a playbook is a list of plays. Each play accepts:
 - `name` (optional) — a human label for the play.
 - `vars` (optional) — variables scoped to the play.
 - `trigger` (optional) — a schedule / cron / webhook descriptor, preserved on round-trip. Schedules that fire are created through `/schedules` and consumed by the orchestrator's cron scheduler. See [Serve Command](/reference/serve-command).
-- `serial` / `strategy` (optional, play-level) — `serial` accepts a host count or percentage; `strategy` is `linear` (default: all hosts advance through tasks together) or `free` (each host runs independently).
+- `serial` / `strategy` / `order` (optional, play-level) — `serial` accepts a host count or percentage; `strategy` is `linear` (default: all hosts advance through tasks together) or `free` (each host runs independently); `order` controls host ordering within each batch.
 
 Every task needs at least a `name` and a module. RoleCall's shape is strict: unknown keys are rejected, so a typo fails fast at load time rather than silently being ignored.
 

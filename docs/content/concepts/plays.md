@@ -28,6 +28,7 @@ A play is the unit of *targeting* — it answers "which hosts?" and "in what ord
 - `strategy: linear` (default) — all targeted hosts advance through the task list together, gated so a failed host stops its own downstream tasks.
 - `strategy: free` — each host runs the play independently at its own pace.
 - `serial: N` or `serial: "N%"` — apply to at most `N` hosts (or the resolved percentage of the matched hosts) at a time, instead of all at once.
+- `order: inventory|sorted|reverse_sorted|reverse_inventory|shuffle` — control the order hosts are processed within each batch.
 
 These are **play-level** settings, not task-level.
 

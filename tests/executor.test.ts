@@ -232,6 +232,22 @@ test("(h2) percentage serial batches by the resolved host count", async () => {
   ]);
 });
 
+test("(h3) order controls host ordering before batching", async () => {
+  const m = recordingModule();
+  const pb: NormalizedPlaybook = {
+    hosts: ["all"],
+    order: "reverse_sorted",
+    tasks: [mkTask({ name: "t", module: m.name, args: {} })],
+    vars: {},
+  };
+  await runPlaybook([pb], inventory(["b", "a", "c"]));
+  expect(m.events.filter((event) => event.startsWith("start:"))).toEqual([
+    "start:c",
+    "start:b",
+    "start:a",
+  ]);
+});
+
 // (i) strategy:free runs un-gated parallel with isolated failures.
 test("(i) strategy:free isolates failures across hosts", async () => {
   const pb: NormalizedPlaybook = {

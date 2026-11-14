@@ -34,6 +34,33 @@ import {
 } from "./runner";
 
 /** Run a normalized playbook file (one or more plays), returning a structured per-host/per-task result. */
+
+/** Apply a play-level host ordering before batching. */
+function orderHosts(
+  hosts: string[],
+  order?: "inventory" | "sorted" | "reverse_sorted" | "reverse_inventory" | "shuffle",
+): string[] {
+  switch (order) {
+    case "sorted":
+      return [...hosts].sort();
+    case "reverse_sorted":
+      return [...hosts].sort().reverse();
+    case "reverse_inventory":
+      return [...hosts].reverse();
+    case "shuffle": {
+      const out = [...hosts];
+      for (let i = out.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [out[i], out[j]] = [out[j]!, out[i]!];
+      }
+      return out;
+    }
+    case "inventory":
+    default:
+      return [...hosts];
+  }
+}
+
 export async function runPlaybook(
   playbook: NormalizedPlaybook[],
   inventory: NormalizedInventory,
@@ -100,7 +127,7 @@ async function runPlay(
     }
   }
   applyPlayVars(resolved, playbook, options.extraVars ?? {});
-  const allHosts = resolved.matchedHosts;
+  const allHosts = orderHosts(resolved.matchedHosts, playbook.order);
   const invSnapshot: InventorySnapshot = await resolveInventorySnapshot(
     inventory,
     options.resolveOptions ?? {},
