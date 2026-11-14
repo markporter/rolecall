@@ -682,7 +682,12 @@ function convertPlay(raw: unknown, state: ConvertState, file: string, path: stri
   }
   if (play.serial !== undefined) {
     if (typeof play.serial === "number") out.serial = play.serial;
-    else finding(state, file, `${path}.serial`, "serial", "handoff", "percentage/string serial values need a concrete host count");
+    else if (typeof play.serial === "string" && /^\d+%$/.test(play.serial)) {
+      out.serial = play.serial;
+      finding(state, file, `${path}.serial`, "serial", "mapped", "percentage serial is supported natively");
+    } else {
+      finding(state, file, `${path}.serial`, "serial", "handoff", "unsupported serial value; use a number or an integer percentage");
+    }
   }
   for (const key of ["remote_user", "order", "ignore_errors", "become_method", "any_errors_fatal", "force_handlers", "max_fail_percentage", "vars_prompt", "gather_subset"]) {
     if (play[key] !== undefined) {

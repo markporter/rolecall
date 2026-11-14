@@ -196,6 +196,16 @@ describe("convert ansible MVP", () => {
     expect(result.findings.some((f) => f.construct === "changed_when" && f.disposition === "handoff")).toBe(false);
   });
 
+  test("percentage serial is preserved", () => {
+    const dir = tmp("serial");
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- hosts: web\n  serial: "30%"\n  tasks:\n    - name: t\n      debug:\n        msg: ok\n`, "utf8");
+    const result = convertAnsible(file, { write: true, out: join(dir, "out") });
+    const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
+    expect(converted[0]!.serial).toBe("30%");
+    expect(result.findings.some((f) => f.construct === "serial" && f.disposition === "handoff")).toBe(false);
+  });
+
   test("strict mode flags remaining handoff items", () => {
     const dir = tmp("strict");
     const file = join(dir, "site.yml");
