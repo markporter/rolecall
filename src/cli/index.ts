@@ -130,6 +130,7 @@ Subcommands:
      doctor             Report local isolation backend readiness (bwrap/userns or Docker)
     docs search <query>  Query RoleCall prose docs by substring (matches sections; use -o json for structured output)
     docs modules [<term>]  List every RoleCall module (name + description + args); optional <term> filter; -o json for structured output
+     convert                                    Interactive wizard: source -> project -> apply/handoff/strict
      convert ansible <path> [--out <dir>] [--project <dir>] [--handoff <dir>] [--write] [--strict] [--report json|md]
                         Analyze + mechanically convert an Ansible file/directory to RoleCall YAML
      convert ansible --validate <dir>
