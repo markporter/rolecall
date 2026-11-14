@@ -330,7 +330,8 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   review/handoff templates. Review constructs can be explicitly accepted with
   `--templates-review accept`. Loop metadata now includes `cycle`, `previtem`, and `nextitem`; Nunjucks
   applies whitespace trim markers before codegen, so trimmed output is preserved.
-  Remaining: corpus-level golden fixtures. The default `--templates keep` path is unchanged.
+  `--validate` now checks template references, engine/extension pairing, and
+  half-converted files. Remaining: corpus-level golden fixtures. The default `--templates keep` path is unchanged.
 
 ## Risks
 
