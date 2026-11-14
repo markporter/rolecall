@@ -432,6 +432,9 @@ function formatHuman(data: CliResult): string {
         }
         break;
       }
+      if (data.project !== undefined) {
+        lines.push(`Project  : ${data.project.root} (${data.project.name}; namespace ${data.project.namespace})`);
+      }
       lines.push(`Output   : ${data.out}`);
       lines.push(`Handoff  : ${data.handoff}`);
       lines.push(`Applied  : ${data.applied ? "yes" : "no (pass --write)"}`);

@@ -11,6 +11,7 @@ import { dirname, isAbsolute, join, relative } from "node:path";
 import { dump as yamlDump, load as yamlLoad } from "js-yaml";
 
 import { loadPlaybook } from "../config/loader";
+import { ensureProjectScaffold } from "../project/scaffold";
 import { MODULE_REMAP, TASK_RULES } from "./matrix";
 import type { ConvertFileResult, ConvertFinding, ConvertResult } from "../cli/types";
 
@@ -109,6 +110,8 @@ export interface ConvertAnsibleOptions {
   strict?: boolean;
   /** Report format hint (json|md); the CLI handles rendering. */
   report?: string;
+  /** Ensure a blank RoleCall project exists at this root and convert into it. */
+  project?: string;
 }
 
 interface ConvertState {
@@ -888,7 +891,11 @@ function isVarFile(rel: string): boolean {
 export function convertAnsible(source: string, options: ConvertAnsibleOptions = {}): ConvertResult {
   const sourceAbs = source;
   const isDir = statSync(sourceAbs).isDirectory();
-  const outDir = options.out ?? (isDir ? join(sourceAbs, "rolecall-converted") : `${sourceAbs}.rolecall`);
+  const project = options.project === undefined ? undefined : ensureProjectScaffold(options.project);
+  const outDir =
+    options.out ??
+    project?.root ??
+    (isDir ? join(sourceAbs, "rolecall-converted") : `${sourceAbs}.rolecall`);
   const handoffDir = options.handoff ?? join(outDir, "handoff");
   const inside = (child: string, parent: string): boolean => {
     const rel = relative(parent, child);
@@ -1005,6 +1012,7 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
       findings: state.findings.length,
     },
     findings: state.findings,
+    ...(project !== undefined ? { project } : {}),
   };
 
   if ((options.write === true || options.handoff !== undefined) && result.findings.length > 0) {

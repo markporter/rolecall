@@ -28,9 +28,12 @@ The handler lives in `src/cli/commands/docs.ts` and returns a `DocsModulesResult
 
 ```sh
 rolecall convert ansible ./ansible-site --out ./site --write
+rolecall convert ansible ./ansible-site --project ./new-project --write
 rolecall convert ansible ./site --strict          # exit 1 if review/handoff items remain
 rolecall convert ansible --validate ./site        # strict-load the converted playbooks
 ```
+
+`--project <dir>` ensures a blank RoleCall project exists at that root (the ADR 0014/0030 shape: `rolecall.yaml`, `playbooks/`, `inventory/`, `plugins/<type>/<namespace>/`, `roles/`, `group_vars/`, `host_vars/`, `collections/`, `.rolecall/isolation.yaml`) and then populates it with the converted tree. Existing files are never overwritten, so it is safe to run against an existing project.
 
 Constructs with no faithful mechanical equivalent (`ignore_errors`, `failed_when`, `changed_when` on non-shell modules, `async`/`until`/`retries`, dynamic includes, `with_first_found` on non-copy/template tasks, play-level `remote_user`, etc.) are recorded in `HANDOFF.md` and `manifest.json` under `--handoff` (default `<out>/handoff`). `--strict` exits non-zero when any review or handoff item remains. The handler lives in `src/cli/commands/convert.ts`, the analyzer/rewriter in `src/convert/ansible.ts`, and the typed compatibility matrix in `src/convert/matrix.ts`; add `-o json` (or `--report json`) for the structured `ConvertResult`.
 

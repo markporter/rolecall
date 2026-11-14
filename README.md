@@ -203,7 +203,7 @@ rolecall inventory show <inv>
 rolecall inventory list <inv>
 rolecall vars list <playbook>
 rolecall vars trace <playbook> --inventory <inv>
-rolecall convert ansible <path> --write --out <dir>
+rolecall convert ansible <path> --write --project <dir>
 rolecall doctor
 rolecall docs search <query>
 rolecall plugin list

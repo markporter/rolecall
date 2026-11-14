@@ -255,6 +255,22 @@ describe("convert ansible MVP", () => {
     expect(result.findings.some((f) => f.construct === "order" && f.disposition === "handoff")).toBe(false);
   });
 
+  test("--project scaffolds a blank project and populates it", () => {
+    const dir = tmp("project");
+    const source = join(dir, "ansible");
+    mkdirSync(join(source, "playbooks"), { recursive: true });
+    writeFileSync(join(source, "playbooks", "site.yml"), `- hosts: web\n  tasks:\n    - name: t\n      debug:\n        msg: ok\n`, "utf8");
+    const project = join(dir, "my-project");
+    const result = convertAnsible(source, { write: true, project });
+    expect(result.project?.root).toBe(project);
+    expect(result.out).toBe(project);
+    expect(existsSync(join(project, "rolecall.yaml"))).toBe(true);
+    expect(existsSync(join(project, "inventory", "inventory.yaml"))).toBe(true);
+    expect(existsSync(join(project, "plugins", "modules", "my-project"))).toBe(true);
+    expect(existsSync(join(project, "playbooks", "site.yml"))).toBe(true);
+    expect(validateConvertedTree(join(project, "playbooks")).every((entry) => entry.ok)).toBe(true);
+  });
+
   test("strict mode flags remaining handoff items", () => {
     const dir = tmp("strict");
     const file = join(dir, "site.yml");

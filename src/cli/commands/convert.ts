@@ -65,6 +65,7 @@ export async function runConvertCommand(
 
   const result = convertAnsible(source, {
     ...(flags.out !== undefined ? { out: flags.out } : {}),
+    ...(flags.project !== undefined ? { project: flags.project } : {}),
     ...(flags.handoff !== undefined ? { handoff: flags.handoff } : {}),
     write: flags.write === true,
     strict: flags.strict === true,

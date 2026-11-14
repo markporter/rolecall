@@ -155,6 +155,21 @@ block/rescue/always, `ignore_errors`/`changed_when`/`failed_when` fields,
 `async`/`until`/`retries`/`delay`, multi-inventory runtime support, Ansible
 callback plugins.
 
+## Conversion workflow
+
+The end-to-end path is:
+
+```sh
+rolecall convert ansible ./ansible-source --project ./new-project --write
+rolecall convert ansible --validate ./new-project/playbooks
+```
+
+`--project <dir>` creates the documented ADR 0014/0030 blank-project shape if it
+does not exist (and only fills in missing files when it does), then writes the
+converted playbooks, roles, `group_vars`/`host_vars`, and assets into it. The
+default `--out` is the project root; an explicit `--out` still wins. This makes
+the converter the first step of a real migration rather than a detached tree.
+
 ## Cycle 4 — Corpus conversion and iteration
 
 - Run the converter against `/home/mark/local_code/ansible_splunk`.
@@ -294,6 +309,9 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   classes: dynamic includes/`include_role`, `with_first_found` on
   non-copy/template tasks, `ignore_errors`/`failed_when`, `async`/`until`/`retries`,
   play-level `remote_user`, `lookup`/`query`, and crypt-compatible `password_hash`.
+- **Conversion workflow:** `convert ansible --project <dir>` now scaffolds the blank
+  ADR 0014/0030 project shape and populates it with the converted tree (tested with a
+  representative playbook/role/group_vars sample).
 - **Cycle 4 (pending):** the external `ansible_splunk` corpus is not present in this
   checkout; the harness is ready to run when it is available.
 - **Cycle 5 (ADR 0031, proposed/not implemented):** the opt-in `--templates eta`

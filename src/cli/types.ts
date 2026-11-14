@@ -422,6 +422,13 @@ export interface ConvertResult {
   validated?: { file: string; ok: boolean; error?: string }[];
   /** True when `--strict` was set and non-mechanical findings remain. */
   strictFailed?: boolean;
+  /** Present when `--project` scaffolded/populated a RoleCall project. */
+  project?: {
+    root: string;
+    name: string;
+    namespace: string;
+    created: string[];
+  };
 }
 
 export type CliResult =
