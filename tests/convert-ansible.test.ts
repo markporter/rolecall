@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import { load as yamlLoad } from "js-yaml";
 
 import { convertAnsible, validateConvertedTree } from "../src/convert/ansible";
+import { MODULE_REMAP, TASK_RULES } from "../src/convert/matrix";
 import { resolveValue } from "../src/templating/refs";
 import { evalWhen } from "../src/executor/context";
 
@@ -190,5 +191,18 @@ describe("convert ansible MVP", () => {
     writeFileSync(file, `- hosts: web\n  tasks:\n    - name: bad\n      shell: /bin/false\n      ignore_errors: true\n`, "utf8");
     const result = convertAnsible(file, { strict: true });
     expect(result.totals.handoff).toBeGreaterThan(0);
+  });
+});
+
+describe("compatibility matrix", () => {
+  test("rules are unique and actionable", () => {
+    const ids = Object.keys(TASK_RULES);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const rule of Object.values(TASK_RULES)) {
+      expect(rule.message.length).toBeGreaterThan(10);
+      expect(rule.disposition).toBe("handoff");
+    }
+    expect(MODULE_REMAP.template).toBe("copy");
+    expect(MODULE_REMAP.apt).toBe("package");
   });
 });

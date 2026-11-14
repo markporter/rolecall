@@ -11,6 +11,7 @@ import { dirname, isAbsolute, join, relative } from "node:path";
 import { dump as yamlDump, load as yamlLoad } from "js-yaml";
 
 import { loadPlaybook } from "../config/loader";
+import { MODULE_REMAP, TASK_RULES } from "./matrix";
 import type { ConvertFileResult, ConvertFinding, ConvertResult } from "../cli/types";
 
 const STRUCTURAL_KEYS = new Set([
@@ -93,14 +94,6 @@ const PLAY_KEYS = new Set([
   "max_fail_percentage",
   "vars_prompt",
 ]);
-
-const MODULE_REMAP: Record<string, string> = {
-  template: "copy",
-  apt: "package",
-  yum: "package",
-  dnf: "package",
-  systemd: "service",
-};
 
 const JINJA_RE = /\{\{|\}\}|\{%|%\}|\{#|#\}/;
 
@@ -596,24 +589,9 @@ function convertTask(
     else finding(state, file, `${path}.connection`, "connection", "handoff", `connection '${connection}' has no RoleCall transport`);
   }
 
-  const delegatedKeys: Array<[string, string]> = [
-    ["ignore_errors", "ignore_errors"],
-    ["changed_when", "changed_when"],
-    ["failed_when", "failed_when"],
-    ["async", "async"],
-    ["poll", "poll"],
-    ["until", "until"],
-    ["retries", "retries"],
-    ["delay", "delay"],
-    ["vars", "vars"],
-    ["loop_control", "loop_control"],
-    ["delegate_facts", "delegate_facts"],
-    ["check_mode", "check_mode"],
-    ["become_method", "become_method"],
-  ];
-  for (const [key, label] of delegatedKeys) {
-    if (task[key] !== undefined) {
-      finding(state, file, `${path}.${key}`, label, "handoff", "no native RoleCall equivalent; rewrite with tx/checkpoint, shell_register, or an idempotent module");
+  for (const rule of Object.values(TASK_RULES)) {
+    if (task[rule.id] !== undefined) {
+      finding(state, file, `${path}.${rule.id}`, rule.id, rule.disposition, rule.message);
     }
   }
 
