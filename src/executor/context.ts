@@ -53,6 +53,7 @@ export interface RunContext {
   started_at: string;
   epoch: number;
   playbook_path?: string;
+  playbook_dir?: string;
   inventory_path?: string;
   limit?: string;
   forks?: number;

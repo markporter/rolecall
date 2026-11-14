@@ -116,6 +116,7 @@ async function runPlay(
     started_at: new Date().toISOString(),
     epoch: Date.now(),
     playbook_path: options.playbookPath,
+    playbook_dir: options.playbookDir,
     inventory_path: options.inventoryPath,
     limit: options.limit,
     forks: options.forks,

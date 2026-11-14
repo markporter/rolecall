@@ -217,9 +217,15 @@ function rewriteAnsibleExpr(expr: string, knownVars?: Set<string>): { text: stri
     [/\binventory_hostname\b/g, "play.host"],
     [/\bgroups\[/g, "inv.groups["],
     [/\bhostvars\[/g, "inv.hosts["],
-    [/\bplaybook_dir\b/g, "run.playbook_path"],
+    [/\bplaybook_dir\b/g, "run.playbook_dir"],
     [/\brole_path\b/g, "role.path"],
     [/\bansible_os_family\b/g, "facts.os_family"],
+    [/\bansible_distribution_major_version\b/g, "facts.distribution_major_version"],
+    [/\bansible_distribution_version\b/g, "facts.distribution_version"],
+    [/\bansible_distribution_release\b/g, "facts.distribution_release"],
+    [/\bansible_distribution\b/g, "facts.distribution"],
+    [/\bansible_date_time\b/g, "facts.date_time"],
+    [/\bansible_dns\b/g, "facts.dns"],
     [/\bansible_architecture\b/g, "facts.arch"],
     [/\bansible_hostname\b/g, "facts.hostname"],
     [/\bansible_fqdn\b/g, "facts.hostname"],
@@ -227,6 +233,7 @@ function rewriteAnsibleExpr(expr: string, knownVars?: Set<string>): { text: stri
     [/\bansible_service_mgr\b/g, "facts.service_mgr"],
     [/\bansible_default_ipv4\.address\b/g, "facts.default_ipv4.address"],
     [/\bansible_default_ipv4\.interface\b/g, "facts.default_ipv4.interface"],
+    [/\bansible_default_ipv4\b/g, "facts.default_ipv4"],
     [/\bansible_all_ipv4_addresses\b/g, "facts.ip_addresses"],
   ];
   for (const [re, replacement] of fixes) text = text.replace(re, replacement);
@@ -234,6 +241,7 @@ function rewriteAnsibleExpr(expr: string, knownVars?: Set<string>): { text: stri
   const unresolved: string[] = [];
   for (const m of text.matchAll(/\bansible_[A-Za-z0-9_]+/g)) unresolved.push(m[0]);
   if (/\b(?:lookup|query)\s*\(/.test(text)) unresolved.push("lookup/query");
+  if (/\bpassword_hash\b/.test(text)) unresolved.push("password_hash (not crypt(3)-compatible)");
   if (/\bomit\b/.test(text)) unresolved.push("omit");
   return { text, unresolved };
 }

@@ -18,8 +18,14 @@ transport. A gatherer without `connectionKinds` runs for every kind.
 | --- | --- | --- |
 | `os` | `os`, `kernel`, `arch`, `os_family` | `ssh`, `local` |
 | `network` | `hostname`, `ip_addresses` | `ssh`, `local` |
+| `system` | `distribution`, `distribution_version`, `distribution_major_version`, `distribution_release`, `pkg_mgr`, `service_mgr` | `ssh`, `local` |
+| `default-ipv4` | `default_ipv4` (`{ address, interface }`) | `ssh`, `local` |
+| `dns` | `dns` (`{ nameservers, search, domain }`) | `ssh`, `local` |
+| `date-time` | `date_time` (ISO-8601 + components) | `ssh`, `local` |
 | `service-posix` | `service_status` | `ssh`, `local` |
 | `service-http` | `service_status` | `http` |
+
+The `system`, `default-ipv4`, `dns`, and `date-time` gatherers cover the common Ansible magic facts (`ansible_pkg_mgr`, `ansible_default_ipv4`, `ansible_dns`, `ansible_date_time`) so converted playbooks can use `facts.*` instead.
 
 `service_status` is therefore produced differently per transport: a shelled host is
 probed with `systemctl is-active`, while an HTTP target is probed via
