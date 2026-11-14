@@ -180,13 +180,19 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   with analyzer/rewriter/`HANDOFF.md`/`manifest.json`, `--write`, `--strict`, and
   `--validate`), plus lazy structured-variable resolution (derived `vars` containing
   `$jinja`/`$concat`/`$var`).
-- **Cycle 3 (in progress):** added `$exists`/`$length`/indexed paths, `omit` sentinel
-  handling, Ansible magic-fact gatherers (`system`, `default_ipv4`, `dns`,
-  `date_time`), `run.playbook_dir`, filter/test parity (`ipaddr`, `strftime`,
-  `human_readable`, `password_hash`, `iterable`, `mapping`, result-state tests), and
-  converter mappings for `with_dict`, static `include_vars`, static `import_playbook`
-  inlining, and `hostvars[...]`/`groups[...]` bracket access. Remaining Cycle 3: role/asset-tree fidelity and the
-  typed compatibility matrix.
+- **Cycle 3 (in progress):** added `$exists`/`$length`/indexed paths, the `omit`
+  sentinel, Ansible magic-fact gatherers (`system`, `default_ipv4`, `dns`,
+  `date_time`), `run.playbook_dir`, filter/test parity (`zip`, `product`, `ipaddr`,
+  `strftime`, `human_readable`, `password_hash`, `iterable`, `mapping`, result-state
+  tests), native role `meta` dependencies, percentage `serial`, and shell
+  `changed_when` -> `run_mode`. Converter mappings now cover `with_dict`,
+  `with_together`/`with_nested`, static `include_vars`, static `import_playbook`
+  inlining, `group_vars`/`host_vars` and role `defaults`/`vars` Jinja, and
+  `hostvars[...]`/`groups[...]` bracket access. The typed compatibility matrix lives
+  in `src/convert/matrix.ts`. Remaining: dynamic includes/`include_role`,
+  `with_first_found`, `ignore_errors`/`failed_when`, `async`/`until`/`retries`,
+  play-level `remote_user`/`order`, `lookup`/`query`, IPv6 `ipaddr`, and
+  crypt-compatible `password_hash`.
 
 ## Risks
 
