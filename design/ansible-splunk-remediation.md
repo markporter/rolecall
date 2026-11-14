@@ -319,13 +319,15 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   representative playbook/role/group_vars sample).
 - **Cycle 4 (pending):** the external `ansible_splunk` corpus is not present in this
   checkout; the harness is ready to run when it is available.
-- **Cycle 5 (ADR 0031, slices 1–2 partial):** `--templates eta` parses each `.j2`
+- **Cycle 5 (ADR 0031, slices 1–3 partial):** `--templates eta` parses each `.j2`
   with the Nunjucks AST, classifies constructs as mapped/review/handoff, and emits
-  per-item handoff work orders. It does **not** rewrite templates yet; the original
-  `.j2` and `engine: jinja` remain. The Eta runtime now exposes shared
+  per-item handoff work orders. Fully mapped templates are written as `.eta` and
+  their task references are rewritten to `engine: eta`; review/handoff templates
+  keep the original `.j2` and `engine: jinja`. The Eta runtime exposes shared
   `filters`/`tests`/`globals` views (including `omit`) and unwraps lenient missing
-  values for Ansible filters/tests. Loop metadata parity, mapped Eta codegen, and
-  draft emission remain. The default `--templates keep` path is unchanged.
+  values for Ansible filters/tests. Remaining: review-construct acceptance rules,
+  partial draft emission with gap markers, broader loop metadata/whitespace parity,
+  and corpus-level golden fixtures. The default `--templates keep` path is unchanged.
 
 ## Risks
 

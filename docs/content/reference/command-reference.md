@@ -36,7 +36,7 @@ rolecall convert ansible ./site --strict          # exit 1 if review/handoff ite
 rolecall convert ansible --validate ./site        # strict-load the converted playbooks
 ```
 
-`--templates keep` (default) preserves Jinja and `.j2` files verbatim. `--templates eta` runs the ADR 0031 template analyzer: it parses each `.j2` with the Nunjucks AST, classifies constructs as mapped/review/handoff, and emits work orders. Eta code generation is not implemented yet, so the original `.j2` is still kept.
+`--templates keep` (default) preserves Jinja and `.j2` files verbatim. `--templates eta` runs the ADR 0031 template pass: it parses each `.j2` with the Nunjucks AST, classifies constructs as mapped/review/handoff, and emits work orders. Fully mapped templates are written as `.eta` and their task references are rewritten to `engine: eta`; review/handoff templates keep the original `.j2` and `engine: jinja`.
 
 `--project <dir>` ensures a blank RoleCall project exists at that root (the ADR 0014/0030 shape: `rolecall.yaml`, `playbooks/`, `inventory/`, `plugins/<type>/<namespace>/`, `roles/`, `group_vars/`, `host_vars/`, `collections/`, `.rolecall/isolation.yaml`) and then populates it with the converted tree. Existing files are never overwritten, so it is safe to run against an existing project.
 
