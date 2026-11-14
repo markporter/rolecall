@@ -18,7 +18,7 @@ These are not 1:1 ports — RoleCall replaced the Ansible approach with a built-
 | `shell` / `command` / `raw` / `script` split + `changed_when` / `check_mode` | single `shell` module + `run_mode` | `command`, `raw`, and `script` are aliases of `shell`; explicit idempotency intent | `run_mode: idempotent \| readonly \| always` (see below) |
 | `template` / `copy` + Jinja `{{ }}` | `$template` + EJS `<%= %>` | Structured, typed templating over facts/vars | `content: $template: "<%= vars.x %>"` |
 | `setup` / `gather_facts` + host vars | `facts gather` + facts in `when`/`loop` | Targeted/cached fact gathering, no implicit magic | `rolecall facts gather <inv>`; `$var: facts.os.family` |
-| `ini_file` / `xml` / `lineinfile` for config | `config_edit` | One structured module for INI/TOML/JSON/YAML/XML | `config_edit: { path, format, set: [...] }` |
+| `ini_file` / `xml` / `lineinfile` for config | `config_edit` | One structured module for INI/TOML/JSON/YAML/XML | `config_edit` with `section`/`option` for `ini_file` parity |
 | `when` / `with_*` / play `vars` | `when` / `loop` / `register` YAML operators | First-class task operators, not module args | `when: $if: ...`, `loop: $each: ...` |
 
 ### `run_mode` instead of `shell`/`command`/`raw` + `changed_when`
@@ -70,17 +70,18 @@ reference page lists the deltas. Highlights:
 | `cron` | `cron` | marker `#Ansible: <name>`; `backup`, `env`, `insertafter`/`insertbefore`, `cron_file` `mode` |
 | `apt_repository` / `yum_repository` | `apt_repository` / `yum_repository` | writes repo file; `apt_repository` `mode`; `yum_repository` cost/priority/exclude/includepkgs/sslcacert/sslverify |
 | `authorized_key` / `known_hosts` | `authorized_key` / `known_hosts` | SSH key management |
-| `copy` / `fetch` / `slurp` | `copy` / `fetch` / `slurp` | push/pull/read on target; `copy` `force` defaults FALSE (Ansible TRUE) |
-| `file` / `stat` / `lineinfile` / `blockinfile` / `replace` | same | idempotent file ops; `lineinfile` regex anchors, `blockinfile` opt-in Ansible markers, `stat` `follow`/`checksum` |
+| `copy` / `fetch` / `slurp` | `copy` / `fetch` / `slurp` | push/pull/read on target; `copy` `force` defaults FALSE (Ansible TRUE), accepts a local directory (contents copied) and `remote_src: true` |
+| `file` / `stat` / `lineinfile` / `blockinfile` / `replace` | same | idempotent file ops; `lineinfile` `create`/`dest`/`mode`/`owner`/`group` and regex anchors, `blockinfile` `insertbefore` and opt-in Ansible markers, `stat` `follow`/`checksum` |
 | `assemble` | `assemble` | concatenate remote files; `delimiter` between parts |
-| `find` / `tempfile` | `find` / `tempfile` | target-side lookup; `find` `size`/`age`/`contains`/`link` |
-| `archive` / `unarchive` | `archive` / `unarchive` | target-side bundling/extraction; `remove`/`exclude_path`/`force_archive`, `keep_newer` |
-| `wait_for` | `wait_for` | port/path polling; `search_regex`, `state` started/present/stopped/absent/drained |
-| `get_url` / `git` / `user` / `group` | same | downloads, VCS, accounts (incl. `password_hash`) |
+| `find` / `tempfile` | `find` / `tempfile` | target-side lookup; `find` `patterns` plural, `size`/`age`/`contains`/`link` |
+| `archive` / `unarchive` | `archive` / `unarchive` | target-side bundling/extraction; `remove`/`exclude_path`/`force_archive`, `keep_newer`, `owner`/`group` (unarchive) |
+| `wait_for` / `wait_for_connection` | same | port/path polling (`search_regex`, `state`) and transport readiness polling |
+| `get_url` / `git` / `user` / `group` | same | downloads, VCS, accounts (incl. `password_hash`, `comment`, `generate_ssh_key`, `update_password`) |
 | `hostname` / `sysctl` / `modprobe` / `mount` | same | host tuning; `hostname` `use`, `sysctl` `reload`/`sysctl_set`, `mount` `boot`/`dump`/`passno` |
-| `selinux` / `iptables` / `ufw` / `timezone` / `locale_gen` / `acl` / `pam_limits` | same | security/limits; `ufw` `default` policy |
-| `synchronize` | `synchronize` | controller-side rsync over ssh; `mode: push` (default) / `pull`; key auth required |
+| `selinux` / `iptables` / `ufw` / `timezone` / `locale_gen` / `acl` / `pam_limits` / `pamd` | same | security/limits; `ufw` `default` policy, `pam_limits` `limit_type`/`limit_item`, `pamd` service rules |
+| `synchronize` | `synchronize` | controller-side rsync over ssh; `mode: push` (default) / `pull`; `rsync_path`, `archive`, `use_ssh_args`, `checksum`; key auth required |
 | `json_query` | `json_query` | JMESPath; `/`-rooted queries keep the JSON-pointer resolver |
+| `apt_key` / `debconf` | `apt_key` / `debconf` | APT signing keys via standalone `gpg` keyrings; debconf preseeding via `debconf-set-selections` |
 | `service_facts` / `user_info` / `group_info` | same | fact lookups |
 | `pause` / `set_stats` / `meta` | same | `pause` has no interactive prompt; `meta` `end_play`/`end_host` halt the play/host, `flush_handlers`/`end_batch`/`refresh_inventory` are wired |
 | `parted` / `filesystem` / `lvol` / `lvg` | same | storage/LVM; `lvol` `thin`/`resizefs`, guarded `shrink` |
@@ -93,11 +94,11 @@ reference page lists the deltas. Highlights:
 
 ## Compatibility notes
 
-- **RoleCall ← Ansible**: copy your Ansible task YAML; rename `shell:`/`command:` to
-  `command:` + `run_mode:`, and convert any `{{ }}` to `<%= %>` inside a
-  `$template`. Most other modules drop in unchanged.
-- **Where RoleCall diverges**: templating is EJS-based by default, but Jinja is available
-  on request via `engine: jinja` (e.g. with `copy`) when you need Ansible template
-  compatibility or its sandbox. `meta` control flags are wired into the executor,
+- **RoleCall ← Ansible**: run `rolecall convert ansible <path>` to mechanically
+  rewrite modules, `when`, loops, and Jinja (wrapping expressions in `$jinja`). For
+  hand-written migrations, rename `shell:`/`command:` to `command:` + `run_mode:` and
+  move any `{{ }}` into `$jinja` (or rewrite it as structured refs). Most other modules
+  drop in unchanged.
+- **Where RoleCall diverges**: templating is EJS-based by default, but Jinja is available only inside `$jinja` or a `.j2` `template_file` with `engine: jinja` when you need Ansible template compatibility or its sandbox. `meta` control flags are wired into the executor,
   `synchronize` runs controller-side over ssh, and `json_query` uses JMESPath with a
   JSON-pointer fallback. Each module's reference page states its exact deltas under `notes`.

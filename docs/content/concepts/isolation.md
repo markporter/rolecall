@@ -76,9 +76,11 @@ addresses unless an explicit IP/CIDR rule allows them.
 
 ## Jinja templates
 
-`engine: jinja` uses **Nunjucks + an Ansible compatibility layer** (macros, imports,
-`loop.index`, common Ansible filters and tests). With isolation enabled, `copy` renders the
-template in the hidden `__render-template` worker:
+`$jinja` uses **Nunjucks + an Ansible compatibility layer** (macros, imports,
+`loop.index`, common Ansible filters and tests). It renders in-process with strict
+undefined-name handling and no filesystem/network APIs. A `.j2` file referenced by `copy`
+with `engine: jinja` renders in the hidden `__render-template` worker when isolation is
+enabled:
 
 - no project filesystem mounts;
 - no network;
@@ -108,10 +110,9 @@ response, fetch it with a module first and pass the value into the template:
   args:
     dest: /etc/app/config.conf
     content:
-      template: |
-        {% set cfg = api_body | from_json %}
+      $jinja: |
+        {% set cfg = facts.api_body | from_json %}
         port = {{ cfg.port }}
-      engine: jinja
 ```
 
 For a file outside the project, use `slurp`/`stat`/`find`/`command` with an explicit
@@ -152,7 +153,7 @@ projects:
 - A project may request restricted code, but cannot approve itself by editing its repo.
 - `allow_restricted_code` gates Eta/EJS, `engine: eta|ejs`, and `$template`.
 - `allow_restricted_helpers` gates project `$call` helpers.
-- `engine: jinja` is not gated.
+- `$jinja` is not gated.
 - Approval is not a sandbox; approved code still renders in the worker.
 - With no backend, approved `copy` code fails closed unless the operator uses the explicit,
   warned `--isolation none --allow-unsafe-template-code` last resort.
@@ -169,7 +170,7 @@ loaded from `templates.allow_restricted_code` / `allow_restricted_helpers` in
 - `$template` and `$call` do **not** yet have a sandboxed worker path. Even when approved,
   they require the explicit `--allow-unsafe-template-code` override and run in-process.
   Without the override the task fails with guidance.
-- `engine: jinja` remains ungated and always sandboxed.
+- `$jinja` remains ungated; a `.j2` file via `copy` uses the worker when isolation is enabled.
 
 Treat `--allow-unsafe-template-code` as unsafe for untrusted projects.
 

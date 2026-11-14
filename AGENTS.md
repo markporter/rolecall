@@ -59,6 +59,7 @@ rolecall update --check|--from-dir <dir>|--rollback [--yes] [--no-restart]  # bi
 rolecall isolation allow|revoke|list|allow-egress|revoke-egress  # operator-owned isolation.yaml grants/egress (ADR 0025)
 rolecall runtime install|status|remove [--bun-version <ver>] [--from-dir <dir>]  # optional standalone Bun toolchain (embedded by default)
 rolecall docs search <query>            # query RoleCall prose docs by substring
+rolecall convert ansible <path> [--out <dir>] [--handoff <dir>] [--write] [--strict] [--validate <dir>]  # mechanical Ansible -> RoleCall conversion + handoff
 rolecall plugin list                               # registered module/fact + built-in inventory plugins
 rolecall plugin register <name> --path <file> [--global]   # persist a module kept outside a project (project plugins in plugins/ need no registration)
 ```
@@ -86,8 +87,9 @@ Subcommand reality (from the HELP string):
    cron scheduler and HTTP webhooks are implemented; the SPA UI remains scaffolded.
    Global Jinja `{{ }}` interpolation in playbook scalars is intentionally absent
    (ordinary args are lint-rejected); Jinja (Nunjucks + Ansible filters/tests)
-   renders only through explicit `copy` content templates with `engine: jinja` or
-   `.j2` files, in the ADR 0025 sandbox worker when isolation is enabled.
+   renders only inside the `$jinja` operator or a `.j2` file referenced by
+   `copy.content.template_file` with `engine: jinja`. `.j2` files use the ADR 0025
+   sandbox worker when isolation is enabled; `$jinja` is strict in-process Nunjucks.
    Template policy: Nunjucks/Jinja is a bounded language and is not approval-gated;
    Eta/EJS, `$template`, and `$call` helpers are "restricted code" (executable code
    allowed only in the sandbox worker) and are planned to be gated per project by
@@ -123,6 +125,11 @@ Subcommand reality (from the HELP string):
    `--extra-vars` with file/line provenance.
 - `docs search <query>` queries `docs/content/**` prose docs by substring (`-o json` for
    structured output).
+- `convert ansible <path>` analyzes and mechanically rewrites Ansible playbooks into
+   RoleCall YAML (ADR 0024 MVP): module remaps, `with_items` -> `loop`, block -> `tx`,
+   Jinja -> `$jinja`, plus a `HANDOFF.md`/`manifest.json` bundle for non-mechanical
+   constructs. `--write` emits files, `--strict` exits non-zero on review/handoff items,
+   and `--validate <dir>` strict-loads an already-converted tree.
 - `plugin list`/`register` are implemented: `register` persists a user module/fact
    plugin to `.rolecall/plugins.json` and it auto-loads at startup; only the richer SDK
    authoring/test harness remains partial (see ADR 0016).
@@ -193,8 +200,8 @@ the fork isolates resolver/facts/plugin globals from concurrent runs. The SPA it
 is not built: `--ui-dist` only serves a static directory.
 
 Honest status note: the genuinely-scaffold subsystems are global Jinja `{{ }}`
-interpolation in playbook scalars (Jinja renders only through explicit content
-templates with `engine: jinja`, via Nunjucks + the sandbox worker), the SPA UI,
+interpolation in playbook scalars (Jinja renders only inside `$jinja` or a `.j2`
+`template_file` with `engine: jinja`, via Nunjucks + the sandbox worker), the SPA UI,
 Http transport (gRPC capability
 deferred), and the richer Plugin SDK authoring surface. The executor, the SSH/Local/Network/HTTP
 transports, the cron scheduler and webhooks, serve-side forked playbook execution,
@@ -287,8 +294,8 @@ labels an area as scaffold while `src/` implements it, trust `src/` and update t
 doc accordingly.
 
 **Subsystem honesty.** Global Jinja `{{ }}` interpolation in playbook scalars is
-not supported (ordinary args are lint-rejected; Jinja is opt-in via `copy` content
-templates with `engine: jinja`), the SPA UI (only static `--ui-dist` serving exists),
+not supported (ordinary args are lint-rejected; Jinja is opt-in via `$jinja` or a
+`.j2` `template_file` with `engine: jinja`), the SPA UI (only static `--ui-dist` serving exists),
 Http transport (gRPC capability deferred), and the richer Plugin SDK authoring surface (module/plugin `register`
 persistence + auto-load are implemented — see ADR 0016) are scaffolded or partial and
 must not be asserted as functional.

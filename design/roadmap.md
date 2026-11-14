@@ -12,8 +12,8 @@ over SSH/local transports and collecting targeted/cached facts per host — is n
 implemented and verified (see below). What remains scaffolded and deferred is the SPA
 UI (only static `--ui-dist` serving exists), the richer plugin SDK authoring
 surface (`plugin list`/`register` persistence + auto-load are implemented), the full
-global Jinja `{{ }}` interpolation in playbook scalars (Jinja renders through explicit
-`copy` content templates), and the Postgres backend. The Node-runtime PAL
+global Jinja `{{ }}` interpolation in playbook scalars (Jinja renders only inside
+`$jinja` or a `.j2` `template_file` with `engine: jinja`), and the Postgres backend. The Node-runtime PAL
 is implemented (npm channel = Node.js, ADR 0018); the durable SQLite store runs on
 both runtimes over the PAL SqliteDb seam (ADR 0019 — drizzle-orm removed), so
 `--serve`, `--trace`, `--profile`, and `run replay` work on Node too.
@@ -46,7 +46,7 @@ both runtimes over the PAL SqliteDb seam (ADR 0019 — drizzle-orm removed), so
 | API reference + VitePress + OpenAPI | `docs/` | TypeDoc + VitePress + route-synced OpenAPI |
 
 ## Scaffolded / deferred (designed, typed, "not yet implemented")
-- **Global Jinja `{{ }}` interpolation in playbook scalars**: not implemented; ordinary args are lint-rejected. Structured `$var`/`$concat`/`$call` + typed `when`/`loop` are native, and Jinja renders through explicit `copy` content templates with `engine: jinja`.
+- **Global Jinja `{{ }}` interpolation in playbook scalars**: not implemented; ordinary args are lint-rejected. Structured `$var`/`$concat`/`$call` + typed `when`/`loop` are native, and Jinja renders only inside `$jinja` or a `.j2` file via `copy.content.template_file` with `engine: jinja`.
 - **Postgres backend**: record-only store; SQLite is the implemented persistence layer, now dual-runtime over the PAL SqliteDb seam (ADR 0019). The narrow `Store`/`TracesRepository` interface is the future Postgres seam.
 - **Plugin SDK**: `plugin list`/`register` are implemented (persist + auto-load user module/fact plugins — see ADR 0016); the richer authoring/test harness is deferred.
 - **SPA UI**: only static `--ui-dist` serving (health JSON when unset); no built SPA ships yet.

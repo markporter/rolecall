@@ -22,6 +22,18 @@ The implementation lives in `src/docs/search.ts` and reads files through `node:f
 
 The handler lives in `src/cli/commands/docs.ts` and returns a `DocsModulesResult` (`{ command, query, count, modules }`) rendered by the output plugin. Because the default `syslog` plugin is a no-op for end-of-run renders, `rolecall docs modules` without an explicit `-o` flag falls back to `human_summary` so the table is actually printed; `docs search` keeps its existing default behavior. Add `-o json` for a structured `DocsModulesResult` that LLM clients can consume directly.
 
+### convert ansible
+
+`rolecall convert ansible <path>` analyzes an Ansible file or directory and mechanically rewrites the safely convertible constructs into RoleCall YAML. Module names are remapped (`template` -> `copy`, `apt`/`yum`/`dnf` -> `package`, `systemd` -> `service`), `with_items` becomes `loop`, blocks flatten into `tx` groups, and any Jinja expression is wrapped in `$jinja` (the sole Jinja escape hatch) with known Ansible magic variables rewritten to `facts.*`/`play.host`/`inv.*`. Nothing is written unless you pass `--write`.
+
+```sh
+rolecall convert ansible ./ansible-site --out ./site --write
+rolecall convert ansible ./site --strict          # exit 1 if review/handoff items remain
+rolecall convert ansible --validate ./site        # strict-load the converted playbooks
+```
+
+Constructs with no faithful mechanical equivalent (`ignore_errors`, `changed_when`, `failed_when`, `async`/`until`/`retries`, dynamic includes, `with_dict`, play-level `remote_user`, percentage `serial`, etc.) are recorded in `HANDOFF.md` and `manifest.json` under `--handoff` (default `<out>/handoff`). `--strict` exits non-zero when any review or handoff item remains. The handler lives in `src/cli/commands/convert.ts` and the analyzer/rewriter in `src/convert/ansible.ts`; add `-o json` for the structured `ConvertResult`.
+
 ### vars list
 
 `rolecall vars list <playbook>` aggregates every declared variable/fact across all plays and groups them by the file that declared them (`roles/<role>/defaults/var-manifest.yml`, the playbook-root manifest, or inline). It also prints the observable-fact capability set: the fact keys each connection kind (`ssh` / `local` / `network` / `http`) can gather, built from the built-in gatherers plus any registered fact plugins. Add `-o json` for a structured `VarsListResult` (`{ command, declared, factsByKind }`) that LLM clients can consume directly. The handler lives in `src/cli/commands/vars.ts` and returns a `VarsListResult`.

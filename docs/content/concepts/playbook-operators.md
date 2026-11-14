@@ -6,7 +6,7 @@ Playbook operators bind dynamic values into task arguments, `when` guards, and `
 
 Tasks may be written in **Ansible-style collapsed form** (`copy: { dest, content }`) or the **explicit** `module:` + `args:` form — the two are equivalent. See [First Playbook](/guide/first-playbook) for the task-shape rules.
 
-Templating binds dynamic values into task arguments, `when` guards, and `loop` sources before execution. RoleCall does **not** auto-render Jinja/<code v-pre>{{ }}</code> at the argument level: an ordinary argument, `when` guard, or `loop` source containing <code v-pre>{{ ... }}</code> is rejected by the playbook lint rather than interpreted. The one place Jinja renders is the `copy` module's `content` template spec, where setting `engine: jinja` opts in explicitly (the default engine there is `eta`); the content spec is a runtime payload like EJS, so `{{ }}` is allowed inside it. What ships broadly is the **structured-ref** system: explicit, escapeless, type-checked data *nodes* whose keys start with `$`. Nodes resolve against one of RoleCall's 9 reserved namespaces (`vars`, `facts`, `reg`, `loop`, `play`, `inv`, `role`, `run`, `rolecall`), so a lookup must be fully qualified — e.g. `$var: vars.foo` or `$var: facts.os`. The `$template` operator is the one opt-in escape hatch for EJS-style string templates (delimiters `<%= %>` for output, `<% %>` for logic). Note: `{{ }}` is **not** a RoleCall delimiter — it is passed through literally.
+Templating binds dynamic values into task arguments, `when` guards, and `loop` sources before execution. RoleCall does **not** auto-render Jinja/<code v-pre>{{ }}</code> at the argument level: an ordinary argument, `when` guard, or `loop` source containing <code v-pre>{{ ... }}</code> is rejected by the playbook lint rather than interpreted. Jinja is allowed only inside the `$jinja` operator (strict Nunjucks); a `.j2` file referenced by `copy.content.template_file` is also allowed because the Jinja lives in the file, not the playbook. What ships broadly is the **structured-ref** system: explicit, escapeless, type-checked data *nodes* whose keys start with `$`. Nodes resolve against one of RoleCall's 9 reserved namespaces (`vars`, `facts`, `reg`, `loop`, `play`, `inv`, `role`, `run`, `rolecall`), so a lookup must be fully qualified — e.g. `$var: vars.foo` or `$var: facts.os`. The `$template` operator is the opt-in escape hatch for EJS-style string templates (delimiters `<%= %>` for output, `<% %>` for logic); `$jinja` is the corresponding Jinja escape hatch. Note: `{{ }}` is **not** a RoleCall delimiter in ordinary values — it is passed through literally and rejected by the lint.
 
 ## Why structured refs
 
@@ -18,12 +18,15 @@ These nodes bind dynamic values into task arguments, `loop` sources, and `when` 
 
 | Operator | Description |
 | --- | --- |
-| `$var` | Single-value lookup against any reserved namespace (`vars`, `facts`, `reg`, `loop`, `play`, `inv`, `role`, `run`, `rolecall`); paths are fully qualified, e.g. `$var: vars.foo` or `$var: facts.os`. |
+| `$var` | Single-value lookup against any reserved namespace (`vars`, `facts`, `reg`, `loop`, `play`, `inv`, `role`, `run`, `rolecall`); paths are fully qualified, e.g. `$var: vars.foo` or `$var: facts.os`. Array indexes and `.length` work: `$var: vars.items[0]`, `$var: vars.items.length`. |
 | `$concat` | Joined string of resolved operands. |
 | `$call` | Invoke a registered helper (a real TS function) with an args array. |
 | `$if` | Ternary over a boolean predicate; `condition` is optional and defaults to true (then/else required). |
 | `$each` | List source for `loop`: a literal array or a `$var` reference. |
 | `$template` | Opt-in EJS render of a literal string — the escape hatch for EJS `<%= %>`/`<% %>` syntax. |
+| `$jinja` | Opt-in Jinja/Nunjucks render of a literal string — the **only** place Jinja delimiters are allowed in a playbook scalar. Rendering is strict. |
+| `$exists` | True when the resolved operand is neither `undefined` nor `null` (the native `is defined` form). |
+| `$length` | Length of a resolved array, string, or object. |
 
 ## `when` / predicate operators
 
@@ -38,11 +41,12 @@ These typed predicates resolve to a boolean and are reused for `when` guards and
 | `$lte` | Numeric/string less-or-equal. |
 | `$gte` | Numeric/string greater-or-equal. |
 | `$in` | Membership — true when the second operand (array or string) contains the first. |
+| `$exists` | True when the resolved operand is neither `undefined` nor `null`. |
 | `$and` | Logical AND of an array of conditions; all must be true. |
 | `$or` | Logical OR of an array of conditions; at least one must be true. |
 | `$not` | Logical NOT of a single condition (the condition may also be wrapped in an array). |
 
-The `$var` prefix rule is the most common mistake: refs must be fully qualified with a reserved namespace (one of `vars.`, `facts.`, `reg.`, `loop.`, `play.`, `inv.`, `role.`, `run.`, `rolecall.`), so you must write `$var: vars.foo` (or `$var: facts.os`). A `$var` whose value lacks a known namespace prefix is flagged as a load-time error.
+The `$var` prefix rule is the most common mistake: refs must be fully qualified with a reserved namespace (one of `vars.`, `facts.`, `reg.`, `loop.`, `play.`, `inv.`, `role.`, `run.`, `rolecall.`), so you must write `$var: vars.foo` (or `$var: facts.os`). A `$var` whose value lacks a known namespace prefix is flagged as a load-time error. A bare string/number `when` guard is also a load-time error; use a structured predicate, a list (implicit AND), or `$jinja`.
 
 ## Examples
 

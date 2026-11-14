@@ -21,7 +21,11 @@ SSH or local transports, and can run on either Node.js or Bun.
 - Consume RoleCall-native or Ansible inventories (INI and `all:`-rooted YAML).
 - Gather facts, inspect resolved hosts and variables, and trace variable precedence.
 - Use roles, handlers, `when`/`loop`, and structured `$var`/`$concat` references,
-  plus Jinja rendering through explicit `copy` content templates.
+  plus Jinja through `$jinja` or `.j2` template files.
+- Apply Ansible-compatible modules across files, packages, services, accounts, APT
+  keys, PAM rules, debconf preseeding, and transport readiness.
+- Convert Ansible playbooks mechanically with `rolecall convert ansible`, including a
+  review/handoff bundle for constructs that need manual attention.
 - Load module plugins with `plugin register`; project plugins auto-load.
 - Run the orchestrator with `--serve`: run dispatch, project/schedule CRUD, cron
   schedules, and Bearer-gated webhooks.
@@ -199,6 +203,7 @@ rolecall inventory show <inv>
 rolecall inventory list <inv>
 rolecall vars list <playbook>
 rolecall vars trace <playbook> --inventory <inv>
+rolecall convert ansible <path> --write --out <dir>
 rolecall doctor
 rolecall docs search <query>
 rolecall plugin list

@@ -8,7 +8,7 @@
 | Orchestrator server (Express) | `src/orchestrator/*` | implemented (route registry, MCP, stores) |
 | Stores (sqlite-backed repos) | `src/store/*` | implemented (runs/traces/schedules/projects) |
 | Config model & validation | `src/config/*` | implemented (Zod) |
-| Templating | `src/templating/*` | implemented (fast EJS + structured refs; Jinja only via explicit content templates with `engine: jinja`) |
+| Templating | `src/templating/*` | implemented (fast EJS + structured refs; Jinja only via `$jinja` or a `.j2` `template_file` with `engine: jinja`) |
 | Executor (tx / checkpoint) | `src/executor/*` | implemented (drives describe/converge live; rollback/resume via tx) |
 | Modules / idempotency lib | `src/modules/*` | implemented (describe/converge executed live by executor) |
 | Transport interfaces | `src/transport/*` | implemented (Ssh/Local/Network connect/run; Http gRPC deferred) |
@@ -31,7 +31,7 @@
    the executor.
 
 ## Honesty note
-Per `AGENTS.md`, global Jinja `{{ }}` interpolation in playbook scalars (Jinja renders only via explicit content templates), Http transport (gRPC deferred), the plugin
+Per `AGENTS.md`, global Jinja `{{ }}` interpolation in playbook scalars (Jinja renders only inside `$jinja` or a `.j2` `template_file`), Http transport (gRPC deferred), the plugin
 SDK authoring surface, and the SPA UI (static `--ui-dist` serving only) are scaffolded or partial and
 must never be asserted as fully functional. The executor, SSH/Local/Network/HTTP transports,
 facts-collection, the cron scheduler, webhooks, and forked full-executor server runs ARE implemented:

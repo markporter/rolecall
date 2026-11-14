@@ -93,7 +93,7 @@ With nothing else on the command line RoleCall resolves the matched hosts and ap
 These behaviors are worth knowing up front:
 
 - **Execution is live.** RoleCall resolves matched hosts and runs each task over SSH or local transports; the outcome lines reflect actual convergence, proven end-to-end by an integration test against an in-process ssh2 simulator.
-- **No global `{{ }}` interpolation.** RoleCall does not auto-render `{{ }}` in task arguments; an ordinary argument containing it is rejected by the playbook lint. Structured `$var`/`$concat`/`$call` and typed `when`/`loop` are what render. Jinja rendering is opt-in inside `copy`, via a `content` template spec with `engine: jinja` (the default engine is Eta) or a `.j2` `template_file`.
+- **No global `{{ }}` interpolation.** RoleCall does not auto-render `{{ }}` in task arguments; an ordinary argument containing it is rejected by the playbook lint. Structured `$var`/`$concat`/`$call` and typed `when`/`loop` are what render. Jinja rendering is opt-in via `$jinja`, or via a `.j2` `template_file` referenced by `copy` with `engine: jinja`.
 - **Facts gathering works.** `rolecall facts gather <inv>` gathers targeted/cached facts per resolved host through its built connection, failing gracefully on unreachable hosts.
 - **Plugins are first class.** `rolecall plugin list` and `rolecall plugin register` persist module/fact plugins to `.rolecall/plugins.json` and auto-load them at startup, and project plugins under `plugins/<type>/<namespace>/` are auto-discovered at `playbook run`.
 
