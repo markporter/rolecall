@@ -332,7 +332,9 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   `--templates-review accept`. Loop metadata now includes `cycle`, `previtem`, and `nextitem`; Nunjucks
   applies whitespace trim markers before codegen, so trimmed output is preserved.
   `--validate` now checks template references, engine/extension pairing, and
-  half-converted files. Remaining: corpus-level golden fixtures. The default `--templates keep` path is unchanged.
+  half-converted files. Ansible YAML/INI inventory connection vars are rewritten to
+  `rolecall_*` during conversion. A checked-in golden fixture covers the full
+  pipeline. Remaining: the external corpus run. The default `--templates keep` path is unchanged.
 
 ## Risks
 
