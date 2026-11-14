@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { analyzeTemplate, generateEta, generateEtaDraft } from "../src/convert/templates";
 import { render } from "../src/templating/fast";
 import { renderJinja } from "../src/templating/jinja";
-import { convertAnsible } from "../src/convert/ansible";
+import { convertAnsible, validateConvertedTree } from "../src/convert/ansible";
 
 const tmp = (suffix: string) => mkdtempSync(join(tmpdir(), `rolecall-template-${suffix}-`));
 
@@ -187,5 +187,28 @@ describe("convert ansible --templates eta", () => {
     writeFileSync(join(dir, "playbooks", "app.j2"), `{{ value | frobnicate }}`);
     const result = convertAnsible(dir, { templates: "keep", write: true, out: join(dir, "out") });
     expect(result.findings.some((f) => f.construct === "filter:frobnicate")).toBe(false);
+  });
+});
+
+describe("validate converted template references", () => {
+  test("accepts eta refs and rejects missing, mismatched, and half-converted files", () => {
+    const dir = tmp("validate");
+    mkdirSync(join(dir, "playbooks"), { recursive: true });
+    const site = (ref: string, engine: string) =>
+      `- hosts: web\n  tasks:\n    - name: t\n      copy:\n        dest: /etc/x\n        content:\n          template_file: ${ref}\n          engine: ${engine}\n`;
+    writeFileSync(join(dir, "playbooks", "app.eta"), "Hello <%= name %>");
+    writeFileSync(join(dir, "playbooks", "site.yml"), site("app.eta", "eta"));
+    expect(validateConvertedTree(dir).every((entry) => entry.ok)).toBe(true);
+
+    writeFileSync(join(dir, "playbooks", "site.yml"), site("missing.eta", "eta"));
+    expect(validateConvertedTree(dir).some((entry) => !entry.ok && entry.error?.includes("does not resolve"))).toBe(true);
+
+    writeFileSync(join(dir, "playbooks", "app.j2"), "x");
+    writeFileSync(join(dir, "playbooks", "site.yml"), site("app.j2", "eta"));
+    expect(validateConvertedTree(dir).some((entry) => !entry.ok && entry.error?.includes("engine eta"))).toBe(true);
+
+    writeFileSync(join(dir, "playbooks", "app.eta"), "x");
+    writeFileSync(join(dir, "playbooks", "site.yml"), site("app.eta", "eta"));
+    expect(validateConvertedTree(dir).some((entry) => !entry.ok && entry.error?.includes("half-converted"))).toBe(true);
   });
 });

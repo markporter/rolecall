@@ -115,6 +115,9 @@ describe("convert ansible MVP", () => {
     expect((tasks[3]!.debug as Record<string, unknown>).msg).toEqual({ $jinja: "{{ vars.http_port }}" });
 
     expect(readFileSync(join(out, "handoff", "HANDOFF.md"), "utf8")).toContain("ignore_errors");
+    // Single-file conversion does not copy sibling assets; stage the .j2 to
+    // exercise the template-reference validation path.
+    writeFileSync(join(out, "nginx.conf.j2"), "server {}");
     const validated = validateConvertedTree(out);
     expect(validated.every((entry) => entry.ok)).toBe(true);
   });

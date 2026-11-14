@@ -1222,6 +1222,74 @@ export function writeHandoff(result: ConvertResult, handoffDir: string): void {
 }
 
 /** Validate every playbook YAML in a converted tree with the strict loader. */
+
+interface TemplateRef {
+  ref: string;
+  engine: string;
+}
+
+/** Collect `copy.content.template_file` references and their engine. */
+function collectTemplateRefs(value: unknown, out: TemplateRef[] = []): TemplateRef[] {
+  if (Array.isArray(value)) {
+    for (const entry of value) collectTemplateRefs(entry, out);
+    return out;
+  }
+  const rec = asRecord(value);
+  if (rec === undefined) return out;
+  const copy = asRecord(rec["copy"]);
+  if (copy !== undefined) {
+    const content = asRecord(copy["content"]);
+    if (content !== undefined && content["template_file"] !== undefined) {
+      const engine = typeof content["engine"] === "string" ? content["engine"] : "ejs";
+      const refs = Array.isArray(content["template_file"])
+        ? content["template_file"]
+        : [content["template_file"]];
+      for (const ref of refs) if (typeof ref === "string") out.push({ ref, engine });
+    }
+  }
+  for (const [key, child] of Object.entries(rec)) {
+    if (key !== "copy") collectTemplateRefs(child, out);
+  }
+  return out;
+}
+
+/** Validate template references, engine/extension pairing, and half-converted files. */
+function validateTemplateRefs(root: string, doc: unknown): string[] {
+  const files = walkFiles(root);
+  const byBase = new Map<string, string[]>();
+  for (const abs of files) {
+    const list = byBase.get(basename(abs)) ?? [];
+    list.push(abs);
+    byBase.set(basename(abs), list);
+  }
+  const resolve = (ref: string): string | undefined => {
+    const direct = join(root, ref);
+    if (existsSync(direct)) return direct;
+    const matches = byBase.get(basename(ref)) ?? [];
+    return matches.length === 1 ? matches[0] : undefined;
+  };
+  const errors: string[] = [];
+  for (const { ref, engine } of collectTemplateRefs(doc)) {
+    const abs = resolve(ref);
+    if (abs === undefined) {
+      errors.push(`template_file '${ref}' does not resolve`);
+      continue;
+    }
+    const ext = abs.slice(abs.lastIndexOf(".")).toLowerCase();
+    if (engine === "eta" && ext !== ".eta") {
+      errors.push(`template_file '${ref}' uses engine eta but resolves to '${ext}'`);
+    }
+    if (engine === "jinja" && ext !== ".j2" && ext !== ".jinja") {
+      errors.push(`template_file '${ref}' uses engine jinja but resolves to '${ext}'`);
+    }
+    if (ext === ".eta") {
+      const j2 = abs.replace(/\.eta$/i, ".j2");
+      if (existsSync(j2)) errors.push(`half-converted template: both '${abs}' and '${j2}' exist`);
+    }
+  }
+  return errors;
+}
+
 export function validateConvertedTree(dir: string): { file: string; ok: boolean; error?: string }[] {
   const out: { file: string; ok: boolean; error?: string }[] = [];
   for (const abs of walkFiles(dir)) {
@@ -1233,7 +1301,12 @@ export function validateConvertedTree(dir: string): { file: string; ok: boolean;
       const first = asRecord(doc[0]);
       if (first === undefined || first.hosts === undefined) continue;
       loadPlaybook(text);
-      out.push({ file: abs, ok: true });
+      const templateErrors = validateTemplateRefs(dir, doc);
+      out.push({
+        file: abs,
+        ok: templateErrors.length === 0,
+        ...(templateErrors.length > 0 ? { error: templateErrors.join("; ") } : {}),
+      });
     } catch (error) {
       out.push({ file: abs, ok: false, error: error instanceof Error ? error.message : String(error) });
     }
