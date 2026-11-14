@@ -5,7 +5,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync, readdi
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
-import { analyzeTemplate, generateEta } from "../src/convert/templates";
+import { analyzeTemplate, generateEta, generateEtaDraft } from "../src/convert/templates";
 import { render } from "../src/templating/fast";
 import { renderJinja } from "../src/templating/jinja";
 import { convertAnsible } from "../src/convert/ansible";
@@ -68,6 +68,17 @@ describe("Eta codegen (mapped subset)", () => {
   });
 });
 
+describe("partial Eta drafts", () => {
+  test("marks unsupported constructs and remains compilable", () => {
+    const draft = generateEtaDraft(
+      `{% macro m() %}x{% endmacro %}Hello {{ name }} {{ value | frobnicate }}`,
+      "draft.j2",
+    );
+    expect(draft).toContain("HANDOFF");
+    expect(() => render(draft, { name: "bob" })).not.toThrow();
+  });
+});
+
 describe("convert ansible --templates eta", () => {
   test("writes .eta and rewrites mapped task references", () => {
     const dir = tmp("eta");
@@ -100,10 +111,13 @@ describe("convert ansible --templates eta", () => {
         dest: /etc/app.conf
 `);
     writeFileSync(join(dir, "playbooks", "app.j2"), `{{ value | frobnicate }}`);
-    convertAnsible(dir, { templates: "eta", write: true, out: join(dir, "out") });
+    const result = convertAnsible(dir, { templates: "eta", write: true, out: join(dir, "out") });
     expect(existsSync(join(dir, "out", "playbooks", "app.j2"))).toBe(true);
     expect(existsSync(join(dir, "out", "playbooks", "app.eta"))).toBe(false);
     expect(readFileSync(join(dir, "out", "playbooks", "site.yml"), "utf8")).toContain("engine: jinja");
+    const drafts = readdirSync(join(result.handoff, "templates"));
+    expect(drafts.length).toBe(1);
+    expect(readFileSync(join(result.handoff, "templates", drafts[0]!), "utf8")).toContain("HANDOFF");
   });
 
   test("records template findings and writes per-item handoff files", () => {

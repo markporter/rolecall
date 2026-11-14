@@ -226,10 +226,16 @@ export interface EtaGeneration {
 
 interface EmitContext {
   loopId: number;
+  draft?: boolean;
 }
 
 function fail(message: string): never {
   throw new Error(message);
+}
+
+function handoffMarker(node: unknown, label: string): string {
+  const line = (node as { lineno?: number } | undefined)?.lineno ?? 0;
+  return `/* HANDOFF: ${label} @ line ${line} */`;
 }
 
 function emitExpr(node: unknown, ctx: EmitContext): string {
@@ -298,17 +304,25 @@ function emitExpr(node: unknown, ctx: EmitContext): string {
       return `(${emitExpr(rec["cond"], ctx)} ? ${emitExpr(rec["body"], ctx)} : ${emitExpr(rec["else_"], ctx)})`;
     case "Is": {
       const test = nodeName(rec["right"]);
-      if (test === undefined) fail("test calls with arguments are not supported");
+      if (test === undefined || !knownTest(test)) {
+        if (ctx.draft) return `${handoffMarker(node, `test ${test ?? "?"}`)} undefined`;
+        fail("test calls with arguments are not supported");
+      }
       return `tests.${test}(${emitExpr(rec["left"], ctx)})`;
     }
     case "Filter": {
-      const name = nodeName(rec["name"]) ?? fail("filter without a name");
+      const name = nodeName(rec["name"]);
+      if (name === undefined || !knownFilter(name)) {
+        if (ctx.draft) return `${handoffMarker(node, `filter ${name ?? "?"}`)} undefined`;
+        fail("filter without a known name");
+      }
       const args = ((rec["args"] as { children?: unknown[] } | undefined)?.children ?? []).map((arg) =>
         emitExpr(arg, ctx),
       );
       return `filters.${name}(${args.join(", ")})`;
     }
     default:
+      if (ctx.draft) return `${handoffMarker(node, typename || "expression")} undefined`;
       fail(`unsupported expression node '${typename || "unknown"}'`);
   }
 }
@@ -336,6 +350,20 @@ function emitNode(node: unknown, ctx: EmitContext): string {
       return String(rec["value"] ?? "");
     case "Comment":
       return "";
+    case "Macro":
+    case "Import":
+    case "FromImport":
+    case "Include":
+    case "Extends":
+    case "Block":
+    case "Super":
+    case "TemplateRef":
+    case "Call":
+    case "CallExtension":
+    case "CallExtensionAsync":
+    case "FilterAsync":
+      if (ctx.draft) return `<% ${handoffMarker(rec, typename)} %>`;
+      fail(`${typename} constructs are not supported`);
     case "If": {
       const cond = emitExpr(rec["cond"], ctx);
       const body = emitNode(rec["body"], ctx);
@@ -344,10 +372,19 @@ function emitNode(node: unknown, ctx: EmitContext): string {
     }
     case "For": {
       const name = rec["name"] as Record<string, unknown>;
-      if (name?.["typename"] !== "Symbol") fail("tuple loop targets are not supported");
+      if (name?.["typename"] !== "Symbol") {
+        if (ctx.draft) return `<% ${handoffMarker(rec, "tuple loop")} %>`;
+        fail("tuple loop targets are not supported");
+      }
       const arr = rec["arr"] as Record<string, unknown>;
-      if (arr?.["cond"] !== undefined) fail("filtered loops are not supported");
-      if (rec["else_"] !== null && rec["else_"] !== undefined) fail("for/else is not supported");
+      if (arr?.["cond"] !== undefined) {
+        if (ctx.draft) return `<% ${handoffMarker(rec, "filtered loop")} %>`;
+        fail("filtered loops are not supported");
+      }
+      if (rec["else_"] !== null && rec["else_"] !== undefined) {
+        if (ctx.draft) return `<% ${handoffMarker(rec, "for/else")} %>`;
+        fail("for/else is not supported");
+      }
       const id = ++ctx.loopId;
       const seq = `__seq_${id}`;
       const idx = `__i_${id}`;
@@ -364,8 +401,14 @@ function emitNode(node: unknown, ctx: EmitContext): string {
     }
     case "Set": {
       const targets = (rec["targets"] as Array<Record<string, unknown>>) ?? [];
-      if (targets.length !== 1 || targets[0]?.["typename"] !== "Symbol") fail("multi-target set is not supported");
-      if ((rec["value"] as Record<string, unknown>)?.["typename"] === "Capture") fail("set-blocks are not supported");
+      if (targets.length !== 1 || targets[0]?.["typename"] !== "Symbol") {
+        if (ctx.draft) return `<% ${handoffMarker(rec, "multi-target set")} %>`;
+        fail("multi-target set is not supported");
+      }
+      if ((rec["value"] as Record<string, unknown>)?.["typename"] === "Capture") {
+        if (ctx.draft) return `<% ${handoffMarker(rec, "set-block")} %>`;
+        fail("set-blocks are not supported");
+      }
       return `<% let ${String(targets[0]["value"])} = ${emitExpr(rec["value"], ctx)}; %>`;
     }
     default:
@@ -391,5 +434,21 @@ export function generateEta(source: string, file: string): EtaGeneration {
     return { ok: true, eta: emitNode(ast, { loopId: 0 }) };
   } catch (error) {
     return { ok: false, reason: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+/**
+ * @summary Generate a complete partial Eta draft for a template with review/handoff constructs. Unsupported fragments become HANDOFF comment markers.
+ * @param source Template text.
+ * @param file Source path used for markers.
+ * @returns Eta draft text.
+ */
+export function generateEtaDraft(source: string, file: string): string {
+  const parser = (nunjucks as unknown as { parser: { parse(text: string): unknown } }).parser;
+  try {
+    const ast = parser.parse(source);
+    return emitNode(ast, { loopId: 0, draft: true });
+  } catch (error) {
+    return `<% ${handoffMarker(undefined, "parse-error")} %>\n/* ${String(error)} */\n`;
   }
 }

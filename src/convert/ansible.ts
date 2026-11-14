@@ -13,7 +13,7 @@ import { dump as yamlDump, load as yamlLoad } from "js-yaml";
 import { loadPlaybook } from "../config/loader";
 import { ensureProjectScaffold } from "../project/scaffold";
 import { MODULE_REMAP, TASK_RULES } from "./matrix";
-import { analyzeTemplate, generateEta } from "./templates";
+import { analyzeTemplate, generateEta, generateEtaDraft } from "./templates";
 import type { ConvertFileResult, ConvertFinding, ConvertResult } from "../cli/types";
 
 const STRUCTURAL_KEYS = new Set([
@@ -983,6 +983,7 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
   const templateBase = new Map<string, string>();
   const ambiguousBases = new Set<string>();
   const preprocessed = new Set<string>();
+  let draftIndex = 0;
 
   if (options.templates === "eta") {
     for (const abs of files) {
@@ -1014,6 +1015,24 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
         if (analysis.disposition === "mapped" && generation.reason !== undefined) {
           finding(state, abs, "template", "template", "handoff", `Eta codegen failed: ${generation.reason}`);
         }
+        const draft = generateEtaDraft(text, abs);
+        draftIndex += 1;
+        const draftId = `${String(draftIndex).padStart(4, "0")}-${basename(rel)
+          .replace(/\.[^.]+$/, "")
+          .replace(/[^a-zA-Z0-9]+/g, "-")}`;
+        const draftPath = join(handoffDir, "templates", `${draftId}.eta.draft`);
+        if (options.write || options.handoff !== undefined) {
+          mkdirSync(dirname(draftPath), { recursive: true });
+          writeFileSync(draftPath, draft, "utf8");
+        }
+        finding(
+          state,
+          abs,
+          `handoff/templates/${draftId}.eta.draft`,
+          "template",
+          "review",
+          "partial Eta draft emitted with HANDOFF markers",
+        );
         if (options.write) {
           mkdirSync(dirname(relOut), { recursive: true });
           copyFileSync(abs, relOut);
