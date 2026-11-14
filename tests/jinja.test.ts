@@ -80,3 +80,34 @@ describe("jinja mode (Nunjucks + Ansible compatibility)", () => {
     expect(renderJinja(`{{ n | double }}`, { n: 21 })).toBe("42");
   });
 });
+
+describe("Ansible filters/tests added for conversion", () => {
+  it("ipaddr handles IPv4 CIDR queries", () => {
+    expect(renderJinja(`{{ "192.168.1.10/24" | ipaddr("network") }}`)).toBe("192.168.1.0");
+    expect(renderJinja(`{{ "192.168.1.10/24" | ipaddr("prefix") }}`)).toBe("24");
+    expect(renderJinja(`{{ "192.168.1.10/24" | ipaddr("broadcast") }}`)).toBe("192.168.1.255");
+    expect(renderJinja(`{{ "192.168.1.10/24" | ipaddr("network/prefix") }}`)).toBe("192.168.1.0/24");
+  });
+
+  it("strftime and human_readable", () => {
+    expect(renderJinja(`{{ "2026-11-14T12:34:56Z" | strftime("%Y-%m-%d") }}`)).toBe("2026-11-14");
+    expect(renderJinja(`{{ 1536 | human_readable }}`)).toBe("1.50 KB");
+    expect(renderJinja(`{{ 8 | human_readable(true) }}`)).toBe("1 B");
+  });
+
+  it("password_hash is deterministic", () => {
+    const a = renderJinja(`{{ "secret" | password_hash("sha256", "salt") }}`);
+    const b = renderJinja(`{{ "secret" | password_hash("sha256", "salt") }}`);
+    expect(a).toBe(b);
+    expect(a).toHaveLength(64);
+  });
+
+  it("iterable/mapping and result-state tests", () => {
+    expect(renderJinja(`{% if [1] is iterable %}yes{% endif %}`)).toBe("yes");
+    expect(renderJinja(`{% if {"a": 1} is mapping %}yes{% endif %}`)).toBe("yes");
+    expect(renderJinja(`{% if reg.ok is succeeded %}yes{% endif %}`, { reg: { ok: { failed: false } } })).toBe("yes");
+    expect(renderJinja(`{% if reg.bad is failed %}yes{% endif %}`, { reg: { bad: { failed: true } } })).toBe("yes");
+    expect(renderJinja(`{% if reg.c is changed %}yes{% endif %}`, { reg: { c: { changed: true } } })).toBe("yes");
+    expect(renderJinja(`{% if reg.r is running %}yes{% endif %}`, { reg: { r: { running: true } } })).toBe("yes");
+  });
+});

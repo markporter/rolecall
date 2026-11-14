@@ -112,6 +112,112 @@ function typeDebug(value: unknown): string {
   return typeof value;
 }
 
+
+function ipv4ToInt(ip: string): number | undefined {
+  const parts = ip.split(".");
+  if (parts.length !== 4) return undefined;
+  let n = 0;
+  for (const part of parts) {
+    const octet = Number(part);
+    if (!Number.isInteger(octet) || octet < 0 || octet > 255) return undefined;
+    n = (n * 256) + octet;
+  }
+  return n >>> 0;
+}
+
+function intToIpv4(n: number): string {
+  return [24, 16, 8, 0].map((shift) => (n >>> shift) & 255).join(".");
+}
+
+/** Minimal Ansible `ipaddr` for IPv4 CIDR queries; IPv6 passes through unchanged. */
+function ipaddr(value: unknown, query?: unknown): unknown {
+  const raw = String(value ?? "").trim();
+  const [address, prefixRaw] = raw.split("/");
+  const n = ipv4ToInt(address ?? "");
+  if (n === undefined) return query === undefined || query === "" ? raw : null;
+  const prefix = prefixRaw === undefined ? 32 : Number(prefixRaw);
+  if (!Number.isInteger(prefix) || prefix < 0 || prefix > 32) return null;
+  const mask = prefix === 0 ? 0 : ((0xffffffff << (32 - prefix)) >>> 0);
+  const network = (n & mask) >>> 0;
+  const broadcast = (network | (~mask >>> 0)) >>> 0;
+  const q = query === undefined || query === null ? "" : String(query);
+  switch (q) {
+    case "":
+    case "address":
+      return address;
+    case "network":
+      return intToIpv4(network);
+    case "prefix":
+      return prefix;
+    case "netmask":
+      return intToIpv4(mask);
+    case "hostmask":
+      return intToIpv4((~mask) >>> 0);
+    case "broadcast":
+      return intToIpv4(broadcast);
+    case "network/prefix":
+      return `${intToIpv4(network)}/${prefix}`;
+    case "address/prefix":
+      return `${address}/${prefix}`;
+    case "size":
+      return 2 ** (32 - prefix);
+    default:
+      return null;
+  }
+}
+
+function toDate(value: unknown): Date | undefined {
+  if (value instanceof Date) return value;
+  if (typeof value === "number") return new Date(value > 1e12 ? value : value * 1000);
+  if (typeof value === "string") {
+    const d = new Date(value);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  return undefined;
+}
+
+/** Small strftime subset used by Ansible templates (`%Y %m %d %H %M %S %s %z`). */
+function strftime(value: unknown, format: unknown): string {
+  const d = toDate(value);
+  if (d === undefined) return String(value ?? "");
+  const pad = (n: number, width = 2): string => String(n).padStart(width, "0");
+  const tokens: Record<string, string> = {
+    "%Y": String(d.getUTCFullYear()),
+    "%m": pad(d.getUTCMonth() + 1),
+    "%d": pad(d.getUTCDate()),
+    "%H": pad(d.getUTCHours()),
+    "%M": pad(d.getUTCMinutes()),
+    "%S": pad(d.getUTCSeconds()),
+    "%s": String(Math.floor(d.getTime() / 1000)),
+    "%z": "+0000",
+    "%%": "%",
+  };
+  return String(format ?? "%Y-%m-%d").replace(/%[YmdHMSsz%]/g, (token) => tokens[token] ?? token);
+}
+
+/** Human-readable byte/bit sizes using 1024-based units (Ansible-style). */
+function humanReadable(value: unknown, isBits = false): string {
+  let n = Number(value);
+  if (!Number.isFinite(n)) return String(value ?? "");
+  if (isBits) n /= 8;
+  const units = ["B", "KB", "MB", "GB", "TB", "PB"];
+  let unit = 0;
+  while (Math.abs(n) >= 1024 && unit < units.length - 1) {
+    n /= 1024;
+    unit += 1;
+  }
+  const rendered = unit === 0 ? String(Math.trunc(n)) : n.toFixed(2);
+  return `${rendered} ${units[unit]}`;
+}
+
+/** Deterministic salted hash for `password_hash`; not a crypt(3) replacement. */
+function passwordHash(value: unknown, algorithm = "sha512", salt?: unknown): string {
+  const algo = String(algorithm).replace(/_crypt$/, "").replace(/-/g, "");
+  const safe = ["sha256", "sha512", "sha1", "md5"].includes(algo) ? algo : "sha512";
+  const saltText = salt === undefined ? "" : String(salt);
+  return createHash(safe).update(`${saltText}${String(value ?? "")}`).digest("hex");
+}
+
 /** Common Ansible filters implemented as pure data transforms. */
 export const ANSIBLE_FILTERS: Record<string, Filter> = {
   default: (value, fallback, useFalsey = false) =>
@@ -183,6 +289,10 @@ export const ANSIBLE_FILTERS: Record<string, Filter> = {
   quote: (value) => `'${String(value ?? "").replace(/'/g, `'\\''`)}'`,
   ternary: (value, trueValue, falseValue) => (toBool(value) ? trueValue : falseValue),
   type_debug: (value) => typeDebug(value),
+  ipaddr: (value, query) => ipaddr(value, query),
+  strftime: (value, format) => strftime(value, format),
+  human_readable: (value, isBits) => humanReadable(value, isBits === true),
+  password_hash: (value, algorithm, salt) => passwordHash(value, algorithm as string | undefined, salt),
   version_compare: (value, other, operator, strict = false) => {
     const cmp = compareVersion(value, other);
     if (cmp === 0 && strict === true && String(value ?? "") !== String(other ?? "")) return false;
@@ -222,6 +332,19 @@ export const ANSIBLE_TESTS: Record<string, Test> = {
   subset: (value, other) => asArray(other).every((v) => asArray(value).includes(v)),
   superset: (value, other) => asArray(value).every((v) => asArray(other).includes(v)),
   version_compare: (value, other, operator) => Boolean(ANSIBLE_FILTERS["version_compare"]!(value, other, operator)),
+  iterable: (value) =>
+    typeof value === "string" || Array.isArray(value) || (typeof value === "object" && value !== null),
+  mapping: (value) => typeof value === "object" && value !== null && !Array.isArray(value),
+  succeeded: (value) => {
+    const rec = asObject(value);
+    return rec["failed"] !== true && rec["success"] !== false;
+  },
+  failed: (value) => asObject(value)["failed"] === true,
+  changed: (value) => asObject(value)["changed"] === true,
+  running: (value) => {
+    const rec = asObject(value);
+    return rec["running"] === true || rec["finished"] === false;
+  },
 };
 
 /** Ansible globals that are safe pure functions. Lookups are deliberately absent. */
