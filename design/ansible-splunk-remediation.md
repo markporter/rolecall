@@ -318,9 +318,11 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   ADR 0014/0030 project shape and populates it with the converted tree (tested with a
   representative playbook/role/group_vars sample). `rolecall project create|init` now
   exposes the same scaffold directly, with `--force` and optional `--vcs git`.
-- **Cycle 4 (partial):** the external `ansible_splunk` corpus is not present in this
-  checkout, but a checked-in golden fixture (`tests/fixtures/ansible-golden`) now
-  exercises the full convert/template/handoff/validate pipeline.
+- **Cycle 4 (corpus run):** converted `/mnt/homes/mark/ANM/anm_dev/ansible_splunk`
+  (1,819 files) with `--templates eta` and validated 128 converted playbooks with
+  **0 failures**. A checked-in golden fixture (`tests/fixtures/ansible-golden`) keeps
+  the pipeline covered in CI. Remaining findings are the documented handoff classes
+  (`ignore_errors`, `async`/`until`/`retries`, dynamic includes/roles, etc.).
 - **Cycle 5 (ADR 0031, slices 1–3 partial):** `--templates eta` parses each `.j2`
   with the Nunjucks AST, classifies constructs as mapped/review/handoff, and emits
   per-item handoff work orders. Fully mapped templates are written as `.eta` and
