@@ -788,6 +788,12 @@ test("$template operator renders an opt-in EJS string", () => {
   expect(out.cmd).toBe("echo web1");
 });
 
+test("renderArgs drops the Jinja omit sentinel", () => {
+  const vars = varsScope({ flag: true });
+  expect(renderArgs({ mode: { $jinja: "{{ vars.missing | default(omit) }}" } }, vars, {})).toEqual({});
+  expect(renderArgs({ mode: { $jinja: "{{ vars.flag }}" } }, vars, {})).toEqual({ mode: "true" });
+});
+
 test("evalWhen rejects bare strings and resolves structured predicates", () => {
   const vars = varsScope({ flag: false });
   expect(() => evalWhen("<%= vars.flag %>", vars)).toThrow(/bare string/);

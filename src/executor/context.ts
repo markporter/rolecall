@@ -6,6 +6,7 @@ import type { Connection } from "../transport/connection";
 import type { ResolveOptions, InventorySnapshot } from "../inventory/engine";
 import type { NormalizedInventory, NormalizedPlaybook } from "../config/schema";
 import type { RunTrace } from "../store/types";
+import { OMIT } from "../templating/ansible-filters";
 import {
   type HelpersMap,
   REFERENCE_OPS,
@@ -99,7 +100,13 @@ export function renderArgs(
       ? value
       : resolveValue(value, scope, helpers, policy);
   const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(args)) out[k] = resolveArg(v);
+  for (const [k, v] of Object.entries(args)) {
+    const resolved = resolveArg(v);
+    // `{{ x | default(omit) }}` inside `$jinja` resolves to the OMIT sentinel;
+    // drop the argument entirely instead of passing a placeholder to the module.
+    if (resolved === OMIT) continue;
+    out[k] = resolved;
+  }
   return out;
 }
 

@@ -10,6 +10,9 @@ import { homedir } from "node:os";
 import { posix } from "node:path";
 import { dump as yamlDump, load as yamlLoad } from "js-yaml";
 
+/** Sentinel returned by the Jinja `omit` global; `renderArgs` drops args with this value. */
+export const OMIT = "__rolecall_omit__";
+
 type Filter = (value: unknown, ...args: unknown[]) => unknown;
 type Test = (value: unknown, ...args: unknown[]) => boolean;
 
@@ -349,6 +352,7 @@ export const ANSIBLE_TESTS: Record<string, Test> = {
 
 /** Ansible globals that are safe pure functions. Lookups are deliberately absent. */
 export const ANSIBLE_GLOBALS: Record<string, unknown> = {
+  omit: OMIT,
   now: (fmt?: string) => {
     const d = new Date();
     return fmt === undefined ? d.toISOString() : d.toISOString();
