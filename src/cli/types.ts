@@ -128,6 +128,8 @@ export interface GlobalFlags {
   report?: string;
   /** convert ansible --validate: validate an already-converted tree. */
   validate?: string;
+  /** convert ansible --templates: keep Jinja (default) or analyze for Eta. */
+  templates?: string;
 }
 
 // ---------------------------------------------------------------------------

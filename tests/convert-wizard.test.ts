@@ -22,7 +22,7 @@ describe("convert wizard", () => {
     const root = tmp("happy");
     const source = sourceProject(root);
     const project = join(root, "converted");
-    const answers = [source, project, "", "", "", ""];
+    const answers = [source, project, "", "", "", "", ""];
     const ask = async (_q: string, fallback: string) => answers.shift() ?? fallback;
     const result = (await runConvertCommand(undefined, [], {} as GlobalFlags, {
       interactive: true,
@@ -39,7 +39,7 @@ describe("convert wizard", () => {
     const root = tmp("dry");
     const source = sourceProject(root);
     const project = join(root, "converted");
-    const answers = [source, project, "", "", "", "n"];
+    const answers = [source, project, "", "", "", "", "n"];
     const ask = async (_q: string, fallback: string) => answers.shift() ?? fallback;
     const result = (await runConvertCommand(undefined, [], {} as GlobalFlags, {
       interactive: true,

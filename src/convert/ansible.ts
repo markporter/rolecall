@@ -13,6 +13,7 @@ import { dump as yamlDump, load as yamlLoad } from "js-yaml";
 import { loadPlaybook } from "../config/loader";
 import { ensureProjectScaffold } from "../project/scaffold";
 import { MODULE_REMAP, TASK_RULES } from "./matrix";
+import { analyzeTemplate } from "./templates";
 import type { ConvertFileResult, ConvertFinding, ConvertResult } from "../cli/types";
 
 const STRUCTURAL_KEYS = new Set([
@@ -112,6 +113,8 @@ export interface ConvertAnsibleOptions {
   report?: string;
   /** Ensure a blank RoleCall project exists at this root and convert into it. */
   project?: string;
+  /** Template pass: keep Jinja (default) or analyze for ADR 0031 Eta conversion. */
+  templates?: "keep" | "eta";
 }
 
 interface ConvertState {
@@ -926,6 +929,24 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
     const rel = isDir ? relative(sourceAbs, abs) : abs.split(/[\\/]/).pop()!;
     const relOut = join(outDir, rel);
     const ext = abs.slice(abs.lastIndexOf(".")).toLowerCase();
+    if (options.templates === "eta" && (ext === ".j2" || ext === ".jinja")) {
+      const text = readFileSync(abs, "utf8");
+      const findingStart = state.findings.length;
+      const analysis = analyzeTemplate(text, abs);
+      state.findings.push(...analysis.findings);
+      if (options.write) {
+        mkdirSync(dirname(relOut), { recursive: true });
+        copyFileSync(abs, relOut);
+        written.push(relOut);
+      }
+      fileResults.push({
+        source: abs,
+        output: relOut,
+        written: options.write === true,
+        findings: state.findings.slice(findingStart),
+      });
+      continue;
+    }
     if (ext !== ".yml" && ext !== ".yaml") {
       if (options.write) {
         mkdirSync(dirname(relOut), { recursive: true });
@@ -1040,6 +1061,27 @@ export function writeHandoff(result: ConvertResult, handoffDir: string): void {
     lines.push(`## ${item.disposition}: ${item.construct}`, "", `- File: \`${item.file}\``, `- Path: \`${item.path}\``, "", item.message, "");
   }
   writeFileSync(join(handoffDir, "HANDOFF.md"), lines.join("\n"), "utf8");
+  const itemsDir = join(handoffDir, "items");
+  mkdirSync(itemsDir, { recursive: true });
+  let index = 0;
+  for (const item of result.findings.filter((f) => f.disposition !== "mapped")) {
+    index += 1;
+    const slug = `${item.construct}-${item.path}`
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60) || "item";
+    const body = [
+      `# ${item.disposition}: ${item.construct}`,
+      "",
+      `- File: \`${item.file}\``,
+      `- Path: \`${item.path}\``,
+      "",
+      item.message,
+      "",
+    ].join("\n");
+    writeFileSync(join(itemsDir, `${String(index).padStart(4, "0")}-${slug}.md`), body, "utf8");
+  }
   writeFileSync(
     join(handoffDir, "manifest.json"),
     `${JSON.stringify(

@@ -82,11 +82,15 @@ export async function runConvertCommand(
   if (flags.report !== undefined && flags.report !== "json" && flags.report !== "md") {
     throw new CliError(true, `--report must be json or md (got '${flags.report}')`);
   }
+  if (flags.templates !== undefined && flags.templates !== "keep" && flags.templates !== "eta") {
+    throw new CliError(true, `--templates must be keep or eta (got '${flags.templates}')`);
+  }
 
   let project = flags.project;
   let write = flags.dryRun === true ? false : flags.write === true || flags.yes === true;
   let strict = flags.strict === true;
   let handoff = flags.handoff;
+  let templates: "keep" | "eta" = flags.templates === "eta" ? "eta" : "keep";
 
   if (interactive) {
     if (project === undefined) {
@@ -102,6 +106,14 @@ export async function runConvertCommand(
     }
     if (flags.strict !== true) {
       strict = await confirm(ask, "Fail on review/handoff items (strict)?", false);
+    }
+    if (flags.templates === undefined) {
+      const analyzeTemplates = await confirm(
+        ask,
+        "Analyze Jinja templates for Eta conversion? (analyzer only; no rewrite yet)",
+        false,
+      );
+      if (analyzeTemplates) templates = "eta";
     }
     if (write) {
       const apply = await confirm(ask, "Apply this conversion?", true);
@@ -122,6 +134,7 @@ export async function runConvertCommand(
     ...(handoff !== undefined ? { handoff } : {}),
     write,
     strict,
+    templates,
     ...(flags.report !== undefined ? { report: flags.report } : {}),
   });
 
