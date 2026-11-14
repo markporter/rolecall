@@ -242,7 +242,6 @@ function rewriteAnsibleExpr(expr: string, knownVars?: Set<string>): { text: stri
   for (const m of text.matchAll(/\bansible_[A-Za-z0-9_]+/g)) unresolved.push(m[0]);
   if (/\b(?:lookup|query)\s*\(/.test(text)) unresolved.push("lookup/query");
   if (/\bpassword_hash\b/.test(text)) unresolved.push("password_hash (not crypt(3)-compatible)");
-  if (/\bomit\b/.test(text)) unresolved.push("omit");
   return { text, unresolved };
 }
 
@@ -490,8 +489,26 @@ function convertTask(
     } else {
       out.loop = convertValue(task.loop, state, file, `${path}.loop`);
     }
-  } else if (task.with_dict !== undefined || task.with_first_found !== undefined || task.with_together !== undefined || task.with_nested !== undefined) {
-    const key = task.with_dict !== undefined ? "with_dict" : task.with_first_found !== undefined ? "with_first_found" : task.with_together !== undefined ? "with_together" : "with_nested";
+  } else if (task.with_dict !== undefined) {
+    const value = task.with_dict;
+    if (typeof value === "string" && hasJinja(value)) {
+      const { text } = rewriteAnsibleExpr(value, state.knownVars);
+      out.loop = { $each: { $jinja: `${text} | dict2items | to_json` } };
+      finding(state, file, `${path}.with_dict`, "with_dict", "mapped", "mapped to $each + dict2items");
+    } else {
+      const rec = asRecord(value);
+      if (rec !== undefined) {
+        out.loop = Object.entries(rec).map(([key, val]) => ({
+          key,
+          value: convertValue(val, state, file, `${path}.with_dict.${key}`),
+        }));
+        finding(state, file, `${path}.with_dict`, "with_dict", "mapped", "literal dict mapped to key/value loop items");
+      } else {
+        finding(state, file, `${path}.with_dict`, "with_dict", "handoff", "with_dict form has no mechanical $each equivalent");
+      }
+    }
+  } else if (task.with_first_found !== undefined || task.with_together !== undefined || task.with_nested !== undefined) {
+    const key = task.with_first_found !== undefined ? "with_first_found" : task.with_together !== undefined ? "with_together" : "with_nested";
     finding(state, file, `${path}.${key}`, key, "handoff", "loop form has no mechanical $each equivalent");
   }
 
@@ -549,6 +566,51 @@ function convertTask(
   return [out];
 }
 
+
+/** Pull static top-level `include_vars` tasks into `vars_files`; leave the rest. */
+function extractStaticIncludeVars(
+  tasks: unknown[],
+  state: ConvertState,
+  file: string,
+  path: string,
+): { tasks: unknown[]; files: string[] } {
+  const kept: unknown[] = [];
+  const files: string[] = [];
+  tasks.forEach((raw, i) => {
+    const task = asRecord(raw);
+    if (task === undefined || task.include_vars === undefined) {
+      kept.push(raw);
+      return;
+    }
+    if (task.when !== undefined || task.name === undefined || task.include_vars === null) {
+      kept.push(raw);
+      return;
+    }
+    const spec = task.include_vars;
+    const rec = asRecord(spec);
+    if (rec !== undefined && rec["name"] !== undefined) {
+      kept.push(raw);
+      return;
+    }
+    const rawFiles = rec !== undefined ? rec["file"] ?? rec["_raw_params"] : spec;
+    const list = Array.isArray(rawFiles) ? rawFiles : [rawFiles];
+    if (list.some((entry) => typeof entry !== "string" || hasJinja(entry))) {
+      kept.push(raw);
+      return;
+    }
+    files.push(...(list as string[]));
+    finding(
+      state,
+      file,
+      `${path}[${i}].include_vars`,
+      "include_vars",
+      "review",
+      "moved to play vars_files; the variables become available earlier than the original task position",
+    );
+  });
+  return { tasks: kept, files };
+}
+
 /** Convert one play object. */
 function convertPlay(raw: unknown, state: ConvertState, file: string, path: string): Record<string, unknown> | undefined {
   const play = asRecord(raw);
@@ -579,14 +641,22 @@ function convertPlay(raw: unknown, state: ConvertState, file: string, path: stri
   for (const key of ["when", "become", "become_user", "connection", "environment", "run_once"]) {
     if (play[key] !== undefined) inherited[key] = play[key];
   }
+  const includeVarsFiles: string[] = [];
   for (const key of ["pre_tasks", "tasks", "post_tasks"] as const) {
     const list = play[key];
     if (!Array.isArray(list)) continue;
+    const extracted = extractStaticIncludeVars(list, state, file, `${path}.${key}`);
+    includeVarsFiles.push(...extracted.files);
     const converted: Record<string, unknown>[] = [];
-    list.forEach((task, i) => {
+    extracted.tasks.forEach((task, i) => {
       converted.push(...convertTask(task, state, file, `${path}.${key}[${i}]`, inherited));
     });
     if (converted.length > 0) out[key] = converted;
+  }
+  if (includeVarsFiles.length > 0) {
+    const existing = out.vars_files;
+    const existingList = existing === undefined ? [] : Array.isArray(existing) ? existing : [existing];
+    out.vars_files = [...existingList, ...includeVarsFiles];
   }
   if (Array.isArray(play.handlers)) {
     const handlers: Record<string, unknown>[] = [];

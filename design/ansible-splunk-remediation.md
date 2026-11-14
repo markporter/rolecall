@@ -179,8 +179,13 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   lint (only `$jinja` is exempt), and the ADR 0024 MVP (`rolecall convert ansible`
   with analyzer/rewriter/`HANDOFF.md`/`manifest.json`, `--write`, `--strict`, and
   `--validate`), plus lazy structured-variable resolution (derived `vars` containing
-  `$jinja`/`$concat`/`$var`). Remaining Cycle 2 work: broader expression translation,
-  role/asset tree conversion, and the full compatibility matrix as typed data.
+  `$jinja`/`$concat`/`$var`).
+- **Cycle 3 (in progress):** added `$exists`/`$length`/indexed paths, `omit` sentinel
+  handling, Ansible magic-fact gatherers (`system`, `default_ipv4`, `dns`,
+  `date_time`), `run.playbook_dir`, filter/test parity (`ipaddr`, `strftime`,
+  `human_readable`, `password_hash`, `iterable`, `mapping`, result-state tests), and
+  converter mappings for `with_dict` and static `include_vars`. Remaining Cycle 3:
+  dynamic host lookup, role/asset-tree fidelity, and the typed compatibility matrix.
 
 ## Risks
 

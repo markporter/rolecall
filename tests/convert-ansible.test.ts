@@ -129,6 +129,27 @@ describe("convert ansible MVP", () => {
     expect((task.debug as Record<string, unknown>).msg).toEqual({ $jinja: "{{ loop.item }}" });
   });
 
+  test("with_dict Jinja becomes $each + dict2items", () => {
+    const dir = tmp("dict");
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- hosts: web\n  vars:\n    users:\n      alice: 1000\n  tasks:\n    - name: t\n      debug:\n        msg: "{{ item.key }}={{ item.value }}"\n      with_dict: "{{ users }}"\n`, "utf8");
+    const result = convertAnsible(file, { write: true, out: join(dir, "out") });
+    const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
+    const task = (converted[0]!.tasks as Array<Record<string, unknown>>)[0]!;
+    expect(task.loop).toEqual({ $each: { $jinja: "{{ vars.users }} | dict2items | to_json" } });
+    expect((task.debug as Record<string, unknown>).msg).toEqual({ $jinja: "{{ loop.item.key }}={{ loop.item.value }}" });
+  });
+
+  test("static include_vars moves to vars_files", () => {
+    const dir = tmp("include-vars");
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- hosts: web\n  tasks:\n    - name: load vars\n      include_vars:\n        file: vars.yml\n    - name: t\n      debug:\n        msg: ok\n`, "utf8");
+    const result = convertAnsible(file, { write: true, out: join(dir, "out") });
+    const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
+    expect(converted[0]!.vars_files).toEqual(["vars.yml"]);
+    expect((converted[0]!.tasks as Array<Record<string, unknown>>).length).toBe(1);
+  });
+
   test("strict mode flags remaining handoff items", () => {
     const dir = tmp("strict");
     const file = join(dir, "site.yml");
