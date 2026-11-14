@@ -24,7 +24,7 @@ The handler lives in `src/cli/commands/docs.ts` and returns a `DocsModulesResult
 
 ### project create / project init
 
-`rolecall project create <name>` creates the documented ADR 0014/0030 project skeleton at `--dir` (or `./<slug(name)>`). `rolecall project init` scaffolds into an existing empty directory (default cwd). Both write `rolecall.yaml`, `playbooks/`, `inventory/inventory.yaml`, `plugins/<type>/<namespace>/`, `roles/`, `group_vars/`, `host_vars/`, `collections/`, `.rolecall/isolation.yaml`, and a commented `collections.yml`, never overwriting existing files. `--force` allows filling missing pieces into a non-empty directory; `--vcs git` runs `git init` and writes a `.gitignore`.
+`rolecall project create <name>` creates the documented ADR 0014/0030 project skeleton at `--dir` (or `./<slug(name)>`). `rolecall project init` scaffolds into an existing empty directory (default cwd). Both write `rolecall.yaml`, `playbooks/`, `inventory/inventory.yaml`, `plugins/<type>/<namespace>/`, `roles/`, `group_vars/`, `host_vars/`, `collections/`, `.rolecall/isolation.yaml`, and a commented `collections.yml`, never overwriting existing files. `--force` allows filling missing pieces into a non-empty directory; `--vcs git` runs `git init` and writes a `.gitignore`; `--dry-run` reports the plan without writing.
 
 ```sh
 rolecall project create "My Site"
