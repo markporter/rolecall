@@ -319,7 +319,8 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   representative playbook/role/group_vars sample). `rolecall project create|init` now
   exposes the same scaffold directly, with `--force` and optional `--vcs git`.
 - **Cycle 4 (corpus run):** converted `/mnt/homes/mark/ANM/anm_dev/ansible_splunk`
-  (1,819 files) with `--templates eta` and validated 128 converted playbooks with
+  (1,819 files) with `--templates eta`; the current pass yields 8,308 mapped,
+  187 review, and 948 handoff findings, and validates 128 converted playbooks with
   **0 failures**. A checked-in golden fixture (`tests/fixtures/ansible-golden`) keeps
   the pipeline covered in CI. Remaining findings are the documented handoff classes
   (`ignore_errors`, `async`/`until`/`retries`, dynamic includes/roles, etc.).
