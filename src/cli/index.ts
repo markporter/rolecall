@@ -39,6 +39,7 @@ import { runUninstallCommand } from "./commands/uninstall";
 import { runUpdateCommand } from "./commands/update";
 import { runIsolationCommand } from "./commands/isolation";
 import { runRuntimeCommand } from "./commands/runtime";
+import { runConvertCommand } from "./commands/convert";
 import { parseMounts } from "./parse-mounts";
 import { parseEgressSpecs } from "../isolation/egress";
 import { CliError, type CliResult, type GlobalFlags } from "./types";
@@ -129,6 +130,10 @@ Subcommands:
      doctor             Report local isolation backend readiness (bwrap/userns or Docker)
     docs search <query>  Query RoleCall prose docs by substring (matches sections; use -o json for structured output)
     docs modules [<term>]  List every RoleCall module (name + description + args); optional <term> filter; -o json for structured output
+     convert ansible <path> [--out <dir>] [--handoff <dir>] [--write] [--strict] [--report json|md]
+                        Analyze + mechanically convert an Ansible file/directory to RoleCall YAML
+     convert ansible --validate <dir>
+                        Validate an already-converted tree with the strict loader
      plugin list                                List registered module/fact plugins + built-in inventory plugins
      plugin register <name> --path <file> [--global]   Persist a user module so 'playbook run' can dispatch it
      isolation allow <source> [--target DIR] [--ro|--rw] [--project DIR] [--from-request]
@@ -202,6 +207,12 @@ const GLOBAL_OPTS = {
   "with-bun": { type: "boolean" },
   "bun-version": { type: "string" },
   "add-bun-to-path": { type: "boolean" },
+  out: { type: "string" },
+  handoff: { type: "string" },
+  write: { type: "boolean" },
+  strict: { type: "boolean" },
+  report: { type: "string" },
+  validate: { type: "string" },
 } as const;
 
 /** @summary Write rendered CLI output to stdout, stripping NUL/control chars from the `json` stream so a polluted data channel never breaks a downstream JSON parser. @param text Rendered text to emit. @param output Selected output plugin name; only `json` gets control-char scrubbing. */
@@ -305,6 +316,12 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
     withBun: values["with-bun"] === true,
     bunVersion: values["bun-version"] as string | undefined,
     addBunToPath: values["add-bun-to-path"] === true,
+    out: values["out"] as string | undefined,
+    handoff: values["handoff"] as string | undefined,
+    write: values["write"] === true,
+    strict: values["strict"] === true,
+    report: values["report"] as string | undefined,
+    validate: values["validate"] as string | undefined,
     // --json is a convenience shorthand for --output json (used by the docs
     // subcommands and any other command the user wants structured output from).
     output: (values["json"] as boolean | undefined)
@@ -464,6 +481,9 @@ export async function main(argv: string[]): Promise<number> {
       case "runtime":
         result = await runRuntimeCommand(sub, rest, flags);
         break;
+      case "convert":
+        result = await runConvertCommand(sub, rest, flags);
+        break;
       case "docs":
         result = await runDocsCommand(sub, rest, flags);
         break;
@@ -499,6 +519,9 @@ export async function main(argv: string[]): Promise<number> {
   writeOut(renderOutput(effectiveOutput, result), effectiveOutput);
   // Exit non-zero only when a playbook run had failures.
   if (result.command === "playbook run" && result.totals && result.totals.failed > 0) {
+    return 1;
+  }
+  if (result.command === "convert ansible" && result.strictFailed === true) {
     return 1;
   }
   return 0;

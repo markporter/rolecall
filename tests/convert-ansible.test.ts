@@ -1,0 +1,139 @@
+// ADR 0024 converter MVP + Cycle-2 strict templating primitives.
+
+import { describe, expect, test } from "bun:test";
+import { join } from "node:path";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { load as yamlLoad } from "js-yaml";
+
+import { convertAnsible, validateConvertedTree } from "../src/convert/ansible";
+import { resolveValue } from "../src/templating/refs";
+import { evalWhen } from "../src/executor/context";
+
+const tmp = (suffix: string) => mkdtempSync(join(tmpdir(), `rolecall-convert-${suffix}-`));
+
+describe("$jinja / $exists / $length primitives", () => {
+  test("$jinja renders strictly", () => {
+    expect(resolveValue({ $jinja: "{{ vars.port }}" }, { vars: { port: 8080 } })).toBe("8080");
+    expect(() => resolveValue({ $jinja: "{{ vars.missing }}" }, { vars: {} })).toThrow();
+  });
+
+  test("$exists and $length", () => {
+    expect(resolveValue({ $exists: { $var: "vars.missing" } }, { vars: {} })).toBe(false);
+    expect(resolveValue({ $exists: { $var: "vars.present" } }, { vars: { present: 0 } })).toBe(true);
+    expect(resolveValue({ $length: { $var: "vars.items" } }, { vars: { items: [1, 2, 3] } })).toBe(3);
+    expect(resolveValue({ $length: { $var: "vars.name" } }, { vars: { name: "abc" } })).toBe(3);
+  });
+
+  test("derived structured vars resolve lazily", () => {
+    const vars = { vars: { port: 8080, url: { $concat: ["http://x:", { $var: "vars.port" }] } } };
+    expect(resolveValue({ $var: "vars.url" }, vars)).toBe("http://x:8080");
+  });
+
+  test("$jinja resolves derived vars in the scope", () => {
+    const vars = {
+      vars: {
+        port: 8080,
+        url: { $jinja: "http://x:{{ vars.port }}" },
+        msg: { $jinja: "{{ vars.url }}" },
+      },
+    };
+    expect(resolveValue({ $jinja: "{{ vars.url }}" }, vars)).toBe("http://x:8080");
+    expect(resolveValue({ $var: "vars.msg" }, vars)).toBe("http://x:8080");
+  });
+
+  test("indexed $var paths", () => {
+    expect(resolveValue({ $var: "vars.items[1]" }, { vars: { items: ["a", "b"] } })).toBe("b");
+    expect(resolveValue({ $var: "vars.items.length" }, { vars: { items: [1, 2] } })).toBe(2);
+    expect(resolveValue({ $var: "vars.name.length" }, { vars: { name: "abc" } })).toBe(3);
+  });
+
+  test("evalWhen accepts $jinja and lists as AND", () => {
+    const scope = { vars: { flag: false }, facts: {}, reg: {}, loop: { item: undefined, index: 0 }, play: {}, inv: {}, role: {}, run: {}, rolecall: {} } as never;
+    expect(evalWhen({ $jinja: "{{ vars.flag }}" }, scope)).toBe(false);
+    expect(evalWhen([{ $eq: [{ $var: "vars.flag" }, false] }, { $jinja: "{{ true }}" }], scope)).toBe(true);
+  });
+});
+
+describe("convert ansible MVP", () => {
+  test("mechanically converts modules/when/loop/template/block and writes handoff", () => {
+    const dir = tmp("src");
+    const file = join(dir, "site.yml");
+    writeFileSync(
+      file,
+      `- name: Web
+  hosts: web
+  vars:
+    http_port: 80
+  tasks:
+    - name: Install nginx
+      apt:
+        name: nginx
+        state: present
+      when: ansible_os_family == "Debian"
+    - name: Template config
+      template:
+        src: nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+        mode: "0644"
+      with_items:
+        - a
+        - b
+    - name: Ignore a failure
+      shell: /bin/false
+      ignore_errors: true
+    - name: Block
+      block:
+        - name: inner
+          debug:
+            msg: "{{ http_port }}"
+      rescue:
+        - name: recover
+          debug:
+            msg: failed
+`,
+      "utf8",
+    );
+
+    const out = join(dir, "out");
+    const result = convertAnsible(file, { write: true, out });
+    expect(result.totals.mapped).toBeGreaterThan(0);
+    expect(result.totals.handoff).toBeGreaterThan(0);
+
+    const converted = yamlLoad(readFileSync(join(out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
+    const tasks = converted[0]!.tasks as Array<Record<string, unknown>>;
+    expect(tasks[0]!.package).toBeDefined();
+    expect(tasks[0]!.when).toEqual({ $jinja: '{{ facts.os_family == "Debian" }}' });
+    expect((tasks[1]!.copy as Record<string, unknown>).content).toEqual({
+      template_file: "nginx.conf.j2",
+      engine: "jinja",
+    });
+    expect(tasks[1]!.loop).toEqual(["a", "b"]);
+    expect((tasks[2]!.shell as Record<string, unknown>).command).toBe("/bin/false");
+    expect(tasks[3]!.tx).toBe("rc-block-1");
+    expect((tasks[3]!.debug as Record<string, unknown>).msg).toEqual({ $jinja: "{{ vars.http_port }}" });
+
+    expect(readFileSync(join(out, "handoff", "HANDOFF.md"), "utf8")).toContain("ignore_errors");
+    const validated = validateConvertedTree(out);
+    expect(validated.every((entry) => entry.ok)).toBe(true);
+  });
+
+  test("Jinja loop expressions become $each + $jinja", () => {
+    const dir = tmp("loop");
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- hosts: web\n  vars:\n    items:\n      - a\n      - b\n  tasks:\n    - name: t\n      debug:\n        msg: "{{ item }}"\n      loop: "{{ items }}"\n`, "utf8");
+    const result = convertAnsible(file, { write: true, out: join(dir, "out") });
+    const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
+    const task = (converted[0]!.tasks as Array<Record<string, unknown>>)[0]!;
+    expect(task.loop).toEqual({ $each: { $jinja: "{{ vars.items }} | to_json" } });
+    expect((task.debug as Record<string, unknown>).msg).toEqual({ $jinja: "{{ loop.item }}" });
+  });
+
+  test("strict mode flags remaining handoff items", () => {
+    const dir = tmp("strict");
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- hosts: web\n  tasks:\n    - name: bad\n      shell: /bin/false\n      ignore_errors: true\n`, "utf8");
+    const result = convertAnsible(file, { strict: true });
+    expect(result.totals.handoff).toBeGreaterThan(0);
+  });
+});

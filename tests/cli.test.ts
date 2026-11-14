@@ -12,7 +12,8 @@
 //   (e) plugin list --output json -> registered plugins
 //   (f) unknown command / subcommand / output plugin -> non-zero exit, no trace
 import { expect, test, mock, spyOn } from "bun:test";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -403,6 +404,7 @@ test("docs modules --output json lists all modules with name + description + arg
        [
         "acl",
         "add_host",
+        "apt_key",
         "apt_repository",
         "archive",
         "assemble",
@@ -413,6 +415,7 @@ test("docs modules --output json lists all modules with name + description + arg
         "config_edit",
         "copy",
         "cron",
+        "debconf",
         "debug",
         "fail",
         "fetch",
@@ -441,6 +444,7 @@ test("docs modules --output json lists all modules with name + description + arg
         "openssl_certificate",
         "package",
         "pam_limits",
+        "pamd",
         "parted",
         "pause",
         "pip",
@@ -469,6 +473,7 @@ test("docs modules --output json lists all modules with name + description + arg
         "user",
         "user_info",
         "wait_for",
+        "wait_for_connection",
         "yum_repository",
       ].sort(),
     );
@@ -677,3 +682,27 @@ test("playbook run -o human_summary prints the human-readable end-of-run summary
   expect(r.stdout).toContain("localhost");
 });
 
+
+test("convert ansible --output json returns a ConvertResult", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "rolecall-cli-convert-"));
+  const file = join(dir, "site.yml");
+  writeFileSync(
+    file,
+    `- hosts: web\n  tasks:\n    - name: t\n      apt:\n        name: nginx\n      when: ansible_os_family == "Debian"\n`,
+    "utf8",
+  );
+  const r = await runRolecall(["convert", "ansible", file, "--output", "json"]);
+  expect(r.code).toBe(0);
+  const data = JSON.parse(r.stdout) as { command: string; totals: { mapped: number }; findings: unknown[] };
+  expect(data.command).toBe("convert ansible");
+  expect(data.totals.mapped).toBeGreaterThan(0);
+  expect(data.findings.length).toBeGreaterThan(0);
+});
+
+test("convert ansible --strict exits non-zero when handoff items remain", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "rolecall-cli-convert-strict-"));
+  const file = join(dir, "site.yml");
+  writeFileSync(file, `- hosts: web\n  tasks:\n    - name: t\n      shell: /bin/false\n      ignore_errors: true\n`, "utf8");
+  const r = await runRolecall(["convert", "ansible", file, "--strict", "--output", "json"]);
+  expect(r.code).toBe(1);
+});

@@ -423,6 +423,31 @@ function formatHuman(data: CliResult): string {
       lines.push(`Note     : ${data.note}`);
       break;
     }
+    case "convert ansible": {
+      lines.push(`Convert  : ${data.source}`);
+      if (data.mode === "validate") {
+        lines.push(`Validate : ${data.validated?.length ?? 0} playbook(s)`);
+        for (const v of data.validated ?? []) {
+          lines.push(`  ${v.ok ? "ok  " : "FAIL"} ${v.file}${v.error ? `: ${v.error}` : ""}`);
+        }
+        break;
+      }
+      lines.push(`Output   : ${data.out}`);
+      lines.push(`Handoff  : ${data.handoff}`);
+      lines.push(`Applied  : ${data.applied ? "yes" : "no (pass --write)"}`);
+      lines.push(
+        `Findings : ${data.totals.findings} total ` +
+          `(${data.totals.mapped} mapped, ${data.totals.review} review, ${data.totals.handoff} handoff)`,
+      );
+      for (const file of data.files) {
+        lines.push(`  - ${file.source} -> ${file.output}${file.written ? " (written)" : ""}${file.error ? ` [${file.error}]` : ""}`);
+      }
+      for (const item of data.findings.filter((f) => f.disposition !== "mapped")) {
+        lines.push(`  [${item.disposition}] ${item.file} ${item.path} ${item.construct}: ${item.message}`);
+      }
+      if (data.strictFailed) lines.push("Strict   : FAIL (non-mechanical findings remain)");
+      break;
+    }
     default: {
       // Exhaustiveness guard — every CliResult variant is handled above.
       lines.push(JSON.stringify(data));

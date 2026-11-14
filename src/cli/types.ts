@@ -116,6 +116,18 @@ export interface GlobalFlags {
   exposed?: boolean;
   /** --allow-anonymous: test-only escape hatch that bypasses the exposed-mode token requirement. */
   allowAnonymous?: boolean;
+  /** convert ansible: output directory for converted files. */
+  out?: string;
+  /** convert ansible: handoff directory for REVIEW/HANDOFF artifacts. */
+  handoff?: string;
+  /** convert ansible: write converted files to disk. */
+  write?: boolean;
+  /** convert ansible: fail when review/handoff items remain. */
+  strict?: boolean;
+  /** convert ansible: report format hint (json|md). */
+  report?: string;
+  /** convert ansible --validate: validate an already-converted tree. */
+  validate?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -369,6 +381,49 @@ export interface IsolationResult {
   note: string;
 }
 
+
+/** One conversion finding produced by `rolecall convert ansible`. */
+export interface ConvertFinding {
+  file: string;
+  path: string;
+  construct: string;
+  disposition: "mapped" | "review" | "handoff";
+  message: string;
+}
+
+/** Per-file conversion outcome. */
+export interface ConvertFileResult {
+  source: string;
+  output: string;
+  written: boolean;
+  findings: ConvertFinding[];
+  error?: string;
+}
+
+/** Result of `rolecall convert ansible` (conversion or validation mode). */
+export interface ConvertResult {
+  command: "convert ansible";
+  mode?: "convert" | "validate";
+  source: string;
+  out: string;
+  handoff: string;
+  applied: boolean;
+  files: ConvertFileResult[];
+  written: string[];
+  totals: {
+    files: number;
+    mapped: number;
+    review: number;
+    handoff: number;
+    findings: number;
+  };
+  findings: ConvertFinding[];
+  /** Present in validation mode. */
+  validated?: { file: string; ok: boolean; error?: string }[];
+  /** True when `--strict` was set and non-mechanical findings remain. */
+  strictFailed?: boolean;
+}
+
 export type CliResult =
   | PlaybookRunResult
   | FactsGatherResult
@@ -388,7 +443,8 @@ export type CliResult =
   | UninstallResult
   | UpdateResult
   | IsolationResult
-  | RuntimeResult;
+  | RuntimeResult
+  | ConvertResult;
 
 // ---------------------------------------------------------------------------
 // Error class — `usage: true` => exit code 2 (unknown subcommand / bad args);
