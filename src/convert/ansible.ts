@@ -163,6 +163,35 @@ function hasJinja(value: unknown): boolean {
   return typeof value === "string" && JINJA_RE.test(value);
 }
 
+/** Turn a dynamic Ansible name into a static, schema-valid RoleCall name. */
+function staticName(value: unknown, fallback: string): string {
+  if (typeof value !== "string" || value.length === 0) return fallback;
+  if (!hasJinja(value)) return value;
+  const stripped = value.replace(/\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}/g, "").trim();
+  return stripped.length > 0 ? stripped : fallback;
+}
+
+/** Normalize Ansible's string/array tags into RoleCall's string[]. */
+function normalizeTags(value: unknown): string[] | undefined {
+  if (value === undefined) return undefined;
+  return Array.isArray(value) ? value.map(String) : [String(value)];
+}
+
+/** Normalize Ansible's yes/no/true/false into a boolean. */
+function normalizeBoolean(value: unknown): boolean | undefined {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const v = value.trim().toLowerCase();
+    if (["yes", "true", "1", "on"].includes(v)) return true;
+    if (["no", "false", "0", "off"].includes(v)) return false;
+  }
+  return undefined;
+}
+
+function normalizeGatherFacts(value: unknown): boolean | undefined {
+  return normalizeBoolean(value);
+}
+
 /** Qualify bare Ansible play-var references as `vars.<name>` inside an expression. */
 function qualifyVars(expr: string, names: Set<string> | undefined): string {
   const known = names ?? new Set<string>();
@@ -397,8 +426,8 @@ function convertTemplateTask(
     return undefined;
   }
   const copyArgs: Record<string, unknown> = {
-    dest,
-    content: { template_file: src, engine: "jinja" },
+    dest: convertValue(dest, state, file, `${path}.template.dest`),
+    content: { template_file: convertValue(src, state, file, `${path}.template.src`), engine: "jinja" },
   };
   for (const key of ["mode", "owner", "group", "backup", "validate", "force", "remote_src"]) {
     if (args[key] !== undefined) copyArgs[key] = convertValue(args[key], state, file, `${path}.${key}`);
@@ -452,7 +481,7 @@ function convertTask(
       finding(state, file, path, "import_tasks", "mapped", "mapped to include_tasks (load-time expansion)");
     }
     const out: Record<string, unknown> = {};
-    if (typeof task.name === "string") out.name = task.name;
+    out.name = staticName(task.name, "include_tasks");
     out.include_tasks = value;
     if (task.when !== undefined) out.when = convertWhen(task.when, state, file, `${path}.when`);
     return [out];
@@ -472,10 +501,20 @@ function convertTask(
   if (task.local_action !== undefined) {
     const la = task.local_action;
     const rec = asRecord(la);
-    const laModule = rec !== undefined ? Object.keys(rec).find((k) => !STRUCTURAL_KEYS.has(k)) : undefined;
-    const laArgs = rec !== undefined && laModule !== undefined ? rec[laModule] : la;
+    let laModule: string | undefined;
+    let laArgs: unknown = la;
+    if (typeof la === "string") {
+      const [moduleName, ...rest] = la.trim().split(/\s+/);
+      laModule = moduleName;
+      if (moduleName !== undefined) {
+        laArgs = { [SCALAR_MODULE_ARG[moduleName] ?? "name"]: rest.join(" ") };
+      }
+    } else if (rec !== undefined) {
+      laModule = Object.keys(rec).find((k) => !STRUCTURAL_KEYS.has(k));
+      laArgs = laModule === undefined ? la : rec[laModule];
+    }
     const out: Record<string, unknown> = {};
-    if (typeof task.name === "string") out.name = task.name;
+    out.name = staticName(task.name, laModule ?? "local_action");
     if (laModule !== undefined) out[laModule] = convertValue(laArgs, state, file, `${path}.local_action`);
     else finding(state, file, `${path}.local_action`, "local_action", "handoff", "could not identify the local_action module");
     out.delegate_to = "localhost";
@@ -487,7 +526,7 @@ function convertTask(
 
   const { module: rawModule, args: rawArgs, scalar } = taskModule(task);
   if (scalar !== undefined) {
-    finding(state, file, path, scalar, "review", `scalar module argument mapped to { ${SCALAR_MODULE_ARG[scalar] ?? "name"}: ... }; verify the module accepts it`);
+    finding(state, file, path, scalar, "mapped", `scalar module argument mapped to { ${SCALAR_MODULE_ARG[scalar] ?? "name"}: ... }`);
   }
   if (rawModule === undefined) {
     finding(state, file, path, "task", "handoff", "could not identify a module key");
@@ -506,12 +545,42 @@ function convertTask(
     module = converted.module;
     args = converted.args;
   }
+  if (rawModule === "authorized_key") {
+    const a = asRecord(args) ?? {};
+    const user = typeof a["user"] === "string" ? a["user"] : "root";
+    const key = a["key"];
+    const path =
+      typeof a["path"] === "string"
+        ? a["path"]
+        : user === "root"
+          ? "/root/.ssh/authorized_keys"
+          : `/home/${user}/.ssh/authorized_keys`;
+    if (key === undefined) {
+      finding(state, file, path, "authorized_key", "handoff", "authorized_key needs a static key");
+      return [];
+    }
+    module = "lineinfile";
+    args = {
+      path,
+      line: key,
+      create: true,
+      mode: "0600",
+      owner: user,
+      group: user,
+      state: a["state"] === "absent" ? "absent" : "present",
+    };
+    finding(state, file, path, "authorized_key", "review", "mapped to lineinfile; verify the target user's home path");
+  }
   if (rawModule !== module) {
     finding(state, file, path, rawModule, "mapped", `module renamed to ${module}`);
   }
 
   const out: Record<string, unknown> = {};
-  if (typeof task.name === "string") out.name = task.name;
+  const rawName = typeof task.name === "string" ? task.name : undefined;
+  out.name = staticName(rawName, `${module} task`);
+  if (rawName !== undefined && hasJinja(rawName)) {
+    finding(state, file, `${path}.name`, "name", "review", "dynamic task name sanitized for schema validity");
+  }
   out[module] = args;
 
   const taskWhen = task.when;
@@ -619,12 +688,30 @@ function convertTask(
     }
   }
 
-  for (const key of ["register", "delegate_to", "run_once", "become", "become_user", "no_log"]) {
+  for (const key of ["run_once", "become", "no_log"]) {
     const value = task[key] ?? inherited[key];
-    if (value !== undefined) out[key] = convertValue(value, state, file, `${path}.${key}`);
+    if (value === undefined) continue;
+    const normalized = normalizeBoolean(value);
+    if (normalized === undefined) {
+      finding(state, file, `${path}.${key}`, key, "handoff", `unsupported ${key} value; review it`);
+    } else {
+      out[key] = normalized;
+    }
+  }
+  if (task.become_user !== undefined || inherited.become_user !== undefined) {
+    const value = task.become_user ?? inherited.become_user;
+    if (typeof value === "string") out.become_user = value;
+    else finding(state, file, `${path}.become_user`, "become_user", "handoff", "dynamic become_user is unsupported");
+  }
+  for (const key of ["register", "delegate_to"]) {
+    const value = task[key] ?? inherited[key];
+    if (value === undefined) continue;
+    if (typeof value === "string" && !hasJinja(value)) out[key] = value;
+    else finding(state, file, `${path}.${key}`, key, "handoff", `dynamic ${key} has no RoleCall equivalent; review it`);
   }
   if (task.listen !== undefined) out.listen = convertValue(task.listen, state, file, `${path}.listen`);
-  if (task.tags !== undefined) out.tags = task.tags;
+  const tags = normalizeTags(task.tags);
+  if (tags !== undefined) out.tags = tags;
   const environment = task.environment ?? inherited.environment;
   if (environment !== undefined) {
     out.environment = convertValue(environment, state, file, `${path}.environment`);
@@ -732,8 +819,32 @@ function convertPlay(raw: unknown, state: ConvertState, file: string, path: stri
     state.knownVars = new Set([...(previousVars ?? []), ...Object.keys(vars)]);
   }
   const out: Record<string, unknown> = {};
-  for (const key of ["name", "hosts", "vars", "vars_files", "roles", "tags", "strategy", "gather_facts", "tx", "checkpoint"]) {
+  if (play.name !== undefined) {
+    out.name = staticName(play.name, "play");
+    if (hasJinja(play.name)) finding(state, file, `${path}.name`, "name", "review", "dynamic play name sanitized for schema validity");
+  }
+  for (const key of ["hosts", "vars", "roles", "strategy", "tx", "checkpoint"]) {
     if (play[key] !== undefined) out[key] = convertValue(play[key], state, file, `${path}.${key}`);
+  }
+  if (play.gather_facts !== undefined) {
+    const gather = normalizeGatherFacts(play.gather_facts);
+    if (gather === undefined) finding(state, file, `${path}.gather_facts`, "gather_facts", "handoff", "unsupported gather_facts value; review it");
+    else out.gather_facts = gather;
+  }
+  const playTags = normalizeTags(play.tags);
+  if (playTags !== undefined) out.tags = playTags;
+  if (play.vars_files !== undefined) {
+    const files: string[] = [];
+    for (const entry of Array.isArray(play.vars_files) ? play.vars_files : [play.vars_files]) {
+      if (typeof entry === "string" && !hasJinja(entry)) files.push(entry);
+      else if (Array.isArray(entry) && typeof entry[0] === "string" && !hasJinja(entry[0])) {
+        files.push(entry[0]);
+        finding(state, file, `${path}.vars_files`, "vars_files", "review", "first-found vars_files entry flattened to its first candidate");
+      } else {
+        finding(state, file, `${path}.vars_files`, "vars_files", "handoff", "dynamic vars_files entry dropped; review it");
+      }
+    }
+    if (files.length > 0) out.vars_files = files;
   }
   if (play.serial !== undefined) {
     if (typeof play.serial === "number") out.serial = play.serial;
@@ -789,6 +900,7 @@ function convertPlay(raw: unknown, state: ConvertState, file: string, path: stri
     });
     if (handlers.length > 0) out.handlers = handlers;
   }
+  if (out.tasks === undefined) out.tasks = [];
   if (playWhen !== undefined) {
     finding(state, file, `${path}.when`, "play-when", "mapped", "applied to each task as an inherited guard");
   }
@@ -809,38 +921,38 @@ function convertYamlDocument(
 ): { converted: unknown; kind: "playbook" | "tasks" | "other" } {
   if (Array.isArray(doc) && doc.length > 0) {
     const first = asRecord(doc[0]);
-    if (first !== undefined && first.import_playbook !== undefined) {
-      const onlyImports = doc.every((entry) => asRecord(entry)?.import_playbook !== undefined);
-      if (!onlyImports) {
-        finding(state, file, "[0].import_playbook", "import_playbook", "handoff", "mixed plays and import_playbook entries; split them before conversion");
-        return { converted: doc, kind: "other" };
-      }
+    if (doc.some((entry) => asRecord(entry)?.import_playbook !== undefined)) {
       const plays: unknown[] = [];
-      for (const entry of doc) {
-        const rec = asRecord(entry)!;
+      doc.forEach((entry, index) => {
+        const rec = asRecord(entry);
+        if (rec?.import_playbook === undefined) {
+          const converted = convertPlay(entry, state, file, `[${index}]`);
+          if (converted !== undefined) plays.push(converted);
+          return;
+        }
         const ref = String(rec.import_playbook);
         if (hasJinja(ref)) {
-          finding(state, file, "import_playbook", "import_playbook", "handoff", "dynamic import_playbook paths are not load-time expandable");
-          continue;
+          finding(state, file, `[${index}].import_playbook`, "import_playbook", "handoff", "dynamic import_playbook paths are not load-time expandable");
+          return;
         }
         const target = isAbsolute(ref) ? ref : join(dirname(file), ref);
         if (seen.has(target) || !existsSync(target)) {
-          finding(state, file, "import_playbook", "import_playbook", "handoff", `could not expand import_playbook '${ref}' (missing or cyclic)`);
-          continue;
+          finding(state, file, `[${index}].import_playbook`, "import_playbook", "handoff", `could not expand import_playbook '${ref}' (missing or cyclic)`);
+          return;
         }
         seen.add(target);
         try {
           const imported = convertYamlDocument(yamlLoad(readFileSync(target, "utf8")), state, target, seen);
           if (imported.kind === "playbook" && Array.isArray(imported.converted)) {
             plays.push(...imported.converted);
-            finding(state, file, "import_playbook", "import_playbook", "mapped", `inlined plays from ${ref}`);
+            finding(state, file, `[${index}].import_playbook`, "import_playbook", "mapped", `inlined plays from ${ref}`);
           } else {
-            finding(state, file, "import_playbook", "import_playbook", "handoff", `imported file '${ref}' is not a playbook`);
+            finding(state, file, `[${index}].import_playbook`, "import_playbook", "handoff", `imported file '${ref}' is not a playbook`);
           }
         } catch (error) {
-          finding(state, file, "import_playbook", "import_playbook", "handoff", `could not parse imported file '${ref}': ${error instanceof Error ? error.message : String(error)}`);
+          finding(state, file, `[${index}].import_playbook`, "import_playbook", "handoff", `could not parse imported file '${ref}': ${error instanceof Error ? error.message : String(error)}`);
         }
-      }
+      });
       return { converted: plays, kind: "playbook" };
     }
     if (first !== undefined && first.hosts !== undefined) {
@@ -1432,6 +1544,9 @@ export function validateConvertedTree(dir: string): { file: string; ok: boolean;
   for (const abs of walkFiles(dir)) {
     if (!/\.ya?ml$/i.test(abs)) continue;
     const text = readFileSync(abs, "utf8");
+    if (!text.trim() || text.trim().split(/\r?\n/).every((line) => !line.trim() || line.trim().startsWith("#"))) {
+      continue;
+    }
     try {
       const doc = yamlLoad(text);
       if (!Array.isArray(doc)) continue;

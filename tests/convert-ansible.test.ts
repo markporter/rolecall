@@ -274,6 +274,47 @@ describe("convert ansible MVP", () => {
     expect(validateConvertedTree(join(project, "playbooks")).every((entry) => entry.ok)).toBe(true);
   });
 
+  test("scalar local_action maps to a local task", () => {
+    const dir = tmp("local-action");
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- hosts: web\n  tasks:\n    - name: local\n      local_action: command echo hi\n`, "utf8");
+    const result = convertAnsible(file, { write: true, out: join(dir, "out") });
+    const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
+    const task = (converted[0]!.tasks as Array<Record<string, unknown>>)[0]!;
+    expect(task.command).toEqual({ command: "echo hi" });
+    expect(task.delegate_to).toBe("localhost");
+    expect(task.connection).toBe("local");
+  });
+
+  test("mixed plays and import_playbook entries are inlined", () => {
+    const dir = tmp("mixed-imports");
+    writeFileSync(join(dir, "child.yml"), `- name: Child\n  hosts: web\n  tasks:\n    - name: t\n      debug:\n        msg: ok\n`, "utf8");
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- name: First\n  hosts: web\n  tasks: []\n- import_playbook: child.yml\n`, "utf8");
+    const result = convertAnsible(file, { write: true, out: join(dir, "out") });
+    const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
+    expect(converted.map((play) => play.name)).toEqual(["First", "Child"]);
+  });
+
+  test("normalizes Ansible schema edge cases", () => {
+    const dir = tmp("normalize");
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- hosts: web\n  gather_facts: "yes"\n  tags: foo\n  vars_files:\n    - [a.yml, b.yml]\n  tasks:\n    - command: echo hi\n      become: "yes"\n      become_user: root\n    - name: add key\n      authorized_key:\n        user: root\n        key: ssh-rsa AAA\n    - include_tasks: child.yml\n`, "utf8");
+    const result = convertAnsible(file, { write: true, out: join(dir, "out") });
+    const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
+    const play = converted[0]!;
+    expect(play.gather_facts).toBe(true);
+    expect(play.tags).toEqual(["foo"]);
+    expect(play.vars_files).toEqual(["a.yml"]);
+    const tasks = play.tasks as Array<Record<string, unknown>>;
+    expect(tasks[0]!.command).toBeDefined();
+    expect(tasks[0]!.become).toBe(true);
+    expect(tasks[0]!.become_user).toBe("root");
+    expect((tasks[1]!.lineinfile as Record<string, unknown>).path).toBe("/root/.ssh/authorized_keys");
+    expect((tasks[1]!.lineinfile as Record<string, unknown>).line).toBe("ssh-rsa AAA");
+    expect(tasks[2]!.name).toBe("include_tasks");
+  });
+
   test("strict mode flags remaining handoff items", () => {
     const dir = tmp("strict");
     const file = join(dir, "site.yml");

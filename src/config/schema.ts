@@ -126,8 +126,8 @@ export const TaskSchema = z
 /** Structural (non-module) task keys; any other single top-level key names a module. */
 const TASK_STRUCTURAL_KEYS = new Set<string>([
   "name", "module", "args", "when", "loop", "notify", "include_tasks",
-  "hosts", "register", "delegate_to", "run_once", "listen", "become",
-  "roleDir", "tx", "checkpoint", "tags", "connection",
+  "hosts", "register", "delegate_to", "run_once", "listen", "become", "become_user",
+  "environment", "no_log", "roleDir", "tx", "checkpoint", "tags", "connection",
 ]);
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
