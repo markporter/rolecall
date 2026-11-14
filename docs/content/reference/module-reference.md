@@ -404,7 +404,7 @@ _source: builtin_
 
 | Arg | Type | Required | Description |
 | --- | --- | --- | --- |
-| `src` | `string` | optional | Local path to a source file or directory on the control node, or a target-side path when `remote_src: true`. At least one of `src` or `content` is required. |
+| `src` | `string` | optional | Local path to a source file/directory, or an ordered list of candidate paths (first existing wins); with `remote_src: true` it is a target-side path. At least one of `src` or `content` is required. |
 | `remote_src` | `boolean` | optional | Treat `src` as a target-side path and copy it on the target (files and directory contents). Defaults to false. |
 | `content` | `string \| { template, template_file, engine }` | optional | Inline content for the destination. A bare string is written verbatim (never interpreted as a template). Pass an object with `template` (inline string) or `template_file` (path) and optional `engine` ('ejs' default, or 'jinja') to render on-host. In a playbook, inline Jinja is lint-rejected; use `$jinja` or a `.j2` `template_file`. |
 | `dest` | `string` | optional | Destination path on the target. |

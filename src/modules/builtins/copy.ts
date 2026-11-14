@@ -52,20 +52,27 @@ const MODULE_NAME = "copy";
  * then `<playbookDir>/<name>`; then `<cwd>/<name>`. Returns the first existing
  * regular file, else the last candidate so the caller can report a precise error.
  */
-function resolveSourcePath(name: string, roleDir?: string, playbookDir?: string): string {
-  if (isAbsolute(name)) return name;
-  const candidates: string[] = [];
-  if (roleDir) candidates.push(join(roleDir, "src", name));
-  if (playbookDir) candidates.push(join(playbookDir, name));
-  candidates.push(join(process.cwd(), name));
-  for (const c of candidates) {
-    try {
-      if (statSync(c).isFile()) return c;
-    } catch {
-      // try next candidate
+function resolveSourcePath(name: string | string[], roleDir?: string, playbookDir?: string): string {
+  const names = Array.isArray(name) ? name : [name];
+  let last = "";
+  for (const entry of names) {
+    const candidates: string[] = [];
+    if (isAbsolute(entry)) candidates.push(entry);
+    else {
+      if (roleDir) candidates.push(join(roleDir, "src", entry));
+      if (playbookDir) candidates.push(join(playbookDir, entry));
+      candidates.push(join(process.cwd(), entry));
     }
+    for (const c of candidates) {
+      try {
+        if (statSync(c).isFile()) return c;
+      } catch {
+        // try next candidate
+      }
+    }
+    last = candidates[candidates.length - 1]!;
   }
-  return candidates[candidates.length - 1]!;
+  return last;
 }
 
 /**
@@ -74,20 +81,27 @@ function resolveSourcePath(name: string, roleDir?: string, playbookDir?: string)
  * `<playbookDir>/<name>`; then `<cwd>/<name>`. Returns the first existing file, else
  * the last candidate so the caller can report a precise missing-path error.
  */
-function resolveTemplatePath(name: string, roleDir?: string, playbookDir?: string): string {
-  if (isAbsolute(name)) return name;
-  const candidates: string[] = [];
-  if (roleDir) candidates.push(join(roleDir, "templates", name));
-  if (playbookDir) candidates.push(join(playbookDir, name));
-  candidates.push(join(process.cwd(), name));
-  for (const c of candidates) {
-    try {
-      if (statSync(c).isFile()) return c;
-    } catch {
-      // try next candidate
+function resolveTemplatePath(name: string | string[], roleDir?: string, playbookDir?: string): string {
+  const names = Array.isArray(name) ? name : [name];
+  let last = "";
+  for (const entry of names) {
+    const candidates: string[] = [];
+    if (isAbsolute(entry)) candidates.push(entry);
+    else {
+      if (roleDir) candidates.push(join(roleDir, "templates", entry));
+      if (playbookDir) candidates.push(join(playbookDir, entry));
+      candidates.push(join(process.cwd(), entry));
     }
+    for (const c of candidates) {
+      try {
+        if (statSync(c).isFile()) return c;
+      } catch {
+        // try next candidate
+      }
+    }
+    last = candidates[candidates.length - 1]!;
   }
-  return candidates[candidates.length - 1]!;
+  return last;
 }
 
 /** Render a template string or template_file on-host with the chosen engine (eta default). */
@@ -95,14 +109,17 @@ async function renderTemplate(spec: ContentSpec | undefined, ctx: ModuleContext)
   const engine = String(spec?.engine ?? "eta");
   const vars: Record<string, unknown> = { ...ctx.vars, ...(ctx.facts || {}), item: ctx.loop?.item, index: ctx.loop?.index };
   const fileRef = spec?.template_file;
-  if (fileRef !== undefined && fileRef !== null && String(fileRef).length > 0) {
-    const abs = resolveTemplatePath(String(fileRef), ctx.roleDir, ctx.playbookDir);
+  const hasFileRef =
+    (typeof fileRef === "string" && fileRef.length > 0) ||
+    (Array.isArray(fileRef) && fileRef.length > 0 && fileRef.every((entry) => typeof entry === "string"));
+  if (hasFileRef) {
+    const abs = resolveTemplatePath(fileRef as string | string[], ctx.roleDir, ctx.playbookDir);
     let src: string;
     try {
       src = readFileSync(abs, "utf8");
     } catch (e) {
       throw new Error(
-        `copy: cannot read template_file '${fileRef}' (resolved: ${abs}): ${e instanceof Error ? e.message : String(e)}`,
+        `copy: cannot read template_file '${Array.isArray(fileRef) ? fileRef.join(", ") : String(fileRef)}' (resolved: ${abs}): ${e instanceof Error ? e.message : String(e)}`,
       );
     }
     return await renderEngine(engine, src, vars, ctx);
@@ -144,24 +161,27 @@ async function resolveSource(ctx: ModuleContext): Promise<SourceBytes> {
     };
   }
 
-  const hasSrc = typeof ctx.args["src"] === "string" && String(ctx.args["src"]).length > 0;
+  const rawSrc = ctx.args["src"];
+  const hasSrc =
+    (typeof rawSrc === "string" && rawSrc.length > 0) ||
+    (Array.isArray(rawSrc) && rawSrc.length > 0 && rawSrc.every((entry) => typeof entry === "string"));
   const hasContent = typeof ctx.args["content"] === "string";
 
   if (hasSrc) {
-    const ref = String(ctx.args["src"]);
+    const ref = Array.isArray(rawSrc) ? (rawSrc as string[]) : String(rawSrc);
     const abs = resolveSourcePath(ref, ctx.roleDir, ctx.playbookDir);
     let buf: Buffer;
     try {
       buf = readFileSync(abs);
     } catch (e) {
       throw new Error(
-        `copy: cannot read source '${ref}' (resolved: ${abs}): ${e instanceof Error ? e.message : String(e)}`,
+        `copy: cannot read source '${Array.isArray(ref) ? ref.join(", ") : ref}' (resolved: ${abs}): ${e instanceof Error ? e.message : String(e)}`,
       );
     }
     return {
       b64: buf.toString("base64"),
       checksum: createHash("sha256").update(buf).digest("hex"),
-      origin: `${MODULE_NAME}: copied ${ref}`,
+      origin: `${MODULE_NAME}: copied ${Array.isArray(ref) ? ref.join(", ") : ref}`,
     };
   }
 
@@ -483,7 +503,9 @@ export const copyModule: CheckableModule = {
     if (!dest) {
       return { changed: false, failed: true, msg: `${MODULE_NAME}: 'dest' (or 'path') is required` };
     }
-    const hasSrc = typeof args.src === "string" && String(args.src).length > 0;
+    const hasSrc =
+      (typeof args.src === "string" && args.src.length > 0) ||
+      (Array.isArray(args.src) && args.src.length > 0 && args.src.every((entry) => typeof entry === "string"));
     const hasContent = typeof args.content === "string" && String(args.content).length > 0;
     const hasTemplate = typeof args.content === "object" && args.content !== null;
     if (!hasSrc && !hasContent && !hasTemplate) {
@@ -508,7 +530,8 @@ export const copyModule: CheckableModule = {
     }
 
     if (hasSrc) {
-      const abs = resolveSourcePath(String(args.src), ctx.roleDir, ctx.playbookDir);
+      const ref = Array.isArray(args.src) ? (args.src as string[]) : String(args.src);
+      const abs = resolveSourcePath(ref, ctx.roleDir, ctx.playbookDir);
       try {
         if (statSync(abs).isDirectory()) return copyLocalDirectory(ctx, abs, dest, opts);
       } catch {
@@ -533,8 +556,8 @@ export const copyModule: CheckableModule = {
       // The remote copy script owns idempotency; there is no local source to hash.
       return { current: null, inDesired: false };
     }
-    if (typeof args.src === "string" && args.src.length > 0) {
-      const abs = resolveSourcePath(args.src, ctx.roleDir, ctx.playbookDir);
+    if ((typeof args.src === "string" && args.src.length > 0) || (Array.isArray(args.src) && args.src.length > 0)) {
+      const abs = resolveSourcePath(args.src as string | string[], ctx.roleDir, ctx.playbookDir);
       try {
         if (statSync(abs).isDirectory()) {
           return { current: null, inDesired: await checkLocalDirectory(ctx, abs, dest) };
@@ -574,7 +597,7 @@ export const meta: ModuleSummary = {
     src: {
       type: "string",
       required: false,
-      description: "Local path to a source file or directory on the control node, or a target-side path when `remote_src: true`. At least one of `src` or `content` is required.",
+      description: "Local path to a source file/directory, or an ordered list of candidate paths (first existing wins); with `remote_src: true` it is a target-side path. At least one of `src` or `content` is required.",
     },
     remote_src: {
       type: "boolean",

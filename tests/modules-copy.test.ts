@@ -185,3 +185,31 @@ test("copy remote_src copies a target-side file", async () => {
   expect(again.changed).toBe(false);
   expect(again.skipped).toBe(true);
 });
+
+test("copy picks the first existing src candidate", async () => {
+  const dir = tmp("-candidates");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "b.conf"), "b=2");
+  const dest = tmp(".conf");
+  const args = { src: [join(dir, "missing.conf"), join(dir, "b.conf")], dest };
+  const res = await applyIdempotent(copyModule, args, localCtx(args), { cache: cache() });
+  expect(res.changed).toBe(true);
+  expect(readFileSync(dest, "utf8")).toBe("b=2");
+});
+
+test("copy picks the first existing template_file candidate", async () => {
+  const dir = tmp("-template-candidates");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "real.j2"), "hello");
+  const dest = tmp(".conf");
+  const args = {
+    dest,
+    content: {
+      template_file: [join(dir, "missing.j2"), join(dir, "real.j2")],
+      engine: "eta",
+    },
+  };
+  const res = await applyIdempotent(copyModule, args, localCtx(args), { cache: cache() });
+  expect(res.changed).toBe(true);
+  expect(readFileSync(dest, "utf8")).toBe("hello");
+});
