@@ -160,6 +160,11 @@ never written as invalid or silently dropped.
 
 #### Jinja policy: structured refs, then the Jinja engine, never eta
 
+> **Amended by [ADR 0031](0031-ansible-template-eta-conversion.md).** The default
+> remains “never eta”, but ADR 0031 adds an explicit opt-in `--templates eta`
+> tier that mechanically converts the safely-translatable template subset and
+> hands the remainder to an LLM as a partial Eta draft.
+
 Jinja is **not** mechanically translated to eta/EJS. Eta templates compile to
 JavaScript, while Jinja expressions are Python-like; a translation would have to
 generate JavaScript, and filter/test/truthiness/whitespace semantics would not

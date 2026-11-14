@@ -3,7 +3,7 @@
 - Status: **Approved (build)**
 - Date: 2026-11-14
 - Source analysis: `.local/ansible_splunk_gaps.md`
-- Related: ADR 0009 (Ansible compatibility), ADR 0024 (analyzer/converter/handoff), ADR 0008 (literal-by-default templating), ADR 0013 (namespaced refs), ADR 0025 (isolation)
+- Related: ADR 0009 (Ansible compatibility), ADR 0024 (analyzer/converter/handoff), ADR 0031 (opt-in Eta template conversion), ADR 0008 (literal-by-default templating), ADR 0013 (namespaced refs), ADR 0025 (isolation)
 - Scope: close the gaps between `ansible_splunk` and RoleCall by **converting to RoleCall idioms**, not by emulating Ansible in the executor.
 
 ## Decisions
@@ -23,6 +23,11 @@
    playbook.
 6. **Module parity first**, then the ADR 0024 converter, then conversion
    primitives, then corpus iteration.
+7. **Template files stay Jinja by default.** ADR 0031 adds an opt-in
+   `--templates eta` tier that mechanically converts the safely translatable
+   subset of a `.j2`/inline Jinja template to Eta, per whole file. The default
+   `--templates keep` preserves `engine: jinja` and verbatim `.j2` output; playbook
+   scalars remain structured refs or `$jinja` and are never rewritten to Eta.
 
 ## Templating rule
 
@@ -36,6 +41,10 @@
   `content.template` may not contain Jinja; use `$jinja` or a `.j2` file.
 - The lint exemption applies to `$jinja` payloads only. The old
   `copy.args.content.template` Jinja exemption is removed.
+- Template *files* are the ADR 0031 surface: `.j2` assets referenced by a
+  converted `template`/`copy` task remain Jinja by default, and `--templates eta`
+  may convert a whole file to `.eta` (never a mixed file). Inline playbook
+  `$jinja` is not part of that pass.
 
 ## Cycle 1 — Module parity (first)
 
@@ -93,19 +102,23 @@ Deliverables:
    - `groups` → `inv.groups`; `hostvars` → `inv.hosts`; `inventory_hostname` →
      `play.host`; `playbook_dir` → `run.playbook_dir`; `role_path` → `role.path`.
    - `ansible_*` → `facts.*` where a gatherer exists, else handoff.
-   - `with_items` / `loop` → `$each`.
+   - `with_items` / `loop` / `with_dict` / `with_together` / `with_nested` →
+     `$each` (with `dict2items`/`zip`/`product` where needed).
    - unconditional `include_role` → `roles:`; conditional → `include_tasks` or handoff.
    - static `include_vars` → ordered `vars_files`; dynamic → handoff.
-   - static `import_playbook` → top-level plays.
-   - `ignore_errors` → `tx`/`checkpoint` + REVIEW.
-   - `changed_when` / `failed_when` → `shell_register` or idempotent module + REVIEW.
+   - static `import_playbook` → inlined plays.
+   - static `with_first_found` on `copy`/`template` → ordered `src`/
+     `template_file` candidates.
+   - `ignore_errors` / `failed_when` → handoff (no faithful RoleCall equivalent).
+   - shell `changed_when: false|true` → `run_mode: readonly|always`; other
+     `changed_when` uses are handoff.
    - `block` / `rescue` → `tx`/`checkpoint` + REVIEW; `always` → handoff.
-   - play-level `become`/`connection`/`remote_user`/`when`/`run_once` → task-level
-     rewrite or handoff.
+   - play-level `become`/`connection`/`when`/`run_once` → task-level rewrite;
+     `remote_user` is handoff. `order` is preserved natively.
    - task `vars`, `loop_control`, `delegate_facts`, `check_mode`, `async`, `until`,
-     `retries`, `delay`, `serial: "30%"` → handoff.
-   - `lookup('file')` → VFS helper/handoff; `lookup('password')` → secrets/handoff;
-     `lookup('pipe')` → handoff by default.
+     `retries`, `delay` → handoff. Percentage `serial` is native.
+   - `lookup`/`query`/`q` → handoff (controller-side I/O is outside the bounded
+     template surface).
 4. Handoff bundle: versioned `REVIEW.md` + machine-readable items with file/line,
    construct, reason, and suggested RC idiom.
 5. Validation: schema + strict Jinja render dry-run, rejecting empty/unresolved output.
@@ -150,6 +163,94 @@ callback plugins.
 - Fix the highest-frequency handoff classes first.
 - Add an opt-in corpus harness (`ROLECALL_ANSIBLE_CORPUS=...`).
 
+## Cycle 5 — ADR 0031 opt-in Eta template conversion
+
+ADR 0031 amends ADR 0024's "never eta" policy with an explicit, default-off
+template tier. The converter still emits `engine: jinja` and verbatim `.j2` files
+by default; this cycle is additive and must not widen the default trust posture.
+
+### CLI and scope
+
+```sh
+rolecall convert ansible <path> --templates keep   # default: preserve Jinja/.j2
+rolecall convert ansible <path> --templates eta    # attempt whole-file Eta output
+```
+
+- The template pass targets only template surfaces: `.j2` files referenced by a
+  converted `template` task or a `copy` content spec with `engine: jinja`, and
+  inline `copy.content.template` strings already carrying `engine: jinja`.
+- Playbook scalar Jinja is out of scope; it remains structured refs or `$jinja`.
+- Conversion is committed per whole file. A file with any non-convertible
+  construct stays Jinja; no half-converted template is emitted.
+- `--templates eta` still obeys `--write`/`--strict`; dry-run reports what would
+  convert, and strict mode fails on review/handoff template items.
+
+### Classification and output
+
+Parse with the Nunjucks AST and classify every node:
+
+- **mapped** — output expressions, `if`/`elif`/`else`, `for` (with `loop.*`
+  metadata), `set`, comments, simple attribute/index access, `raw`, and
+  filters/tests with verified JS equivalents.
+- **review** — edge-case fidelity: attribute `map`/`select`/`reject`,
+  `namespace`, cross-scope mutation, `default(omit)`, truthiness-sensitive
+  comparisons, whitespace trim markers, and tests whose undefined behavior differs.
+- **handoff** — macros, `call`, `import`/`from`, `include`, `extends`, `block`,
+  `filter` blocks, lookups/`query`/`q`, Python-only methods, unknown
+  filters/tests, and unresolved dynamic constructs.
+
+For a fully converted file: write `<name>.eta`, rewrite the task to
+`content: { template_file: <name>.eta, engine: eta }`, omit the original `.j2`
+from the converted tree, and record the source→output mapping in `manifest.json`.
+
+For a file with unresolved constructs: keep the original `.j2` and
+`engine: jinja`; emit a handoff work order plus a complete partial Eta draft at
+`handoff/templates/<id>.eta.draft` with `/* HANDOFF: <construct> @ <line> */`
+markers. Each work order includes the original snippet/location, per-construct
+disposition, the draft, runtime helper mappings, and a render-equivalence fixture
+or an explicit statement that none is possible.
+
+### Runtime parity (prerequisite)
+
+Before code generation ships, Eta's render context must match Jinja for the
+supported subset:
+
+- expose `ANSIBLE_FILTERS`, `ANSIBLE_TESTS`, and the relevant `ANSIBLE_GLOBALS`
+  (`omit`, `now`) to Eta, or generate calls against the same callables;
+- provide loop metadata (`loop.index`, `index0`, `first`, `last`, `length`,
+  `revindex`, `cycle`) including nested-loop shadowing;
+- define undefined/truthiness behavior so converted templates do not silently
+  change from strict Nunjucks to lenient Eta rendering;
+- keep `autoEscape: false` and literal whitespace parity; trim markers remain
+  review-only until verified.
+
+### Security and validation
+
+- Conversion parses and rewrites; it never executes a template.
+- Eta output is restricted code: converted `engine: eta` templates require the
+  ADR 0025 approval/sandbox path exactly like hand-written Eta and are never run
+  under `--isolation none` without the existing unsafe escape hatch.
+- `--templates eta` must not add executable template surface without the flag.
+- `--validate <dir>` checks that every converted template reference resolves,
+  `engine` matches the file extension, and no file is half-converted.
+- Add golden fixtures that render original Jinja and converted Eta with the same
+  defined vars and byte-compare output. `review` constructs need an explicit
+  expected-output fixture before promotion to `mapped`.
+- The analyzer stays offline and deterministic: identical source hashes produce
+  identical classification, draft bytes, and manifest ordering.
+
+### Implementation slices
+
+1. **Analyzer only** — AST parse, classification, `manifest.json` and work-order
+   emission; no rewritten templates.
+2. **Runtime parity** — shared Ansible filters/tests/globals and loop metadata in
+   the Eta context, with parity tests for defined-value cases.
+3. **Mapped codegen** — output, `if`, `for` + loop metadata, `set`, comments, and
+   simple filters; golden render-equivalence tests.
+4. **CLI and docs** — `--templates eta`, output mapping, strict-mode behavior,
+   and updates to ADR 0024, `AGENTS.md`, `README.md`, `design/`, and
+   `docs/content/concepts/templates.md`.
+
 ## Verification
 
 ```sh
@@ -174,13 +275,13 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   and `pam_limits` (`limit_type`/`limit_item`). Added `wait_for_connection`, `pamd`,
   `apt_key`, and `debconf`. Tests, both runtime branches, the type gate, generated
   module reference, API docs, and the VitePress build are green.
-- **Cycle 2 (in progress):** landed `$jinja`, `$exists`, `$length`, indexed `$var`
+- **Cycle 2: complete.** Landed `$jinja`, `$exists`, `$length`, indexed `$var`
   paths, strict-by-default Jinja, bare-`when` rejection, the no-Jinja-in-playbook
   lint (only `$jinja` is exempt), and the ADR 0024 MVP (`rolecall convert ansible`
   with analyzer/rewriter/`HANDOFF.md`/`manifest.json`, `--write`, `--strict`, and
   `--validate`), plus lazy structured-variable resolution (derived `vars` containing
   `$jinja`/`$concat`/`$var`).
-- **Cycle 3 (in progress):** added `$exists`/`$length`/indexed paths, the `omit`
+- **Cycle 3: complete for the current converter surface.** Added `$exists`/`$length`/indexed paths, the `omit`
   sentinel, Ansible magic-fact gatherers (`system`, `default_ipv4`, `dns`,
   `date_time`), `run.playbook_dir`, filter/test parity (`zip`, `product`, `ipaddr`,
   `strftime`, `human_readable`, `password_hash`, `iterable`, `mapping`, result-state
@@ -189,10 +290,15 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   `with_together`/`with_nested`, static `include_vars`, static `import_playbook`
   inlining, `with_first_found` -> `copy` candidates, `group_vars`/`host_vars` and role `defaults`/`vars` Jinja, and
   `hostvars[...]`/`groups[...]` bracket access. The typed compatibility matrix lives
-  in `src/convert/matrix.ts`. Remaining: dynamic includes/`include_role`,
-  `with_first_found` on non-copy/template tasks, `ignore_errors`/`failed_when`, `async`/`until`/`retries`,
-  play-level `remote_user`, `lookup`/`query`, and crypt-compatible
-  `password_hash`.
+  in `src/convert/matrix.ts`. Remaining handoffs are the non-mechanical/by-design
+  classes: dynamic includes/`include_role`, `with_first_found` on
+  non-copy/template tasks, `ignore_errors`/`failed_when`, `async`/`until`/`retries`,
+  play-level `remote_user`, `lookup`/`query`, and crypt-compatible `password_hash`.
+- **Cycle 4 (pending):** the external `ansible_splunk` corpus is not present in this
+  checkout; the harness is ready to run when it is available.
+- **Cycle 5 (ADR 0031, proposed/not implemented):** the opt-in `--templates eta`
+  analyzer, runtime parity, mapped codegen, and CLI/docs slices remain. The default
+  `--templates keep` path is unchanged.
 
 ## Risks
 
@@ -206,3 +312,7 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   The actionable divergence is `vars_files`/role-vars tier ordering.
 - Module parity is large; prioritize by corpus count and let the handoff report
   drive the remainder.
+- ADR 0031 conversion changes an inert `.j2` into executable Eta. It must stay
+  default-off, whole-file, and behind the ADR 0025 approval/sandbox path; a
+  half-converted file or a silent undefined/truthiness change is worse than
+  leaving the template as Jinja.
