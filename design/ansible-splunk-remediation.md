@@ -327,8 +327,9 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   keep the original `.j2` and `engine: jinja`. The Eta runtime exposes shared
   `filters`/`tests`/`globals` views (including `omit`) and unwraps lenient missing
   values for Ansible filters/tests. Partial Eta drafts with HANDOFF markers are emitted for
-  review/handoff templates. Remaining: review-construct acceptance rules, broader
-  loop metadata/whitespace parity, and corpus-level golden fixtures. The default `--templates keep` path is unchanged.
+  review/handoff templates. Review constructs can be explicitly accepted with
+  `--templates-review accept`. Remaining: broader loop metadata/whitespace parity
+  and corpus-level golden fixtures. The default `--templates keep` path is unchanged.
 
 ## Risks
 

@@ -41,12 +41,13 @@ Bare `rolecall convert` opens an interactive wizard in a TTY: it asks for the An
 ```sh
 rolecall convert ansible ./ansible-site --out ./site --write
 rolecall convert ansible ./ansible-site --project ./new-project --write
-rolecall convert ansible ./ansible-site --templates eta   # analyze .j2 convertibility
+rolecall convert ansible ./ansible-site --templates eta   # convert mapped .j2 files
+rolecall convert ansible ./ansible-site --templates eta --templates-review accept
 rolecall convert ansible ./site --strict          # exit 1 if review/handoff items remain
 rolecall convert ansible --validate ./site        # strict-load the converted playbooks
 ```
 
-`--templates keep` (default) preserves Jinja and `.j2` files verbatim. `--templates eta` runs the ADR 0031 template pass: it parses each `.j2` with the Nunjucks AST, classifies constructs as mapped/review/handoff, and emits work orders. Fully mapped templates are written as `.eta` and their task references are rewritten to `engine: eta`; review/handoff templates keep the original `.j2` and `engine: jinja`, and receive a partial Eta draft under `handoff/templates/<id>.eta.draft` with `HANDOFF` markers.
+`--templates keep` (default) preserves Jinja and `.j2` files verbatim. `--templates eta` runs the ADR 0031 template pass: it parses each `.j2` with the Nunjucks AST, classifies constructs as mapped/review/handoff, and emits work orders. Fully mapped templates are written as `.eta` and their task references are rewritten to `engine: eta`; review/handoff templates keep the original `.j2` and `engine: jinja`, and receive a partial Eta draft under `handoff/templates/<id>.eta.draft` with `HANDOFF` markers. `--templates-review accept` allows codegen for `review` constructs (only after a parity review); handoff constructs still stay Jinja.
 
 `--project <dir>` ensures a blank RoleCall project exists at that root (the ADR 0014/0030 shape: `rolecall.yaml`, `playbooks/`, `inventory/`, `plugins/<type>/<namespace>/`, `roles/`, `group_vars/`, `host_vars/`, `collections/`, `.rolecall/isolation.yaml`) and then populates it with the converted tree. Existing files are never overwritten, so it is safe to run against an existing project.
 

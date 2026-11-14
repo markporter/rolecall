@@ -206,7 +206,7 @@ rolecall vars trace <playbook> --inventory <inv>
 rolecall project create my-site                  # scaffold a blank project
 rolecall convert                                # interactive wizard
 rolecall convert ansible <path> --write --project <dir>
-rolecall convert ansible <path> --templates eta   # analyze .j2 convertibility
+rolecall convert ansible <path> --templates eta   # convert mapped .j2 files
 rolecall doctor
 rolecall docs search <query>
 rolecall plugin list

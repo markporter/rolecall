@@ -62,7 +62,7 @@ rolecall docs search <query>            # query RoleCall prose docs by substring
 rolecall project create <name> [--dir <path>] [--namespace <ns>] [--vcs none|git]  # scaffold a blank project
 rolecall project init [--dir <path>] [--name <name>] [--namespace <ns>] [--vcs none|git]
 rolecall convert                          # TTY wizard: source -> project -> apply/handoff/strict
-rolecall convert ansible <path> [--out <dir>] [--project <dir>] [--handoff <dir>] [--write] [--strict] [--templates keep|eta] [--validate <dir>]  # mechanical Ansible -> RoleCall conversion + handoff
+rolecall convert ansible <path> [--out <dir>] [--project <dir>] [--handoff <dir>] [--write] [--strict] [--templates keep|eta] [--templates-review accept|reject] [--validate <dir>]  # mechanical Ansible -> RoleCall conversion + handoff
 rolecall plugin list                               # registered module/fact + built-in inventory plugins
 rolecall plugin register <name> --path <file> [--global]   # persist a module kept outside a project (project plugins in plugins/ need no registration)
 ```
