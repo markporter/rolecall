@@ -116,6 +116,49 @@ function typeDebug(value: unknown): string {
 }
 
 
+
+function ipv6ToBigInt(ip: string): bigint | undefined {
+  if (!ip.includes(":")) return undefined;
+  const text = ip.split("%")[0]!;
+  const [head = "", tail] = text.split("::");
+  const headGroups = head.length > 0 ? head.split(":") : [];
+  const tailGroups = tail !== undefined && tail.length > 0 ? tail.split(":") : [];
+  const groups =
+    tail === undefined
+      ? headGroups
+      : [...headGroups, ...Array(Math.max(0, 8 - headGroups.length - tailGroups.length)).fill("0"), ...tailGroups];
+  if (groups.length !== 8) return undefined;
+  let n = 0n;
+  for (const group of groups) {
+    if (!/^[0-9a-fA-F]{1,4}$/.test(group)) return undefined;
+    n = (n << 16n) | BigInt(Number.parseInt(group, 16));
+  }
+  return n;
+}
+
+function bigIntToIpv6(value: bigint): string {
+  const groups = Array.from({ length: 8 }, (_, i) =>
+    Number((value >> BigInt(112 - i * 16)) & 0xffffn).toString(16),
+  );
+  let bestStart = -1;
+  let bestLength = 0;
+  for (let i = 0; i < groups.length; ) {
+    if (groups[i] !== "0") {
+      i += 1;
+      continue;
+    }
+    let j = i;
+    while (j < groups.length && groups[j] === "0") j += 1;
+    if (j - i > bestLength) {
+      bestStart = i;
+      bestLength = j - i;
+    }
+    i = j;
+  }
+  if (bestLength < 2) return groups.join(":");
+  return `${groups.slice(0, bestStart).join(":")}::${groups.slice(bestStart + bestLength).join(":")}`;
+}
+
 function ipv4ToInt(ip: string): number | undefined {
   const parts = ip.split(".");
   if (parts.length !== 4) return undefined;
@@ -135,8 +178,40 @@ function intToIpv4(n: number): string {
 /** Minimal Ansible `ipaddr` for IPv4 CIDR queries; IPv6 passes through unchanged. */
 function ipaddr(value: unknown, query?: unknown): unknown {
   const raw = String(value ?? "").trim();
-  const [address, prefixRaw] = raw.split("/");
-  const n = ipv4ToInt(address ?? "");
+  const [address = "", prefixRaw] = raw.split("/");
+  const v6 = ipv6ToBigInt(address);
+  if (v6 !== undefined) {
+    const prefix = prefixRaw === undefined ? 128 : Number(prefixRaw);
+    if (!Number.isInteger(prefix) || prefix < 0 || prefix > 128) return null;
+    const full = (1n << 128n) - 1n;
+    const mask = prefix === 0 ? 0n : full ^ ((1n << BigInt(128 - prefix)) - 1n);
+    const network = v6 & mask;
+    const q = query === undefined || query === null ? "" : String(query);
+    switch (q) {
+      case "":
+      case "address":
+        return address;
+      case "network":
+        return bigIntToIpv6(network);
+      case "prefix":
+        return prefix;
+      case "netmask":
+        return bigIntToIpv6(mask);
+      case "hostmask":
+        return bigIntToIpv6(full ^ mask);
+      case "network/prefix":
+        return `${bigIntToIpv6(network)}/${prefix}`;
+      case "address/prefix":
+        return `${address}/${prefix}`;
+      case "size": {
+        const size = 2n ** BigInt(128 - prefix);
+        return size <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(size) : size.toString();
+      }
+      default:
+        return null;
+    }
+  }
+  const n = ipv4ToInt(address);
   if (n === undefined) return query === undefined || query === "" ? raw : null;
   const prefix = prefixRaw === undefined ? 32 : Number(prefixRaw);
   if (!Number.isInteger(prefix) || prefix < 0 || prefix > 32) return null;

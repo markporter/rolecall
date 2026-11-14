@@ -87,6 +87,10 @@ describe("Ansible filters/tests added for conversion", () => {
     expect(renderJinja(`{{ "192.168.1.10/24" | ipaddr("prefix") }}`)).toBe("24");
     expect(renderJinja(`{{ "192.168.1.10/24" | ipaddr("broadcast") }}`)).toBe("192.168.1.255");
     expect(renderJinja(`{{ "192.168.1.10/24" | ipaddr("network/prefix") }}`)).toBe("192.168.1.0/24");
+    expect(renderJinja(`{{ "2001:db8::1/64" | ipaddr("network") }}`)).toBe("2001:db8::");
+    expect(renderJinja(`{{ "2001:db8::1/64" | ipaddr("network/prefix") }}`)).toBe("2001:db8::/64");
+    expect(renderJinja(`{{ "2001:db8::1/64" | ipaddr("prefix") }}`)).toBe("64");
+    expect(renderJinja(`{{ "2001:db8::1/64" | ipaddr("netmask") }}`)).toBe("ffff:ffff:ffff:ffff::");
   });
 
   it("strftime and human_readable", () => {
