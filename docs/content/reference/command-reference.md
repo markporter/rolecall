@@ -24,7 +24,7 @@ The handler lives in `src/cli/commands/docs.ts` and returns a `DocsModulesResult
 
 ### convert ansible
 
-`rolecall convert ansible <path>` analyzes an Ansible file or directory and mechanically rewrites the safely convertible constructs into RoleCall YAML. Module names are remapped (`template` -> `copy`, `apt`/`yum`/`dnf` -> `package`, `systemd` -> `service`), `with_items`/`with_dict` become `loop`, static top-level `include_vars` moves to `vars_files`, static `import_playbook` entries are inlined, `group_vars`/`host_vars` and role `defaults`/`vars` Jinja is converted, blocks flatten into `tx` groups, and any Jinja expression is wrapped in `$jinja` (the sole Jinja escape hatch) with known Ansible magic variables rewritten to `facts.*`/`play.host`/`inv.*` (`hostvars[h]` -> `inv.hosts[h].vars`, `groups[g]` -> `inv.groups[g].hosts`). Nothing is written unless you pass `--write`.
+`rolecall convert ansible <path>` analyzes an Ansible file or directory and mechanically rewrites the safely convertible constructs into RoleCall YAML. Module names are remapped (`template` -> `copy`, `apt`/`yum`/`dnf` -> `package`, `systemd` -> `service`), `with_items`/`with_dict` become `loop`, static top-level `include_vars` moves to `vars_files`, static `import_playbook` entries are inlined, `group_vars`/`host_vars` and role `defaults`/`vars` Jinja is converted, blocks flatten into `tx` groups, and any Jinja expression is wrapped in `$jinja` (the sole Jinja escape hatch) with known Ansible magic variables rewritten to `facts.*`/`play.host`/`inv.*` (`hostvars[h]` -> `inv.hosts[h].vars`, `groups[g]` -> `inv.groups[g].hosts`). Nothing is written unless you pass `--write` (or `--handoff`, which emits the review bundle without converting files).
 
 ```sh
 rolecall convert ansible ./ansible-site --out ./site --write
@@ -32,7 +32,7 @@ rolecall convert ansible ./site --strict          # exit 1 if review/handoff ite
 rolecall convert ansible --validate ./site        # strict-load the converted playbooks
 ```
 
-Constructs with no faithful mechanical equivalent (`ignore_errors`, `failed_when`, `changed_when` on non-shell modules, `async`/`until`/`retries`, dynamic includes, `with_first_found`, play-level `remote_user`, etc.) are recorded in `HANDOFF.md` and `manifest.json` under `--handoff` (default `<out>/handoff`). `--strict` exits non-zero when any review or handoff item remains. The handler lives in `src/cli/commands/convert.ts`, the analyzer/rewriter in `src/convert/ansible.ts`, and the typed compatibility matrix in `src/convert/matrix.ts`; add `-o json` for the structured `ConvertResult`.
+Constructs with no faithful mechanical equivalent (`ignore_errors`, `failed_when`, `changed_when` on non-shell modules, `async`/`until`/`retries`, dynamic includes, `with_first_found`, play-level `remote_user`, etc.) are recorded in `HANDOFF.md` and `manifest.json` under `--handoff` (default `<out>/handoff`). `--strict` exits non-zero when any review or handoff item remains. The handler lives in `src/cli/commands/convert.ts`, the analyzer/rewriter in `src/convert/ansible.ts`, and the typed compatibility matrix in `src/convert/matrix.ts`; add `-o json` (or `--report json`) for the structured `ConvertResult`.
 
 ### vars list
 

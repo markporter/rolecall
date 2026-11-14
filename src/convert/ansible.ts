@@ -975,7 +975,7 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
     findings: state.findings,
   };
 
-  if (options.write === true && result.findings.length > 0) {
+  if ((options.write === true || options.handoff !== undefined) && result.findings.length > 0) {
     writeHandoff(result, handoffDir);
   }
   return result;

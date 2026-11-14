@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { load as yamlLoad } from "js-yaml";
 
@@ -215,6 +215,17 @@ describe("convert ansible MVP", () => {
     const tasks = converted[0]!.tasks as Array<Record<string, unknown>>;
     expect(tasks[0]!.loop).toEqual({ $each: { $jinja: "{{ vars.a | zip(vars.b) | to_json }}" } });
     expect(tasks[1]!.loop).toEqual({ $each: { $jinja: "{{ vars.a | product(vars.b) | to_json }}" } });
+  });
+
+  test("handoff bundle can be written without --write", () => {
+    const dir = tmp("handoff-only");
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- hosts: web\n  tasks:\n    - name: t\n      shell: /bin/false\n      ignore_errors: true\n`, "utf8");
+    const handoff = join(dir, "handoff");
+    const result = convertAnsible(file, { handoff });
+    expect(result.applied).toBe(false);
+    expect(existsSync(join(handoff, "HANDOFF.md"))).toBe(true);
+    expect(existsSync(join(handoff, "manifest.json"))).toBe(true);
   });
 
   test("strict mode flags remaining handoff items", () => {

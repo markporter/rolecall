@@ -61,6 +61,8 @@ export async function runConvertCommand(
     throw new CliError(true, `--report must be json or md (got '${flags.report}')`);
   }
 
+  if (flags.report === "json") flags.output = "json";
+
   const result = convertAnsible(source, {
     ...(flags.out !== undefined ? { out: flags.out } : {}),
     ...(flags.handoff !== undefined ? { handoff: flags.handoff } : {}),
