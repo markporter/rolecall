@@ -24,6 +24,8 @@ The handler lives in `src/cli/commands/docs.ts` and returns a `DocsModulesResult
 
 ### convert ansible
 
+Bare `rolecall convert` opens an interactive wizard in a TTY: it asks for the Ansible source, the target project directory, whether to write files/handoff, whether to be strict, and confirms before applying. `--yes`/`--non-interactive`/`--dry-run` skip the prompts.
+
 `rolecall convert ansible <path>` analyzes an Ansible file or directory and mechanically rewrites the safely convertible constructs into RoleCall YAML. Module names are remapped (`template` -> `copy`, `apt`/`yum`/`dnf` -> `package`, `systemd` -> `service`), `with_items`/`with_dict` become `loop`, static top-level `include_vars` moves to `vars_files`, static `import_playbook` entries are inlined, `with_first_found` becomes `copy` source/template candidates, `group_vars`/`host_vars` and role `defaults`/`vars` Jinja is converted, blocks flatten into `tx` groups, and any Jinja expression is wrapped in `$jinja` (the sole Jinja escape hatch) with known Ansible magic variables rewritten to `facts.*`/`play.host`/`inv.*` (`hostvars[h]` -> `inv.hosts[h].vars`, `groups[g]` -> `inv.groups[g].hosts`). Nothing is written unless you pass `--write` (or `--handoff`, which emits the review bundle without converting files).
 
 ```sh

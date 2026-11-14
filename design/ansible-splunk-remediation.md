@@ -160,9 +160,14 @@ callback plugins.
 The end-to-end path is:
 
 ```sh
+rolecall convert                                  # TTY wizard
 rolecall convert ansible ./ansible-source --project ./new-project --write
 rolecall convert ansible --validate ./new-project/playbooks
 ```
+
+The bare command prompts for the source path, target project directory, write/handoff
+choices, strict mode, and a final apply confirmation; `--yes`/`--non-interactive`/
+`--dry-run` skip the wizard.
 
 `--project <dir>` creates the documented ADR 0014/0030 blank-project shape if it
 does not exist (and only fills in missing files when it does), then writes the
