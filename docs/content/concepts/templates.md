@@ -17,7 +17,7 @@ EJS uses two delimiters:
 - `<%= expr %>` — output the value of `expr`.
 - `<% expr %>` — run logic (loops, conditionals) with no output.
 
-`expr` is evaluated against RoleCall's reserved namespaces (including `vars` and `loop`); the current loop item is `loop.item` / `loop.index`.
+`expr` is evaluated against RoleCall's reserved namespaces (including `vars` and `loop`); the current loop item is `loop.item` / `loop.index`. Eta templates also get `filters`, `tests`, and `globals` views backed by the same Ansible compatibility layer used by Jinja (for example `<%= filters.default(value, "fallback") %>`), which ADR 0031 conversion uses for runtime parity.
 
 ### Via the `$template` operator
 
