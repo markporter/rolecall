@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { load as yamlLoad } from "js-yaml";
 
@@ -169,6 +169,19 @@ describe("convert ansible MVP", () => {
     const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
     expect(converted).toHaveLength(1);
     expect(converted[0]!.name).toBe("Child");
+  });
+
+  test("directory mode converts var-file Jinja and flags role dependencies", () => {
+    const dir = tmp("tree");
+    mkdirSync(join(dir, "group_vars"), { recursive: true });
+    mkdirSync(join(dir, "roles", "web", "meta"), { recursive: true });
+    writeFileSync(join(dir, "group_vars", "all.yml"), `port: 80\nurl: "http://{{ inventory_hostname }}:{{ port }}"\n`, "utf8");
+    writeFileSync(join(dir, "roles", "web", "meta", "main.yml"), `dependencies:\n  - common\n`, "utf8");
+    writeFileSync(join(dir, "site.yml"), `- hosts: web\n  roles:\n    - web\n  tasks:\n    - name: t\n      debug:\n        msg: ok\n`, "utf8");
+    const result = convertAnsible(dir, { write: true, out: join(dir, "out") });
+    const vars = yamlLoad(readFileSync(join(result.out, "group_vars", "all.yml"), "utf8")) as Record<string, unknown>;
+    expect(vars.url).toEqual({ $jinja: "http://{{ play.host }}:{{ vars.port }}" });
+    expect(result.findings.some((f) => f.construct === "role-dependencies" && f.disposition === "handoff")).toBe(true);
   });
 
   test("strict mode flags remaining handoff items", () => {

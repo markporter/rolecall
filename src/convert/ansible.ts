@@ -813,6 +813,20 @@ function walkFiles(root: string): string[] {
   return out.sort();
 }
 
+
+/** True for Ansible var files whose mappings should be converted in place. */
+function isVarFile(rel: string): boolean {
+  return (
+    /(^|[\\/])(group_vars|host_vars)[\\/]/.test(rel) ||
+    /(^|[\\/])roles[\\/][^\\/]+[\\/](defaults|vars)[\\/]/.test(rel)
+  );
+}
+
+/** True for a role meta file (`roles/<name>/meta/main.yml`). */
+function isRoleMeta(rel: string): boolean {
+  return /(^|[\\/])roles[\\/][^\\/]+[\\/]meta[\\/]main\.ya?ml$/i.test(rel);
+}
+
 /**
  * @summary Analyze and mechanically convert an Ansible file or directory into RoleCall YAML, collecting review/handoff findings for anything not safely convertible.
  * @param source Source file or directory.
@@ -831,7 +845,21 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
   const files = (isDir ? walkFiles(sourceAbs) : [sourceAbs]).filter(
     (abs) => !inside(abs, outDir) && !inside(abs, handoffDir),
   );
-  const state: ConvertState = { findings: [], blockCounter: 0 };
+  const state: ConvertState = { findings: [], blockCounter: 0, knownVars: new Set<string>() };
+  // Collect var names across every Ansible var file so bare refs in one file can
+  // be qualified as `vars.<name>` even when they are declared in another file.
+  if (isDir) {
+    for (const abs of files) {
+      const rel = relative(sourceAbs, abs);
+      if (!isVarFile(rel)) continue;
+      try {
+        const rec = asRecord(yamlLoad(readFileSync(abs, "utf8")));
+        if (rec !== undefined) for (const key of Object.keys(rec)) state.knownVars!.add(key);
+      } catch {
+        /* parse errors are reported in the main loop */
+      }
+    }
+  }
   const fileResults: ConvertFileResult[] = [];
   const written: string[] = [];
 
@@ -859,6 +887,36 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
       continue;
     }
     const findingStart = state.findings.length;
+    const relMode = isDir ? relative(sourceAbs, abs) : "";
+    if (isDir && isRoleMeta(relMode)) {
+      const rec = asRecord(doc);
+      if (rec?.["dependencies"] !== undefined) {
+        finding(state, abs, "meta.dependencies", "role-dependencies", "handoff", "role meta dependencies are not resolved by RoleCall; add them to the play roles list");
+      }
+    }
+    if (isDir && isVarFile(relMode) && asRecord(doc) !== undefined) {
+      const rec = asRecord(doc)!;
+      const convertedVars: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(rec)) {
+        convertedVars[key] = convertValue(value, state, abs, `vars.${key}`);
+      }
+      if (/\{\{|\{%/.test(text)) {
+        finding(state, abs, "vars", "var-file", "mapped", "converted Jinja values to $jinja");
+      }
+      const outputText = yamlDump(convertedVars, { lineWidth: -1, noRefs: true, sortKeys: false });
+      if (options.write) {
+        mkdirSync(dirname(relOut), { recursive: true });
+        writeFileSync(relOut, outputText, "utf8");
+        written.push(relOut);
+      }
+      fileResults.push({
+        source: abs,
+        output: relOut,
+        written: options.write === true,
+        findings: state.findings.slice(findingStart),
+      });
+      continue;
+    }
     const converted = convertYamlDocument(doc, state, abs);
     const fileFindings = state.findings.slice(findingStart);
     let outputText: string | undefined;
