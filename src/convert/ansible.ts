@@ -736,13 +736,21 @@ function convertPlay(raw: unknown, state: ConvertState, file: string, path: stri
       finding(state, file, `${path}.serial`, "serial", "handoff", "unsupported serial value; use a number or an integer percentage");
     }
   }
-  for (const key of ["remote_user", "order", "ignore_errors", "become_method", "any_errors_fatal", "force_handlers", "max_fail_percentage", "vars_prompt", "gather_subset"]) {
+  for (const key of ["remote_user", "ignore_errors", "become_method", "any_errors_fatal", "force_handlers", "max_fail_percentage", "vars_prompt", "gather_subset"]) {
     if (play[key] !== undefined) {
       finding(state, file, `${path}.${key}`, key, "handoff", "no play-level RoleCall equivalent; apply it per task or review");
     }
   }
   if (typeof play.strategy === "string" && !["linear", "free"].includes(play.strategy)) {
     finding(state, file, `${path}.strategy`, "strategy", "handoff", `strategy '${play.strategy}' is not supported (linear|free)`);
+  }
+  if (play.order !== undefined) {
+    if (["inventory", "sorted", "reverse_sorted", "reverse_inventory", "shuffle"].includes(String(play.order))) {
+      out.order = play.order;
+      finding(state, file, `${path}.order`, "order", "mapped", "host ordering is supported natively");
+    } else {
+      finding(state, file, `${path}.order`, "order", "handoff", `order '${String(play.order)}' is not supported`);
+    }
   }
   const playWhen = play.when;
   const inherited: Record<string, unknown> = {};

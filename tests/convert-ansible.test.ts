@@ -245,6 +245,16 @@ describe("convert ansible MVP", () => {
     ]);
   });
 
+  test("play order is preserved", () => {
+    const dir = tmp("order");
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- hosts: web\n  order: reverse_inventory\n  tasks:\n    - name: t\n      debug:\n        msg: ok\n`, "utf8");
+    const result = convertAnsible(file, { write: true, out: join(dir, "out") });
+    const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
+    expect(converted[0]!.order).toBe("reverse_inventory");
+    expect(result.findings.some((f) => f.construct === "order" && f.disposition === "handoff")).toBe(false);
+  });
+
   test("strict mode flags remaining handoff items", () => {
     const dir = tmp("strict");
     const file = join(dir, "site.yml");

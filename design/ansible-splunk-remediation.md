@@ -191,7 +191,7 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   `hostvars[...]`/`groups[...]` bracket access. The typed compatibility matrix lives
   in `src/convert/matrix.ts`. Remaining: dynamic includes/`include_role`,
   `with_first_found` on non-copy/template tasks, `ignore_errors`/`failed_when`, `async`/`until`/`retries`,
-  play-level `remote_user`/`order`, `lookup`/`query`, and crypt-compatible
+  play-level `remote_user`, `lookup`/`query`, and crypt-compatible
   `password_hash`.
 
 ## Risks
