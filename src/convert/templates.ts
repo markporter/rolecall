@@ -200,9 +200,6 @@ function walk(value: unknown, findings: ConvertFinding[], file: string): void {
  */
 export function analyzeTemplate(source: string, file: string): TemplateAnalysis {
   const findings: ConvertFinding[] = [];
-  if (/\{%-|-%\}|\{\{-|-\}\}/.test(source)) {
-    add(findings, file, undefined, "whitespace-trim", "review", "whitespace-control trim markers need a byte-parity fixture");
-  }
   if (/\bnamespace\s*\(/.test(source)) {
     add(findings, file, undefined, "namespace", "review", "namespace mutation across scopes needs a parity fixture");
   }
@@ -418,7 +415,7 @@ function emitNode(node: unknown, ctx: EmitContext): string {
         `<% const ${seq} = ${emitExpr(arr, ctx)}; %>`,
         `<% for (let ${idx} = 0; ${idx} < ${seq}.length; ${idx}++) { %>`,
         `<% const ${variable} = ${seq}[${idx}]; %>`,
-        `<% const loop = { index: ${idx} + 1, index0: ${idx}, first: ${idx} === 0, last: ${idx} === ${seq}.length - 1, length: ${seq}.length, revindex: ${seq}.length - ${idx}, revindex0: ${seq}.length - ${idx} - 1, cycle: (...__args) => __args[${idx} % __args.length] }; %>`,
+        `<% const loop = { index: ${idx} + 1, index0: ${idx}, first: ${idx} === 0, last: ${idx} === ${seq}.length - 1, length: ${seq}.length, revindex: ${seq}.length - ${idx}, revindex0: ${seq}.length - ${idx} - 1, cycle: (...__args) => __args[${idx} % __args.length], previtem: ${idx} === 0 ? undefined : ${seq}[${idx} - 1], nextitem: ${idx} === ${seq}.length - 1 ? undefined : ${seq}[${idx} + 1] }; %>`,
         body,
         `<% } %>`,
       ].join("");

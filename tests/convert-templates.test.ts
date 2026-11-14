@@ -24,15 +24,22 @@ describe("template analyzer", () => {
     );
   });
 
-  test("flags omit, trim markers, and set-blocks as review", () => {
+  test("flags omit and set-blocks as review", () => {
     const analysis = analyzeTemplate(
       `{%- set x %}a{% endset -%}\n{{ missing | default(omit) }}`,
       "review.j2",
     );
     expect(analysis.disposition).toBe("review");
     expect(analysis.findings.some((f) => f.construct === "default(omit)" && f.disposition === "review")).toBe(true);
-    expect(analysis.findings.some((f) => f.construct === "whitespace-trim")).toBe(true);
     expect(analysis.findings.some((f) => f.construct === "set-block")).toBe(true);
+  });
+
+  test("trim markers are already applied by the parser and stay mapped", () => {
+    const analysis = analyzeTemplate(`a {%- if x -%} b {%- endif -%} c`, "trim.j2");
+    expect(analysis.disposition).toBe("mapped");
+    const generated = generateEta(`a {%- if x -%} b {%- endif -%} c`, "trim.j2");
+    expect(generated.ok).toBe(true);
+    expect(render(generated.eta!, { x: true })).toBe(renderJinja(`a {%- if x -%} b {%- endif -%} c`, { x: true }));
   });
 
   test("flags macros, lookups, and unknown filters as handoff", () => {
@@ -62,6 +69,13 @@ describe("Eta codegen (mapped subset)", () => {
     const cycle = generateEta('{% for x in xs %}{{ loop.cycle("odd", "even") }}{% endfor %}', "cycle.j2");
     expect(cycle.ok).toBe(true);
     expect(render(cycle.eta!, { xs: [1, 2, 3] })).toBe("oddevenodd");
+
+    const adjacent = generateEta(
+      '{% for x in xs %}{{ loop.previtem }}-{{ x }}-{{ loop.nextitem }};{% endfor %}',
+      "adjacent.j2",
+    );
+    expect(adjacent.ok).toBe(true);
+    expect(render(adjacent.eta!, { xs: [1, 2, 3] })).toBe("-1-2;1-2-3;2-3-;");
 
     for (const [source, vars] of cases) {
       const generated = generateEta(source, "t.j2");
