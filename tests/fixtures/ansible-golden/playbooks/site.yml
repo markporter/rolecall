@@ -1,0 +1,35 @@
+- name: Golden site
+  hosts: all
+  vars:
+    app_port: 8080
+  roles:
+    - common
+  tasks:
+    - name: Install package
+      apt:
+        name: nginx
+        state: present
+      when: ansible_os_family == "Debian"
+    - name: Render app config
+      template:
+        src: app.j2
+        dest: /etc/app/app.conf
+        mode: "0644"
+    - name: Render unsupported config
+      template:
+        src: unsupported.j2
+        dest: /etc/app/unsupported.conf
+    - name: Probe service
+      shell: /bin/true
+      changed_when: false
+    - name: Best effort
+      shell: /bin/false
+      ignore_errors: true
+    - name: Grouped work
+      block:
+        - name: Loop debug
+          debug:
+            msg: "{{ item }}"
+          with_items:
+            - one
+            - two

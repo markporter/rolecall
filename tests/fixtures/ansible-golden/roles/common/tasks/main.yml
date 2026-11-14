@@ -1,0 +1,9 @@
+- name: App group
+  group:
+    name: app
+    state: present
+- name: App user
+  user:
+    name: app
+    group: app
+    comment: App service account

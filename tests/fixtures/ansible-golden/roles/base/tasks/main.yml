@@ -1,0 +1,5 @@
+- name: Base directory
+  file:
+    path: /etc/app
+    state: directory
+    mode: "0755"
