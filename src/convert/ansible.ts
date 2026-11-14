@@ -942,6 +942,110 @@ function rewriteTemplateRefs(
   }
 }
 
+
+/** Ansible inventory connection vars rewritten to RoleCall names. */
+const CONNECTION_VAR_MAP: Record<string, string> = {
+  ansible_host: "rolecall_host",
+  ansible_user: "rolecall_user",
+  ansible_ssh_user: "rolecall_user",
+  ansible_port: "rolecall_port",
+  ansible_ssh_port: "rolecall_port",
+  ansible_connection: "rolecall_connection",
+  ansible_ssh_private_key_file: "rolecall_ssh_private_key_file",
+  ansible_ssh_pass: "rolecall_ssh_pass",
+  ansible_password: "rolecall_ssh_pass",
+};
+
+const CONNECTION_VALUE_MAP: Record<string, string> = {
+  ssh: "ssh",
+  local: "local",
+  network: "network",
+  network_cli: "network",
+  netconf: "network",
+};
+
+function isAnsibleYamlInventory(doc: unknown): boolean {
+  const rec = asRecord(doc);
+  if (rec === undefined || rec["all"] === undefined) return false;
+  const all = asRecord(rec["all"]);
+  return all !== undefined && (all["hosts"] !== undefined || all["children"] !== undefined || all["vars"] !== undefined);
+}
+
+/** Rewrite known Ansible connection vars anywhere in a YAML inventory tree. */
+function convertInventoryValue(value: unknown, state: ConvertState, file: string, path: string): unknown {
+  if (Array.isArray(value)) return value.map((entry, i) => convertInventoryValue(entry, state, file, `${path}[${i}]`));
+  const rec = asRecord(value);
+  if (rec === undefined) return value;
+  const out: Record<string, unknown> = {};
+  for (const [key, child] of Object.entries(rec)) {
+    const mapped = CONNECTION_VAR_MAP[key];
+    if (mapped !== undefined) {
+      if (key === "ansible_connection" && typeof child === "string") {
+        const value = CONNECTION_VALUE_MAP[child];
+        if (value === undefined) {
+          finding(state, file, `${path}.${key}`, key, "handoff", `connection '${child}' has no RoleCall transport`);
+          out[key] = child;
+          continue;
+        }
+        out[mapped] = value;
+      } else {
+        out[mapped] = convertValue(child, state, file, `${path}.${key}`);
+      }
+      finding(state, file, `${path}.${key}`, key, "mapped", `rewritten to ${mapped}`);
+      continue;
+    }
+    if (key.startsWith("ansible_")) {
+      finding(state, file, `${path}.${key}`, key, "review", "Ansible inventory variable is not rewritten; review it");
+    }
+    out[key] = convertInventoryValue(child, state, file, `${path}.${key}`);
+  }
+  return out;
+}
+
+/** Rewrite `ansible_*` connection keys in an Ansible INI inventory. */
+function convertInventoryIni(text: string, state: ConvertState, file: string): string {
+  let changed = false;
+  const rewrite = (key: string, value: string): { key: string; value: string } | undefined => {
+    const mapped = CONNECTION_VAR_MAP[key];
+    if (mapped === undefined) {
+      if (key.startsWith("ansible_")) {
+        finding(state, file, key, key, "review", "Ansible inventory variable is not rewritten; review it");
+      }
+      return undefined;
+    }
+    if (key === "ansible_connection" && !Object.prototype.hasOwnProperty.call(CONNECTION_VALUE_MAP, value.trim())) {
+      finding(state, file, key, key, "handoff", `connection '${value.trim()}' has no RoleCall transport`);
+      return undefined;
+    }
+    finding(state, file, key, key, "mapped", `rewritten to ${mapped}`);
+    changed = true;
+    return { key: mapped, value: key === "ansible_connection" ? CONNECTION_VALUE_MAP[value.trim()]! : value };
+  };
+
+  const out = text
+    .split(/\r?\n/)
+    .map((line) => {
+      // Whole-line `key = value` (group:vars sections).
+      const match = line.match(/^(\s*)([A-Za-z0-9_]+)(\s*=\s*)(.*)$/);
+      if (match !== null) {
+        const [, indent, key, eq, value] = match;
+        const next = rewrite(key!, value!);
+        if (next !== undefined) return `${indent}${next.key}${eq}${next.value}`;
+        return line;
+      }
+      // Inline host vars: `host ansible_host=... ansible_user=...`.
+      return line.replace(
+        /(^|\s)(ansible_[A-Za-z0-9_]+)=(\S+)/g,
+        (whole, prefix: string, key: string, value: string) => {
+          const next = rewrite(key, value);
+          return next === undefined ? whole : `${prefix}${next.key}=${next.value}`;
+        },
+      );
+    })
+    .join("\n");
+  return changed ? out : text;
+}
+
 /**
  * @summary Analyze and mechanically convert an Ansible file or directory into RoleCall YAML, collecting review/handoff findings for anything not safely convertible.
  * @param source Source file or directory.
@@ -1069,6 +1173,23 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
     const relOut = join(outDir, rel);
     const ext = abs.slice(abs.lastIndexOf(".")).toLowerCase();
     if (ext !== ".yml" && ext !== ".yaml") {
+      const text = ext === ".ini" ? readFileSync(abs, "utf8") : "";
+      if (text.includes("ansible_")) {
+        const findingStart = state.findings.length;
+        const converted = convertInventoryIni(text, state, abs);
+        if (options.write) {
+          mkdirSync(dirname(relOut), { recursive: true });
+          writeFileSync(relOut, converted, "utf8");
+          written.push(relOut);
+        }
+        fileResults.push({
+          source: abs,
+          output: relOut,
+          written: options.write === true,
+          findings: state.findings.slice(findingStart),
+        });
+        continue;
+      }
       if (options.write) {
         mkdirSync(dirname(relOut), { recursive: true });
         copyFileSync(abs, relOut);
@@ -1089,6 +1210,22 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
     }
     const findingStart = state.findings.length;
     const relMode = isDir ? relative(sourceAbs, abs) : "";
+    if (isAnsibleYamlInventory(doc)) {
+      const convertedInventory = convertInventoryValue(doc, state, abs, "inventory");
+      const outputText = yamlDump(convertedInventory, { lineWidth: -1, noRefs: true, sortKeys: false });
+      if (options.write) {
+        mkdirSync(dirname(relOut), { recursive: true });
+        writeFileSync(relOut, outputText, "utf8");
+        written.push(relOut);
+      }
+      fileResults.push({
+        source: abs,
+        output: relOut,
+        written: options.write === true,
+        findings: state.findings.slice(findingStart),
+      });
+      continue;
+    }
     if (isDir && isVarFile(relMode) && asRecord(doc) !== undefined) {
       const rec = asRecord(doc)!;
       const convertedVars: Record<string, unknown> = {};
