@@ -447,10 +447,17 @@ function emitNode(node: unknown, ctx: EmitContext): string {
  * @param file Source path used in analysis/failures.
  * @returns Generated Eta or a reason it was skipped.
  */
-export function generateEta(source: string, file: string): EtaGeneration {
+export function generateEta(
+  source: string,
+  file: string,
+  opts: { acceptReview?: boolean } = {},
+): EtaGeneration {
   const analysis = analyzeTemplate(source, file);
-  if (analysis.disposition !== "mapped") {
-    return { ok: false, reason: `template has ${analysis.disposition} constructs` };
+  if (analysis.disposition === "handoff") {
+    return { ok: false, reason: "template has handoff constructs" };
+  }
+  if (analysis.disposition === "review" && opts.acceptReview !== true) {
+    return { ok: false, reason: "template has review constructs; pass --templates-review accept to convert" };
   }
   try {
     const parser = (nunjucks as unknown as { parser: { parse(text: string): unknown } }).parser;

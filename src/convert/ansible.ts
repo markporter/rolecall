@@ -115,6 +115,8 @@ export interface ConvertAnsibleOptions {
   project?: string;
   /** Template pass: keep Jinja (default) or analyze for ADR 0031 Eta conversion. */
   templates?: "keep" | "eta";
+  /** Accept review constructs for Eta codegen (default reject). */
+  templatesReview?: "accept" | "reject";
 }
 
 interface ConvertState {
@@ -995,7 +997,11 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
       const text = readFileSync(abs, "utf8");
       const analysis = analyzeTemplate(text, abs);
       state.findings.push(...analysis.findings);
-      const generation = analysis.disposition === "mapped" ? generateEta(text, abs) : { ok: false, reason: "not mapped" };
+      const acceptReview = options.templatesReview === "accept";
+      const generation =
+        analysis.disposition === "mapped" || (acceptReview && analysis.disposition === "review")
+          ? generateEta(text, abs, { acceptReview })
+          : { ok: false, reason: "not mapped" };
       if (generation.ok && generation.eta !== undefined) {
         const etaRel = rel.replace(/\.(j2|jinja)$/i, ".eta");
         const etaOut = join(outDir, etaRel);
@@ -1009,7 +1015,16 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
         const existing = templateBase.get(base);
         if (existing !== undefined && existing !== etaRel) ambiguousBases.add(base);
         else templateBase.set(base, etaRel);
-        finding(state, abs, "template", "template", "mapped", "converted to Eta (mapped subset)");
+        finding(
+          state,
+          abs,
+          "template",
+          "template",
+          analysis.disposition === "review" ? "review" : "mapped",
+          analysis.disposition === "review"
+            ? "converted to Eta with explicitly accepted review constructs"
+            : "converted to Eta (mapped subset)",
+        );
         fileResults.push({ source: abs, output: etaOut, written: options.write === true, findings: state.findings.slice(findingStart) });
       } else {
         if (analysis.disposition === "mapped" && generation.reason !== undefined) {

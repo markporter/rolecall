@@ -130,6 +130,8 @@ export interface GlobalFlags {
   validate?: string;
   /** convert ansible --templates: keep Jinja (default) or analyze for Eta. */
   templates?: string;
+  /** convert ansible --templates-review: accept or reject review constructs. */
+  templatesReview?: string;
   /** project create/init: exact target directory. */
   dir?: string;
   /** project create/init: plugin namespace. */

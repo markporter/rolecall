@@ -85,12 +85,20 @@ export async function runConvertCommand(
   if (flags.templates !== undefined && flags.templates !== "keep" && flags.templates !== "eta") {
     throw new CliError(true, `--templates must be keep or eta (got '${flags.templates}')`);
   }
+  if (
+    flags.templatesReview !== undefined &&
+    flags.templatesReview !== "accept" &&
+    flags.templatesReview !== "reject"
+  ) {
+    throw new CliError(true, `--templates-review must be accept or reject (got '${flags.templatesReview}')`);
+  }
 
   let project = flags.project;
   let write = flags.dryRun === true ? false : flags.write === true || flags.yes === true;
   let strict = flags.strict === true;
   let handoff = flags.handoff;
   let templates: "keep" | "eta" = flags.templates === "eta" ? "eta" : "keep";
+  let templatesReview: "accept" | "reject" = flags.templatesReview === "accept" ? "accept" : "reject";
 
   if (interactive) {
     if (project === undefined) {
@@ -113,7 +121,15 @@ export async function runConvertCommand(
         "Convert mechanically-safe Jinja templates to Eta? (mapped subset only)",
         false,
       );
-      if (analyzeTemplates) templates = "eta";
+      if (analyzeTemplates) {
+        templates = "eta";
+        const acceptReview = await confirm(
+          ask,
+          "Accept review constructs for Eta conversion? (only with a parity review)",
+          false,
+        );
+        if (acceptReview) templatesReview = "accept";
+      }
     }
     if (write) {
       const apply = await confirm(ask, "Apply this conversion?", true);
@@ -135,6 +151,7 @@ export async function runConvertCommand(
     write,
     strict,
     templates,
+    templatesReview,
     ...(flags.report !== undefined ? { report: flags.report } : {}),
   });
 

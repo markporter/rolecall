@@ -72,6 +72,15 @@ describe("Eta codegen (mapped subset)", () => {
   });
 });
 
+describe("review acceptance", () => {
+  test("review constructs convert only when explicitly accepted", () => {
+    const source = '{{ x | default(omit) }}';
+    expect(generateEta(source, "review.j2").ok).toBe(false);
+    const accepted = generateEta(source, "review.j2", { acceptReview: true });
+    expect(accepted.ok).toBe(true);
+  });
+});
+
 describe("partial Eta drafts", () => {
   test("marks unsupported constructs and remains compilable", () => {
     const draft = generateEtaDraft(
@@ -102,6 +111,27 @@ describe("convert ansible --templates eta", () => {
     expect(site).toContain("template_file: app.eta");
     expect(site).toContain("engine: eta");
     expect(result.findings.some((f) => f.construct === "template" && f.disposition === "mapped")).toBe(true);
+  });
+
+  test("accepts review constructs when requested", () => {
+    const dir = tmp("accept-review");
+    mkdirSync(join(dir, "playbooks"), { recursive: true });
+    writeFileSync(join(dir, "playbooks", "site.yml"), `- hosts: web
+  tasks:
+    - name: t
+      template:
+        src: app.j2
+        dest: /etc/app.conf
+`);
+    writeFileSync(join(dir, "playbooks", "app.j2"), `{{ x | default(omit) }}`);
+    const result = convertAnsible(dir, {
+      templates: "eta",
+      templatesReview: "accept",
+      write: true,
+      out: join(dir, "out"),
+    });
+    expect(existsSync(join(dir, "out", "playbooks", "app.eta"))).toBe(true);
+    expect(result.findings.some((f) => f.disposition === "review" && f.message.includes("accepted"))).toBe(true);
   });
 
   test("keeps .j2 and Jinja for review/handoff templates", () => {

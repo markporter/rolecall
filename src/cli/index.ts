@@ -136,7 +136,7 @@ Subcommands:
      project init [--dir <path>] [--name <name>] [--namespace <ns>] [--vcs none|git]
                                                 Scaffold into an existing directory
      convert                                    Interactive wizard: source -> project -> apply/handoff/strict
-     convert ansible <path> [--out <dir>] [--project <dir>] [--handoff <dir>] [--write] [--strict] [--templates keep|eta] [--report json|md]
+     convert ansible <path> [--out <dir>] [--project <dir>] [--handoff <dir>] [--write] [--strict] [--templates keep|eta] [--templates-review accept|reject] [--report json|md]
                         Analyze + mechanically convert an Ansible file/directory to RoleCall YAML
      convert ansible --validate <dir>
                         Validate an already-converted tree with the strict loader
@@ -220,6 +220,7 @@ const GLOBAL_OPTS = {
   report: { type: "string" },
   validate: { type: "string" },
   templates: { type: "string" },
+  "templates-review": { type: "string" },
   dir: { type: "string" },
   namespace: { type: "string" },
   vcs: { type: "string" },
@@ -334,6 +335,7 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
     report: values["report"] as string | undefined,
     validate: values["validate"] as string | undefined,
     templates: values["templates"] as string | undefined,
+    templatesReview: values["templates-review"] as string | undefined,
     dir: values["dir"] as string | undefined,
     namespace: values["namespace"] as string | undefined,
     vcs: values["vcs"] as string | undefined,
