@@ -6,7 +6,7 @@
 // Jinja never lands in a playbook scalar: expressions are wrapped in `$jinja`
 // (the sole Jinja escape hatch) or translated to structured refs.
 
-import { copyFileSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative } from "node:path";
 import { dump as yamlDump, load as yamlLoad } from "js-yaml";
 
@@ -736,12 +736,47 @@ function convertPlay(raw: unknown, state: ConvertState, file: string, path: stri
   return out;
 }
 
-function convertYamlDocument(doc: unknown, state: ConvertState, file: string): { converted: unknown; kind: "playbook" | "tasks" | "other" } {
+function convertYamlDocument(
+  doc: unknown,
+  state: ConvertState,
+  file: string,
+  seen: Set<string> = new Set(),
+): { converted: unknown; kind: "playbook" | "tasks" | "other" } {
   if (Array.isArray(doc) && doc.length > 0) {
     const first = asRecord(doc[0]);
     if (first !== undefined && first.import_playbook !== undefined) {
-      finding(state, file, "[0].import_playbook", "import_playbook", "handoff", "import_playbook must become a separate top-level playbook or an `imports:` entry");
-      return { converted: doc, kind: "other" };
+      const onlyImports = doc.every((entry) => asRecord(entry)?.import_playbook !== undefined);
+      if (!onlyImports) {
+        finding(state, file, "[0].import_playbook", "import_playbook", "handoff", "mixed plays and import_playbook entries; split them before conversion");
+        return { converted: doc, kind: "other" };
+      }
+      const plays: unknown[] = [];
+      for (const entry of doc) {
+        const rec = asRecord(entry)!;
+        const ref = String(rec.import_playbook);
+        if (hasJinja(ref)) {
+          finding(state, file, "import_playbook", "import_playbook", "handoff", "dynamic import_playbook paths are not load-time expandable");
+          continue;
+        }
+        const target = isAbsolute(ref) ? ref : join(dirname(file), ref);
+        if (seen.has(target) || !existsSync(target)) {
+          finding(state, file, "import_playbook", "import_playbook", "handoff", `could not expand import_playbook '${ref}' (missing or cyclic)`);
+          continue;
+        }
+        seen.add(target);
+        try {
+          const imported = convertYamlDocument(yamlLoad(readFileSync(target, "utf8")), state, target, seen);
+          if (imported.kind === "playbook" && Array.isArray(imported.converted)) {
+            plays.push(...imported.converted);
+            finding(state, file, "import_playbook", "import_playbook", "mapped", `inlined plays from ${ref}`);
+          } else {
+            finding(state, file, "import_playbook", "import_playbook", "handoff", `imported file '${ref}' is not a playbook`);
+          }
+        } catch (error) {
+          finding(state, file, "import_playbook", "import_playbook", "handoff", `could not parse imported file '${ref}': ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+      return { converted: plays, kind: "playbook" };
     }
     if (first !== undefined && first.hosts !== undefined) {
       const plays = doc.map((play, i) => convertPlay(play, state, file, `[${i}]`)).filter((p): p is Record<string, unknown> => p !== undefined);

@@ -160,6 +160,17 @@ describe("convert ansible MVP", () => {
     expect(task.when).toEqual({ $jinja: "{{ inv.hosts[loop.item].vars.foo == \"bar\" and inv.groups['web'].hosts | length > 0 }}" });
   });
 
+  test("import_playbook inlines imported plays", () => {
+    const dir = tmp("imports");
+    writeFileSync(join(dir, "child.yml"), `- name: Child\n  hosts: web\n  tasks:\n    - name: t\n      debug:\n        msg: ok\n`, "utf8");
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- import_playbook: child.yml\n`, "utf8");
+    const result = convertAnsible(file, { write: true, out: join(dir, "out") });
+    const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
+    expect(converted).toHaveLength(1);
+    expect(converted[0]!.name).toBe("Child");
+  });
+
   test("strict mode flags remaining handoff items", () => {
     const dir = tmp("strict");
     const file = join(dir, "site.yml");

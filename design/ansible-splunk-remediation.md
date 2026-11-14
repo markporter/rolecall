@@ -184,8 +184,8 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   handling, Ansible magic-fact gatherers (`system`, `default_ipv4`, `dns`,
   `date_time`), `run.playbook_dir`, filter/test parity (`ipaddr`, `strftime`,
   `human_readable`, `password_hash`, `iterable`, `mapping`, result-state tests), and
-  converter mappings for `with_dict`, static `include_vars`, and `hostvars[...]`/
-  `groups[...]` bracket access. Remaining Cycle 3: role/asset-tree fidelity and the
+  converter mappings for `with_dict`, static `include_vars`, static `import_playbook`
+  inlining, and `hostvars[...]`/`groups[...]` bracket access. Remaining Cycle 3: role/asset-tree fidelity and the
   typed compatibility matrix.
 
 ## Risks
