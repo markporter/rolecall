@@ -59,6 +59,10 @@ describe("Eta codegen (mapped subset)", () => {
       ["{% if x is defined %}yes{% else %}no{% endif %}", { x: 1 }],
       ["{% if x is defined %}yes{% else %}no{% endif %}", {}],
     ];
+    const cycle = generateEta('{% for x in xs %}{{ loop.cycle("odd", "even") }}{% endfor %}', "cycle.j2");
+    expect(cycle.ok).toBe(true);
+    expect(render(cycle.eta!, { xs: [1, 2, 3] })).toBe("oddevenodd");
+
     for (const [source, vars] of cases) {
       const generated = generateEta(source, "t.j2");
       expect(generated.ok).toBe(true);

@@ -56,6 +56,19 @@ function add(
   findings.push({ file, path, construct, disposition, message });
 }
 
+function isLoopCall(node: unknown): boolean {
+  const name = (node as { name?: Record<string, unknown> } | undefined)?.name;
+  if (name?.["typename"] !== "LookupVal") return false;
+  const target = name["target"] as Record<string, unknown> | undefined;
+  const val = name["val"] as Record<string, unknown> | undefined;
+  return (
+    target?.["typename"] === "Symbol" &&
+    target["value"] === "loop" &&
+    (val?.["typename"] === "Symbol" || val?.["typename"] === "Literal") &&
+    val["value"] === "cycle"
+  );
+}
+
 function nodeName(node: unknown): string | undefined {
   const rec = node as { value?: unknown; name?: unknown } | undefined;
   if (rec === undefined) return undefined;
@@ -122,6 +135,7 @@ function walk(value: unknown, findings: ConvertFinding[], file: string): void {
       add(findings, file, node as { lineno?: number }, "set-block", "review", "capture/set-block output may depend on whitespace/scope; review before Eta codegen");
       break;
     case "FunCall": {
+      if (isLoopCall(node)) break;
       const name = nodeName(node["name"]);
       if (name === "lookup" || name === "query" || name === "q") {
         add(findings, file, node as { lineno?: number }, name, "handoff", "Ansible lookups/query are controller-side I/O and have no Eta equivalent");
@@ -212,7 +226,7 @@ export function analyzeTemplate(source: string, file: string): TemplateAnalysis 
       ? "review"
       : "mapped";
   if (disposition === "mapped") {
-    add(findings, file, undefined, "template", "mapped", "template is mechanically convertible (Eta codegen not implemented yet)");
+    add(findings, file, undefined, "template", "mapped", "template is fully mapped");
   }
   return { file, disposition, findings };
 }
@@ -310,6 +324,16 @@ function emitExpr(node: unknown, ctx: EmitContext): string {
       }
       return `tests.${test}(${emitExpr(rec["left"], ctx)})`;
     }
+    case "FunCall": {
+      if (isLoopCall(node)) {
+        const args = ((rec["args"] as { children?: unknown[] } | undefined)?.children ?? []).map((arg) =>
+          emitExpr(arg, ctx),
+        );
+        return `loop.cycle(${args.join(", ")})`;
+      }
+      if (ctx.draft) return `${handoffMarker(node, "call")} undefined`;
+      fail("function calls are not supported");
+    }
     case "Filter": {
       const name = nodeName(rec["name"]);
       if (name === undefined || !knownFilter(name)) {
@@ -394,7 +418,7 @@ function emitNode(node: unknown, ctx: EmitContext): string {
         `<% const ${seq} = ${emitExpr(arr, ctx)}; %>`,
         `<% for (let ${idx} = 0; ${idx} < ${seq}.length; ${idx}++) { %>`,
         `<% const ${variable} = ${seq}[${idx}]; %>`,
-        `<% const loop = { index: ${idx} + 1, index0: ${idx}, first: ${idx} === 0, last: ${idx} === ${seq}.length - 1, length: ${seq}.length, revindex: ${seq}.length - ${idx}, revindex0: ${seq}.length - ${idx} - 1 }; %>`,
+        `<% const loop = { index: ${idx} + 1, index0: ${idx}, first: ${idx} === 0, last: ${idx} === ${seq}.length - 1, length: ${seq}.length, revindex: ${seq}.length - ${idx}, revindex0: ${seq}.length - ${idx} - 1, cycle: (...__args) => __args[${idx} % __args.length] }; %>`,
         body,
         `<% } %>`,
       ].join("");
