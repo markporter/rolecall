@@ -68,6 +68,18 @@ describe("project create/init", () => {
     expect(readFileSync(join(root, ".gitignore"), "utf8")).toContain(".rolecall/state.db");
   });
 
+  test("--dry-run does not write the scaffold", async () => {
+    const root = join(tmp("dry"), "site");
+    const result = (await runProjectCommand(
+      "create",
+      ["site"],
+      { dir: root, dryRun: true } as GlobalFlags,
+      { interactive: false },
+    )) as ProjectResult;
+    expect(result.applied).toBe(false);
+    expect(existsSync(root)).toBe(false);
+  });
+
   test("non-interactive create without a name errors", async () => {
     await expect(
       runProjectCommand("create", [], {} as GlobalFlags, { interactive: false }),

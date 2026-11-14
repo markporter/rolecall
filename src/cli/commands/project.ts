@@ -81,6 +81,18 @@ export async function runProjectCommand(
     );
   }
 
+  if (flags.dryRun === true) {
+    return {
+      command: sub === "create" ? "project create" : "project init",
+      root,
+      name,
+      namespace,
+      vcs: vcs === "git" ? "git" : "none",
+      created: [],
+      applied: false,
+    };
+  }
+
   const scaffold = ensureProjectScaffold(root, { name, namespace });
   if (vcs === "git") {
     const git = spawnSync("git", ["init"], { cwd: root, stdio: "ignore" });
@@ -98,6 +110,7 @@ export async function runProjectCommand(
     namespace,
     vcs: vcs === "git" ? "git" : "none",
     created: scaffold.created,
+    applied: true,
   };
   return result;
 }

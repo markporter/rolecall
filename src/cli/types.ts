@@ -418,6 +418,7 @@ export interface ProjectResult {
   namespace: string;
   vcs: "none" | "git";
   created: string[];
+  applied?: boolean;
 }
 
 /** Result of `rolecall convert ansible` (conversion or validation mode). */

@@ -429,6 +429,7 @@ function formatHuman(data: CliResult): string {
       lines.push(`Name     : ${data.name}`);
       lines.push(`Namespace: ${data.namespace}`);
       lines.push(`VCS      : ${data.vcs}`);
+      lines.push(`Applied  : ${data.applied === false ? "no (dry run)" : "yes"}`);
       lines.push(`Created  : ${data.created.length} path(s)`);
       for (const path of data.created) lines.push(`  + ${path}`);
       break;
