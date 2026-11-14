@@ -150,6 +150,16 @@ describe("convert ansible MVP", () => {
     expect((converted[0]!.tasks as Array<Record<string, unknown>>).length).toBe(1);
   });
 
+  test("hostvars and groups bracket access gain .vars/.hosts", () => {
+    const dir = tmp("hostvars");
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- hosts: web\n  tasks:\n    - name: t\n      debug:\n        msg: ok\n      when: hostvars[item].foo == "bar" and groups['web'] | length > 0\n`, "utf8");
+    const result = convertAnsible(file, { write: true, out: join(dir, "out") });
+    const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
+    const task = (converted[0]!.tasks as Array<Record<string, unknown>>)[0]!;
+    expect(task.when).toEqual({ $jinja: "{{ inv.hosts[loop.item].vars.foo == \"bar\" and inv.groups['web'].hosts | length > 0 }}" });
+  });
+
   test("strict mode flags remaining handoff items", () => {
     const dir = tmp("strict");
     const file = join(dir, "site.yml");

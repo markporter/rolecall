@@ -164,7 +164,7 @@ function hasJinja(value: unknown): boolean {
 
 /** Qualify bare Ansible play-var references as `vars.<name>` inside an expression. */
 function qualifyVars(expr: string, names: Set<string> | undefined): string {
-  if (names === undefined || names.size === 0) return expr;
+  const known = names ?? new Set<string>();
   let out = "";
   let quote: "'" | "\"" | null = null;
   for (let i = 0; i < expr.length; ) {
@@ -194,7 +194,7 @@ function qualifyVars(expr: string, names: Set<string> | undefined): string {
       const next = expr.slice(j).trimStart()[0] ?? "";
       if (ident === "item" && prev !== "." && next !== "(") {
         out += "loop.item";
-      } else if (names.has(ident) && prev !== "." && next !== "(" && !["and", "or", "not", "in", "is", "if", "else", "true", "false", "none"].includes(ident)) {
+      } else if (known.has(ident) && prev !== "." && next !== "(" && !["and", "or", "not", "in", "is", "if", "else", "true", "false", "none"].includes(ident)) {
         out += `vars.${ident}`;
       } else {
         out += ident;
@@ -208,6 +208,63 @@ function qualifyVars(expr: string, names: Set<string> | undefined): string {
   return out;
 }
 
+
+/** Rewrite `name[...]` to `replacement[...]suffix`, balancing nested brackets/quotes. */
+function rewriteBracketAccess(text: string, name: string, replacement: string, suffix: string): string {
+  let out = "";
+  let i = 0;
+  while (i < text.length) {
+    const idx = text.indexOf(name, i);
+    if (idx === -1) {
+      out += text.slice(i);
+      break;
+    }
+    const prev = idx > 0 ? text[idx - 1]! : "";
+    const after = text[idx + name.length] ?? "";
+    if (/[A-Za-z0-9_]/.test(prev) || /[A-Za-z0-9_]/.test(after)) {
+      out += text.slice(i, idx + name.length);
+      i = idx + name.length;
+      continue;
+    }
+    let j = idx + name.length;
+    while (text[j] === " " || text[j] === "\t") j += 1;
+    if (text[j] !== "[") {
+      out += text.slice(i, idx + name.length);
+      i = idx + name.length;
+      continue;
+    }
+    out += text.slice(i, idx) + replacement;
+    let depth = 0;
+    let quote: "'" | '"' | null = null;
+    for (; j < text.length; j += 1) {
+      const ch = text[j]!;
+      if (quote !== null) {
+        if (ch === "\\") {
+          j += 1;
+          continue;
+        }
+        if (ch === quote) quote = null;
+        continue;
+      }
+      if (ch === "'" || ch === '"') {
+        quote = ch;
+        continue;
+      }
+      if (ch === "[") depth += 1;
+      else if (ch === "]") {
+        depth -= 1;
+        if (depth === 0) {
+          j += 1;
+          break;
+        }
+      }
+    }
+    out += text.slice(idx + name.length, j) + suffix;
+    i = j;
+  }
+  return out;
+}
+
 /** Rewrite Ansible magic variables to RoleCall namespaces inside a Jinja expression. */
 function rewriteAnsibleExpr(expr: string, knownVars?: Set<string>): { text: string; unresolved: string[] } {
   let text = expr;
@@ -215,8 +272,6 @@ function rewriteAnsibleExpr(expr: string, knownVars?: Set<string>): { text: stri
     [/ansible_facts\[['"]?([A-Za-z0-9_]+)['"]?\]/g, "facts.$1"],
     [/ansible_facts\.([A-Za-z0-9_]+)/g, "facts.$1"],
     [/\binventory_hostname\b/g, "play.host"],
-    [/\bgroups\[/g, "inv.groups["],
-    [/\bhostvars\[/g, "inv.hosts["],
     [/\bplaybook_dir\b/g, "run.playbook_dir"],
     [/\brole_path\b/g, "role.path"],
     [/\bansible_os_family\b/g, "facts.os_family"],
@@ -237,11 +292,15 @@ function rewriteAnsibleExpr(expr: string, knownVars?: Set<string>): { text: stri
     [/\bansible_all_ipv4_addresses\b/g, "facts.ip_addresses"],
   ];
   for (const [re, replacement] of fixes) text = text.replace(re, replacement);
+  text = rewriteBracketAccess(text, "hostvars", "inv.hosts", ".vars");
+  text = rewriteBracketAccess(text, "groups", "inv.groups", ".hosts");
   text = qualifyVars(text, knownVars);
   const unresolved: string[] = [];
   for (const m of text.matchAll(/\bansible_[A-Za-z0-9_]+/g)) unresolved.push(m[0]);
   if (/\b(?:lookup|query)\s*\(/.test(text)) unresolved.push("lookup/query");
   if (/\bpassword_hash\b/.test(text)) unresolved.push("password_hash (not crypt(3)-compatible)");
+  if (/\bhostvars\b/.test(text)) unresolved.push("bare hostvars");
+  if (/\bgroups\b/.test(text)) unresolved.push("bare groups");
   return { text, unresolved };
 }
 
