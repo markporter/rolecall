@@ -7,13 +7,13 @@
 // (the sole Jinja escape hatch) or translated to structured refs.
 
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
-import { dirname, isAbsolute, join, relative } from "node:path";
+import { basename, dirname, isAbsolute, join, relative } from "node:path";
 import { dump as yamlDump, load as yamlLoad } from "js-yaml";
 
 import { loadPlaybook } from "../config/loader";
 import { ensureProjectScaffold } from "../project/scaffold";
 import { MODULE_REMAP, TASK_RULES } from "./matrix";
-import { analyzeTemplate } from "./templates";
+import { analyzeTemplate, generateEta } from "./templates";
 import type { ConvertFileResult, ConvertFinding, ConvertResult } from "../cli/types";
 
 const STRUCTURAL_KEYS = new Set([
@@ -401,7 +401,7 @@ function convertTemplateTask(
   for (const key of ["mode", "owner", "group", "backup", "validate", "force", "remote_src"]) {
     if (args[key] !== undefined) copyArgs[key] = convertValue(args[key], state, file, `${path}.${key}`);
   }
-  finding(state, file, `${path}.template`, "template", "review", "mapped to copy + content.template_file (engine: jinja); verify the .j2 asset moved with the playbook");
+  finding(state, file, `${path}.template`, "template", "mapped", "mapped to copy + content.template_file");
   void task;
   return { module: "copy", args: copyArgs };
 }
@@ -885,6 +885,61 @@ function isVarFile(rel: string): boolean {
   );
 }
 
+
+/** Rewrite `copy.content.template_file` references to converted `.eta` assets. */
+function rewriteTemplateRefs(
+  value: unknown,
+  exact: Map<string, string>,
+  base: Map<string, string>,
+  state: ConvertState,
+  file: string,
+): void {
+  if (Array.isArray(value)) {
+    for (const entry of value) rewriteTemplateRefs(entry, exact, base, state, file);
+    return;
+  }
+  const rec = asRecord(value);
+  if (rec === undefined) return;
+  const copy = asRecord(rec["copy"]);
+  if (copy !== undefined) {
+    const content = asRecord(copy["content"]);
+    if (content !== undefined) {
+      const ref = content["template_file"];
+      const resolve = (entry: string): string | undefined => exact.get(entry) ?? base.get(basename(entry));
+      if (typeof ref === "string") {
+        const eta = resolve(ref);
+        if (eta !== undefined) {
+          content["template_file"] = exact.get(ref) ?? basename(eta);
+          content["engine"] = "eta";
+        }
+      } else if (Array.isArray(ref)) {
+        const mapped = ref.map((entry) => (typeof entry === "string" ? resolve(entry) : undefined));
+        const any = mapped.some((entry) => entry !== undefined);
+        const all = mapped.every((entry) => entry !== undefined);
+        if (any && !all) {
+          finding(
+            state,
+            file,
+            "copy.content.template_file",
+            "template",
+            "review",
+            "mixed .j2/.eta candidates cannot share one engine; task kept as Jinja",
+          );
+        } else if (all) {
+          content["template_file"] = ref.map((entry, index) =>
+            exact.get(String(entry)) ?? basename(mapped[index]!),
+          );
+          content["engine"] = "eta";
+        }
+      }
+    }
+  }
+  for (const [key, child] of Object.entries(rec)) {
+    if (key === "copy") continue;
+    rewriteTemplateRefs(child, exact, base, state, file);
+  }
+}
+
 /**
  * @summary Analyze and mechanically convert an Ansible file or directory into RoleCall YAML, collecting review/handoff findings for anything not safely convertible.
  * @param source Source file or directory.
@@ -924,29 +979,61 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
   }
   const fileResults: ConvertFileResult[] = [];
   const written: string[] = [];
+  const templateExact = new Map<string, string>();
+  const templateBase = new Map<string, string>();
+  const ambiguousBases = new Set<string>();
+  const preprocessed = new Set<string>();
+
+  if (options.templates === "eta") {
+    for (const abs of files) {
+      const ext = abs.slice(abs.lastIndexOf(".")).toLowerCase();
+      if (ext !== ".j2" && ext !== ".jinja") continue;
+      const rel = isDir ? relative(sourceAbs, abs) : abs.split(/[\\/]/).pop()!;
+      const relOut = join(outDir, rel);
+      const findingStart = state.findings.length;
+      const text = readFileSync(abs, "utf8");
+      const analysis = analyzeTemplate(text, abs);
+      state.findings.push(...analysis.findings);
+      const generation = analysis.disposition === "mapped" ? generateEta(text, abs) : { ok: false, reason: "not mapped" };
+      if (generation.ok && generation.eta !== undefined) {
+        const etaRel = rel.replace(/\.(j2|jinja)$/i, ".eta");
+        const etaOut = join(outDir, etaRel);
+        if (options.write) {
+          mkdirSync(dirname(etaOut), { recursive: true });
+          writeFileSync(etaOut, generation.eta, "utf8");
+          written.push(etaOut);
+        }
+        templateExact.set(rel, etaRel);
+        const base = basename(rel);
+        const existing = templateBase.get(base);
+        if (existing !== undefined && existing !== etaRel) ambiguousBases.add(base);
+        else templateBase.set(base, etaRel);
+        finding(state, abs, "template", "template", "mapped", "converted to Eta (mapped subset)");
+        fileResults.push({ source: abs, output: etaOut, written: options.write === true, findings: state.findings.slice(findingStart) });
+      } else {
+        if (analysis.disposition === "mapped" && generation.reason !== undefined) {
+          finding(state, abs, "template", "template", "handoff", `Eta codegen failed: ${generation.reason}`);
+        }
+        if (options.write) {
+          mkdirSync(dirname(relOut), { recursive: true });
+          copyFileSync(abs, relOut);
+          written.push(relOut);
+        }
+        fileResults.push({ source: abs, output: relOut, written: options.write === true, findings: state.findings.slice(findingStart) });
+      }
+      preprocessed.add(abs);
+    }
+    for (const base of ambiguousBases) {
+      finding(state, sourceAbs, "template", "template", "review", `multiple templates share the basename '${base}'; task references were not rewritten`);
+      templateBase.delete(base);
+    }
+  }
 
   for (const abs of files) {
+    if (preprocessed.has(abs)) continue;
     const rel = isDir ? relative(sourceAbs, abs) : abs.split(/[\\/]/).pop()!;
     const relOut = join(outDir, rel);
     const ext = abs.slice(abs.lastIndexOf(".")).toLowerCase();
-    if (options.templates === "eta" && (ext === ".j2" || ext === ".jinja")) {
-      const text = readFileSync(abs, "utf8");
-      const findingStart = state.findings.length;
-      const analysis = analyzeTemplate(text, abs);
-      state.findings.push(...analysis.findings);
-      if (options.write) {
-        mkdirSync(dirname(relOut), { recursive: true });
-        copyFileSync(abs, relOut);
-        written.push(relOut);
-      }
-      fileResults.push({
-        source: abs,
-        output: relOut,
-        written: options.write === true,
-        findings: state.findings.slice(findingStart),
-      });
-      continue;
-    }
     if (ext !== ".yml" && ext !== ".yaml") {
       if (options.write) {
         mkdirSync(dirname(relOut), { recursive: true });
@@ -995,6 +1082,7 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
     const fileFindings = state.findings.slice(findingStart);
     let outputText: string | undefined;
     if (converted.kind !== "other") {
+      rewriteTemplateRefs(converted.converted, templateExact, templateBase, state, abs);
       outputText = yamlDump(converted.converted, { lineWidth: -1, noRefs: true, sortKeys: false });
       if (options.write) {
         mkdirSync(dirname(relOut), { recursive: true });

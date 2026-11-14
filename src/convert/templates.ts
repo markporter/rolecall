@@ -95,7 +95,15 @@ function walk(value: unknown, findings: ConvertFinding[], file: string): void {
     case "Not":
     case "UnaryOp":
     case "BinOp":
+    case "Add":
+    case "Sub":
+    case "Mul":
+    case "Div":
+    case "FloorDiv":
+    case "Pow":
+    case "Mod":
     case "Concat":
+    case "In":
     case "InlineIf":
     case "If":
     case "For":
@@ -207,4 +215,181 @@ export function analyzeTemplate(source: string, file: string): TemplateAnalysis 
     add(findings, file, undefined, "template", "mapped", "template is mechanically convertible (Eta codegen not implemented yet)");
   }
   return { file, disposition, findings };
+}
+
+/** Result of attempting to generate Eta for one template. */
+export interface EtaGeneration {
+  ok: boolean;
+  eta?: string;
+  reason?: string;
+}
+
+interface EmitContext {
+  loopId: number;
+}
+
+function fail(message: string): never {
+  throw new Error(message);
+}
+
+function emitExpr(node: unknown, ctx: EmitContext): string {
+  const rec = node as Record<string, unknown>;
+  const typename = typeof rec["typename"] === "string" ? rec["typename"] : "";
+  switch (typename) {
+    case "Symbol": {
+      const value = String(rec["value"]);
+      if (value === "True" || value === "true") return "true";
+      if (value === "False" || value === "false") return "false";
+      if (value === "None" || value === "none" || value === "null") return "null";
+      return value;
+    }
+    case "Literal":
+      return JSON.stringify(rec["value"]);
+    case "LookupVal": {
+      const target = emitExpr(rec["target"], ctx);
+      const val = rec["val"] as Record<string, unknown>;
+      if (val?.["typename"] === "Literal" && typeof val["value"] === "string") {
+        return `${target}[${JSON.stringify(val["value"])}]`;
+      }
+      if (val?.["typename"] === "Literal" && typeof val["value"] === "number") {
+        return `${target}[${val["value"]}]`;
+      }
+      if (val?.["typename"] === "Symbol") return `${target}.${String(val["value"])}`;
+      return `${target}[${emitExpr(val, ctx)}]`;
+    }
+    case "Group":
+      return `(${emitExpr((rec["children"] as unknown[])[0], ctx)})`;
+    case "Array":
+      return `[${((rec["children"] as unknown[]) ?? []).map((child) => emitExpr(child, ctx)).join(", ")}]`;
+    case "Dict":
+      return `{ ${((rec["children"] as unknown[]) ?? []).map((pair) => emitPair(pair, ctx)).join(", ")} }`;
+    case "Pair":
+      return emitPair(rec, ctx);
+    case "Compare": {
+      const left = rec["left"] as Record<string, unknown>;
+      const base = emitExpr(left["expr"], ctx);
+      const ops = (left["ops"] as Array<Record<string, unknown>>) ?? [];
+      return ops.reduce((acc, op) => `${acc} ${String(op["type"])} ${emitExpr(op["expr"], ctx)}`, base);
+    }
+    case "Add":
+    case "Sub":
+    case "Mul":
+    case "Div":
+    case "Pow":
+    case "Mod": {
+      const op = { Add: "+", Sub: "-", Mul: "*", Div: "/", Pow: "**", Mod: "%" }[typename]!;
+      return `(${emitExpr(rec["left"], ctx)} ${op} ${emitExpr(rec["right"], ctx)})`;
+    }
+    case "FloorDiv":
+      return `Math.floor(${emitExpr(rec["left"], ctx)} / ${emitExpr(rec["right"], ctx)})`;
+    case "Concat":
+      return `(String(${emitExpr(rec["left"], ctx)}) + String(${emitExpr(rec["right"], ctx)}))`;
+    case "In":
+      return `(${emitExpr(rec["right"], ctx)}).includes(${emitExpr(rec["left"], ctx)})`;
+    case "And":
+      return `(${emitExpr(rec["left"], ctx)} && ${emitExpr(rec["right"], ctx)})`;
+    case "Or":
+      return `(${emitExpr(rec["left"], ctx)} || ${emitExpr(rec["right"], ctx)})`;
+    case "Not":
+      return `(!(${emitExpr(rec["target"], ctx)}))`;
+    case "UnaryOp":
+      return `(${String(rec["op"] ?? "-")}${emitExpr(rec["target"], ctx)})`;
+    case "InlineIf":
+      return `(${emitExpr(rec["cond"], ctx)} ? ${emitExpr(rec["body"], ctx)} : ${emitExpr(rec["else_"], ctx)})`;
+    case "Is": {
+      const test = nodeName(rec["right"]);
+      if (test === undefined) fail("test calls with arguments are not supported");
+      return `tests.${test}(${emitExpr(rec["left"], ctx)})`;
+    }
+    case "Filter": {
+      const name = nodeName(rec["name"]) ?? fail("filter without a name");
+      const args = ((rec["args"] as { children?: unknown[] } | undefined)?.children ?? []).map((arg) =>
+        emitExpr(arg, ctx),
+      );
+      return `filters.${name}(${args.join(", ")})`;
+    }
+    default:
+      fail(`unsupported expression node '${typename || "unknown"}'`);
+  }
+}
+
+function emitPair(node: unknown, ctx: EmitContext): string {
+  const rec = node as Record<string, unknown>;
+  const key = rec["key"] as Record<string, unknown>;
+  const value = emitExpr(rec["value"], ctx);
+  if (key?.["typename"] === "Symbol") return `${String(key["value"])}: ${value}`;
+  if (key?.["typename"] === "Literal") return `${JSON.stringify(key["value"])}: ${value}`;
+  fail("unsupported dictionary key");
+}
+
+function emitNode(node: unknown, ctx: EmitContext): string {
+  if (node === null || typeof node !== "object") return "";
+  const rec = node as Record<string, unknown>;
+  const typename = typeof rec["typename"] === "string" ? rec["typename"] : "";
+  switch (typename) {
+    case "Root":
+    case "NodeList":
+    case "Output":
+      return ((rec["children"] as unknown[]) ?? []).map((child) => emitNode(child, ctx)).join("");
+    case "TemplateData":
+    case "Raw":
+      return String(rec["value"] ?? "");
+    case "Comment":
+      return "";
+    case "If": {
+      const cond = emitExpr(rec["cond"], ctx);
+      const body = emitNode(rec["body"], ctx);
+      const otherwise = rec["else_"] === null || rec["else_"] === undefined ? "" : emitNode(rec["else_"], ctx);
+      return `<% if (${cond}) { %>${body}<% }${otherwise ? ` else { %>${otherwise}<% }` : ""} %>`;
+    }
+    case "For": {
+      const name = rec["name"] as Record<string, unknown>;
+      if (name?.["typename"] !== "Symbol") fail("tuple loop targets are not supported");
+      const arr = rec["arr"] as Record<string, unknown>;
+      if (arr?.["cond"] !== undefined) fail("filtered loops are not supported");
+      if (rec["else_"] !== null && rec["else_"] !== undefined) fail("for/else is not supported");
+      const id = ++ctx.loopId;
+      const seq = `__seq_${id}`;
+      const idx = `__i_${id}`;
+      const variable = String(name["value"]);
+      const body = emitNode(rec["body"], ctx);
+      return [
+        `<% const ${seq} = ${emitExpr(arr, ctx)}; %>`,
+        `<% for (let ${idx} = 0; ${idx} < ${seq}.length; ${idx}++) { %>`,
+        `<% const ${variable} = ${seq}[${idx}]; %>`,
+        `<% const loop = { index: ${idx} + 1, index0: ${idx}, first: ${idx} === 0, last: ${idx} === ${seq}.length - 1, length: ${seq}.length, revindex: ${seq}.length - ${idx}, revindex0: ${seq}.length - ${idx} - 1 }; %>`,
+        body,
+        `<% } %>`,
+      ].join("");
+    }
+    case "Set": {
+      const targets = (rec["targets"] as Array<Record<string, unknown>>) ?? [];
+      if (targets.length !== 1 || targets[0]?.["typename"] !== "Symbol") fail("multi-target set is not supported");
+      if ((rec["value"] as Record<string, unknown>)?.["typename"] === "Capture") fail("set-blocks are not supported");
+      return `<% let ${String(targets[0]["value"])} = ${emitExpr(rec["value"], ctx)}; %>`;
+    }
+    default:
+      // Expression nodes appearing directly (e.g. inside Output) are emitted as output.
+      return `<%= ${emitExpr(node, ctx)} %>`;
+  }
+}
+
+/**
+ * @summary Generate Eta for a template that the analyzer classified as fully mapped. Returns `ok:false` for any review/handoff construct or unsupported expression.
+ * @param source Template text.
+ * @param file Source path used in analysis/failures.
+ * @returns Generated Eta or a reason it was skipped.
+ */
+export function generateEta(source: string, file: string): EtaGeneration {
+  const analysis = analyzeTemplate(source, file);
+  if (analysis.disposition !== "mapped") {
+    return { ok: false, reason: `template has ${analysis.disposition} constructs` };
+  }
+  try {
+    const parser = (nunjucks as unknown as { parser: { parse(text: string): unknown } }).parser;
+    const ast = parser.parse(source);
+    return { ok: true, eta: emitNode(ast, { loopId: 0 }) };
+  } catch (error) {
+    return { ok: false, reason: error instanceof Error ? error.message : String(error) };
+  }
 }

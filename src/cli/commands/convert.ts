@@ -110,7 +110,7 @@ export async function runConvertCommand(
     if (flags.templates === undefined) {
       const analyzeTemplates = await confirm(
         ask,
-        "Analyze Jinja templates for Eta conversion? (analyzer only; no rewrite yet)",
+        "Convert mechanically-safe Jinja templates to Eta? (mapped subset only)",
         false,
       );
       if (analyzeTemplates) templates = "eta";

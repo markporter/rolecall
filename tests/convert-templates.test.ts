@@ -1,11 +1,13 @@
 // ADR 0031 slice 1 — template analyzer classification.
 
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, readdirSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
-import { analyzeTemplate } from "../src/convert/templates";
+import { analyzeTemplate, generateEta } from "../src/convert/templates";
+import { render } from "../src/templating/fast";
+import { renderJinja } from "../src/templating/jinja";
 import { convertAnsible } from "../src/convert/ansible";
 
 const tmp = (suffix: string) => mkdtempSync(join(tmpdir(), `rolecall-template-${suffix}-`));
@@ -45,7 +47,65 @@ describe("template analyzer", () => {
   });
 });
 
-describe("convert ansible --templates eta (analyzer only)", () => {
+describe("Eta codegen (mapped subset)", () => {
+  test("renders the same output as the Jinja source for mapped constructs", () => {
+    const cases: Array<[string, Record<string, unknown>]> = [
+      ["Hello {{ name }}", { name: "bob" }],
+      ["{% if active %}yes{% else %}no{% endif %}", { active: true }],
+      ["{% if active %}yes{% else %}no{% endif %}", { active: false }],
+      ["{% for x in xs %}{{ loop.index }}:{{ x }};{% endfor %}", { xs: ["a", "b"] }],
+      ["{% set y = x + 1 %}{{ y }}", { x: 2 }],
+      ['{{ x | default("fallback") }}', {}],
+      ["{% if x is defined %}yes{% else %}no{% endif %}", { x: 1 }],
+      ["{% if x is defined %}yes{% else %}no{% endif %}", {}],
+    ];
+    for (const [source, vars] of cases) {
+      const generated = generateEta(source, "t.j2");
+      expect(generated.ok).toBe(true);
+      // Compare against the Nunjucks render of the same source.
+      expect(render(generated.eta!, vars)).toBe(renderJinja(source, vars));
+    }
+  });
+});
+
+describe("convert ansible --templates eta", () => {
+  test("writes .eta and rewrites mapped task references", () => {
+    const dir = tmp("eta");
+    mkdirSync(join(dir, "playbooks"), { recursive: true });
+    writeFileSync(join(dir, "playbooks", "site.yml"), `- hosts: web
+  tasks:
+    - name: t
+      template:
+        src: app.j2
+        dest: /etc/app.conf
+`);
+    writeFileSync(join(dir, "playbooks", "app.j2"), `Hello {{ name }}`);
+    const result = convertAnsible(dir, { templates: "eta", write: true, out: join(dir, "out") });
+    expect(existsSync(join(dir, "out", "playbooks", "app.eta"))).toBe(true);
+    expect(existsSync(join(dir, "out", "playbooks", "app.j2"))).toBe(false);
+    const site = readFileSync(join(dir, "out", "playbooks", "site.yml"), "utf8");
+    expect(site).toContain("template_file: app.eta");
+    expect(site).toContain("engine: eta");
+    expect(result.findings.some((f) => f.construct === "template" && f.disposition === "mapped")).toBe(true);
+  });
+
+  test("keeps .j2 and Jinja for review/handoff templates", () => {
+    const dir = tmp("keep-jinja");
+    mkdirSync(join(dir, "playbooks"), { recursive: true });
+    writeFileSync(join(dir, "playbooks", "site.yml"), `- hosts: web
+  tasks:
+    - name: t
+      template:
+        src: app.j2
+        dest: /etc/app.conf
+`);
+    writeFileSync(join(dir, "playbooks", "app.j2"), `{{ value | frobnicate }}`);
+    convertAnsible(dir, { templates: "eta", write: true, out: join(dir, "out") });
+    expect(existsSync(join(dir, "out", "playbooks", "app.j2"))).toBe(true);
+    expect(existsSync(join(dir, "out", "playbooks", "app.eta"))).toBe(false);
+    expect(readFileSync(join(dir, "out", "playbooks", "site.yml"), "utf8")).toContain("engine: jinja");
+  });
+
   test("records template findings and writes per-item handoff files", () => {
     const dir = tmp("project");
     mkdirSync(join(dir, "playbooks"), { recursive: true });
