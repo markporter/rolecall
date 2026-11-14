@@ -423,6 +423,16 @@ function formatHuman(data: CliResult): string {
       lines.push(`Note     : ${data.note}`);
       break;
     }
+    case "project create":
+    case "project init": {
+      lines.push(`Project  : ${data.root}`);
+      lines.push(`Name     : ${data.name}`);
+      lines.push(`Namespace: ${data.namespace}`);
+      lines.push(`VCS      : ${data.vcs}`);
+      lines.push(`Created  : ${data.created.length} path(s)`);
+      for (const path of data.created) lines.push(`  + ${path}`);
+      break;
+    }
     case "convert ansible": {
       lines.push(`Convert  : ${data.source}`);
       if (data.mode === "validate") {

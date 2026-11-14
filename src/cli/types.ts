@@ -130,6 +130,14 @@ export interface GlobalFlags {
   validate?: string;
   /** convert ansible --templates: keep Jinja (default) or analyze for Eta. */
   templates?: string;
+  /** project create/init: exact target directory. */
+  dir?: string;
+  /** project create/init: plugin namespace. */
+  namespace?: string;
+  /** project create/init: VCS mode (none|git). */
+  vcs?: string;
+  /** project create/init: human-readable project name. */
+  name?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -402,6 +410,16 @@ export interface ConvertFileResult {
   error?: string;
 }
 
+/** Result of `rolecall project create|init`. */
+export interface ProjectResult {
+  command: "project create" | "project init";
+  root: string;
+  name: string;
+  namespace: string;
+  vcs: "none" | "git";
+  created: string[];
+}
+
 /** Result of `rolecall convert ansible` (conversion or validation mode). */
 export interface ConvertResult {
   command: "convert ansible";
@@ -453,7 +471,8 @@ export type CliResult =
   | UpdateResult
   | IsolationResult
   | RuntimeResult
-  | ConvertResult;
+  | ConvertResult
+  | ProjectResult;
 
 // ---------------------------------------------------------------------------
 // Error class — `usage: true` => exit code 2 (unknown subcommand / bad args);

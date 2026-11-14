@@ -40,6 +40,7 @@ import { runUpdateCommand } from "./commands/update";
 import { runIsolationCommand } from "./commands/isolation";
 import { runRuntimeCommand } from "./commands/runtime";
 import { runConvertCommand } from "./commands/convert";
+import { runProjectCommand } from "./commands/project";
 import { parseMounts } from "./parse-mounts";
 import { parseEgressSpecs } from "../isolation/egress";
 import { CliError, type CliResult, type GlobalFlags } from "./types";
@@ -130,6 +131,10 @@ Subcommands:
      doctor             Report local isolation backend readiness (bwrap/userns or Docker)
     docs search <query>  Query RoleCall prose docs by substring (matches sections; use -o json for structured output)
     docs modules [<term>]  List every RoleCall module (name + description + args); optional <term> filter; -o json for structured output
+     project create <name> [--dir <path>] [--namespace <ns>] [--vcs none|git]
+                                                Create a blank RoleCall project
+     project init [--dir <path>] [--name <name>] [--namespace <ns>] [--vcs none|git]
+                                                Scaffold into an existing directory
      convert                                    Interactive wizard: source -> project -> apply/handoff/strict
      convert ansible <path> [--out <dir>] [--project <dir>] [--handoff <dir>] [--write] [--strict] [--templates keep|eta] [--report json|md]
                         Analyze + mechanically convert an Ansible file/directory to RoleCall YAML
@@ -215,6 +220,10 @@ const GLOBAL_OPTS = {
   report: { type: "string" },
   validate: { type: "string" },
   templates: { type: "string" },
+  dir: { type: "string" },
+  namespace: { type: "string" },
+  vcs: { type: "string" },
+  name: { type: "string" },
 } as const;
 
 /** @summary Write rendered CLI output to stdout, stripping NUL/control chars from the `json` stream so a polluted data channel never breaks a downstream JSON parser. @param text Rendered text to emit. @param output Selected output plugin name; only `json` gets control-char scrubbing. */
@@ -325,6 +334,10 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
     report: values["report"] as string | undefined,
     validate: values["validate"] as string | undefined,
     templates: values["templates"] as string | undefined,
+    dir: values["dir"] as string | undefined,
+    namespace: values["namespace"] as string | undefined,
+    vcs: values["vcs"] as string | undefined,
+    name: values["name"] as string | undefined,
     // --json is a convenience shorthand for --output json (used by the docs
     // subcommands and any other command the user wants structured output from).
     output: (values["json"] as boolean | undefined)
@@ -486,6 +499,9 @@ export async function main(argv: string[]): Promise<number> {
         break;
       case "convert":
         result = await runConvertCommand(sub, rest, flags);
+        break;
+      case "project":
+        result = await runProjectCommand(sub, rest, flags);
         break;
       case "docs":
         result = await runDocsCommand(sub, rest, flags);
