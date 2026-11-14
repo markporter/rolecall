@@ -109,6 +109,43 @@ describe("role composition (ADR 0009 #3)", () => {
     expect(play.vars.shared).toBe("play-shared");
   });
 
+  it("applies role meta dependencies before the role", async () => {
+    const root = mkdtempSync(join(tmpdir(), "rolecall-role-deps-"));
+    try {
+      mkdirSync(join(root, "roles", "base", "tasks"), { recursive: true });
+      mkdirSync(join(root, "roles", "base", "defaults"), { recursive: true });
+      mkdirSync(join(root, "roles", "child", "tasks"), { recursive: true });
+      mkdirSync(join(root, "roles", "child", "meta"), { recursive: true });
+      writeFileSync(join(root, "roles", "base", "tasks", "main.yml"), `- name: base task\n  module: debug\n  args:\n    msg: base\n`);
+      writeFileSync(join(root, "roles", "base", "defaults", "main.yml"), `base_var: from-base\n`);
+      writeFileSync(join(root, "roles", "child", "tasks", "main.yml"), `- name: child task\n  module: debug\n  args:\n    msg: child\n`);
+      writeFileSync(join(root, "roles", "child", "meta", "main.yml"), `dependencies:\n  - base\n`);
+      writeFileSync(join(root, "playbook.yml"), `- hosts: all\n  roles: [child]\n  tasks: []\n`);
+      const plays = await loadPlaybookFile("playbook.yml", new FsProjectSource(root));
+      expect(plays[0]!.tasks.map((t) => t.name)).toEqual(["base task", "child task"]);
+      expect(plays[0]!.roleDefaults?.base_var).toBe("from-base");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("detects cyclic role dependencies", async () => {
+    const root = mkdtempSync(join(tmpdir(), "rolecall-role-cycle-"));
+    try {
+      for (const name of ["a", "b"]) {
+        mkdirSync(join(root, "roles", name, "tasks"), { recursive: true });
+        mkdirSync(join(root, "roles", name, "meta"), { recursive: true });
+        writeFileSync(join(root, "roles", name, "tasks", "main.yml"), `- name: ${name}\n  module: debug\n  args:\n    msg: ${name}\n`);
+      }
+      writeFileSync(join(root, "roles", "a", "meta", "main.yml"), `dependencies:\n  - b\n`);
+      writeFileSync(join(root, "roles", "b", "meta", "main.yml"), `dependencies:\n  - a\n`);
+      writeFileSync(join(root, "playbook.yml"), `- hosts: all\n  roles: [a]\n  tasks: []\n`);
+      await expect(loadPlaybookFile("playbook.yml", new FsProjectSource(root))).rejects.toThrow(/cyclic role dependency/);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it("discovers role var-manifest: seeds declared defaults and registers entries (Phase 1)", async () => {
     const plays = await loadPlaybookFile("playbook.yml", new FsProjectSource(dir));
     const play = plays[0]!;

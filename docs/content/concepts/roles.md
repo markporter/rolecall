@@ -23,6 +23,7 @@ my-site/
       handlers/main.yml       # optional: handlers with `listen`
       defaults/main.yml       # optional: lowest-precedence vars
       vars/main.yml           # optional: role vars
+      meta/main.yml           # optional: dependencies
       templates/              # optional: role-relative templates
       files/                  # optional: role-relative source files
 ```
@@ -47,6 +48,10 @@ Local roles resolve by bare name from `roles/`. A path-like name (containing `/`
 starting with `.`) resolves relative to the playbook directory. Role tasks run in
 listed order, and role defaults merge below play vars; two roles setting the same var
 follow the same listed order (later wins).
+
+A role may declare `dependencies:` in `meta/main.yml`; RoleCall applies each dependency
+(recursively, once) before the role itself and rejects cycles. Dependency entries may be
+bare names or `{ role: <name> }`; per-dependency vars/tags/when are not supported.
 
 ## Sharing roles
 

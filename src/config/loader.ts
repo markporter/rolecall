@@ -576,6 +576,34 @@ async function loadRoleFiles(
   return { tasks: [...tasks, ...handlerTasks], defaults, vars, manifest, defaultsOrigins, varsOrigins };
 }
 
+
+/** Read a role's `meta/main.yml` dependencies (bare role names only). */
+async function readRoleDependencies(source: ProjectSource, dirAbs: string): Promise<string[]> {
+  const text = await firstReadable(source, dirAbs, ["meta", "main.yml"], ["meta", "main.yaml"]);
+  if (text === null) return [];
+  const doc = parseYaml(text);
+  if (doc === null || typeof doc !== "object" || Array.isArray(doc)) return [];
+  const deps = (doc as Record<string, unknown>)["dependencies"];
+  if (deps === undefined) return [];
+  if (!Array.isArray(deps)) {
+    throw new Error(`[rolecall:roles] ${join(dirAbs, "meta", "main.yml")} dependencies must be a YAML list`);
+  }
+  return deps.map((dep) => {
+    if (typeof dep === "string" && dep.length > 0) return dep;
+    if (dep !== null && typeof dep === "object" && !Array.isArray(dep)) {
+      const rec = dep as Record<string, unknown>;
+      const extra = Object.keys(rec).filter((key) => key !== "role");
+      if (extra.length > 0) {
+        throw new Error(
+          `[rolecall:roles] dependency options (${extra.join(", ")}) are not supported in ${join(dirAbs, "meta", "main.yml")}; list the role directly`,
+        );
+      }
+      if (typeof rec["role"] === "string" && rec["role"].length > 0) return rec["role"];
+    }
+    throw new Error(`[rolecall:roles] invalid dependency entry in ${join(dirAbs, "meta", "main.yml")}`);
+  });
+}
+
 /**
  * Compose an entire play's `roles:` list in listed order. Later roles override earlier ones
  * at the same var tier (deep-merge). Tasks accumulate in listed order; defaults merge into one
@@ -600,13 +628,21 @@ async function composeRoles(
   let accumulatedDefaultsOrigins: VarOriginMap = {};
   let accumulatedVarsOrigins: VarOriginMap = {};
 
-  for (const roleName of play.roles ?? []) {
+  const applied = new Set<string>();
+  const applyRole = async (roleName: string, stack: string[]): Promise<void> => {
+    if (stack.includes(roleName)) {
+      throw new Error(`[rolecall:roles] cyclic role dependency: ${[...stack, roleName].join(" -> ")}`);
+    }
+    if (applied.has(roleName)) return;
     const dirAbs = await resolveRoleDirectory(roleName, playbookDir, root, source);
     if (dirAbs === undefined) {
       throw new Error(
         `[rolecall:roles] could not resolve role '${roleName}' — expected a readable ` +
           `${join("roles", roleName, "tasks", "main.yml")} relative to the playbook or project root`,
       );
+    }
+    for (const dependency of await readRoleDependencies(source, dirAbs)) {
+      await applyRole(dependency, [...stack, roleName]);
     }
     const contribution = await loadRoleFiles(dirAbs, source);
     collectedTasks.push(...contribution.tasks);
@@ -615,6 +651,10 @@ async function composeRoles(
     accumulatedManifest = accumulatedManifest.concat(contribution.manifest);
     accumulatedDefaultsOrigins = { ...accumulatedDefaultsOrigins, ...contribution.defaultsOrigins };
     accumulatedVarsOrigins = { ...accumulatedVarsOrigins, ...contribution.varsOrigins };
+    applied.add(roleName);
+  };
+  for (const roleName of play.roles ?? []) {
+    await applyRole(roleName, []);
   }
 
   return { tasks: collectedTasks, defaults: accumulatedDefaults, vars: accumulatedVars, manifest: accumulatedManifest, defaultsOrigins: accumulatedDefaultsOrigins, varsOrigins: accumulatedVarsOrigins };
