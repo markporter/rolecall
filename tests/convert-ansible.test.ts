@@ -185,6 +185,17 @@ describe("convert ansible MVP", () => {
     expect(result.findings.some((f) => f.construct === "role-dependencies")).toBe(false);
   });
 
+  test("changed_when on shell maps to run_mode", () => {
+    const dir = tmp("changed-when");
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- hosts: web\n  tasks:\n    - name: check\n      shell: /bin/true\n      changed_when: false\n`, "utf8");
+    const result = convertAnsible(file, { write: true, out: join(dir, "out") });
+    const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
+    const task = (converted[0]!.tasks as Array<Record<string, unknown>>)[0]!;
+    expect(task.shell).toEqual({ command: "/bin/true", run_mode: "readonly" });
+    expect(result.findings.some((f) => f.construct === "changed_when" && f.disposition === "handoff")).toBe(false);
+  });
+
   test("strict mode flags remaining handoff items", () => {
     const dir = tmp("strict");
     const file = join(dir, "site.yml");

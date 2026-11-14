@@ -589,7 +589,26 @@ function convertTask(
     else finding(state, file, `${path}.connection`, "connection", "handoff", `connection '${connection}' has no RoleCall transport`);
   }
 
+  let handledChangedWhen = false;
+  if (task.changed_when !== undefined && ["shell", "command", "raw"].includes(module)) {
+    const argsRecord = asRecord(args);
+    const hasGuard =
+      argsRecord !== undefined &&
+      ["creates", "removes", "creates_cmd", "removes_cmd"].some((key) => argsRecord[key] !== undefined);
+    const mode = argsRecord?.["run_mode"];
+    if (task.changed_when === false && !hasGuard && (mode === undefined || mode === "readonly")) {
+      (args as Record<string, unknown>)["run_mode"] = "readonly";
+      finding(state, file, `${path}.changed_when`, "changed_when", "mapped", "mapped changed_when: false to run_mode: readonly");
+      handledChangedWhen = true;
+    } else if (task.changed_when === true && (mode === undefined || mode === "always")) {
+      (args as Record<string, unknown>)["run_mode"] = "always";
+      finding(state, file, `${path}.changed_when`, "changed_when", "mapped", "mapped changed_when: true to run_mode: always");
+      handledChangedWhen = true;
+    }
+  }
+
   for (const rule of Object.values(TASK_RULES)) {
+    if (rule.id === "changed_when" && handledChangedWhen) continue;
     if (task[rule.id] !== undefined) {
       finding(state, file, `${path}.${rule.id}`, rule.id, rule.disposition, rule.message);
     }
