@@ -76,6 +76,7 @@ describe("Eta codegen (mapped subset)", () => {
       ["{% if active %}yes{% else %}no{% endif %}", { active: false }],
       ["{% for x in xs %}{{ loop.index }}:{{ x }};{% endfor %}", { xs: ["a", "b"] }],
       ["{% set y = x + 1 %}{{ y }}", { x: 2 }],
+      ["{% for x in xs %}{% if loop.last == false %}{{ x }},{% endif %}{% endfor %}", { xs: [1, 2] }],
       ['{{ x | default("fallback") }}', {}],
       ["{% if x is defined %}yes{% else %}no{% endif %}", { x: 1 }],
       ["{% if x is defined %}yes{% else %}no{% endif %}", {}],

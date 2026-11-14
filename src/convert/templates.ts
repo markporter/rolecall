@@ -296,10 +296,10 @@ function emitExpr(node: unknown, ctx: EmitContext): string {
       return `{ ${((rec["children"] as unknown[]) ?? []).map((pair) => emitPair(pair, ctx)).join(", ")} }`;
     case "Pair":
       return emitPair(rec, ctx);
-    case "Compare": {
-      const left = rec["left"] as Record<string, unknown>;
-      const base = emitExpr(left["expr"], ctx);
-      const ops = (left["ops"] as Array<Record<string, unknown>>) ?? [];
+    case "Compare":
+    case "CompareOperand": {
+      const base = emitExpr(rec["expr"], ctx);
+      const ops = (rec["ops"] as Array<Record<string, unknown>>) ?? [];
       return ops.reduce((acc, op) => `${acc} ${String(op["type"])} ${emitExpr(op["expr"], ctx)}`, base);
     }
     case "Add":
