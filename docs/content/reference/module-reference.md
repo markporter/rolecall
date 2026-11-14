@@ -62,6 +62,35 @@ _source: builtin_
 
 > Registers the host into the run-level dynamic inventory (`ExecOptions.dynamicHosts`) and into the resolved host set so subsequent `hosts: all` tasks target it within the same run; the spec is also returned in `data.add_host` for `register:`. For SSH transports the host's connection vars (ansible_host, etc.) must be supplied so the transport can connect.
 
+## apt_key
+
+Manage an APT signing key in a standalone keyring with gpg (Ansible `apt_key` alternate).
+
+_source: builtin_
+
+**Args**
+
+| Arg | Type | Required | Description |
+| --- | --- | --- | --- |
+| `url` | `string` | optional | URL of an armored key. |
+| `data` | `string` | optional | Inline armored key data. |
+| `id` | `string` | optional | Key ID/fingerprint (required for keyserver and state: absent). |
+| `keyserver` | `string` | optional | Keyserver to fetch `id` from. |
+| `keyring` | `string` | optional | Keyring path (default /etc/apt/trusted.gpg). |
+| `state` | `present \| absent` | optional | Desired state (default present). |
+| `validate_certs` | `boolean` | optional | Set false to pass `-k` to curl. |
+
+**Examples**
+
+```yaml
+- apt_key:
+    url: https://example.com/repo.asc
+    keyring: /usr/share/keyrings/example.gpg
+```
+
+
+> ≠ Ansible `apt_key`: uses `gpg --no-default-keyring --keyring` instead of the removed `apt-key`; requires `gpg` (and `curl` for URLs) on the target. Inline `data` is piped through `gpg --dearmor` unless the keyring ends in `.asc`. Idempotency needs `id`; without it the key is re-installed each run.
+
 ## apt_repository
 
 Manage an APT source line (Ansible `apt_repository` alternate) under /etc/apt/sources.list.d. Idempotent: re-running with the same repo is a no-op and other lines in the file are preserved.
@@ -168,6 +197,8 @@ _idempotent · source: builtin_
 | --- | --- | --- | --- |
 | `that` | `unknown` | optional | Condition that must be truthy for the assertion to pass. |
 | `msg` | `string` | optional | Failure message when `that` is falsy. |
+| `fail_msg` | `string` | optional | Ansible-parity failure message; takes precedence over `msg`. |
+| `success_msg` | `string` | optional | Message reported when the assertion passes (default `ok`). |
 
 **Examples**
 
@@ -206,7 +237,7 @@ _idempotent · source: builtin_
 ```
 
 
-> ≠ Ansible `assert`: conditions use RoleCall's structured `$var`/`$eq`/`$gt`/`$and` expression ops (rendered like any other arg), not Jinja `when`. `that` is truthy-tested; `msg` is the failure text.
+> ≠ Ansible `assert`: conditions use RoleCall's structured `$var`/`$eq`/`$gt`/`$and` expression ops (rendered like any other arg), not Jinja `when`. `that` is truthy-tested; `fail_msg` (or `msg`) is the failure text and `success_msg` is the pass text.
 
 ## authorized_key
 
@@ -254,7 +285,8 @@ _idempotent · source: builtin_
 | `marker_id` | `string` | optional | Id used inside the markers. Default 'block'. |
 | `ansible_marker` | `boolean` | optional | Use Ansible's `# BEGIN/END ANSIBLE MANAGED BLOCK` markers instead of RoleCall's. Defaults to false. |
 | `state` | `present \| absent` | optional | Desired state (default present). |
-| `insertafter` | `EOF \| START` | optional | Where to insert when absent (default EOF). |
+| `insertafter` | `string` | optional | Where to insert when absent: `EOF` (default), `START`, or a regex string to insert after the last matching line. |
+| `insertbefore` | `string` | optional | Where to insert when absent: `BOF`/`START`, or a regex string to insert before the last matching line. Mutually exclusive with `insertafter`. |
 | `backup` | `boolean` | optional | Back up the existing file (a timestamped `.bak` sibling, attributes preserved) before writing. Defaults to false. |
 | `validate` | `string` | optional | Validation command run against the file after writing; `%s` is replaced with the file path. The task fails if the command exits non-zero (e.g. `nginx -t -c %s`). |
 
@@ -285,7 +317,7 @@ _idempotent · source: builtin_
 ```
 
 
-> ≠ Ansible `blockinfile`: the default marker is `# RoleCall BLOCK {mark}` (not `# BEGIN/END ANSIBLE MANAGED BLOCK`); set `ansible_marker: true` to opt into the Ansible markers. Multiple blocks in one file need explicit `marker` templates instead of `ansible_marker` (which ignores `marker`/`marker_id`). Uses `$var` refs, not Jinja `{{ }}`.
+> ≠ Ansible `blockinfile`: the default marker is `# RoleCall BLOCK {mark}` (not `# BEGIN/END ANSIBLE MANAGED BLOCK`); set `ansible_marker: true` to opt into the Ansible markers. `insertafter`/`insertbefore` accept `EOF`/`BOF`/`START` or a regex string and are mutually exclusive. Multiple blocks in one file need explicit `marker` templates instead of `ansible_marker` (which ignores `marker`/`marker_id`). Uses `$var` refs, not Jinja `{{ }}`.
 
 ## command
 
@@ -332,7 +364,15 @@ _idempotent · source: builtin_
 
 | Arg | Type | Required | Description |
 | --- | --- | --- | --- |
-| `path` | `string` | required | Destination path on the target. |
+| `path` | `string` | optional | Destination path on the target. Alias: `dest`. |
+| `dest` | `string` | optional | Alias for `path` (Ansible parity). |
+| `section` | `string` | optional | INI section (Ansible `ini_file` parity). |
+| `option` | `string` | optional | INI option inside `section` (Ansible `ini_file` parity). |
+| `create` | `boolean` | optional | Create the file when absent (default false). |
+| `backup` | `boolean` | optional | Rotate a timestamped `.bak` before writing. |
+| `mode` | `string` | optional | Octal mode applied after writing. |
+| `owner` | `string` | optional | Owner applied after writing. |
+| `group` | `string` | optional | Group applied after writing. |
 | `format` | `json \| yaml \| ini \| xml \| text` | optional | Structured format for key merge (json/yaml/ini) or fenced block mode (xml/text). |
 | `key` | `string` | optional | Dotted key path into the structure (structured modes). |
 | `value` | `unknown` | optional | Desired value at key (structured present) or full value (no key). Note: value REPLACES the key — no native list-append. |
@@ -352,11 +392,11 @@ _idempotent · source: builtin_
 ```
 
 
-> `value` REPLACES the key (there is no native list-append this pass). Uses RoleCall's structured `$var`/`$concat`/`$call` refs, not Jinja `{{ }}`. Supersedes the removed `file` module for in-place edits.
+> `value` REPLACES the key (there is no native list-append this pass). `section`/`option` provide `ini_file` parity (default `create: false` for that form; other structured edits create unless `create: false` is set). `dest` aliases `path`; `backup`/`mode`/`owner`/`group` are supported. Uses RoleCall's structured `$var`/`$concat`/`$call` refs, not Jinja `{{ }}`. Supersedes the removed `file` module for in-place edits.
 
 ## copy
 
-Literal idempotent file copy to a remote target, or on-host template render (_content/template_file, EJS or Jinja). SHA-256 compare; ships bytes base64-encoded and decodes on-target in one compare+write script with atomic mv. Supports inline content, a local source file, optional mode/owner/group, backup, validate, become, and --check.
+Literal idempotent file or directory copy to a remote target, on-target copy with remote_src, or on-host template render (content/template_file, EJS or Jinja). SHA-256/cmp/diff compare; ships bytes base64-encoded and decodes on-target. Supports inline content, local files/directories, remote_src, optional mode/owner/group, backup, validate, become, and --check.
 
 _source: builtin_
 
@@ -364,8 +404,9 @@ _source: builtin_
 
 | Arg | Type | Required | Description |
 | --- | --- | --- | --- |
-| `src` | `string` | optional | Local path to the source file on the control node. At least one of `src` or `content` is required. |
-| `content` | `string \| { template, template_file, engine }` | optional | Inline content for the destination. A bare string is written verbatim (never interpreted as a template). Pass an object with `template` (inline string) or `template_file` (path) and optional `engine` ('ejs' default, or 'jinja') to render on-host. |
+| `src` | `string` | optional | Local path to a source file or directory on the control node, or a target-side path when `remote_src: true`. At least one of `src` or `content` is required. |
+| `remote_src` | `boolean` | optional | Treat `src` as a target-side path and copy it on the target (files and directory contents). Defaults to false. |
+| `content` | `string \| { template, template_file, engine }` | optional | Inline content for the destination. A bare string is written verbatim (never interpreted as a template). Pass an object with `template` (inline string) or `template_file` (path) and optional `engine` ('ejs' default, or 'jinja') to render on-host. In a playbook, inline Jinja is lint-rejected; use `$jinja` or a `.j2` `template_file`. |
 | `dest` | `string` | optional | Destination path on the target. |
 | `path` | `string` | optional | Alias for `dest` (accepted for drop-in `config_write` parity). |
 | `mode` | `string` | optional | Octal mode to apply after writing, e.g. '0644'. |
@@ -382,6 +423,20 @@ _source: builtin_
     src: files/app.conf
     dest: /etc/app/app.conf
     mode: '0644'
+```
+
+```yaml
+- copy:
+    src: files/conf.d
+    dest: /etc/app/conf.d
+    mode: '0644'
+```
+
+```yaml
+- copy:
+    remote_src: true
+    src: /opt/staging/app.conf
+    dest: /etc/app/app.conf
 ```
 
 ```yaml
@@ -413,7 +468,7 @@ _source: builtin_
 ```
 
 
-> ≠ Ansible `copy`: **`force` defaults to FALSE** (Ansible defaults TRUE), so copy only rewrites when the destination differs unless you pass force:true. Templating is on-host: pass `content` as an object with `template`/`template_file` and optional `engine` (EJS default, or `jinja`); a bare `content` string is written literally (never interpreted as a template). Attribute application relies on stat/chown/chgrp availability; no SELinux context handling.
+> ≠ Ansible `copy`: **`force` defaults to FALSE** (Ansible defaults TRUE), so copy only rewrites when the destination differs unless you pass force:true. A local directory `src` copies its **contents** into `dest` (no `src/` trailing-slash distinction). `remote_src: true` copies a target-side path on the target using `cmp`/`diff -rq` for idempotency and `cp -a` for the transfer. Templating is on-host: pass `content` as an object with `template`/`template_file` and optional `engine` (EJS default, or `jinja`); a bare `content` string is written literally (never interpreted as a template). Playbook lint rejects inline Jinja (`content.template` with `engine: jinja`); use `$jinja` or a `.j2` `template_file` instead. Attribute application relies on stat/chown/chgrp availability; no SELinux context handling.
 
 ## cron
 
@@ -469,6 +524,35 @@ _idempotent · source: builtin_
 
 > ≠ Ansible `cron`: `env` is supported only in user crontabs (not with `cron_file`) and `mode` requires `cron_file`; `backup` writes `&lt;cron_file&gt;.&lt;epoch&gt;.bak` or `/tmp/rolecall-crontab-&lt;user&gt;-&lt;epoch&gt;.bak`. `cron_file` accepts an absolute path or a bare name rooted at /etc/cron.d. Uses `$var` refs, not Jinja `{{ }}`.
 
+## debconf
+
+Preseed or clear a debconf answer with debconf-set-selections (Ansible `debconf` alternate).
+
+_idempotent · source: builtin_
+
+**Args**
+
+| Arg | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | required | Debian package that owns the question. |
+| `question` | `string` | required | Question path. |
+| `vtype` | `string` | optional | Debconf value type (default string). |
+| `value` | `string` | optional | Desired answer (required for state: present). |
+| `state` | `present \| absent` | optional | present (default) or absent (clears the answer). |
+
+**Examples**
+
+```yaml
+- debconf:
+    name: openssh-server
+    question: openssh-server/disable-password-authentication
+    vtype: boolean
+    value: "true"
+```
+
+
+> ≠ Ansible `debconf`: reads current state with `debconf-show` (requires `debconf-utils`) and writes with `debconf-set-selections`. `state: absent` clears the answer by writing an empty value; it does not remove the question definition.
+
 ## debug
 
 Echoes the (rendered) task args as stdout; never changes target state. Useful for control-flow diagnostics.
@@ -477,7 +561,11 @@ _idempotent · source: builtin_
 
 **Args**
 
-_(none)_
+| Arg | Type | Required | Description |
+| --- | --- | --- | --- |
+| `msg` | `unknown` | optional | Message or structured value to print. |
+| `var` | `unknown` | optional | Value to print under a `var` key (Ansible parity). |
+| `verbosity` | `number` | optional | Accepted for Ansible parity; RoleCall has no run verbosity threshold, so the value is echoed but never suppresses output. |
 
 **Examples**
 
@@ -487,8 +575,11 @@ _(none)_
       $concat:
         - deploying
         - ' '
-        - $var: vars.app_name
+        -       $var: vars.app_name
 ```
+
+
+> ≠ Ansible `debug`: `var` prints its resolved value under a `var` key; `verbosity` is accepted but does not suppress output because RoleCall has no run-level verbosity threshold.
 
 ## fail
 
@@ -550,7 +641,8 @@ _idempotent · source: builtin_
 
 | Arg | Type | Required | Description |
 | --- | --- | --- | --- |
-| `path` | `string` | required | Target path on the host. |
+| `path` | `string` | optional | Target path on the host. Alias: `dest`. |
+| `dest` | `string` | optional | Alias for `path` (Ansible parity). |
 | `state` | `directory \| file \| touch \| link \| absent` | required | Desired state of the path. |
 | `mode` | `string` | optional | Octal mode to apply, e.g. '0755'. |
 | `owner` | `string` | optional | Owner user to apply. |
@@ -576,7 +668,7 @@ _idempotent · source: builtin_
 ```
 
 
-> ≠ Ansible `file`: naïve shell implementation using `[ -d ]`/`[ -f ]`/`ln -sfn`/`rm`. No SELinux contexts, ACLs, follow/force semantics for links, backup handling, or remote-user validation. mtime is intentionally NOT updated on existing paths during `touch` (kept strictly idempotent).
+> ≠ Ansible `file`: `dest` aliases `path`. Naïve shell implementation using `[ -d ]`/`[ -f ]`/`ln -sfn`/`rm`. No SELinux contexts, ACLs, follow/force semantics for links, backup handling, or remote-user validation. mtime is intentionally NOT updated on existing paths during `touch` (kept strictly idempotent).
 
 ## filesystem
 
@@ -616,6 +708,7 @@ _source: builtin_
 | --- | --- | --- | --- |
 | `paths` | `string \| string[]` | optional | Root path(s) to search (default /). |
 | `pattern` | `string` | optional | Name (or regex with `use_regex`) pattern. |
+| `patterns` | `string \| string[]` | optional | Ansible-parity alias for one or more name/regex patterns; combined with `pattern` via `-o`. |
 | `file_type` | `file \| directory \| link \| any` | optional | Filter by type (default any). |
 | `recurse` | `boolean` | optional | Descend into subdirectories (default true). |
 | `depth` | `number` | optional | Max search depth. |
@@ -647,7 +740,7 @@ _source: builtin_
 ```
 
 
-> ≠ Ansible `find`: returns a list of dicts ({path,size,mtime,type,mode}) rather than full `stat`. GNU `find -printf` required. `size` passes through to `find -size`; `age`+`age_stamp` map to `-mtime`/`-atime`/`-ctime` (d/w) or `-mmin`/`-amin`/`-cmin` (h/m/s); `contains` post-filters regular files with `grep -q -E`.
+> ≠ Ansible `find`: returns a list of dicts ({path,size,mtime,type,mode}) rather than full `stat`. GNU `find -printf` required. `patterns` (or `pattern`) accepts one or more name/regex filters, combined with `-o`. `size` passes through to `find -size`; `age`+`age_stamp` map to `-mtime`/`-atime`/`-ctime` (d/w) or `-mmin`/`-amin`/`-cmin` (h/m/s); `contains` post-filters regular files with `grep -q -E`.
 
 ## firewalld
 
@@ -1090,7 +1183,9 @@ _idempotent · source: builtin_
 
 | Arg | Type | Required | Description |
 | --- | --- | --- | --- |
-| `path` | `string` | required | Destination path on the target. |
+| `path` | `string` | optional | Destination path on the target. Alias: `dest`. |
+| `dest` | `string` | optional | Alias for `path` (Ansible parity). |
+| `create` | `boolean` | optional | Create the file when it is absent (default false; absent + create:false is an error for state:present). |
 | `line` | `string` | optional | Desired line content (required for present state). |
 | `regexp` | `string` | optional | Optional regexp matching an existing line to replace. |
 | `state` | `present \| absent` | optional | Desired state (default present). |
@@ -1098,6 +1193,9 @@ _idempotent · source: builtin_
 | `insertbefore` | `string` | optional | Insert position when absent: `BOF`/`START` to prepend, or a regex string to insert before the last matching line. Mutually exclusive with `insertafter`. |
 | `backup` | `boolean` | optional | Back up the existing file (a timestamped `.bak` sibling, attributes preserved) before writing. Defaults to false. |
 | `validate` | `string` | optional | Validation command run against the file after writing; `%s` is replaced with the file path. The task fails if the command exits non-zero (e.g. `nginx -t -c %s`). |
+| `mode` | `string` | optional | Octal mode to apply after writing, e.g. '0644'. |
+| `owner` | `string` | optional | Owner user to apply after writing. |
+| `group` | `string` | optional | Group to apply after writing. |
 
 **Examples**
 
@@ -1113,7 +1211,7 @@ _idempotent · source: builtin_
 ```
 
 
-> ≠ Ansible `lineinfile`: `insertafter` accepts `EOF` or a regex string; `insertbefore` accepts `BOF`/`START` or a regex string. Regex anchors insert relative to the LAST matching line, falling back to EOF. Uses `$var` refs, not Jinja `{{ }}`.
+> ≠ Ansible `lineinfile`: `insertafter` accepts `EOF` or a regex string; `insertbefore` accepts `BOF`/`START` or a regex string. Regex anchors insert relative to the LAST matching line, falling back to EOF. `dest` aliases `path`; an absent file fails unless `create: true`; `mode`/`owner`/`group` are applied after writing. Uses `$var` refs, not Jinja `{{ }}`.
 
 ## locale_gen
 
@@ -1459,8 +1557,10 @@ _source: builtin_
 | Arg | Type | Required | Description |
 | --- | --- | --- | --- |
 | `domain` | `string` | required | Limit domain (user/group/*). |
-| `type` | `soft \| hard \| -` | required | Limit type. |
-| `item` | `string` | required | Limit item (e.g. nofile). |
+| `type` | `soft \| hard \| -` | optional | Limit type (alias: `limit_type`). |
+| `item` | `string` | optional | Limit item, e.g. nofile (alias: `limit_item`). |
+| `limit_type` | `soft \| hard \| -` | optional | Ansible-parity alias for `type`. |
+| `limit_item` | `string` | optional | Ansible-parity alias for `item`. |
 | `value` | `string` | required | Limit value. |
 | `dest` | `string` | optional | limits.conf path (default /etc/security/limits.conf). |
 | `state` | `present \| absent` | optional | present (default). |
@@ -1477,7 +1577,39 @@ _source: builtin_
 ```
 
 
-> ≠ Ansible `pam_limits`: comment-as-key not supported; matches the exact `domain type item value` line (or the first matching `domain type item ` prefix when `use_first_match`).
+> ≠ Ansible `pam_limits`: `limit_type`/`limit_item` alias `type`/`item`; comment-as-key not supported; matches the exact `domain type item value` line (or the first matching `domain type item ` prefix when `use_first_match`).
+
+## pamd
+
+Ensure or remove one PAM rule in /etc/pam.d/&lt;service&gt; (Ansible `pamd` alternate).
+
+_idempotent · source: builtin_
+
+**Args**
+
+| Arg | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | required | PAM service name; the file is `&lt;path&gt;/&lt;name&gt;`. |
+| `type` | `auth \| account \| password \| session` | required | PAM management group. |
+| `control` | `string` | required | Control flag (required/requisite/sufficient/optional). |
+| `module_path` | `string` | required | PAM module path, e.g. `pam_unix.so`. |
+| `module_arguments` | `string \| string[]` | optional | Extra module arguments. |
+| `state` | `present \| absent` | optional | Desired state (default present). |
+| `path` | `string` | optional | PAM service directory (default /etc/pam.d). |
+| `backup` | `boolean` | optional | Rotate a timestamped `.bak` before writing. |
+
+**Examples**
+
+```yaml
+- pamd:
+    name: sshd
+    type: auth
+    control: required
+    module_path: pam_unix.so
+```
+
+
+> ≠ Ansible `pamd`: matches a rule by module path (exact or basename), replaces the first match, and inserts at EOF when absent. Supports `state: absent`, `path`, and `backup`; no `comment` line injection.
 
 ## parted
 
@@ -2079,6 +2211,10 @@ _source: builtin_
 | `mode` | `string` | optional | Transfer direction: `push` (default, controller -&gt; target) or `pull` (target -&gt; controller). |
 | `delete` | `boolean` | optional | Mirror deletions on the destination (--delete). |
 | `recursive` | `boolean` | optional | Recurse (default true; `-a`, or `-r` when false). |
+| `archive` | `boolean` | optional | Use archive mode (`-a`, default true). Set false to use `-r` instead. |
+| `rsync_path` | `string` | optional | Remote rsync binary (`--rsync-path=&lt;path&gt;`). |
+| `use_ssh_args` | `boolean` | optional | Include `-o StrictHostKeyChecking=no` in the ssh transport command (default true). Set false to send only the port. |
+| `checksum` | `boolean` | optional | Compare by checksum (`--checksum`) instead of size/mtime. |
 | `rsync_opts` | `string` | optional | Extra rsync options, whitespace-separated (quotes supported). |
 | `check` | `boolean` | optional | Dry run: add `--dry-run` (the global `--check` passthrough sets `_check`). |
 
@@ -2100,7 +2236,7 @@ _source: builtin_
 ```
 
 
-> Ansible-parity: rsync runs on the controller, not the target. Default `mode: push` sends a controller `src` to a target `dest`; `mode: pull` reverses it. Local targets (`rolecall_connection: local`) rsync locally with no ssh spec. SSH targets use `user@host:path` plus `-e "ssh -p &lt;port&gt; -o StrictHostKeyChecking=no"` from `rolecall_user`/`rolecall_ssh_user`, `rolecall_host`, and `rolecall_port`/`rolecall_ssh_port`. Key-based auth is required: password-only ssh cannot prompt through rsync, so it fails with an actionable error (no `sshpass`). Idempotency uses `--itemize-changes`; no output means `changed: false, skipped: true`.
+> Ansible-parity: rsync runs on the controller, not the target. Default `mode: push` sends a controller `src` to a target `dest`; `mode: pull` reverses it. Local targets (`rolecall_connection: local`) rsync locally with no ssh spec. SSH targets use `user@host:path` plus `-e "ssh -p &lt;port&gt; -o StrictHostKeyChecking=no"` from `rolecall_user`/`rolecall_ssh_user`, `rolecall_host`, and `rolecall_port`/`rolecall_ssh_port`; `use_ssh_args: false` sends only the port. `archive: false` uses `-r`, `rsync_path` maps to `--rsync-path`, and `checksum: true` adds `--checksum`. Key-based auth is required: password-only ssh cannot prompt through rsync, so it fails with an actionable error (no `sshpass`). Idempotency uses `--itemize-changes`; no output means `changed: false, skipped: true`.
 
 ## sysctl
 
@@ -2238,6 +2374,9 @@ _source: builtin_
 | `dest` | `string` | required | Remote directory to extract into. |
 | `creates` | `string` | optional | Skip the task if this path exists. |
 | `keep_newer` | `boolean` | optional | Preserve files newer than the archive (tar `--keep-newer-files`; zip `-n`). |
+| `owner` | `string` | optional | Owner applied recursively to the extracted tree. |
+| `group` | `string` | optional | Group applied recursively to the extracted tree. |
+| `remote_src` | `boolean` | optional | Accepted for Ansible parity; extraction always runs on the target. `false` is rejected with guidance to stage the archive with copy first. |
 
 **Examples**
 
@@ -2249,11 +2388,11 @@ _source: builtin_
 ```
 
 
-> ≠ Ansible `unarchive`: `remote_src` is always true (RoleCall extracts on the target); no per-file diff — re-running re-extracts unless `creates` guards it. `keep_newer` maps to tar `--keep-newer-files`; for zip it uses `-n` (never overwrite), the closest available option — note that `-n` takes precedence over the default `-o` overwrite.
+> ≠ Ansible `unarchive`: extraction always runs on the target, so `remote_src: true` is implicit and `false` is rejected; stage a controller-side archive with `copy` first. `owner`/`group` are applied recursively after extraction. No per-file diff — re-running re-extracts unless `creates` guards it. `keep_newer` maps to tar `--keep-newer-files`; for zip it uses `-n` (never overwrite), the closest available option — note that `-n` takes precedence over the default `-o` overwrite.
 
 ## user
 
-Ensure or remove a local/unix account idempotently (present/absent), reconciling uid/gid/home/shell/groups.
+Ensure or remove a local/unix account idempotently (present/absent), reconciling uid/gid/home/shell/comment/groups; optionally generates an SSH key and controls when passwords are applied.
 
 _idempotent · source: builtin_
 
@@ -2275,6 +2414,12 @@ _idempotent · source: builtin_
 | `password` | `string` | optional | Cleartext password applied via chpasswd when provided. |
 | `password_hash` | `string` | optional | Already-crypted password (e.g. $6$...) applied verbatim via usermod -p. Exclusive with password. |
 | `remove` | `boolean` | optional | Delete home dir + mail spool on removal (userdel -r). |
+| `comment` | `string` | optional | GECOS/comment field (e.g. full name). |
+| `generate_ssh_key` | `boolean` | optional | Generate an SSH key for the account when the key file is absent (default false). |
+| `ssh_key_bits` | `number` | optional | Key size passed to `ssh-keygen -b`. |
+| `ssh_key_type` | `string` | optional | Key type passed to `ssh-keygen -t` (default rsa). |
+| `ssh_key_file` | `string` | optional | Key path (default `&lt;home&gt;/.ssh/id_rsa`). |
+| `update_password` | `always \| on_create` | optional | Apply password/password_hash always (default) or only when the account is created. |
 
 **Examples**
 
@@ -2294,7 +2439,7 @@ _idempotent · source: builtin_
 ```
 
 
-> ≠ Ansible `user`: imperative getent-based implementation using useradd/usermod/userdel/chpasswd over Local/Ssh. `password` is sent in cleartext via chpasswd (no hashing); `password_hash` applies an already-crypted value verbatim via usermod -p (compared against the current shadow entry so a matching hash is a no-op). No login-history validation and no OpenSSH/LDAP account backends.
+> ≠ Ansible `user`: imperative getent-based implementation using useradd/usermod/userdel/chpasswd over Local/Ssh. `comment`, `generate_ssh_key`/`ssh_key_*`, and `update_password` (always default, or on_create) are supported. `password` is sent in cleartext via chpasswd (no hashing); `password_hash` applies an already-crypted value verbatim via usermod -p (compared against the current shadow entry so a matching hash is a no-op). No login-history validation and no OpenSSH/LDAP account backends.
 
 ## user_info
 
@@ -2367,6 +2512,32 @@ _source: builtin_
 
 
 > ≠ Ansible `wait_for`: port probing uses bash `/dev/tcp`; `state: drained` inspects established connections via `ss` (falling back to `netstat -an`) rather than `active_connection`.
+
+## wait_for_connection
+
+Poll the target transport until it can execute a command (Ansible `wait_for_connection` alternate). Read-only and check-safe.
+
+_source: builtin_
+
+**Args**
+
+| Arg | Type | Required | Description |
+| --- | --- | --- | --- |
+| `timeout` | `number` | optional | Maximum wait in seconds (default 300). |
+| `delay` | `number` | optional | Initial delay before the first probe, in seconds (default 0). |
+| `sleep` | `number` | optional | Delay between probes, in seconds (default 1). |
+| `connect_timeout` | `number` | optional | Accepted for Ansible parity; the transport owns its connect timeout. |
+
+**Examples**
+
+```yaml
+- wait_for_connection:
+    timeout: 120
+    sleep: 2
+```
+
+
+> ≠ Ansible `wait_for_connection`: uses the already-built RoleCall transport (no second connection), probing with `true`. `connect_timeout` is accepted but the transport owns connect timeouts.
 
 ## yum_repository
 

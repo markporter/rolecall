@@ -14,7 +14,7 @@ import { createConnection } from "../src/transport";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import { copyModule } from "../src/modules/builtins/copy";
 
@@ -135,4 +135,53 @@ test("copy backs up an existing destination before overwriting", async () => {
   expect((backupFile as string).endsWith(".bak")).toBe(true);
   expect(readFileSync(backupFile as string, "utf8")).toBe("OLD");
   expect(readFileSync(dest, "utf8")).toBe("NEW");
+});
+
+test("copy copies a local directory's contents and is idempotent", async () => {
+  const srcDir = tmp("-dir");
+  const destDir = tmp("-dir");
+  mkdirSync(join(srcDir, "nested"), { recursive: true });
+  writeFileSync(join(srcDir, "a.conf"), "a=1");
+  writeFileSync(join(srcDir, "nested", "b.conf"), "b=2");
+
+  const first = await applyIdempotent(
+    copyModule,
+    { src: srcDir, dest: destDir },
+    localCtx({ src: srcDir, dest: destDir }),
+    { cache: cache() },
+  );
+  expect(first.changed).toBe(true);
+  expect(readFileSync(join(destDir, "a.conf"), "utf8")).toBe("a=1");
+  expect(readFileSync(join(destDir, "nested", "b.conf"), "utf8")).toBe("b=2");
+
+  const second = await applyIdempotent(
+    copyModule,
+    { src: srcDir, dest: destDir },
+    localCtx({ src: srcDir, dest: destDir }),
+    { cache: cache() },
+  );
+  expect(second.skippedUnchanged).toBe(true);
+});
+
+test("copy remote_src copies a target-side file", async () => {
+  const src = tmp(".conf");
+  const dest = tmp(".conf");
+  writeFileSync(src, "remote=1");
+  const res = await applyIdempotent(
+    copyModule,
+    { src, dest, remote_src: true },
+    localCtx({ src, dest, remote_src: true }),
+    { cache: cache() },
+  );
+  expect(res.changed).toBe(true);
+  expect(readFileSync(dest, "utf8")).toBe("remote=1");
+
+  const again = await applyIdempotent(
+    copyModule,
+    { src, dest, remote_src: true },
+    localCtx({ src, dest, remote_src: true }),
+    { cache: cache() },
+  );
+  expect(again.changed).toBe(false);
+  expect(again.skipped).toBe(true);
 });

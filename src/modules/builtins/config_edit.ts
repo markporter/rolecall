@@ -12,7 +12,7 @@ import { load as yamlLoad, dump as yamlDump } from "js-yaml";
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
 import type { CheckableModule } from "../../idempotency/types";
 import { resource } from "../resource";
-import { readRemoteFile, writeRemoteFile } from "./fs";
+import { applyRemoteAttrs, readRemoteFile, writeWithBackupValidate } from "./fs";
 import type { ModuleSummary } from "../search";
 
 /** Search metadata for the `config_edit` module (auto-collected by builtins/index.ts). */
@@ -23,7 +23,15 @@ export const meta: ModuleSummary = {
   idempotent: true,
   source: "builtin",
   args: {
-    path: { type: "string", required: true, description: "Destination path on the target." },
+    path: { type: "string", required: false, description: "Destination path on the target. Alias: `dest`." },
+    dest: { type: "string", required: false, description: "Alias for `path` (Ansible parity)." },
+    section: { type: "string", required: false, description: "INI section (Ansible `ini_file` parity)." },
+    option: { type: "string", required: false, description: "INI option inside `section` (Ansible `ini_file` parity)." },
+    create: { type: "boolean", required: false, description: "Create the file when absent (default false)." },
+    backup: { type: "boolean", required: false, description: "Rotate a timestamped `.bak` before writing." },
+    mode: { type: "string", required: false, description: "Octal mode applied after writing." },
+    owner: { type: "string", required: false, description: "Owner applied after writing." },
+    group: { type: "string", required: false, description: "Group applied after writing." },
     format: {
       type: "json | yaml | ini | xml | text",
       required: false,
@@ -71,18 +79,34 @@ export const meta: ModuleSummary = {
     value: 8080`,
   ],
   notes:
-    "`value` REPLACES the key (there is no native list-append this pass). Uses RoleCall's structured `$var`/`$concat`/`$call` refs, not Jinja `{{ }}`. Supersedes the removed `file` module for in-place edits.",
+    "`value` REPLACES the key (there is no native list-append this pass). `section`/`option` provide `ini_file` parity (default `create: false` for that form; other structured edits create unless `create: false` is set). `dest` aliases `path`; `backup`/`mode`/`owner`/`group` are supported. Uses RoleCall's structured `$var`/`$concat`/`$call` refs, not Jinja `{{ }}`. Supersedes the removed `file` module for in-place edits.",
 };
 
 type EditFormat = "json" | "yaml" | "ini" | "xml" | "text";
 
 interface EditArgs {
-  /** Destination path on the target. Required. */
-  path: string;
+  /** Destination path on the target. Required unless `dest` is supplied. */
+  path?: string;
+  /** Alias for `path` (Ansible parity). */
+  dest?: string;
   /** Structured format for key merge: json | yaml | ini. */
   format?: EditFormat;
   /** Dotted key path into the structure (structured modes). */
   key?: string;
+  /** INI section for `ini` edits (Ansible `ini_file` parity). */
+  section?: string;
+  /** INI option inside `section` (Ansible `ini_file` parity). */
+  option?: string;
+  /** Create the file when absent (default false). */
+  create?: boolean;
+  /** Rotate a timestamped `.bak` before writing. */
+  backup?: boolean;
+  /** Octal mode applied after writing. */
+  mode?: string;
+  /** Owner applied after writing. */
+  owner?: string;
+  /** Group applied after writing. */
+  group?: string;
   /** Desired value at `key` (structured present) or full value (no key). REPLACES the key. */
   value?: unknown;
   /** Desired state: "present" (default) or "absent". */
@@ -93,6 +117,35 @@ interface EditArgs {
   marker?: string;
   /** Id used inside the fenced markers (xml/text modes). */
   marker_id?: string;
+}
+
+/** Resolve the destination path from `path` or its Ansible-parity `dest` alias. */
+function editPath(a: EditArgs): string {
+  return String(a.path ?? a.dest ?? "");
+}
+
+/** Apply an `ini_file`-style section/option edit to an already-parsed INI object. */
+function applyIniSectionEdit(obj: Record<string, unknown>, a: EditArgs): void {
+  if (a.section === undefined) return;
+  const option = a.option;
+  if (option === undefined) return;
+  if (a.state === "absent") {
+    const section = obj[a.section];
+    if (section !== null && typeof section === "object") {
+      delete (section as Record<string, unknown>)[option];
+    }
+    return;
+  }
+  if (obj[a.section] === null || typeof obj[a.section] !== "object") obj[a.section] = {};
+  (obj[a.section] as Record<string, unknown>)[option] = a.value;
+}
+
+/** Read an `ini_file`-style section/option value from an already-parsed INI object. */
+function readIniSectionEdit(obj: Record<string, unknown>, a: EditArgs): unknown {
+  if (a.section === undefined) return undefined;
+  const section = obj[a.section];
+  if (section === null || typeof section !== "object") return undefined;
+  return a.option === undefined ? section : (section as Record<string, unknown>)[a.option];
 }
 
 // --- dot-path helpers -------------------------------------------------------
@@ -256,7 +309,7 @@ export const configEditModule: Module & CheckableModule = resource({
   name: "config_edit",
   async describe(args, ctx) {
     const a = args as unknown as EditArgs;
-    const path = String(a.path ?? "");
+    const path = editPath(a);
     if (!path) return { current: null, inDesired: false };
     const format = (a.format ?? "json") as EditFormat;
     const state = a.state ?? "present";
@@ -274,24 +327,48 @@ export const configEditModule: Module & CheckableModule = resource({
 
     if (current === null) return { current: null, inDesired: state === "absent" };
     const obj = parseStructured(format, current);
-    const cur = a.key ? getKey(obj, a.key) : obj;
+    const hasSectionEdit = format === "ini" && a.section !== undefined && a.option !== undefined;
+    const cur = hasSectionEdit
+      ? readIniSectionEdit(obj, a)
+      : a.key
+        ? getKey(obj, a.key)
+        : obj;
     if (state === "present") {
       return { current: cur, inDesired: deepEqual(cur, a.value) };
     }
-    const inDesired = a.key ? cur === undefined : Object.keys(obj).length === 0;
+    const inDesired = hasSectionEdit
+      ? cur === undefined
+      : a.key
+        ? cur === undefined
+        : Object.keys(obj).length === 0;
     return { current: cur, inDesired };
   },
   async converge(args, ctx) {
     const a = args as unknown as EditArgs;
-    const path = String(a.path ?? "");
+    const path = editPath(a);
     if (!path) {
-      return { changed: false, failed: true, msg: "config_edit: 'path' is required" };
+      return { changed: false, failed: true, msg: "config_edit: 'path' (or 'dest') is required" };
     }
     const conn = ctx.connection;
     const format = (a.format ?? "json") as EditFormat;
     const state = a.state ?? "present";
     const current = await readRemoteFile(conn, path, ctx.become);
     const fenced = format === "xml" || format === "text" || a.block !== undefined;
+    // `ini_file` semantics default `create` to false; other structured edits keep
+    // the historical create-on-write behavior unless explicitly disabled.
+    const create = a.create ?? !(format === "ini" && a.section !== undefined);
+
+    const write = async (content: string): Promise<{ failed?: string; backupFile?: string; attrsChanged?: boolean }> => {
+      const r = await writeWithBackupValidate(conn, path, content, {
+        backup: Boolean(a.backup),
+        validate: "",
+        become: Boolean(ctx.become),
+        existing: current,
+      });
+      if (r.failed) return { failed: r.failed };
+      const attrsChanged = await applyRemoteAttrs(conn, path, a, Boolean(ctx.become));
+      return { backupFile: r.backupFile, attrsChanged };
+    };
 
     if (fenced) {
       const { begin, end } = blockMarkers(a);
@@ -300,30 +377,45 @@ export const configEditModule: Module & CheckableModule = resource({
         if (current === null || current.indexOf(begin) < 0) {
           return { changed: false, msg: `${path} block absent (no-op)` };
         }
-        await writeRemoteFile(conn, path, removeBlock(current, begin, end), ctx.become);
-        return { changed: true, msg: `${path} block removed` };
+        const w = await write(removeBlock(current, begin, end));
+        if (w.failed) return { changed: false, failed: true, msg: `config_edit: ${w.failed}` };
+        return { changed: true, msg: `${path} block removed`, data: { ...(w.backupFile ? { backup_file: w.backupFile } : {}), ...(w.attrsChanged ? { attributes: true } : {}) } };
+      }
+      if (current === null && !create) {
+        return { changed: false, failed: true, msg: `config_edit: ${path} does not exist; set create: true to create it` };
       }
       const next = current === null ? "" : replaceOrInsertBlock(current, begin, end, block);
       if (current !== null && extractBlock(current, begin, end) === block) {
-        return { changed: false, msg: `${path} block unchanged` };
+        const attrsChanged = await applyRemoteAttrs(conn, path, a, Boolean(ctx.become));
+        return { changed: attrsChanged, msg: attrsChanged ? `${path} attributes updated` : `${path} block unchanged` };
       }
-      await writeRemoteFile(conn, path, next, ctx.become);
-      return { changed: true, msg: `${path} block written` };
+      const w = await write(next);
+      if (w.failed) return { changed: false, failed: true, msg: `config_edit: ${w.failed}` };
+      return { changed: true, msg: `${path} block written`, data: { ...(w.backupFile ? { backup_file: w.backupFile } : {}), ...(w.attrsChanged ? { attributes: true } : {}) } };
     }
 
+    if (current === null && state === "present" && !create) {
+      return { changed: false, failed: true, msg: `config_edit: ${path} does not exist; set create: true to create it` };
+    }
     const obj = current === null ? emptyFor(format) : parseStructured(format, current);
+    const hasSectionEdit = format === "ini" && a.section !== undefined && a.option !== undefined;
     if (state === "present") {
-      if (a.key) setKey(obj, a.key, a.value);
+      if (hasSectionEdit) applyIniSectionEdit(obj, a);
+      else if (a.key) setKey(obj, a.key, a.value);
       else if (a.value !== undefined) Object.assign(obj, a.value as Record<string, unknown>);
+    } else if (hasSectionEdit) {
+      applyIniSectionEdit(obj, a);
     } else if (a.key) {
       deleteKey(obj, a.key);
     }
     const next = serializeStructured(format, obj);
     if (current !== null && current.trim() === next.trim()) {
-      return { changed: false, msg: `${path} unchanged` };
+      const attrsChanged = await applyRemoteAttrs(conn, path, a, Boolean(ctx.become));
+      return { changed: attrsChanged, msg: attrsChanged ? `${path} attributes updated` : `${path} unchanged` };
     }
-    await writeRemoteFile(conn, path, next, ctx.become);
-    return { changed: true, msg: `${path} edited (${format})` };
+    const w = await write(next);
+    if (w.failed) return { changed: false, failed: true, msg: `config_edit: ${w.failed}` };
+    return { changed: true, msg: `${path} edited (${format})`, data: { ...(w.backupFile ? { backup_file: w.backupFile } : {}), ...(w.attrsChanged ? { attributes: true } : {}) } };
   },
 });
 

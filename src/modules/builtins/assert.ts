@@ -32,10 +32,10 @@ export const assertModule: Module = {
       return {
         changed: false,
         failed: true,
-        msg: String(ctx.args["msg"] ?? "assertion failed"),
+        msg: String(ctx.args["fail_msg"] ?? ctx.args["msg"] ?? "assertion failed"),
       };
     }
-    return { changed: false, msg: "ok" };
+    return { changed: false, msg: String(ctx.args["success_msg"] ?? "ok") };
   },
 };
 
@@ -53,6 +53,16 @@ export const meta: ModuleSummary = {
       description: "Condition that must be truthy for the assertion to pass.",
     },
     msg: { type: "string", required: false, description: "Failure message when `that` is falsy." },
+    fail_msg: {
+      type: "string",
+      required: false,
+      description: "Ansible-parity failure message; takes precedence over `msg`.",
+    },
+    success_msg: {
+      type: "string",
+      required: false,
+      description: "Message reported when the assertion passes (default `ok`).",
+    },
   },
   examples: [
     `- assert:
@@ -82,7 +92,7 @@ export const meta: ModuleSummary = {
     msg: 'proceed when dry-run or retries remain'`,
   ],
   notes:
-    "≠ Ansible `assert`: conditions use RoleCall's structured `$var`/`$eq`/`$gt`/`$and` expression ops (rendered like any other arg), not Jinja `when`. `that` is truthy-tested; `msg` is the failure text.",
+    "≠ Ansible `assert`: conditions use RoleCall's structured `$var`/`$eq`/`$gt`/`$and` expression ops (rendered like any other arg), not Jinja `when`. `that` is truthy-tested; `fail_msg` (or `msg`) is the failure text and `success_msg` is the pass text.",
 };
 
 (assertModule as Module & { meta: ModuleSummary }).meta = meta;

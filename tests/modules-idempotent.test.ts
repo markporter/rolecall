@@ -195,7 +195,7 @@ test("blockinfile module is idempotent", async () => {
 // --- lineinfile -------------------------------------------------------------
 test("lineinfile module ensures a line once", async () => {
   const path = tmp(".cfg");
-  const args = { path, line: "FOO=bar" };
+  const args = { path, line: "FOO=bar", create: true };
   const first = await applyIdempotent(lineinfileModule, args, localCtx(args), { cache: cache() });
   expect(first.changed).toBe(true);
   const second = await applyIdempotent(lineinfileModule, args, localCtx(args), { cache: cache() });

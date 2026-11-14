@@ -35,9 +35,14 @@ export const meta: ModuleSummary = {
     },
     state: { type: "present | absent", required: false, description: "Desired state (default present)." },
     insertafter: {
-      type: "EOF | START",
+      type: "string",
       required: false,
-      description: "Where to insert when absent (default EOF).",
+      description: "Where to insert when absent: `EOF` (default), `START`, or a regex string to insert after the last matching line.",
+    },
+    insertbefore: {
+      type: "string",
+      required: false,
+      description: "Where to insert when absent: `BOF`/`START`, or a regex string to insert before the last matching line. Mutually exclusive with `insertafter`.",
     },
     backup: {
       type: "boolean",
@@ -71,7 +76,7 @@ export const meta: ModuleSummary = {
     state: present`,
   ],
   notes:
-    "≠ Ansible `blockinfile`: the default marker is `# RoleCall BLOCK {mark}` (not `# BEGIN/END ANSIBLE MANAGED BLOCK`); set `ansible_marker: true` to opt into the Ansible markers. Multiple blocks in one file need explicit `marker` templates instead of `ansible_marker` (which ignores `marker`/`marker_id`). Uses `$var` refs, not Jinja `{{ }}`.",
+    "≠ Ansible `blockinfile`: the default marker is `# RoleCall BLOCK {mark}` (not `# BEGIN/END ANSIBLE MANAGED BLOCK`); set `ansible_marker: true` to opt into the Ansible markers. `insertafter`/`insertbefore` accept `EOF`/`BOF`/`START` or a regex string and are mutually exclusive. Multiple blocks in one file need explicit `marker` templates instead of `ansible_marker` (which ignores `marker`/`marker_id`). Uses `$var` refs, not Jinja `{{ }}`.",
 };
 
 interface BlockArgs {
@@ -87,8 +92,10 @@ interface BlockArgs {
   ansible_marker?: boolean;
   /** Desired state: "present" (default) or "absent". */
   state?: "present" | "absent";
-  /** Where to insert when absent: "EOF" (default) or "START". */
-  insertafter?: "EOF" | "START";
+  /** Where to insert when absent: "EOF" (default), "START", or a regex string. */
+  insertafter?: string;
+  /** Where to insert when absent: "BOF"/"START" or a regex string. Mutually exclusive with `insertafter`. */
+  insertbefore?: string;
   /** Rotate a timestamped `.bak` (preserving attributes via `cp -p`) before writing. */
   backup?: unknown;
   /** Validation command run against the file after writing; `%s` is replaced with the path. The task fails if it exits non-zero. */
@@ -142,6 +149,9 @@ export const blockinfileModule: Module & CheckableModule = resource({
     if (!path) {
       return { changed: false, failed: true, msg: "blockinfile: 'path' is required" };
     }
+    if (a.insertafter !== undefined && a.insertbefore !== undefined) {
+      return { changed: false, failed: true, msg: "blockinfile: use only one of insertafter / insertbefore" };
+    }
     const conn = ctx.connection;
     const bec = Boolean(ctx.become);
     const doBackup = Boolean(a.backup);
@@ -168,7 +178,7 @@ export const blockinfileModule: Module & CheckableModule = resource({
     const next =
       current === null
         ? begin + "\n" + block + "\n" + end + "\n"
-        : replaceOrInsert(current, begin, end, block, a.insertafter ?? "EOF");
+        : replaceOrInsert(current, begin, end, block, { insertafter: a.insertafter, insertbefore: a.insertbefore });
     const r = await writeWithBackupValidate(conn, path, next, { backup: doBackup, validate: validateCmd, become: bec, existing: current });
     if (r.failed) return { changed: false, failed: true, msg: `blockinfile: ${r.failed}` };
     return { changed: true, msg: `${path} block written`, data: r.backupFile ? { backup_file: r.backupFile } : undefined };
@@ -182,7 +192,7 @@ function replaceOrInsert(
   begin: string,
   end: string,
   block: string,
-  where: "EOF" | "START",
+  where: { insertafter?: string; insertbefore?: string },
 ): string {
   const bi = content.indexOf(begin);
   if (bi >= 0) {
@@ -193,10 +203,39 @@ function replaceOrInsert(
       );
     }
   }
-  if (where === "START") {
-    return begin + "\n" + block + "\n" + end + "\n" + content.replace(/^\n/, "");
+  const region = begin + "\n" + block + "\n" + end + "\n";
+  if (where.insertbefore === "BOF" || where.insertbefore === "START" || where.insertafter === "START") {
+    return region + content.replace(/^\n/, "");
   }
-  return content.replace(/\n*$/, "") + "\n" + begin + "\n" + block + "\n" + end + "\n";
+  if (where.insertbefore !== undefined && where.insertbefore !== "EOF") {
+    return insertRelative(content, region, new RegExp(where.insertbefore), "before");
+  }
+  if (where.insertafter !== undefined && where.insertafter !== "EOF") {
+    return insertRelative(content, region, new RegExp(where.insertafter), "after");
+  }
+  return content.replace(/\n*$/, "") + "\n" + region;
+}
+
+/** Insert an already-formed block region relative to the last line matching `re`. */
+function insertRelative(
+  content: string,
+  region: string,
+  re: RegExp,
+  position: "before" | "after",
+): string {
+  const lines = content.split(/\r?\n/);
+  if (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
+  let index = -1;
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    if (re.test(lines[i]!)) {
+      index = i;
+      break;
+    }
+  }
+  if (index < 0) return content.replace(/\n*$/, "") + "\n" + region;
+  const regionLines = region.replace(/\n$/, "").split("\n");
+  lines.splice(position === "before" ? index : index + 1, 0, ...regionLines);
+  return lines.join("\n") + "\n";
 }
 
 function removeRegion(content: string, begin: string, end: string): string {

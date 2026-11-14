@@ -155,7 +155,7 @@ function rsyncOptions(args: Record<string, unknown>): string[] {
 
 /**
  * @summary Build the controller-side rsync argv for a `synchronize` invocation without spawning anything.
- * @param args Module arguments (`src`, `dest`, `mode`, `delete`, `recursive`, `rsync_opts`, `check`/`_check`).
+ * @param args Module arguments (`src`, `dest`, `mode`, `delete`, `recursive`, `archive`, `rsync_opts`, `rsync_path`, `use_ssh_args`, `checksum`, `check`/`_check`).
  * @param ctxLike Context carrying host vars plus the optional transport kind.
  * @returns A pure {@link RsyncPlan} (command, argv, direction, remote target).
  * @throws Error when required paths are missing, `mode` is invalid, the remote host is unknown, or password-only ssh auth is configured.
@@ -176,12 +176,17 @@ export function buildRsyncPlan(
   const vars = ctxLike.vars ?? {};
   const remote = !isLocalTarget(ctxLike);
   const recursive = args["recursive"] !== false;
+  const archive = args["archive"] !== false;
   const del = Boolean(args["delete"]);
   const check = Boolean(args["check"] ?? args["_check"]);
+  const useSshArgs = args["use_ssh_args"] !== false;
 
-  const argv: string[] = ["--itemize-changes", recursive ? "-a" : "-r"];
+  const argv: string[] = ["--itemize-changes", archive && recursive ? "-a" : "-r"];
   if (del) argv.push("--delete");
   if (check) argv.push("--dry-run");
+  if (args["checksum"] === true) argv.push("--checksum");
+  const rsyncPath = asString(args["rsync_path"]);
+  if (rsyncPath) argv.push(`--rsync-path=${rsyncPath}`);
   argv.push(...rsyncOptions(args));
 
   let srcArg = src;
@@ -205,7 +210,12 @@ export function buildRsyncPlan(
     const remoteSpec = `${remoteTarget}:${mode === "push" ? dest : src}`;
     if (mode === "push") destArg = remoteSpec;
     else srcArg = remoteSpec;
-    argv.push("-e", `ssh -p ${port} -o StrictHostKeyChecking=no`);
+    argv.push(
+      "-e",
+      useSshArgs
+        ? `ssh -p ${port} -o StrictHostKeyChecking=no`
+        : `ssh -p ${port}`,
+    );
   }
 
   argv.push(srcArg, destArg);
@@ -339,6 +349,18 @@ export const meta: ModuleSummary = {
     mode: { type: "string", required: false, description: "Transfer direction: `push` (default, controller -> target) or `pull` (target -> controller)." },
     delete: { type: "boolean", required: false, description: "Mirror deletions on the destination (--delete)." },
     recursive: { type: "boolean", required: false, description: "Recurse (default true; `-a`, or `-r` when false)." },
+    archive: {
+      type: "boolean",
+      required: false,
+      description: "Use archive mode (`-a`, default true). Set false to use `-r` instead.",
+    },
+    rsync_path: { type: "string", required: false, description: "Remote rsync binary (`--rsync-path=<path>`)." },
+    use_ssh_args: {
+      type: "boolean",
+      required: false,
+      description: "Include `-o StrictHostKeyChecking=no` in the ssh transport command (default true). Set false to send only the port.",
+    },
+    checksum: { type: "boolean", required: false, description: "Compare by checksum (`--checksum`) instead of size/mtime." },
     rsync_opts: { type: "string", required: false, description: "Extra rsync options, whitespace-separated (quotes supported)." },
     check: { type: "boolean", required: false, description: "Dry run: add `--dry-run` (the global `--check` passthrough sets `_check`)." },
   },
@@ -353,7 +375,7 @@ export const meta: ModuleSummary = {
     dest: /tmp/collected/
     rsync_opts: --compress`,
   ],
-  notes: "Ansible-parity: rsync runs on the controller, not the target. Default `mode: push` sends a controller `src` to a target `dest`; `mode: pull` reverses it. Local targets (`rolecall_connection: local`) rsync locally with no ssh spec. SSH targets use `user@host:path` plus `-e \"ssh -p <port> -o StrictHostKeyChecking=no\"` from `rolecall_user`/`rolecall_ssh_user`, `rolecall_host`, and `rolecall_port`/`rolecall_ssh_port`. Key-based auth is required: password-only ssh cannot prompt through rsync, so it fails with an actionable error (no `sshpass`). Idempotency uses `--itemize-changes`; no output means `changed: false, skipped: true`.",
+  notes: "Ansible-parity: rsync runs on the controller, not the target. Default `mode: push` sends a controller `src` to a target `dest`; `mode: pull` reverses it. Local targets (`rolecall_connection: local`) rsync locally with no ssh spec. SSH targets use `user@host:path` plus `-e \"ssh -p <port> -o StrictHostKeyChecking=no\"` from `rolecall_user`/`rolecall_ssh_user`, `rolecall_host`, and `rolecall_port`/`rolecall_ssh_port`; `use_ssh_args: false` sends only the port. `archive: false` uses `-r`, `rsync_path` maps to `--rsync-path`, and `checksum: true` adds `--checksum`. Key-based auth is required: password-only ssh cannot prompt through rsync, so it fails with an actionable error (no `sshpass`). Idempotency uses `--itemize-changes`; no output means `changed: false, skipped: true`.",
 };
 
 (synchronizeModule as Module & { meta: ModuleSummary }).meta = meta;

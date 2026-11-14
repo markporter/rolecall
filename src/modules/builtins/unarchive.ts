@@ -2,9 +2,9 @@
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
 import type { ModuleSummary } from "../search";
-import { shQuote } from "./fs";
+import { applyRemoteAttrs, shQuote } from "./fs";
 
-/** @summary Extract an archive on the target (Ansible `unarchive` alternate). Reads `src` on the target and extracts into `dest`; skips when `creates` already exists. @param ctx ModuleContext carrying `src`, `dest`, `creates`, `keep_newer`, `remote_src`, `check`. @returns ModuleResult; `skipped` when guarded. */
+/** @summary Extract an archive on the target (Ansible `unarchive` alternate). Reads `src` on the target and extracts into `dest`; skips when `creates` already exists. @param ctx ModuleContext carrying `src`, `dest`, `creates`, `keep_newer`, `owner`, `group`, `remote_src`, `check`. @returns ModuleResult; `skipped` when guarded. */
 export const unarchiveModule: Module = {
   name: "unarchive",
   supportsCheck: true,
@@ -16,6 +16,13 @@ export const unarchiveModule: Module = {
     const creates = typeof a["creates"] === "string" ? String(a["creates"]) : "";
     const keepNewer = Boolean(a["keep_newer"]);
     const check = Boolean(a["check"] ?? a["_check"]);
+    if (a["remote_src"] === false) {
+      return {
+        changed: false,
+        failed: true,
+        msg: "unarchive: extraction always runs on the target; stage the archive with copy first instead of remote_src: false",
+      };
+    }
 
     if (creates) {
       const r = await ctx.connection.exec(`test -e ${shQuote(creates)}`);
@@ -30,7 +37,14 @@ export const unarchiveModule: Module = {
     if (check) return { changed: true, skipped: true, msg: `unarchive: would extract ${src} (dry run)` };
     const res = await ctx.connection.exec(cmd);
     if (res.exitCode !== 0) return { changed: false, failed: true, msg: `unarchive: failed: ${res.stderr || `exit ${res.exitCode}`}` };
-    return { changed: true, msg: `unarchive: ${src} -> ${dest}`, data: { src, dest } };
+    const attrsChanged = await applyRemoteAttrs(
+      ctx.connection,
+      dest,
+      { owner: a["owner"], group: a["group"] },
+      Boolean(ctx.become),
+      { recurse: true },
+    );
+    return { changed: true, msg: `unarchive: ${src} -> ${dest}`, data: { src, dest, ...(attrsChanged ? { attributes: true } : {}) } };
   },
 };
 
@@ -44,6 +58,13 @@ export const meta: ModuleSummary = {
     dest: { type: "string", required: true, description: "Remote directory to extract into." },
     creates: { type: "string", required: false, description: "Skip the task if this path exists." },
     keep_newer: { type: "boolean", required: false, description: "Preserve files newer than the archive (tar `--keep-newer-files`; zip `-n`)." },
+    owner: { type: "string", required: false, description: "Owner applied recursively to the extracted tree." },
+    group: { type: "string", required: false, description: "Group applied recursively to the extracted tree." },
+    remote_src: {
+      type: "boolean",
+      required: false,
+      description: "Accepted for Ansible parity; extraction always runs on the target. `false` is rejected with guidance to stage the archive with copy first.",
+    },
   },
   examples: [
     `- unarchive:
@@ -51,7 +72,7 @@ export const meta: ModuleSummary = {
     dest: /opt/app
     creates: /opt/app/.installed`,
   ],
-  notes: "≠ Ansible `unarchive`: `remote_src` is always true (RoleCall extracts on the target); no per-file diff — re-running re-extracts unless `creates` guards it. `keep_newer` maps to tar `--keep-newer-files`; for zip it uses `-n` (never overwrite), the closest available option — note that `-n` takes precedence over the default `-o` overwrite.",
+  notes: "≠ Ansible `unarchive`: extraction always runs on the target, so `remote_src: true` is implicit and `false` is rejected; stage a controller-side archive with `copy` first. `owner`/`group` are applied recursively after extraction. No per-file diff — re-running re-extracts unless `creates` guards it. `keep_newer` maps to tar `--keep-newer-files`; for zip it uses `-n` (never overwrite), the closest available option — note that `-n` takes precedence over the default `-o` overwrite.",
 };
 
 (unarchiveModule as Module & { meta: ModuleSummary }).meta = meta;

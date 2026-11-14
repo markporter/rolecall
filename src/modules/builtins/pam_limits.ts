@@ -10,8 +10,18 @@ export const pamLimitsModule: Module & CheckableModule = {
   name: "pam_limits",
   async check(args, ctx) {
     const domain = typeof args["domain"] === "string" ? String(args["domain"]) : "";
-    const type = typeof args["type"] === "string" ? String(args["type"]) : "";
-    const item = typeof args["item"] === "string" ? String(args["item"]) : "";
+    const type =
+      typeof args["type"] === "string"
+        ? String(args["type"])
+        : typeof args["limit_type"] === "string"
+          ? String(args["limit_type"])
+          : "";
+    const item =
+      typeof args["item"] === "string"
+        ? String(args["item"])
+        : typeof args["limit_item"] === "string"
+          ? String(args["limit_item"])
+          : "";
     const value = typeof args["value"] === "string" ? String(args["value"]) : "";
     const dest = typeof args["dest"] === "string" ? String(args["dest"]) : "/etc/security/limits.conf";
     const state = (typeof args["state"] === "string" ? String(args["state"]) : "present") as "present" | "absent";
@@ -22,8 +32,18 @@ export const pamLimitsModule: Module & CheckableModule = {
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const a = ctx.args;
     const domain = typeof a["domain"] === "string" ? String(a["domain"]) : "";
-    const type = typeof a["type"] === "string" ? String(a["type"]) : "";
-    const item = typeof a["item"] === "string" ? String(a["item"]) : "";
+    const type =
+      typeof a["type"] === "string"
+        ? String(a["type"])
+        : typeof a["limit_type"] === "string"
+          ? String(a["limit_type"])
+          : "";
+    const item =
+      typeof a["item"] === "string"
+        ? String(a["item"])
+        : typeof a["limit_item"] === "string"
+          ? String(a["limit_item"])
+          : "";
     const value = typeof a["value"] === "string" ? String(a["value"]) : "";
     const dest = typeof a["dest"] === "string" ? String(a["dest"]) : "/etc/security/limits.conf";
     const state = (typeof a["state"] === "string" ? String(a["state"]) : "present") as "present" | "absent";
@@ -63,8 +83,10 @@ export const meta: ModuleSummary = {
   source: "builtin",
   args: {
     domain: { type: "string", required: true, description: "Limit domain (user/group/*).", },
-    type: { type: "soft | hard | -", required: true, description: "Limit type." },
-    item: { type: "string", required: true, description: "Limit item (e.g. nofile)." },
+    type: { type: "soft | hard | -", required: false, description: "Limit type (alias: `limit_type`)." },
+    item: { type: "string", required: false, description: "Limit item, e.g. nofile (alias: `limit_item`)." },
+    limit_type: { type: "soft | hard | -", required: false, description: "Ansible-parity alias for `type`." },
+    limit_item: { type: "string", required: false, description: "Ansible-parity alias for `item`." },
     value: { type: "string", required: true, description: "Limit value." },
     dest: { type: "string", required: false, description: "limits.conf path (default /etc/security/limits.conf)." },
     state: { type: "present | absent", required: false, description: "present (default)." },
@@ -77,7 +99,7 @@ export const meta: ModuleSummary = {
     item: nofile
     value: "65536"`,
   ],
-  notes: "≠ Ansible `pam_limits`: comment-as-key not supported; matches the exact `domain type item value` line (or the first matching `domain type item ` prefix when `use_first_match`).",
+  notes: "≠ Ansible `pam_limits`: `limit_type`/`limit_item` alias `type`/`item`; comment-as-key not supported; matches the exact `domain type item value` line (or the first matching `domain type item ` prefix when `use_first_match`).",
 };
 
 (pamLimitsModule as Module & { meta: ModuleSummary }).meta = meta;

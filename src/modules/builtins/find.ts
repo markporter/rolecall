@@ -35,6 +35,14 @@ export const findModule: Module = {
     const a = ctx.args;
     const paths = typeof a["paths"] === "string" ? [String(a["paths"])] : Array.isArray(a["paths"]) ? (a["paths"] as unknown[]).map(String) : ["/"];
     const pattern = typeof a["pattern"] === "string" ? String(a["pattern"]) : "";
+    const patternList = [
+      ...(pattern ? [pattern] : []),
+      ...(typeof a["patterns"] === "string"
+        ? [String(a["patterns"])]
+        : Array.isArray(a["patterns"])
+          ? (a["patterns"] as unknown[]).map(String)
+          : []),
+    ];
     const fileType = typeof a["file_type"] === "string" ? String(a["file_type"]) : "any";
     const recurse = a["recurse"] !== false;
     const depth = typeof a["depth"] === "number" ? Number(a["depth"]) : a["depth"] ? Number(a["depth"]) : undefined;
@@ -65,7 +73,14 @@ export const findModule: Module = {
     if (!recurse) opts.push("-maxdepth 1");
     else if (depth !== undefined) opts.push(`-maxdepth ${depth}`);
     if (!hidden) opts.push("-not -name '.*'");
-    const pat = pattern ? (useRegex ? `-regex ${shQuote(pattern)}` : `-name ${shQuote(pattern)}`) : "";
+    const patternExpr = (value: string): string =>
+      useRegex ? `-regex ${shQuote(value)}` : `-name ${shQuote(value)}`;
+    const pat =
+      patternList.length === 0
+        ? ""
+        : patternList.length === 1
+          ? patternExpr(patternList[0]!)
+          : `\\( ${patternList.map(patternExpr).join(" -o ")} \\)`;
     const fmt = "%p\\t%s\\t%Y\\t%y\\t%m";
     const cmd = `find ${paths.map(shQuote).join(" ")} ${opts.join(" ")} ${pat} -printf ${shQuote(fmt)}`.trim();
 
@@ -111,6 +126,11 @@ export const meta: ModuleSummary = {
   args: {
     paths: { type: "string | string[]", required: false, description: "Root path(s) to search (default /)." },
     pattern: { type: "string", required: false, description: "Name (or regex with `use_regex`) pattern." },
+    patterns: {
+      type: "string | string[]",
+      required: false,
+      description: "Ansible-parity alias for one or more name/regex patterns; combined with `pattern` via `-o`.",
+    },
     file_type: { type: "file | directory | link | any", required: false, description: "Filter by type (default any)." },
     recurse: { type: "boolean", required: false, description: "Descend into subdirectories (default true)." },
     depth: { type: "number", required: false, description: "Max search depth." },
@@ -135,7 +155,7 @@ export const meta: ModuleSummary = {
     contains: "ERROR"
   register: stale_logs`,
   ],
-  notes: "≠ Ansible `find`: returns a list of dicts ({path,size,mtime,type,mode}) rather than full `stat`. GNU `find -printf` required. `size` passes through to `find -size`; `age`+`age_stamp` map to `-mtime`/`-atime`/`-ctime` (d/w) or `-mmin`/`-amin`/`-cmin` (h/m/s); `contains` post-filters regular files with `grep -q -E`.",
+  notes: "≠ Ansible `find`: returns a list of dicts ({path,size,mtime,type,mode}) rather than full `stat`. GNU `find -printf` required. `patterns` (or `pattern`) accepts one or more name/regex filters, combined with `-o`. `size` passes through to `find -size`; `age`+`age_stamp` map to `-mtime`/`-atime`/`-ctime` (d/w) or `-mmin`/`-amin`/`-cmin` (h/m/s); `contains` post-filters regular files with `grep -q -E`.",
 };
 
 (findModule as Module & { meta: ModuleSummary }).meta = meta;

@@ -49,12 +49,25 @@ export interface UserArgs {
   password_hash?: string;
   /** Remove the account's home directory and mail spool on deletion (`userdel -r`). */
   remove?: boolean;
+  /** GECOS/comment field (e.g. full name). */
+  comment?: string;
+  /** Generate an SSH key for the account when it is absent. */
+  generate_ssh_key?: boolean;
+  /** RSA/ECDSA/Ed25519 key size passed to `ssh-keygen -b` (default: ssh-keygen's default). */
+  ssh_key_bits?: number;
+  /** Key type passed to `ssh-keygen -t` (default `rsa`). */
+  ssh_key_type?: string;
+  /** Key path (default `<home>/.ssh/id_rsa`). */
+  ssh_key_file?: string;
+  /** When to apply `password`/`password_hash`: `always` (default) or `on_create`. */
+  update_password?: "always" | "on_create";
 }
 
 interface PasswdEntry {
   name: string;
   uid?: number;
   gid?: number;
+  comment?: string;
   home?: string;
   shell?: string;
 }
@@ -83,6 +96,7 @@ async function lookupUser(
         name: p[0] ?? "",
         uid: p[2] !== undefined ? Number.parseInt(String(p[2]), 10) : undefined,
         gid: p[3] !== undefined ? Number.parseInt(String(p[3]), 10) : undefined,
+        comment: p[4] ?? undefined,
         home: p[5] ?? undefined,
         shell: p[6] ?? undefined,
       },
@@ -115,6 +129,55 @@ async function readShadowHash(
   return hash !== undefined && hash.length > 0 ? hash : undefined;
 }
 
+/** Resolve the requested SSH key path (`ssh_key_file`, else `<home>/.ssh/id_rsa`). */
+function sshKeyPath(args: UserArgs, entry?: PasswdEntry): string | undefined {
+  if (typeof args.ssh_key_file === "string" && args.ssh_key_file.length > 0) return args.ssh_key_file;
+  const home = args.home ?? entry?.home;
+  return home ? `${home}/.ssh/id_rsa` : undefined;
+}
+
+/** True when the account's SSH key file already exists on the target. */
+async function sshKeyExists(
+  conn: NonNullable<ModuleContext["connection"]>,
+  sudo: string,
+  keyPath: string,
+): Promise<boolean> {
+  return (await conn.exec(`${sudo}test -f ${shQuote(keyPath)}`)).exitCode === 0;
+}
+
+/**
+ * Generate an account SSH key with `ssh-keygen` when `generate_ssh_key` is set
+ * and the key file is absent. The `.ssh` directory is created and handed to the
+ * account before key generation so `sudo -u <name>` can write the key.
+ * @returns Whether a key was created, its path, and any failure detail.
+ */
+async function ensureSshKey(
+  conn: NonNullable<ModuleContext["connection"]>,
+  sudo: string,
+  name: string,
+  args: UserArgs,
+  entry?: PasswdEntry,
+): Promise<{ changed: boolean; keyFile?: string; failed?: string }> {
+  if (args.generate_ssh_key !== true) return { changed: false };
+  const keyFile = sshKeyPath(args, entry);
+  if (keyFile === undefined) {
+    return { changed: false, failed: "cannot determine the home directory for an SSH key" };
+  }
+  if (await sshKeyExists(conn, sudo, keyFile)) return { changed: false, keyFile };
+  const dir = keyFile.replace(/\/[^/]+$/, "");
+  const type = args.ssh_key_type ?? "rsa";
+  const bits = typeof args.ssh_key_bits === "number" ? ` -b ${args.ssh_key_bits}` : "";
+  const runAs = sudo ? `${sudo}-u ${shQuote(name)}` : "";
+  const cmd =
+    `${sudo}mkdir -p ${shQuote(dir)} && ${sudo}chown ${shQuote(name)} ${shQuote(dir)} && ` +
+    `${runAs}ssh-keygen -t ${shQuote(type)}${bits} -N '' -f ${shQuote(keyFile)}`;
+  const res = await conn.exec(cmd);
+  if (res.exitCode !== 0) {
+    return { changed: false, keyFile, failed: res.stderr.trim() || `exit ${res.exitCode}` };
+  }
+  return { changed: true, keyFile };
+}
+
 /** Parse the comma/space separated supplementary groups reported by `groups <name>`. */
 function parseGroups(stdout: string): string[] {
   // Real output looks like "alice : grpA grpB "; split on ':' then whitespace.
@@ -131,6 +194,7 @@ function buildCreate(args: UserArgs): string[] {
   else if (typeof args.group === "string" && args.group.length > 0) parts.push(`--gid ${shQuote(args.group)}`);
   if (typeof args.home === "string" && args.home.length > 0) parts.push(`--home-dir ${shQuote(args.home)}`);
   if (typeof args.shell === "string" && args.shell.length > 0) parts.push(`--shell ${shQuote(args.shell)}`);
+  if (typeof args.comment === "string" && args.comment.length > 0) parts.push(`--comment ${shQuote(args.comment)}`);
   // Default to creating the home directory unless explicitly disabled.
   if (args.create_home !== false) parts.push("--create-home");
   if (typeof args.groups === "string" && args.groups.length > 0) {
@@ -170,6 +234,14 @@ function buildReconcile(args: UserArgs, cur: PasswdEntry): string[] {
     parts.push(`--shell ${shQuote(args.shell)}`);
     applied = true;
   }
+  if (
+    typeof args.comment === "string" &&
+    args.comment.length > 0 &&
+    args.comment !== (cur.comment ?? "")
+  ) {
+    parts.push(`--comment ${shQuote(args.comment)}`);
+    applied = true;
+  }
   if (typeof args.groups === "string" && args.groups.length > 0) {
     parts.push(args.append === true ? "--append --groups" : "--groups");
     parts.push(shQuote(args.groups));
@@ -182,7 +254,7 @@ function buildReconcile(args: UserArgs, cur: PasswdEntry): string[] {
 export const meta: ModuleSummary = {
   name: "user",
   description:
-    "Ensure or remove a local/unix account idempotently (present/absent), reconciling uid/gid/home/shell/groups.",
+    "Ensure or remove a local/unix account idempotently (present/absent), reconciling uid/gid/home/shell/comment/groups; optionally generates an SSH key and controls when passwords are applied.",
   idempotent: true,
   source: "builtin",
   args: {
@@ -220,6 +292,20 @@ export const meta: ModuleSummary = {
       description: "Already-crypted password (e.g. $6$...) applied verbatim via usermod -p. Exclusive with password.",
     },
     remove: { type: "boolean", required: false, description: "Delete home dir + mail spool on removal (userdel -r)." },
+    comment: { type: "string", required: false, description: "GECOS/comment field (e.g. full name)." },
+    generate_ssh_key: {
+      type: "boolean",
+      required: false,
+      description: "Generate an SSH key for the account when the key file is absent (default false).",
+    },
+    ssh_key_bits: { type: "number", required: false, description: "Key size passed to `ssh-keygen -b`." },
+    ssh_key_type: { type: "string", required: false, description: "Key type passed to `ssh-keygen -t` (default rsa)." },
+    ssh_key_file: { type: "string", required: false, description: "Key path (default `<home>/.ssh/id_rsa`)." },
+    update_password: {
+      type: "always | on_create",
+      required: false,
+      description: "Apply password/password_hash always (default) or only when the account is created.",
+    },
   },
   examples: [
     `- user:
@@ -233,7 +319,7 @@ export const meta: ModuleSummary = {
     remove: true`,
   ],
   notes:
-    "≠ Ansible `user`: imperative getent-based implementation using useradd/usermod/userdel/chpasswd over Local/Ssh. `password` is sent in cleartext via chpasswd (no hashing); `password_hash` applies an already-crypted value verbatim via usermod -p (compared against the current shadow entry so a matching hash is a no-op). No login-history validation and no OpenSSH/LDAP account backends.",
+    "≠ Ansible `user`: imperative getent-based implementation using useradd/usermod/userdel/chpasswd over Local/Ssh. `comment`, `generate_ssh_key`/`ssh_key_*`, and `update_password` (always default, or on_create) are supported. `password` is sent in cleartext via chpasswd (no hashing); `password_hash` applies an already-crypted value verbatim via usermod -p (compared against the current shadow entry so a matching hash is a no-op). No login-history validation and no OpenSSH/LDAP account backends.",
 };
 
 /** @summary Ensure or remove a local/unix account named `name`, reconciling identity attributes idempotently. Probes `/etc/passwd` before acting so re-runs are no-ops; applies `sudo` on every command when `ctx.become` is set. @param ctx ModuleContext carrying UserArgs and connection. @returns ModuleResult with data.name/state populated; failed:true carries the reason in msg on validation/command errors. */
@@ -259,12 +345,29 @@ export const userModule: Module & CheckableModule = {
         inDesired = a.append === true ? hasAll : hasAll && !hasExtra;
       }
     }
-    if (inDesired && typeof a.password_hash === "string" && a.password_hash.length > 0) {
+    const updatePassword = a.update_password ?? "always";
+    if (
+      inDesired &&
+      updatePassword === "always" &&
+      typeof a.password_hash === "string" &&
+      a.password_hash.length > 0
+    ) {
       inDesired = (await readShadowHash(conn, sudo, name)) === a.password_hash;
     }
-    if (inDesired && typeof a.password === "string" && a.password.length > 0) {
+    if (
+      inDesired &&
+      updatePassword === "always" &&
+      typeof a.password === "string" &&
+      a.password.length > 0
+    ) {
       // Cleartext passwords are always re-applied (no readback comparison).
       inDesired = false;
+    }
+    if (inDesired && a.generate_ssh_key === true) {
+      const keyFile = sshKeyPath(a, entry);
+      if (keyFile === undefined || !(await sshKeyExists(conn, sudo, keyFile))) {
+        inDesired = false;
+      }
     }
     return { current: entry, inDesired };
   },
@@ -293,6 +396,7 @@ export const userModule: Module & CheckableModule = {
     const conn = ctx.connection;
     const sudo = ctx.become ? "sudo " : "";
     let changed = false;
+    let created = false;
     const data: Record<string, unknown> = { name, state };
 
     if (state === "absent") {
@@ -341,6 +445,7 @@ export const userModule: Module & CheckableModule = {
         };
       }
       changed = true;
+      created = true;
       data.created = true;
     } else {
       const mods = buildReconcile(args, entry!);
@@ -389,8 +494,14 @@ export const userModule: Module & CheckableModule = {
       }
     }
 
+    const updatePassword = args.update_password ?? "always";
+    const applyPassword = updatePassword === "always" || created;
     const desiredHash =
-      typeof args.password_hash === "string" && args.password_hash.length > 0 ? args.password_hash : undefined;
+      typeof args.password_hash === "string" &&
+      args.password_hash.length > 0 &&
+      applyPassword
+        ? args.password_hash
+        : undefined;
     if (desiredHash !== undefined) {
       const currentHash = await readShadowHash(conn, sudo, name);
       if (currentHash !== desiredHash) {
@@ -409,8 +520,13 @@ export const userModule: Module & CheckableModule = {
       }
     }
 
-    // Password is applied only when supplied (via chpasswd, which takes cleartext).
-    if (typeof args.password === "string" && args.password.length > 0) {
+    // Password is applied only when supplied (via chpasswd, which takes cleartext)
+    // and when `update_password` permits it (always, or on_create after creation).
+    if (
+      applyPassword &&
+      typeof args.password === "string" &&
+      args.password.length > 0
+    ) {
       const line = `${name}:${args.password}`;
       const res = await conn.exec(`echo ${shQuote(line)} | ${sudo}chpasswd`);
       if (res.exitCode !== 0) {
@@ -424,6 +540,27 @@ export const userModule: Module & CheckableModule = {
       }
       changed = true;
       data.passwordChanged = true;
+    }
+
+    const key = await ensureSshKey(
+      conn,
+      sudo,
+      name,
+      args,
+      found ? entry : (await lookupUser(conn, sudo, name)).entry,
+    );
+    if (key.failed !== undefined) {
+      return {
+        changed: false,
+        failed: true,
+        stderr: "",
+        msg: `user: failed to generate SSH key for ${name}: ${key.failed}`,
+        data,
+      };
+    }
+    if (key.changed) {
+      changed = true;
+      data.sshKeyGenerated = key.keyFile;
     }
 
     return {

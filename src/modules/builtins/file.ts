@@ -19,8 +19,10 @@ import { shQuote } from "./fs";
 type FileState = "directory" | "file" | "touch" | "link" | "absent";
 
 interface FileArgs {
-  /** Target path on the host. Required. */
-  path: string;
+  /** Target path on the host. Required unless `dest` is supplied. */
+  path?: string;
+  /** Alias for `path` (Ansible parity). */
+  dest?: string;
   /** Desired state. Required. */
   state: FileState;
   /** Octal mode, e.g. "0755", applied when present. */
@@ -43,7 +45,8 @@ export const meta: ModuleSummary = {
   idempotent: true,
   source: "builtin",
   args: {
-    path: { type: "string", required: true, description: "Target path on the host." },
+    path: { type: "string", required: false, description: "Target path on the host. Alias: `dest`." },
+    dest: { type: "string", required: false, description: "Alias for `path` (Ansible parity)." },
     state: {
       type: "directory | file | touch | link | absent",
       required: true,
@@ -71,7 +74,7 @@ export const meta: ModuleSummary = {
     mode: '0644'`,
   ],
   notes:
-    "≠ Ansible `file`: naïve shell implementation using `[ -d ]`/`[ -f ]`/`ln -sfn`/`rm`. No SELinux contexts, ACLs, follow/force semantics for links, backup handling, or remote-user validation. mtime is intentionally NOT updated on existing paths during `touch` (kept strictly idempotent).",
+    "≠ Ansible `file`: `dest` aliases `path`. Naïve shell implementation using `[ -d ]`/`[ -f ]`/`ln -sfn`/`rm`. No SELinux contexts, ACLs, follow/force semantics for links, backup handling, or remote-user validation. mtime is intentionally NOT updated on existing paths during `touch` (kept strictly idempotent).",
 };
 
 async function has(conn: NonNullable<ModuleContext["connection"]>, sudo: string, test: string): Promise<boolean> {
@@ -147,7 +150,7 @@ export const fileModule: Module & CheckableModule = {
   name: "file",
   async check(args, ctx) {
     const a = args as unknown as FileArgs;
-    const path = String(a.path ?? "");
+    const path = String(a.path ?? a.dest ?? "");
     const state = String(a.state ?? "") as FileState;
     const conn = ctx.connection;
     const sudo = ctx.become ? "sudo " : "";
@@ -179,7 +182,7 @@ export const fileModule: Module & CheckableModule = {
   },
   async run(ctx: ModuleContext): Promise<ModuleResult> {
     const args = ctx.args as unknown as FileArgs;
-    const path = String(args.path ?? "");
+    const path = String(args.path ?? args.dest ?? "");
     if (!path) {
       return { changed: false, failed: true, msg: "file: 'path' is required" };
     }

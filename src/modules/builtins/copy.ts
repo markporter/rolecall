@@ -14,8 +14,8 @@
 // via `check()`.
 
 import { createHash } from "node:crypto";
-import { readFileSync, statSync } from "node:fs";
-import { isAbsolute, join } from "node:path";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { isAbsolute, join, relative } from "node:path";
 
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
 import type { CheckableModule } from "../../idempotency";
@@ -24,6 +24,7 @@ import { render } from "../../templating/fast";
 import { renderJinja } from "../../templating/jinja";
 import { renderTemplateIsolated } from "../../isolation/template-worker";
 import { requirePolicy } from "../../templating/refs";
+import { shQuote } from "./fs";
 
 /** Resolved source content plus its checksum, ready to ship to the target. */
 interface SourceBytes {
@@ -124,7 +125,7 @@ async function renderEngine(
       engine === "jinja" ? "jinja" : engine === "ejs" ? "ejs" : "eta";
     return renderTemplateIsolated({ engine: isolatedEngine, template: source, vars, isolation: ctx.isolation });
   }
-  return engine === "jinja" ? renderJinja(source, vars, { strict: false }) : render(source, vars);
+  return engine === "jinja" ? renderJinja(source, vars) : render(source, vars);
 }
 
 /** Read the desired bytes locally: from `src`, inline `content` (string), or a rendered `content` template spec. */
@@ -270,9 +271,210 @@ interface CopyArgs {
   check?: unknown;
   _check?: unknown;
   validate?: unknown;
+  /** Treat `src` as a target-side path and copy it on the target instead of reading it locally. */
+  remote_src?: unknown;
 }
 
-/** @summary Copy a local source file (or inline content, or a `content` template spec rendered on-host) to a remote destination idempotently. Ships bytes base64-encoded and decodes on-target in one compare+write script; supports on-host templating (content template spec, eta/jinja), atomic mv, optional mode/owner/group, backup, validate, become, and --check. @param ctx ModuleContext carrying copy args (`src`|`content` (string or template spec), `dest`/`path`, `mode`, `force`, `backup`, `validate`, `owner`, `group`) plus connection/become/check flags. @returns ModuleResult with data.{dest,changed,checksum,backup_file?}; skipped=true when unchanged or in --check dry-run. */
+interface CopyOpts {
+  force: boolean;
+  check: boolean;
+  backup: boolean;
+  mode: string;
+  owner: string;
+  group: string;
+  validate: string;
+}
+
+function copyOpts(args: CopyArgs): CopyOpts {
+  return {
+    force: Boolean(args.force ?? args._force),
+    check: Boolean(args.check ?? args._check),
+    backup: Boolean(args.backup),
+    mode: typeof args.mode === "string" ? args.mode : "",
+    owner: typeof args.owner === "string" ? args.owner : "",
+    group: typeof args.group === "string" ? args.group : "",
+    validate: typeof args.validate === "string" ? args.validate : "",
+  };
+}
+
+/** Build the remote-source copy script (files and directory contents). */
+function buildRemoteSrcScript(destB64: string, srcB64: string, opts: CopyOpts): string {
+  const fArg = opts.force ? "1" : "0";
+  const cArg = opts.check ? "1" : "0";
+  const bkArg = opts.backup ? "1" : "0";
+  const mB64 = Buffer.from(opts.mode, "utf8").toString("base64");
+  const oB64 = Buffer.from(opts.owner, "utf8").toString("base64");
+  const gB64 = Buffer.from(opts.group, "utf8").toString("base64");
+  const vB64 = Buffer.from(opts.validate, "utf8").toString("base64");
+  const script = [
+    "set -eo pipefail",
+    'S="$(printf %s "$1" | base64 -d)"',
+    'P="$(printf %s "$2" | base64 -d)"',
+    'F="$3"; C="$4"; B="$5"',
+    'MODE="$(printf %s "$6" | base64 -d)"',
+    'OWNER="$(printf %s "$7" | base64 -d)"',
+    'GROUP="$(printf %s "$8" | base64 -d)"',
+    'VALIDATE="$(printf %s "$9" | base64 -d)"',
+    'if [ ! -e "$S" ]; then echo MISSING_SRC; exit 0; fi',
+    'if [ -d "$S" ]; then',
+    '  SAME=0; if [ -d "$P" ] && diff -rq "$S" "$P" >/dev/null 2>&1; then SAME=1; fi',
+    '  if [ "$SAME" = "1" ] && [ "$F" = "0" ]; then echo NOOP;',
+    '  elif [ "$C" = "1" ]; then echo WOULD_CHANGE;',
+    '  else mkdir -p "$P"; BK=""; if [ "$B" = "1" ] && [ -d "$P" ]; then BK="$P.$(date +%Y%m%d%H%M%S%N).bak"; cp -a "$P" "$BK"; fi; cp -a "$S"/. "$P"/; if [ "$B" = "1" ]; then echo "CHANGED $(printf %s "$BK" | base64 -w0)"; else echo CHANGED; fi; fi',
+    'else',
+    '  SAME=0; if [ -f "$P" ] && cmp -s "$S" "$P"; then SAME=1; fi',
+    '  if [ "$SAME" = "1" ] && [ "$F" = "0" ]; then echo NOOP;',
+    '  elif [ "$C" = "1" ]; then echo WOULD_CHANGE;',
+    '  else mkdir -p "$(dirname "$P")"; BK=""; if [ "$B" = "1" ] && [ -f "$P" ]; then BK="$P.$(date +%Y%m%d%H%M%S%N).bak"; cp -p "$P" "$BK"; fi; cp -p "$S" "$P"; if [ -n "$VALIDATE" ]; then VCMD="${VALIDATE//%s/$P}"; if ! bash -c "$VCMD"; then echo VALIDATE_FAILED; exit 1; fi; fi; if [ "$B" = "1" ]; then echo "CHANGED $(printf %s "$BK" | base64 -w0)"; else echo CHANGED; fi; fi',
+    'fi',
+    'if [ -n "$MODE" ]; then chmod -R "$MODE" "$P"; fi',
+    'if [ -n "$OWNER" ]; then chown -R "$OWNER" "$P"; fi',
+    'if [ -n "$GROUP" ]; then chgrp -R "$GROUP" "$P"; fi',
+  ].join("\n");
+  return `bash -c '${script}' -- "${srcB64}" "${destB64}" "${fArg}" "${cArg}" "${bkArg}" "${mB64}" "${oB64}" "${gB64}" "${vB64}"`;
+}
+
+/** Execute a copy script and normalize its status marker into a ModuleResult. */
+async function runCopyCommand(
+  ctx: ModuleContext,
+  cmd: string,
+  dest: string,
+  dataBase: Record<string, unknown>,
+  opts: CopyOpts,
+): Promise<ModuleResult> {
+  const execCmd = ctx.become ? `sudo ${cmd}` : cmd;
+  let stdout = "";
+  let stderr = "";
+  let exitCode = 0;
+  try {
+    const res = await ctx.connection.exec(execCmd);
+    stdout = res.stdout ?? "";
+    stderr = res.stderr ?? "";
+    exitCode = res.exitCode ?? 0;
+  } catch (e) {
+    return {
+      changed: false,
+      failed: true,
+      msg: `${MODULE_NAME}: transport error (${e instanceof Error ? e.message : String(e)})`,
+      stderr: stderr || undefined,
+    };
+  }
+  const status = stdout.trim().split(/\s+/)[0];
+  if (exitCode !== 0) {
+    return { changed: false, failed: true, msg: `${MODULE_NAME}: remote write failed`, stdout, stderr };
+  }
+  if (status === "MISSING_SRC") {
+    return { changed: false, failed: true, msg: `${MODULE_NAME}: remote source does not exist`, stdout, stderr };
+  }
+  if (status !== "CHANGED" && status !== "WOULD_CHANGE" && status !== "NOOP") {
+    return {
+      changed: false,
+      failed: true,
+      msg: `${MODULE_NAME}: unexpected remote status: ${JSON.stringify(status)}`,
+      stdout,
+      stderr,
+    };
+  }
+  if (status === "WOULD_CHANGE") {
+    return {
+      changed: false,
+      skipped: true,
+      msg: opts.check ? `${dest} would change (dry run)` : `${dest} would change`,
+      data: { ...dataBase, changed: false, wouldChange: true },
+    };
+  }
+  if (status === "NOOP") {
+    return { changed: false, skipped: true, msg: `${dest} unchanged`, data: { ...dataBase, changed: false } };
+  }
+  const backupFile = extractBackup(stdout);
+  return {
+    changed: true,
+    msg: `${String(dataBase.origin ?? MODULE_NAME)} -> ${dest}`,
+    stdout,
+    data: { ...dataBase, changed: true, ...(backupFile ? { backup_file: backupFile } : {}) },
+  };
+}
+
+/** Recursively list regular files under `root`, returning paths relative to it. */
+function walkLocalFiles(root: string): string[] {
+  const out: string[] = [];
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const abs = join(dir, entry.name);
+      if (entry.isDirectory()) walk(abs);
+      else if (entry.isFile() || entry.isSymbolicLink()) out.push(relative(root, abs));
+    }
+  };
+  walk(root);
+  return out.sort();
+}
+
+/** Copy a local directory's contents into `dest` file-by-file. */
+async function copyLocalDirectory(
+  ctx: ModuleContext,
+  absSrc: string,
+  dest: string,
+  opts: CopyOpts,
+): Promise<ModuleResult> {
+  const files = walkLocalFiles(absSrc);
+  let changed = false;
+  let failed = false;
+  const failures: string[] = [];
+  const destB64For = (p: string) => Buffer.from(p, "utf8").toString("base64");
+  for (const rel of files) {
+    const abs = join(absSrc, rel);
+    const buf = readFileSync(abs);
+    const src: SourceBytes = {
+      b64: buf.toString("base64"),
+      checksum: createHash("sha256").update(buf).digest("hex"),
+      origin: `${MODULE_NAME}: ${absSrc}`,
+    };
+    const target = join(dest, rel);
+    const r = await runCopyCommand(ctx, buildCopyScript(destB64For(target), src.b64, opts), target, { dest: target, checksum: src.checksum, origin: src.origin }, opts);
+    if (r.failed) {
+      failed = true;
+      failures.push(`${target}: ${r.msg ?? "failed"}`);
+    } else if (r.changed) {
+      changed = true;
+    }
+  }
+  if (failed) {
+    return { changed: false, failed: true, msg: `${MODULE_NAME}: ${failures[0]}`, data: { dest, files: files.length } };
+  }
+  if (files.length === 0) {
+    // Still create the destination directory for an empty source tree.
+    const r = await ctx.connection.exec(`mkdir -p ${shQuote(dest)}`);
+    if (r.exitCode !== 0) return { changed: false, failed: true, msg: `${MODULE_NAME}: could not create ${dest}` };
+  }
+  return {
+    changed,
+    skipped: !changed,
+    msg: changed ? `${absSrc}/* -> ${dest} (${files.length} file(s))` : `${dest} unchanged (${files.length} file(s))`,
+    data: { dest, files: files.length },
+  };
+}
+
+/** Compare every file in a local directory against `dest`; true when all match. */
+async function checkLocalDirectory(ctx: ModuleContext, absSrc: string, dest: string): Promise<boolean> {
+  const files = walkLocalFiles(absSrc);
+  if (files.length === 0) {
+    const r = await ctx.connection.exec(`test -d ${shQuote(dest)}`);
+    return r.exitCode === 0;
+  }
+  for (const rel of files) {
+    const buf = readFileSync(join(absSrc, rel));
+    const checksum = createHash("sha256").update(buf).digest("hex");
+    const target = join(dest, rel);
+    const destB64 = Buffer.from(target, "utf8").toString("base64");
+    const cmd = ctx.become ? `sudo ${buildCompareScript(destB64)}` : buildCompareScript(destB64);
+    const res = await ctx.connection.exec(cmd);
+    const current = (res.stdout ?? "").trim();
+    if (current === "" || current === "MISSING" || current !== checksum) return false;
+  }
+  return true;
+}
+
+/** @summary Copy a local file/directory, inline content, a `content` template spec, or a remote source (`remote_src: true`) to a remote destination idempotently. Local files ship bytes base64-encoded into one compare+write script; local directories copy contents file-by-file; remote sources use `cmp`/`diff -rq` and `cp -a` on the target. Supports on-host templating (content template spec, eta/jinja), atomic mv, optional mode/owner/group, backup, validate, become, and --check. @param ctx ModuleContext carrying copy args (`src`|`content` (string or template spec), `remote_src`, `dest`/`path`, `mode`, `force`, `backup`, `validate`, `owner`, `group`) plus connection/become/check flags. @returns ModuleResult with data.{dest,changed,checksum,backup_file?}; skipped=true when unchanged or in --check dry-run. */
 export const copyModule: CheckableModule = {
   name: MODULE_NAME,
   async run(ctx: ModuleContext): Promise<ModuleResult> {
@@ -287,93 +489,62 @@ export const copyModule: CheckableModule = {
     if (!hasSrc && !hasContent && !hasTemplate) {
       return { changed: false, failed: true, msg: `${MODULE_NAME}: one of 'src' or 'content' is required` };
     }
-
-    const src = await resolveSource(ctx);
+    const opts = copyOpts(args);
     const destB64 = Buffer.from(dest, "utf8").toString("base64");
 
-    const opts = {
-      force: Boolean(args.force ?? args._force),
-      check: Boolean(args.check ?? args._check),
-      backup: Boolean(args.backup),
-      mode: typeof args.mode === "string" ? args.mode : "",
-      owner: typeof args.owner === "string" ? args.owner : "",
-      group: typeof args.group === "string" ? args.group : "",
-      validate: typeof args.validate === "string" ? args.validate : "",
-    };
-
-    const cmd = buildCopyScript(destB64, src.b64, opts);
-    // Executor owns the connection lifecycle, so we must NOT connect/disconnect here.
-    // When `become` is set, prefix the whole script with `sudo` so it runs as root.
-    // The script body contains no single quotes, so `sudo bash -c '...'` stays safe.
-    const execCmd = ctx.become ? `sudo ${cmd}` : cmd;
-
-    let stdout = "";
-    let stderr = "";
-    let exitCode = 0;
-    try {
-      const res = await ctx.connection.exec(execCmd);
-      stdout = res.stdout ?? "";
-      stderr = res.stderr ?? "";
-      exitCode = res.exitCode ?? 0;
-    } catch (e) {
-      return {
-        changed: false,
-        failed: true,
-        msg: `${MODULE_NAME}: transport error (${e instanceof Error ? e.message : String(e)})`,
-        stderr: stderr || undefined,
-      };
+    if (args.remote_src === true) {
+      if (!hasSrc) {
+        return { changed: false, failed: true, msg: `${MODULE_NAME}: 'src' is required with remote_src: true` };
+      }
+      const srcRef = String(args.src);
+      const srcB64 = Buffer.from(srcRef, "utf8").toString("base64");
+      return runCopyCommand(
+        ctx,
+        buildRemoteSrcScript(destB64, srcB64, opts),
+        dest,
+        { dest, checksum: "", origin: `${MODULE_NAME}: remote ${srcRef}` },
+        opts,
+      );
     }
 
-    // Status is the first whitespace-delimited token; when a backup was taken the
-    // script appends "<base64-of-.bak-path>" after "CHANGED" for run() to recover.
-    const status = stdout.trim().split(/\s+/)[0];
-    if (exitCode !== 0) {
-      return {
-        changed: false,
-        failed: true,
-        msg: `${MODULE_NAME}: remote write failed`,
-        stdout,
-        stderr,
-      };
-    }
-    if (status !== "CHANGED" && status !== "WOULD_CHANGE" && status !== "NOOP") {
-      return {
-        changed: false,
-        failed: true,
-        msg: `${MODULE_NAME}: unexpected remote status: ${JSON.stringify(status)}`,
-        stdout,
-        stderr,
-      };
+    if (hasSrc) {
+      const abs = resolveSourcePath(String(args.src), ctx.roleDir, ctx.playbookDir);
+      try {
+        if (statSync(abs).isDirectory()) return copyLocalDirectory(ctx, abs, dest, opts);
+      } catch {
+        // fall through to the file path resolver for a precise missing-file error
+      }
     }
 
-    const data: Record<string, unknown> = { dest, checksum: src.checksum, origin: src.origin };
-
-    if (status === "WOULD_CHANGE") {
-      return {
-        changed: false,
-        skipped: true,
-        msg: opts.check ? `${dest} would change (dry run)` : `${dest} would change`,
-        data: { ...data, changed: false, wouldChange: true },
-      };
-    }
-
-    if (status === "NOOP") {
-      return { changed: false, skipped: true, msg: `${dest} unchanged`, data: { ...data, changed: false } };
-    }
-
-    // CHANGED — report what landed (and whether a backup was written).
-    const backupFile = extractBackup(stdout);
-    return {
-      changed: true,
-      msg: `${originLabel(src)} -> ${dest}`,
-      stdout,
-      data: { ...data, changed: true, ...(backupFile ? { backup_file: backupFile } : {}) },
-    };
+    const src = await resolveSource(ctx);
+    return runCopyCommand(
+      ctx,
+      buildCopyScript(destB64, src.b64, opts),
+      dest,
+      { dest, checksum: src.checksum, origin: src.origin },
+      opts,
+    );
   },
   /** Report current target state for declarative reconciliation (used by applyIdempotent's skip-unchanged path). */
   async check(_args: Record<string, unknown>, ctx: ModuleContext): Promise<{ current: string | null; inDesired: boolean }> {
+    const args = ctx.args as unknown as CopyArgs;
+    const dest = String(args.dest ?? args.path ?? "");
+    if (args.remote_src === true) {
+      // The remote copy script owns idempotency; there is no local source to hash.
+      return { current: null, inDesired: false };
+    }
+    if (typeof args.src === "string" && args.src.length > 0) {
+      const abs = resolveSourcePath(args.src, ctx.roleDir, ctx.playbookDir);
+      try {
+        if (statSync(abs).isDirectory()) {
+          return { current: null, inDesired: await checkLocalDirectory(ctx, abs, dest) };
+        }
+      } catch {
+        // fall through to the file path
+      }
+    }
     const src = await resolveSource(ctx);
-    const destB64 = Buffer.from(String(ctx.args["dest"] ?? ctx.args["path"] ?? ""), "utf8").toString("base64");
+    const destB64 = Buffer.from(dest, "utf8").toString("base64");
     const cmpCmd = ctx.become ? `sudo ${buildCompareScript(destB64)}` : buildCompareScript(destB64);
     try {
       const res = await ctx.connection.exec(cmpCmd);
@@ -397,18 +568,23 @@ function originLabel(src: SourceBytes): string {
 export const meta: ModuleSummary = {
   name: MODULE_NAME,
   description:
-    "Literal idempotent file copy to a remote target, or on-host template render (_content/template_file, EJS or Jinja). SHA-256 compare; ships bytes base64-encoded and decodes on-target in one compare+write script with atomic mv. Supports inline content, a local source file, optional mode/owner/group, backup, validate, become, and --check.",
+    "Literal idempotent file or directory copy to a remote target, on-target copy with remote_src, or on-host template render (content/template_file, EJS or Jinja). SHA-256/cmp/diff compare; ships bytes base64-encoded and decodes on-target. Supports inline content, local files/directories, remote_src, optional mode/owner/group, backup, validate, become, and --check.",
   source: "builtin",
   args: {
     src: {
       type: "string",
       required: false,
-      description: "Local path to the source file on the control node. At least one of `src` or `content` is required.",
+      description: "Local path to a source file or directory on the control node, or a target-side path when `remote_src: true`. At least one of `src` or `content` is required.",
+    },
+    remote_src: {
+      type: "boolean",
+      required: false,
+      description: "Treat `src` as a target-side path and copy it on the target (files and directory contents). Defaults to false.",
     },
     content: {
       type: "string | { template, template_file, engine }",
       required: false,
-      description: "Inline content for the destination. A bare string is written verbatim (never interpreted as a template). Pass an object with `template` (inline string) or `template_file` (path) and optional `engine` ('ejs' default, or 'jinja') to render on-host.",
+      description: "Inline content for the destination. A bare string is written verbatim (never interpreted as a template). Pass an object with `template` (inline string) or `template_file` (path) and optional `engine` ('ejs' default, or 'jinja') to render on-host. In a playbook, inline Jinja is lint-rejected; use `$jinja` or a `.j2` `template_file`.",
     },
     dest: { type: "string", required: false, description: "Destination path on the target." },
     path: { type: "string", required: false, description: "Alias for `dest` (accepted for drop-in `config_write` parity)." },
@@ -437,6 +613,14 @@ export const meta: ModuleSummary = {
     dest: /etc/app/app.conf
     mode: '0644'`,
     `- copy:
+    src: files/conf.d
+    dest: /etc/app/conf.d
+    mode: '0644'`,
+    `- copy:
+    remote_src: true
+    src: /opt/staging/app.conf
+    dest: /etc/app/app.conf`,
+    `- copy:
     content: 'port=8080'
     dest: /etc/app/port.conf`,
     `- copy:
@@ -454,7 +638,7 @@ export const meta: ModuleSummary = {
     validate: 'visudo -cf %s'`,
   ],
     notes:
-    "≠ Ansible `copy`: **`force` defaults to FALSE** (Ansible defaults TRUE), so copy only rewrites when the destination differs unless you pass force:true. Templating is on-host: pass `content` as an object with `template`/`template_file` and optional `engine` (EJS default, or `jinja`); a bare `content` string is written literally (never interpreted as a template). Attribute application relies on stat/chown/chgrp availability; no SELinux context handling.",
+    "≠ Ansible `copy`: **`force` defaults to FALSE** (Ansible defaults TRUE), so copy only rewrites when the destination differs unless you pass force:true. A local directory `src` copies its **contents** into `dest` (no `src/` trailing-slash distinction). `remote_src: true` copies a target-side path on the target using `cmp`/`diff -rq` for idempotency and `cp -a` for the transfer. Templating is on-host: pass `content` as an object with `template`/`template_file` and optional `engine` (EJS default, or `jinja`); a bare `content` string is written literally (never interpreted as a template). Playbook lint rejects inline Jinja (`content.template` with `engine: jinja`); use `$jinja` or a `.j2` `template_file` instead. Attribute application relies on stat/chown/chgrp availability; no SELinux context handling.",
 };
 
 (copyModule as Module & { meta: ModuleSummary }).meta = meta;

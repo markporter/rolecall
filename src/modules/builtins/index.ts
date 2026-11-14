@@ -79,6 +79,10 @@ import { snapModule } from "./snap";
 import { firewalldModule } from "./firewalld";
 import { pingModule } from "./ping";
 import { setConfigModule } from "./set_config";
+import { waitForConnectionModule } from "./wait_for_connection";
+import { pamdModule } from "./pamd";
+import { aptKeyModule } from "./apt_key";
+import { debconfModule } from "./debconf";
 
 /**
  * Register all built-in modules with the executor registry (idempotent — safe to
@@ -275,6 +279,20 @@ export function registerAllModules(): void {
   registerModule(setConfigModule);
   if ((setConfigModule as Module & { meta?: ModuleSummary }).meta)
     setModuleMeta(setConfigModule.name, (setConfigModule as Module & { meta?: ModuleSummary }).meta!);
+  // Ansible-parity additions (Splunk remediation Cycle 1): connection wait,
+  // PAM service edits, APT signing keys, and debconf preseeding.
+  registerModule(waitForConnectionModule);
+  if ((waitForConnectionModule as Module & { meta?: ModuleSummary }).meta)
+    setModuleMeta(waitForConnectionModule.name, (waitForConnectionModule as Module & { meta?: ModuleSummary }).meta!);
+  registerModule(pamdModule);
+  if ((pamdModule as Module & { meta?: ModuleSummary }).meta)
+    setModuleMeta(pamdModule.name, (pamdModule as Module & { meta?: ModuleSummary }).meta!);
+  registerModule(aptKeyModule);
+  if ((aptKeyModule as Module & { meta?: ModuleSummary }).meta)
+    setModuleMeta(aptKeyModule.name, (aptKeyModule as Module & { meta?: ModuleSummary }).meta!);
+  registerModule(debconfModule);
+  if ((debconfModule as Module & { meta?: ModuleSummary }).meta)
+    setModuleMeta(debconfModule.name, (debconfModule as Module & { meta?: ModuleSummary }).meta!);
 }
 export {
   httpModule,
@@ -345,4 +363,8 @@ export {
   firewalldModule,
   pingModule,
   setConfigModule,
+  waitForConnectionModule,
+  pamdModule,
+  aptKeyModule,
+  debconfModule,
 };

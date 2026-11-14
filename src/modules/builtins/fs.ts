@@ -127,6 +127,56 @@ export async function writeWithBackupValidate(
 }
 
 /**
+ * Apply `mode`/`owner`/`group` attributes to a target path, issuing only the
+ * commands whose desired value differs from the current one. Mirrors the `file`
+ * module's attribute probe so editing modules can provide Ansible-parity
+ * ownership/permission control without redundant chmod/chown/chgrp calls.
+ * @param conn Active connection (Local or Ssh).
+ * @param path Destination path on the target.
+ * @param attrs Desired attributes; omitted/empty values are ignored.
+ * @param become When true, escalate attribute commands with sudo.
+ * @param opts.recurse Apply attributes recursively (`-R`).
+ * @returns Whether any attribute was changed.
+ */
+export async function applyRemoteAttrs(
+  conn: Connection,
+  path: string,
+  attrs: { mode?: unknown; owner?: unknown; group?: unknown },
+  become = false,
+  opts: { recurse?: boolean } = {},
+): Promise<boolean> {
+  const mode = typeof attrs.mode === "string" && attrs.mode.length > 0 ? attrs.mode : undefined;
+  const owner = typeof attrs.owner === "string" && attrs.owner.length > 0 ? attrs.owner : undefined;
+  const group = typeof attrs.group === "string" && attrs.group.length > 0 ? attrs.group : undefined;
+  if (mode === undefined && owner === undefined && group === undefined) return false;
+  const sudo = become ? "sudo " : "";
+  const rec = opts.recurse ? "-R " : "";
+  const st = await conn.exec(
+    `${sudo}stat -c '%a %U %G' ${shQuote(path)} 2>/dev/null || ${sudo}stat -f '%Lp %Su %Sg' ${shQuote(path)}`,
+  );
+  if (st.exitCode !== 0) return false;
+  const [curMode = "", curOwner = "", curGroup = ""] = st.stdout.trim().split(/\s+/);
+  let changed = false;
+  if (
+    mode !== undefined &&
+    curMode !== mode &&
+    Number.parseInt(curMode, 8) !== Number.parseInt(mode, 8)
+  ) {
+    await conn.exec(`${sudo}chmod ${rec}${mode} ${shQuote(path)}`);
+    changed = true;
+  }
+  if (owner !== undefined && curOwner !== owner) {
+    await conn.exec(`${sudo}chown ${rec}${owner} ${shQuote(path)}`);
+    changed = true;
+  }
+  if (group !== undefined && curGroup !== group) {
+    await conn.exec(`${sudo}chgrp ${rec}${group} ${shQuote(path)}`);
+    changed = true;
+  }
+  return changed;
+}
+
+/**
  * Build the on-target command string for a module, applying (in order) the
  * task-level `environment` exports, then privilege escalation (`become` /
  * `become_user` → `sudo [-u <user>] sh -c '<cmd>'`). Shared by builtin modules

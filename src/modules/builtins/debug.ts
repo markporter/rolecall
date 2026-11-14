@@ -14,10 +14,12 @@ import type { ModuleSummary } from "../search";
 export const debugModule: Module = {
   name: "debug",
   async run(ctx) {
+    const hasVar = ctx.args["var"] !== undefined;
+    const payload = hasVar ? { var: ctx.args["var"] } : ctx.args;
     return {
       changed: false,
-      stdout: JSON.stringify(ctx.args),
-      data: { args: ctx.args },
+      stdout: JSON.stringify(payload),
+      data: { args: ctx.args, ...(hasVar ? { var: ctx.args["var"] } : {}) },
     };
   },
 };
@@ -29,15 +31,25 @@ export const meta: ModuleSummary = {
     "Echoes the (rendered) task args as stdout; never changes target state. Useful for control-flow diagnostics.",
   idempotent: true,
   source: "builtin",
-  args: {},
+  args: {
+    msg: { type: "unknown", required: false, description: "Message or structured value to print." },
+    var: { type: "unknown", required: false, description: "Value to print under a `var` key (Ansible parity)." },
+    verbosity: {
+      type: "number",
+      required: false,
+      description: "Accepted for Ansible parity; RoleCall has no run verbosity threshold, so the value is echoed but never suppresses output.",
+    },
+  },
   examples: [
     `- debug:
     msg:
       $concat:
         - deploying
         - ' '
-        - $var: vars.app_name`,
+        -       $var: vars.app_name`,
   ],
+  notes:
+    "≠ Ansible `debug`: `var` prints its resolved value under a `var` key; `verbosity` is accepted but does not suppress output because RoleCall has no run-level verbosity threshold.",
 };
 
 (debugModule as Module & { meta: ModuleSummary }).meta = meta;

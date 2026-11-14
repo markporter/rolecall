@@ -10,7 +10,7 @@
 import type { Module, ModuleContext, ModuleResult } from "../../executor/module";
 import type { CheckableModule } from "../../idempotency/types";
 import { resource } from "../resource";
-import { readRemoteFile, writeRemoteFile, writeWithBackupValidate } from "./fs";
+import { applyRemoteAttrs, readRemoteFile, writeWithBackupValidate } from "./fs";
 import type { ModuleSummary } from "../search";
 
 /** Search metadata for the `lineinfile` module (auto-collected by builtins/index.ts). */
@@ -21,7 +21,13 @@ export const meta: ModuleSummary = {
   idempotent: true,
   source: "builtin",
   args: {
-    path: { type: "string", required: true, description: "Destination path on the target." },
+    path: { type: "string", required: false, description: "Destination path on the target. Alias: `dest`." },
+    dest: { type: "string", required: false, description: "Alias for `path` (Ansible parity)." },
+    create: {
+      type: "boolean",
+      required: false,
+      description: "Create the file when it is absent (default false; absent + create:false is an error for state:present).",
+    },
     line: { type: "string", required: false, description: "Desired line content (required for present state)." },
     regexp: {
       type: "string",
@@ -49,6 +55,9 @@ export const meta: ModuleSummary = {
       required: false,
       description: "Validation command run against the file after writing; `%s` is replaced with the file path. The task fails if the command exits non-zero (e.g. `nginx -t -c %s`).",
     },
+    mode: { type: "string", required: false, description: "Octal mode to apply after writing, e.g. '0644'." },
+    owner: { type: "string", required: false, description: "Owner user to apply after writing." },
+    group: { type: "string", required: false, description: "Group to apply after writing." },
   },
   examples: [
     `- lineinfile:
@@ -61,12 +70,16 @@ export const meta: ModuleSummary = {
     state: present`,
   ],
   notes:
-    "≠ Ansible `lineinfile`: `insertafter` accepts `EOF` or a regex string; `insertbefore` accepts `BOF`/`START` or a regex string. Regex anchors insert relative to the LAST matching line, falling back to EOF. Uses `$var` refs, not Jinja `{{ }}`.",
+    "≠ Ansible `lineinfile`: `insertafter` accepts `EOF` or a regex string; `insertbefore` accepts `BOF`/`START` or a regex string. Regex anchors insert relative to the LAST matching line, falling back to EOF. `dest` aliases `path`; an absent file fails unless `create: true`; `mode`/`owner`/`group` are applied after writing. Uses `$var` refs, not Jinja `{{ }}`.",
 };
 
 interface LineArgs {
-  /** Destination path on the target. Required. */
-  path: string;
+  /** Destination path on the target. Required unless `dest` is supplied. */
+  path?: string;
+  /** Alias for `path` (Ansible parity). */
+  dest?: string;
+  /** Create the file when absent (default false). */
+  create?: boolean;
   /** Desired line content. Required for present state. */
   line?: string;
   /** Optional regexp matching an existing line to replace. */
@@ -81,6 +94,17 @@ interface LineArgs {
   backup?: unknown;
   /** Validation command run against the file after writing; `%s` is replaced with the path. The task fails if it exits non-zero. */
   validate?: string;
+  /** Octal mode applied after writing. */
+  mode?: string;
+  /** Owner applied after writing. */
+  owner?: string;
+  /** Group applied after writing. */
+  group?: string;
+}
+
+/** Resolve the destination path from `path` or its Ansible-parity `dest` alias. */
+function linePath(a: LineArgs): string {
+  return String(a.path ?? a.dest ?? "");
 }
 
 /** @summary Idempotent line-in-file module: ensures a line is present/absent, replacing a regexp-matched line when given. @param args LineArgs (path, line, regexp, state, insertafter, backup, validate). @returns Module & CheckableModule. */
@@ -88,7 +112,7 @@ export const lineinfileModule: Module & CheckableModule = resource({
   name: "lineinfile",
   async describe(args, ctx) {
     const a = args as unknown as LineArgs;
-    const path = String(a.path ?? "");
+    const path = linePath(a);
     if (!path) return { current: null, inDesired: false };
     if (hasBothAnchors(a)) return { current: null, inDesired: false };
     const current = await readRemoteFile(ctx.connection, path, Boolean(ctx.become));
@@ -109,9 +133,9 @@ export const lineinfileModule: Module & CheckableModule = resource({
   },
   async converge(args, ctx) {
     const a = args as unknown as LineArgs;
-    const path = String(a.path ?? "");
+    const path = linePath(a);
     if (!path) {
-      return { changed: false, failed: true, msg: "lineinfile: 'path' is required" };
+      return { changed: false, failed: true, msg: "lineinfile: 'path' (or 'dest') is required" };
     }
     if (hasBothAnchors(a)) {
       return { changed: false, failed: true, msg: "lineinfile: use only one of insertafter / insertbefore" };
@@ -127,9 +151,17 @@ export const lineinfileModule: Module & CheckableModule = resource({
 
     if (current === null) {
       if (state === "absent") return { changed: false, msg: `${path} absent (no-op)` };
-      const r = await writeWithBackupValidate(conn, path, line + "\n", { backup: doBackup, validate: validateCmd, become: bec, existing: null });
+      if (a.create !== true) {
+        return {
+          changed: false,
+          failed: true,
+          msg: `lineinfile: ${path} does not exist; set create: true to create it`,
+        };
+      }
+      const r = await writeWithBackupValidate(conn, path, line, { backup: doBackup, validate: validateCmd, become: bec, existing: null });
       if (r.failed) return { changed: false, failed: true, msg: `lineinfile: ${r.failed}` };
-      return { changed: true, msg: `${path} line added`, data: r.backupFile ? { backup_file: r.backupFile } : undefined };
+      const attrsChanged = await applyRemoteAttrs(conn, path, a, bec);
+      return { changed: true, msg: `${path} line added`, data: { ...(r.backupFile ? { backup_file: r.backupFile } : {}), ...(attrsChanged ? { attributes: true } : {}) } };
     }
 
     const lines = current.split(/\r?\n/);
@@ -141,9 +173,10 @@ export const lineinfileModule: Module & CheckableModule = resource({
       if (next.length === lines.length) {
         return { changed: false, msg: `${path} line absent (no-op)` };
       }
-      const r = await writeWithBackupValidate(conn, path, next.join("\n") + "\n", { backup: doBackup, validate: validateCmd, become: bec, existing: current });
+      const r = await writeWithBackupValidate(conn, path, next.join("\n"), { backup: doBackup, validate: validateCmd, become: bec, existing: current });
       if (r.failed) return { changed: false, failed: true, msg: `lineinfile: ${r.failed}` };
-      return { changed: true, msg: `${path} line removed`, data: r.backupFile ? { backup_file: r.backupFile } : undefined };
+      const attrsChanged = await applyRemoteAttrs(conn, path, a, bec);
+      return { changed: true, msg: `${path} line removed`, data: { ...(r.backupFile ? { backup_file: r.backupFile } : {}), ...(attrsChanged ? { attributes: true } : {}) } };
     }
 
     // present
@@ -166,9 +199,10 @@ export const lineinfileModule: Module & CheckableModule = resource({
     } else {
       lines.push(line);
     }
-    const r = await writeWithBackupValidate(conn, path, lines.join("\n") + "\n", { backup: doBackup, validate: validateCmd, become: bec, existing: current });
+    const r = await writeWithBackupValidate(conn, path, lines.join("\n"), { backup: doBackup, validate: validateCmd, become: bec, existing: current });
     if (r.failed) return { changed: false, failed: true, msg: `lineinfile: ${r.failed}` };
-    return { changed: true, msg: `${path} line added`, data: r.backupFile ? { backup_file: r.backupFile } : undefined };
+    const attrsChanged = await applyRemoteAttrs(conn, path, a, bec);
+    return { changed: true, msg: `${path} line added`, data: { ...(r.backupFile ? { backup_file: r.backupFile } : {}), ...(attrsChanged ? { attributes: true } : {}) } };
   },
 });
 
