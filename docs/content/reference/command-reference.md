@@ -31,9 +31,12 @@ Bare `rolecall convert` opens an interactive wizard in a TTY: it asks for the An
 ```sh
 rolecall convert ansible ./ansible-site --out ./site --write
 rolecall convert ansible ./ansible-site --project ./new-project --write
+rolecall convert ansible ./ansible-site --templates eta   # analyze .j2 convertibility
 rolecall convert ansible ./site --strict          # exit 1 if review/handoff items remain
 rolecall convert ansible --validate ./site        # strict-load the converted playbooks
 ```
+
+`--templates keep` (default) preserves Jinja and `.j2` files verbatim. `--templates eta` runs the ADR 0031 template analyzer: it parses each `.j2` with the Nunjucks AST, classifies constructs as mapped/review/handoff, and emits work orders. Eta code generation is not implemented yet, so the original `.j2` is still kept.
 
 `--project <dir>` ensures a blank RoleCall project exists at that root (the ADR 0014/0030 shape: `rolecall.yaml`, `playbooks/`, `inventory/`, `plugins/<type>/<namespace>/`, `roles/`, `group_vars/`, `host_vars/`, `collections/`, `.rolecall/isolation.yaml`) and then populates it with the converted tree. Existing files are never overwritten, so it is safe to run against an existing project.
 

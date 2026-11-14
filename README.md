@@ -205,6 +205,7 @@ rolecall vars list <playbook>
 rolecall vars trace <playbook> --inventory <inv>
 rolecall convert                                # interactive wizard
 rolecall convert ansible <path> --write --project <dir>
+rolecall convert ansible <path> --templates eta   # analyze .j2 convertibility
 rolecall doctor
 rolecall docs search <query>
 rolecall plugin list

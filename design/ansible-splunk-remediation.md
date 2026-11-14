@@ -319,9 +319,11 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   representative playbook/role/group_vars sample).
 - **Cycle 4 (pending):** the external `ansible_splunk` corpus is not present in this
   checkout; the harness is ready to run when it is available.
-- **Cycle 5 (ADR 0031, proposed/not implemented):** the opt-in `--templates eta`
-  analyzer, runtime parity, mapped codegen, and CLI/docs slices remain. The default
-  `--templates keep` path is unchanged.
+- **Cycle 5 (ADR 0031, slice 1 complete):** `--templates eta` now parses each `.j2`
+  with the Nunjucks AST, classifies constructs as mapped/review/handoff, and emits
+  per-item handoff work orders. It does **not** rewrite templates yet; the original
+  `.j2` and `engine: jinja` remain. Runtime parity, mapped Eta codegen, and draft
+  emission are the remaining slices. The default `--templates keep` path is unchanged.
 
 ## Risks
 

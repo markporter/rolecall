@@ -60,7 +60,7 @@ rolecall isolation allow|revoke|list|allow-egress|revoke-egress  # operator-owne
 rolecall runtime install|status|remove [--bun-version <ver>] [--from-dir <dir>]  # optional standalone Bun toolchain (embedded by default)
 rolecall docs search <query>            # query RoleCall prose docs by substring
 rolecall convert                          # TTY wizard: source -> project -> apply/handoff/strict
-rolecall convert ansible <path> [--out <dir>] [--project <dir>] [--handoff <dir>] [--write] [--strict] [--validate <dir>]  # mechanical Ansible -> RoleCall conversion + handoff
+rolecall convert ansible <path> [--out <dir>] [--project <dir>] [--handoff <dir>] [--write] [--strict] [--templates keep|eta] [--validate <dir>]  # mechanical Ansible -> RoleCall conversion + handoff
 rolecall plugin list                               # registered module/fact + built-in inventory plugins
 rolecall plugin register <name> --path <file> [--global]   # persist a module kept outside a project (project plugins in plugins/ need no registration)
 ```
