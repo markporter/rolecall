@@ -56,17 +56,29 @@ function add(
   findings.push({ file, path, construct, disposition, message });
 }
 
-function isLoopCall(node: unknown): boolean {
+const SAFE_METHODS = new Set(["keys", "items", "values", "split", "__len__", "__str__"]);
+
+interface MethodCall {
+  method: string;
+  target: unknown;
+  args: unknown[];
+}
+
+function methodCall(node: unknown): MethodCall | undefined {
   const name = (node as { name?: Record<string, unknown> } | undefined)?.name;
-  if (name?.["typename"] !== "LookupVal") return false;
-  const target = name["target"] as Record<string, unknown> | undefined;
+  if (name?.["typename"] !== "LookupVal") return undefined;
   const val = name["val"] as Record<string, unknown> | undefined;
-  return (
-    target?.["typename"] === "Symbol" &&
-    target["value"] === "loop" &&
-    (val?.["typename"] === "Symbol" || val?.["typename"] === "Literal") &&
-    val["value"] === "cycle"
-  );
+  const method =
+    val?.["typename"] === "Symbol" || val?.["typename"] === "Literal" ? String(val["value"]) : undefined;
+  if (method === undefined) return undefined;
+  const args = ((node as { args?: { children?: unknown[] } }).args?.children ?? []) as unknown[];
+  return { method, target: name["target"], args };
+}
+
+function isLoopCall(node: unknown): boolean {
+  const call = methodCall(node);
+  const target = call?.target as Record<string, unknown> | undefined;
+  return call?.method === "cycle" && target?.["typename"] === "Symbol" && target["value"] === "loop";
 }
 
 function nodeName(node: unknown): string | undefined {
@@ -136,6 +148,8 @@ function walk(value: unknown, findings: ConvertFinding[], file: string): void {
       break;
     case "FunCall": {
       if (isLoopCall(node)) break;
+      const call = methodCall(node);
+      if (call !== undefined && SAFE_METHODS.has(call.method)) break;
       const name = nodeName(node["name"]);
       if (name === "lookup" || name === "query" || name === "q") {
         add(findings, file, node as { lineno?: number }, name, "handoff", "Ansible lookups/query are controller-side I/O and have no Eta equivalent");
@@ -328,6 +342,25 @@ function emitExpr(node: unknown, ctx: EmitContext): string {
         );
         return `loop.cycle(${args.join(", ")})`;
       }
+      const call = methodCall(node);
+      if (call !== undefined && SAFE_METHODS.has(call.method)) {
+        const target = emitExpr(call.target, ctx);
+        const args = call.args.map((arg) => emitExpr(arg, ctx));
+        switch (call.method) {
+          case "keys":
+            return `Object.keys(${target})`;
+          case "items":
+            return `Object.entries(${target})`;
+          case "values":
+            return `Object.values(${target})`;
+          case "split":
+            return `String(${target}).split(${args.join(", ")})`;
+          case "__len__":
+            return `(Array.isArray(${target}) || typeof ${target} === "string" ? ${target}.length : Object.keys(${target}).length)`;
+          case "__str__":
+            return `String(${target})`;
+        }
+      }
       if (ctx.draft) return `${handoffMarker(node, "call")} undefined`;
       fail("function calls are not supported");
     }
@@ -393,7 +426,17 @@ function emitNode(node: unknown, ctx: EmitContext): string {
     }
     case "For": {
       const name = rec["name"] as Record<string, unknown>;
-      if (name?.["typename"] !== "Symbol") {
+      let variables: string[];
+      if (name?.["typename"] === "Symbol") {
+        variables = [String(name["value"])];
+      } else if (name?.["typename"] === "NodeList" || name?.["typename"] === "Array") {
+        const children = (name["children"] as Array<Record<string, unknown>>) ?? [];
+        if (children.length !== 2 || children.some((child) => child["typename"] !== "Symbol")) {
+          if (ctx.draft) return `<% ${handoffMarker(rec, "tuple loop")} %>`;
+          fail("tuple loop targets must be two symbols");
+        }
+        variables = children.map((child) => String(child["value"]));
+      } else {
         if (ctx.draft) return `<% ${handoffMarker(rec, "tuple loop")} %>`;
         fail("tuple loop targets are not supported");
       }
@@ -409,7 +452,7 @@ function emitNode(node: unknown, ctx: EmitContext): string {
       const id = ++ctx.loopId;
       const seq = `__seq_${id}`;
       const idx = `__i_${id}`;
-      const variable = String(name["value"]);
+      const variable = variables.length === 1 ? variables[0] : `[${variables.join(", ")}]`;
       const body = emitNode(rec["body"], ctx);
       return [
         `<% const ${seq} = ${emitExpr(arr, ctx)}; %>`,

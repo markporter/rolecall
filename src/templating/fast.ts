@@ -93,6 +93,68 @@ const unwrapLenient = (value: unknown): unknown => (value === LENIENT_NIL ? unde
 const wrapFilter = (filter: AnyFilter): AnyFilter =>
   (value, ...args) => filter(unwrapLenient(value), ...args.map(unwrapLenient));
 
+
+// Small built-in filter set used by ADR 0031 codegen. These mirror the Nunjucks
+// filters the analyzer classifies as mapped; keep this list in sync with
+// `BUILTIN_FILTERS` in src/convert/templates.ts.
+const BUILTIN_FILTER_IMPLS: Record<string, AnyFilter> = {
+  join: (value, sep = "") => (Array.isArray(value) ? value.join(String(sep ?? "")) : String(value ?? "")),
+  length: (value) =>
+    Array.isArray(value) || typeof value === "string"
+      ? value.length
+      : value !== null && typeof value === "object"
+        ? Object.keys(value).length
+        : 0,
+  upper: (value) => String(value ?? "").toUpperCase(),
+  lower: (value) => String(value ?? "").toLowerCase(),
+  capitalize: (value) => {
+    const text = String(value ?? "");
+    return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+  },
+  title: (value) =>
+    String(value ?? "").replace(/\w\S*/g, (word) => word[0]!.toUpperCase() + word.slice(1).toLowerCase()),
+  trim: (value) => String(value ?? "").trim(),
+  replace: (value, from, to) => String(value ?? "").split(String(from)).join(String(to)),
+  first: (value) => (Array.isArray(value) ? value[0] : typeof value === "string" ? value[0] : undefined),
+  last: (value) =>
+    Array.isArray(value) ? value[value.length - 1] : typeof value === "string" ? value[value.length - 1] : undefined,
+  reverse: (value) =>
+    Array.isArray(value) ? [...value].reverse() : String(value ?? "").split("").reverse().join(""),
+  sort: (value) => (Array.isArray(value) ? [...value].sort() : value),
+  list: (value) =>
+    Array.isArray(value) ? value : typeof value === "string" ? value.split("") : Object.values(value ?? {}),
+  string: (value) => String(value ?? ""),
+  int: (value) => Number.parseInt(String(value ?? ""), 10) || 0,
+  float: (value) => Number.parseFloat(String(value ?? "")) || 0,
+  abs: (value) => Math.abs(Number(value)),
+  round: (value, precision = 0) => {
+    const factor = 10 ** Number(precision);
+    return Math.round(Number(value) * factor) / factor;
+  },
+  sum: (value) => (Array.isArray(value) ? value : []).reduce<number>((sum, item) => sum + Number(item), 0),
+  unique: (value) => Array.from(new Set(Array.isArray(value) ? value : [])),
+  min: (value) => Math.min(...(Array.isArray(value) ? value.map(Number) : [])),
+  max: (value) => Math.max(...(Array.isArray(value) ? value.map(Number) : [])),
+  slice: (value, start, end) =>
+    Array.isArray(value)
+      ? value.slice(Number(start ?? 0), end === undefined ? undefined : Number(end))
+      : String(value ?? "").slice(Number(start ?? 0), end === undefined ? undefined : Number(end)),
+  batch: (value, size) => {
+    const input = Array.isArray(value) ? value : [];
+    const width = Math.max(1, Number(size));
+    const out: unknown[][] = [];
+    for (let i = 0; i < input.length; i += width) out.push(input.slice(i, i + width));
+    return out;
+  },
+  safe: (value) => value,
+  escape: (value) =>
+    String(value ?? "").replace(/[&<>"']/g, (char) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!,
+    ),
+  tojson: (value) => JSON.stringify(value),
+  dump: (value) => JSON.stringify(value),
+};
+
 const FILTER_VIEW = new Proxy(
   {},
   {
@@ -103,7 +165,7 @@ const FILTER_VIEW = new Proxy(
       if (typeof key !== "string") return undefined;
       const shared = getFilter(key);
       if (shared !== undefined) return shared;
-      const filter = ANSIBLE_FILTERS[key];
+      const filter = ANSIBLE_FILTERS[key] ?? BUILTIN_FILTER_IMPLS[key];
       return filter === undefined ? undefined : wrapFilter(filter);
     },
   },
@@ -145,7 +207,7 @@ function makeData(vars: Record<string, unknown>): object {
         if (key === "globals") return ANSIBLE_GLOBALS;
         const shared = getFilter(key);
         if (shared !== undefined) return shared;
-        const ansible = ANSIBLE_FILTERS[key];
+        const ansible = ANSIBLE_FILTERS[key] ?? BUILTIN_FILTER_IMPLS[key];
         if (ansible !== undefined) return wrapFilter(ansible);
         if (Object.prototype.hasOwnProperty.call(ANSIBLE_GLOBALS, key)) return ANSIBLE_GLOBALS[key];
         if (SAFE_GLOBALS.has(key)) return SAFE_GLOBALS.get(key);

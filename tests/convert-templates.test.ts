@@ -42,6 +42,20 @@ describe("template analyzer", () => {
     expect(render(generated.eta!, { x: true })).toBe(renderJinja(`a {%- if x -%} b {%- endif -%} c`, { x: true }));
   });
 
+  test("maps safe Python-style method calls", () => {
+    for (const source of [
+      "{{ d.keys() }}",
+      "{{ d.items() }}",
+      "{{ d.values() }}",
+      '{{ s.split("/") }}',
+      "{{ x.__len__() }}",
+      "{{ x.__str__() }}",
+    ]) {
+      expect(analyzeTemplate(source, "methods.j2").disposition).toBe("mapped");
+    }
+    expect(analyzeTemplate("{{ xs.append(1) }}", "append.j2").disposition).toBe("review");
+  });
+
   test("flags macros, lookups, and unknown filters as handoff", () => {
     const analysis = analyzeTemplate(
       `{% macro m() %}x{% endmacro %}{{ lookup("file", "x") }}{{ y | frobnicate }}`,
@@ -69,6 +83,17 @@ describe("Eta codegen (mapped subset)", () => {
     const cycle = generateEta('{% for x in xs %}{{ loop.cycle("odd", "even") }}{% endfor %}', "cycle.j2");
     expect(cycle.ok).toBe(true);
     expect(render(cycle.eta!, { xs: [1, 2, 3] })).toBe("oddevenodd");
+
+    const methods = generateEta(
+      '{% for k, v in d.items() %}{{ k }}={{ v }};{% endfor %}',
+      "methods.j2",
+    );
+    expect(methods.ok).toBe(true);
+    expect(render(methods.eta!, { d: { a: 1, b: 2 } })).toBe("a=1;b=2;");
+
+    const keys = generateEta('{{ d.keys() | join(",") }}', "keys.j2");
+    expect(keys.ok).toBe(true);
+    expect(render(keys.eta!, { d: { a: 1, b: 2 } })).toBe("a,b");
 
     const adjacent = generateEta(
       '{% for x in xs %}{{ loop.previtem }}-{{ x }}-{{ loop.nextitem }};{% endfor %}',
