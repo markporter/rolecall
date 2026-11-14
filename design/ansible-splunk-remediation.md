@@ -328,8 +328,9 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   `filters`/`tests`/`globals` views (including `omit`) and unwraps lenient missing
   values for Ansible filters/tests. Partial Eta drafts with HANDOFF markers are emitted for
   review/handoff templates. Review constructs can be explicitly accepted with
-  `--templates-review accept`. Remaining: broader loop metadata/whitespace parity
-  and corpus-level golden fixtures. The default `--templates keep` path is unchanged.
+  `--templates-review accept`. Loop metadata now includes `cycle`, `previtem`, and `nextitem`; Nunjucks
+  applies whitespace trim markers before codegen, so trimmed output is preserved.
+  Remaining: corpus-level golden fixtures. The default `--templates keep` path is unchanged.
 
 ## Risks
 
