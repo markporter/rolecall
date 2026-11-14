@@ -95,6 +95,11 @@ describe("Ansible filters/tests added for conversion", () => {
     expect(renderJinja(`{{ 8 | human_readable(true) }}`)).toBe("1 B");
   });
 
+  it("zip and product filters", () => {
+    expect(renderJinja(`{{ [1, 2] | zip([3, 4]) | to_json }}`)).toBe("[[1,3],[2,4]]");
+    expect(renderJinja(`{{ [1, 2] | product([3, 4]) | to_json }}`)).toBe("[[1,3],[1,4],[2,3],[2,4]]");
+  });
+
   it("password_hash is deterministic", () => {
     const a = renderJinja(`{{ "secret" | password_hash("sha256", "salt") }}`);
     const b = renderJinja(`{{ "secret" | password_hash("sha256", "salt") }}`);

@@ -257,6 +257,20 @@ export const ANSIBLE_FILTERS: Record<string, Filter> = {
     return out;
   },
   flatten: (value, levels) => flatten(value, typeof levels === "number" ? levels : Infinity),
+  zip: (value, ...others) => {
+    const lists = [asArray(value), ...others.map(asArray)];
+    const length = Math.min(...lists.map((list) => list.length));
+    return Array.from({ length }, (_, i) => lists.map((list) => list[i]));
+  },
+  product: (value, ...others) => {
+    let out: unknown[][] = asArray(value).map((item) => [item]);
+    for (const other of others.map(asArray)) {
+      const next: unknown[][] = [];
+      for (const prefix of out) for (const item of other) next.push([...prefix, item]);
+      out = next;
+    }
+    return out;
+  },
   unique: (value) => unique(asArray(value)),
   union: (value, other) => unique([...asArray(value), ...asArray(other)]),
   intersect: (value, other) => unique(asArray(value).filter((v) => asArray(other).includes(v))),
