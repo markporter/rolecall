@@ -20,6 +20,7 @@
 
 import { Eta, type TemplateFunction } from "eta";
 import { getFilter, hasFilter } from "./filters.js";
+import { ANSIBLE_FILTERS, ANSIBLE_GLOBALS, ANSIBLE_TESTS } from "./ansible-filters.js";
 
 // eta-internal free-variable bindings emitted inside `with(it){ ... }`. These must
 // resolve to the REAL function scope, not the data proxy — if the proxy scopes
@@ -84,6 +85,44 @@ const LENIENT_NIL: object = new Proxy(
   },
 );
 
+// Shared Ansible filter/test/global views for ADR 0031 Eta codegen. User vars
+// still win because `makeData` checks the data object first. Filters/tests unwrap
+// the lenient missing-value proxy so Ansible `default`/`defined` see `undefined`.
+type AnyFilter = (value: unknown, ...args: unknown[]) => unknown;
+const unwrapLenient = (value: unknown): unknown => (value === LENIENT_NIL ? undefined : value);
+const wrapFilter = (filter: AnyFilter): AnyFilter =>
+  (value, ...args) => filter(unwrapLenient(value), ...args.map(unwrapLenient));
+
+const FILTER_VIEW = new Proxy(
+  {},
+  {
+    has() {
+      return true;
+    },
+    get(_target, key) {
+      if (typeof key !== "string") return undefined;
+      const shared = getFilter(key);
+      if (shared !== undefined) return shared;
+      const filter = ANSIBLE_FILTERS[key];
+      return filter === undefined ? undefined : wrapFilter(filter);
+    },
+  },
+);
+
+const TEST_VIEW = new Proxy(
+  {},
+  {
+    has() {
+      return true;
+    },
+    get(_target, key) {
+      if (typeof key !== "string") return undefined;
+      const test = ANSIBLE_TESTS[key];
+      return test === undefined ? undefined : wrapFilter(test);
+    },
+  },
+);
+
 // Build the `it` data object as a Proxy that resolves vars, filters, and globals,
 // and falls back to LENIENT_NIL for anything undefined (lenient rendering).
 function makeData(vars: Record<string, unknown>): object {
@@ -93,6 +132,7 @@ function makeData(vars: Record<string, unknown>): object {
       has(_target, key) {
         if (typeof key !== "string") return false;
         if (Object.prototype.hasOwnProperty.call(vars, key)) return true;
+        if (key === "filters" || key === "tests" || key === "globals") return true;
         if (hasFilter(key)) return true;
         if (ENGINE_INTERNAL.has(key)) return false; // resolve to real scope
         return true; // lenient: treat unknown name as a missing var
@@ -100,8 +140,14 @@ function makeData(vars: Record<string, unknown>): object {
       get(_target, key) {
         if (typeof key !== "string") return undefined;
         if (Object.prototype.hasOwnProperty.call(vars, key)) return vars[key];
-        const filter = getFilter(key);
-        if (filter !== undefined) return filter;
+        if (key === "filters") return FILTER_VIEW;
+        if (key === "tests") return TEST_VIEW;
+        if (key === "globals") return ANSIBLE_GLOBALS;
+        const shared = getFilter(key);
+        if (shared !== undefined) return shared;
+        const ansible = ANSIBLE_FILTERS[key];
+        if (ansible !== undefined) return wrapFilter(ansible);
+        if (Object.prototype.hasOwnProperty.call(ANSIBLE_GLOBALS, key)) return ANSIBLE_GLOBALS[key];
         if (SAFE_GLOBALS.has(key)) return SAFE_GLOBALS.get(key);
         return LENIENT_NIL; // lenient default for missing vars
       },

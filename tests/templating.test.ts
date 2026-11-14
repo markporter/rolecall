@@ -155,3 +155,15 @@ describe("fast templating — nested + control flow", () => {
     expect(render(tpl, { items: ["a", "b", "c"] })).toBe("a;b;c;");
   });
 });
+
+describe("fast templating — Ansible views (ADR 0031 parity)", () => {
+  it("exposes filters, tests, and globals without shadowing vars", () => {
+    expect(render("<%= filters.default(missing, 'fallback') %>", {})).toBe("fallback");
+    expect(render("<%= filters.to_json(value) %>", { value: { a: 1 } })).toBe('{"a":1}');
+    expect(render("<%= tests.defined(name) %>", { name: "bob" })).toBe("true");
+    expect(render("<%= tests.undefined(missing) %>", {})).toBe("true");
+    expect(render("<%= globals.omit %>")).toBe("__rolecall_omit__");
+    expect(render("<%= omit %>")).toBe("__rolecall_omit__");
+    expect(render("<%= filters.default(name, 'fallback') %>", { name: "bob" })).toBe("bob");
+  });
+});
