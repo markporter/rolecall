@@ -59,6 +59,8 @@ rolecall update --check|--from-dir <dir>|--rollback [--yes] [--no-restart]  # bi
 rolecall isolation allow|revoke|list|allow-egress|revoke-egress  # operator-owned isolation.yaml grants/egress (ADR 0025)
 rolecall runtime install|status|remove [--bun-version <ver>] [--from-dir <dir>]  # optional standalone Bun toolchain (embedded by default)
 rolecall docs search <query>            # query RoleCall prose docs by substring
+rolecall project create <name> [--dir <path>] [--namespace <ns>] [--vcs none|git]  # scaffold a blank project
+rolecall project init [--dir <path>] [--name <name>] [--namespace <ns>] [--vcs none|git]
 rolecall convert                          # TTY wizard: source -> project -> apply/handoff/strict
 rolecall convert ansible <path> [--out <dir>] [--project <dir>] [--handoff <dir>] [--write] [--strict] [--templates keep|eta] [--validate <dir>]  # mechanical Ansible -> RoleCall conversion + handoff
 rolecall plugin list                               # registered module/fact + built-in inventory plugins

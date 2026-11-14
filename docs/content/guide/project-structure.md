@@ -32,6 +32,8 @@ Run it with:
 rolecall playbook run playbooks/site.yaml --inventory inventory/inventory.yaml
 ```
 
+Create this layout with `rolecall project create <name>` (or `rolecall project init` in an existing directory); the command only writes missing files.
+
 RoleCall scans a `plugins/` tree at `playbook run` time. A plugin's
 fully-qualified name (FQCN) is `<namespace>.<name>`, implied by its directory
 under `plugins/<type>/<namespace>/<name>.ts`. The supported type directories are

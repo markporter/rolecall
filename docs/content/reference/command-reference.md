@@ -22,6 +22,16 @@ The implementation lives in `src/docs/search.ts` and reads files through `node:f
 
 The handler lives in `src/cli/commands/docs.ts` and returns a `DocsModulesResult` (`{ command, query, count, modules }`) rendered by the output plugin. Because the default `syslog` plugin is a no-op for end-of-run renders, `rolecall docs modules` without an explicit `-o` flag falls back to `human_summary` so the table is actually printed; `docs search` keeps its existing default behavior. Add `-o json` for a structured `DocsModulesResult` that LLM clients can consume directly.
 
+### project create / project init
+
+`rolecall project create <name>` creates the documented ADR 0014/0030 project skeleton at `--dir` (or `./<slug(name)>`). `rolecall project init` scaffolds into an existing empty directory (default cwd). Both write `rolecall.yaml`, `playbooks/`, `inventory/inventory.yaml`, `plugins/<type>/<namespace>/`, `roles/`, `group_vars/`, `host_vars/`, `collections/`, `.rolecall/isolation.yaml`, and a commented `collections.yml`, never overwriting existing files. `--force` allows filling missing pieces into a non-empty directory; `--vcs git` runs `git init` and writes a `.gitignore`.
+
+```sh
+rolecall project create "My Site"
+rolecall project create site --dir ./infra --namespace acme --vcs git
+rolecall project init --dir .
+```
+
 ### convert ansible
 
 Bare `rolecall convert` opens an interactive wizard in a TTY: it asks for the Ansible source, the target project directory, whether to write files/handoff, whether to be strict, and confirms before applying. `--yes`/`--non-interactive`/`--dry-run` skip the prompts.

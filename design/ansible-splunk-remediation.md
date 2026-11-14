@@ -316,7 +316,8 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   play-level `remote_user`, `lookup`/`query`, and crypt-compatible `password_hash`.
 - **Conversion workflow:** `convert ansible --project <dir>` now scaffolds the blank
   ADR 0014/0030 project shape and populates it with the converted tree (tested with a
-  representative playbook/role/group_vars sample).
+  representative playbook/role/group_vars sample). `rolecall project create|init` now
+  exposes the same scaffold directly, with `--force` and optional `--vcs git`.
 - **Cycle 4 (pending):** the external `ansible_splunk` corpus is not present in this
   checkout; the harness is ready to run when it is available.
 - **Cycle 5 (ADR 0031, slices 1–3 partial):** `--templates eta` parses each `.j2`
