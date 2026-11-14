@@ -584,7 +584,31 @@ function convertTask(
       }
     }
   } else if (task.with_first_found !== undefined) {
-    finding(state, file, `${path}.with_first_found`, "with_first_found", "handoff", "file-search loops have no mechanical $each equivalent");
+    const list = task.with_first_found;
+    if (
+      (rawModule === "copy" || rawModule === "template") &&
+      Array.isArray(list) &&
+      list.length > 0 &&
+      list.every((entry) => typeof entry === "string")
+    ) {
+      const converted = list.map((entry, i) =>
+        convertValue(entry, state, file, `${path}.with_first_found[${i}]`),
+      );
+      if (rawModule === "template") {
+        const content = asRecord((args as Record<string, unknown>)["content"]);
+        if (content !== undefined) {
+          content["template_file"] = converted;
+          finding(state, file, `${path}.with_first_found`, "with_first_found", "mapped", "mapped to copy template_file candidates");
+        } else {
+          finding(state, file, `${path}.with_first_found`, "with_first_found", "handoff", "template conversion did not produce a content spec");
+        }
+      } else {
+        (args as Record<string, unknown>)["src"] = converted;
+        finding(state, file, `${path}.with_first_found`, "with_first_found", "mapped", "mapped to copy src candidates");
+      }
+    } else {
+      finding(state, file, `${path}.with_first_found`, "with_first_found", "handoff", "with_first_found is only mechanical for static copy/template candidates");
+    }
   }
 
   for (const key of ["register", "delegate_to", "run_once", "become", "become_user", "no_log"]) {

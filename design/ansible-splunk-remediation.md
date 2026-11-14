@@ -187,10 +187,10 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   tests), native role `meta` dependencies, percentage `serial`, and shell
   `changed_when` -> `run_mode`. Converter mappings now cover `with_dict`,
   `with_together`/`with_nested`, static `include_vars`, static `import_playbook`
-  inlining, `group_vars`/`host_vars` and role `defaults`/`vars` Jinja, and
+  inlining, `with_first_found` -> `copy` candidates, `group_vars`/`host_vars` and role `defaults`/`vars` Jinja, and
   `hostvars[...]`/`groups[...]` bracket access. The typed compatibility matrix lives
   in `src/convert/matrix.ts`. Remaining: dynamic includes/`include_role`,
-  `with_first_found`, `ignore_errors`/`failed_when`, `async`/`until`/`retries`,
+  `with_first_found` on non-copy/template tasks, `ignore_errors`/`failed_when`, `async`/`until`/`retries`,
   play-level `remote_user`/`order`, `lookup`/`query`, IPv6 `ipaddr`, and
   crypt-compatible `password_hash`.
 

@@ -228,6 +228,23 @@ describe("convert ansible MVP", () => {
     expect(existsSync(join(handoff, "manifest.json"))).toBe(true);
   });
 
+  test("with_first_found maps to copy/template candidates", () => {
+    const dir = tmp("first-found");
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- hosts: web\n  tasks:\n    - name: template\n      template:\n        src: "{{ item }}"\n        dest: /etc/app.conf\n      with_first_found:\n        - "{{ ansible_distribution }}.j2"\n        - default.j2\n    - name: copy\n      copy:\n        src: "{{ item }}"\n        dest: /etc/app.raw\n      with_first_found:\n        - "{{ ansible_distribution }}.conf"\n        - default.conf\n`, "utf8");
+    const result = convertAnsible(file, { write: true, out: join(dir, "out") });
+    const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
+    const tasks = converted[0]!.tasks as Array<Record<string, unknown>>;
+    expect((tasks[0]!.copy as Record<string, unknown>).content).toEqual({
+      template_file: [{ $jinja: "{{ facts.distribution }}.j2" }, "default.j2"],
+      engine: "jinja",
+    });
+    expect((tasks[1]!.copy as Record<string, unknown>).src).toEqual([
+      { $jinja: "{{ facts.distribution }}.conf" },
+      "default.conf",
+    ]);
+  });
+
   test("strict mode flags remaining handoff items", () => {
     const dir = tmp("strict");
     const file = join(dir, "site.yml");
