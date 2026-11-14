@@ -213,3 +213,30 @@ test("copy picks the first existing template_file candidate", async () => {
   expect(res.changed).toBe(true);
   expect(readFileSync(dest, "utf8")).toBe("hello");
 });
+
+test("copy resolves role-relative files/ sources", async () => {
+  const roleDir = tmp("-role");
+  mkdirSync(join(roleDir, "files"), { recursive: true });
+  writeFileSync(join(roleDir, "files", "role.conf"), "role=1");
+  const dest = tmp(".conf");
+  const args = { src: "role.conf", dest };
+  const ctx = { ...localCtx(args), roleDir } as ModuleContext;
+  const res = await applyIdempotent(copyModule, args, ctx, { cache: cache() });
+  expect(res.changed).toBe(true);
+  expect(readFileSync(dest, "utf8")).toBe("role=1");
+});
+
+test("copy resolves role-relative templates/ files", async () => {
+  const roleDir = tmp("-role-templates");
+  mkdirSync(join(roleDir, "templates"), { recursive: true });
+  writeFileSync(join(roleDir, "templates", "role.j2"), "template");
+  const dest = tmp(".conf");
+  const args = {
+    dest,
+    content: { template_file: "role.j2", engine: "eta" },
+  };
+  const ctx = { ...localCtx(args), roleDir } as ModuleContext;
+  const res = await applyIdempotent(copyModule, args, ctx, { cache: cache() });
+  expect(res.changed).toBe(true);
+  expect(readFileSync(dest, "utf8")).toBe("template");
+});

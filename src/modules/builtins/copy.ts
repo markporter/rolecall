@@ -59,8 +59,14 @@ function resolveSourcePath(name: string | string[], roleDir?: string, playbookDi
     const candidates: string[] = [];
     if (isAbsolute(entry)) candidates.push(entry);
     else {
-      if (roleDir) candidates.push(join(roleDir, "src", entry));
-      if (playbookDir) candidates.push(join(playbookDir, entry));
+      if (roleDir) {
+        candidates.push(join(roleDir, "files", entry));
+        candidates.push(join(roleDir, "src", entry));
+      }
+      if (playbookDir) {
+        candidates.push(join(playbookDir, "files", entry));
+        candidates.push(join(playbookDir, entry));
+      }
       candidates.push(join(process.cwd(), entry));
     }
     for (const c of candidates) {
@@ -89,7 +95,10 @@ function resolveTemplatePath(name: string | string[], roleDir?: string, playbook
     if (isAbsolute(entry)) candidates.push(entry);
     else {
       if (roleDir) candidates.push(join(roleDir, "templates", entry));
-      if (playbookDir) candidates.push(join(playbookDir, entry));
+      if (playbookDir) {
+        candidates.push(join(playbookDir, "templates", entry));
+        candidates.push(join(playbookDir, entry));
+      }
       candidates.push(join(process.cwd(), entry));
     }
     for (const c of candidates) {
@@ -661,7 +670,7 @@ export const meta: ModuleSummary = {
     validate: 'visudo -cf %s'`,
   ],
     notes:
-    "≠ Ansible `copy`: **`force` defaults to FALSE** (Ansible defaults TRUE), so copy only rewrites when the destination differs unless you pass force:true. A local directory `src` copies its **contents** into `dest` (no `src/` trailing-slash distinction). `remote_src: true` copies a target-side path on the target using `cmp`/`diff -rq` for idempotency and `cp -a` for the transfer. Templating is on-host: pass `content` as an object with `template`/`template_file` and optional `engine` (EJS default, or `jinja`); a bare `content` string is written literally (never interpreted as a template). Playbook lint rejects inline Jinja (`content.template` with `engine: jinja`); use `$jinja` or a `.j2` `template_file` instead. Attribute application relies on stat/chown/chgrp availability; no SELinux context handling.",
+    "≠ Ansible `copy`: **`force` defaults to FALSE** (Ansible defaults TRUE), so copy only rewrites when the destination differs unless you pass force:true. A local directory `src` copies its **contents** into `dest` (no `src/` trailing-slash distinction). `remote_src: true` copies a target-side path on the target using `cmp`/`diff -rq` for idempotency and `cp -a` for the transfer. Source paths resolve against `<role>/files/`, `<role>/src/`, `<playbook>/files/`, `<playbook>/`, then cwd; `template_file` resolves against `<role>/templates/`, `<playbook>/templates/`, `<playbook>/`, then cwd. Templating is on-host: pass `content` as an object with `template`/`template_file` and optional `engine` (EJS default, or `jinja`); a bare `content` string is written literally (never interpreted as a template). Playbook lint rejects inline Jinja (`content.template` with `engine: jinja`); use `$jinja` or a `.j2` `template_file` instead. Attribute application relies on stat/chown/chgrp availability; no SELinux context handling.",
 };
 
 (copyModule as Module & { meta: ModuleSummary }).meta = meta;
