@@ -182,7 +182,7 @@ describe("convert ansible MVP", () => {
     const result = convertAnsible(dir, { write: true, out: join(dir, "out") });
     const vars = yamlLoad(readFileSync(join(result.out, "group_vars", "all.yml"), "utf8")) as Record<string, unknown>;
     expect(vars.url).toEqual({ $jinja: "http://{{ play.host }}:{{ vars.port }}" });
-    expect(result.findings.some((f) => f.construct === "role-dependencies" && f.disposition === "handoff")).toBe(true);
+    expect(result.findings.some((f) => f.construct === "role-dependencies")).toBe(false);
   });
 
   test("strict mode flags remaining handoff items", () => {

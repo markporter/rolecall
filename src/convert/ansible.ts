@@ -800,11 +800,6 @@ function isVarFile(rel: string): boolean {
   );
 }
 
-/** True for a role meta file (`roles/<name>/meta/main.yml`). */
-function isRoleMeta(rel: string): boolean {
-  return /(^|[\\/])roles[\\/][^\\/]+[\\/]meta[\\/]main\.ya?ml$/i.test(rel);
-}
-
 /**
  * @summary Analyze and mechanically convert an Ansible file or directory into RoleCall YAML, collecting review/handoff findings for anything not safely convertible.
  * @param source Source file or directory.
@@ -866,12 +861,6 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
     }
     const findingStart = state.findings.length;
     const relMode = isDir ? relative(sourceAbs, abs) : "";
-    if (isDir && isRoleMeta(relMode)) {
-      const rec = asRecord(doc);
-      if (rec?.["dependencies"] !== undefined) {
-        finding(state, abs, "meta.dependencies", "role-dependencies", "handoff", "role meta dependencies are not resolved by RoleCall; add them to the play roles list");
-      }
-    }
     if (isDir && isVarFile(relMode) && asRecord(doc) !== undefined) {
       const rec = asRecord(doc)!;
       const convertedVars: Record<string, unknown> = {};

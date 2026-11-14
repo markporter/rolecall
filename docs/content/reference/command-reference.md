@@ -32,7 +32,7 @@ rolecall convert ansible ./site --strict          # exit 1 if review/handoff ite
 rolecall convert ansible --validate ./site        # strict-load the converted playbooks
 ```
 
-Constructs with no faithful mechanical equivalent (`ignore_errors`, `changed_when`, `failed_when`, `async`/`until`/`retries`, dynamic includes, `with_first_found`, play-level `remote_user`, percentage `serial`, role `meta` dependencies, etc.) are recorded in `HANDOFF.md` and `manifest.json` under `--handoff` (default `<out>/handoff`). `--strict` exits non-zero when any review or handoff item remains. The handler lives in `src/cli/commands/convert.ts`, the analyzer/rewriter in `src/convert/ansible.ts`, and the typed compatibility matrix in `src/convert/matrix.ts`; add `-o json` for the structured `ConvertResult`.
+Constructs with no faithful mechanical equivalent (`ignore_errors`, `changed_when`, `failed_when`, `async`/`until`/`retries`, dynamic includes, `with_first_found`, play-level `remote_user`, percentage `serial`, etc.) are recorded in `HANDOFF.md` and `manifest.json` under `--handoff` (default `<out>/handoff`). `--strict` exits non-zero when any review or handoff item remains. The handler lives in `src/cli/commands/convert.ts`, the analyzer/rewriter in `src/convert/ansible.ts`, and the typed compatibility matrix in `src/convert/matrix.ts`; add `-o json` for the structured `ConvertResult`.
 
 ### vars list
 
