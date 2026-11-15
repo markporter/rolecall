@@ -319,11 +319,15 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   representative playbook/role/group_vars sample). `rolecall project create|init` now
   exposes the same scaffold directly, with `--force` and optional `--vcs git`.
 - **Cycle 4 (corpus run):** converted `/mnt/homes/mark/ANM/anm_dev/ansible_splunk`
-  (1,819 files) with `--templates eta`; the current pass yields 8,308 mapped,
-  187 review, and 948 gap findings, and validates 128 converted playbooks with
-  **0 failures**. A checked-in golden fixture (`tests/fixtures/ansible-golden`) keeps
-  the pipeline covered in CI. Remaining findings are the documented gap classes
-  (`ignore_errors`, `async`/`until`/`retries`, dynamic includes/roles, etc.).
+  (1,819 files) with `--templates eta`; the current pass yields ~12.9k mapped,
+  432 review, and 237 gap findings, and validates 128 converted playbooks with
+  **0 failures**. Native `ignore_errors`, `changed_when`/`failed_when`,
+  `retries`/`until`/`delay`, play `remote_user`, inventory `host_vars`/
+  `group_hosts` views, and task-level `include_role` inlining closed the largest
+  classes. Remaining gaps are concentrated in `async`/`poll`, dynamic
+  includes/`include_vars`, `lookup`/`query`, `delegate_facts`, and task-level
+  `vars`. A checked-in golden fixture (`tests/fixtures/ansible-golden`) keeps the
+  pipeline covered in CI.
 - **Cycle 5 (ADR 0031, slices 1–3 partial):** `--templates eta` parses each `.j2`
   with the Nunjucks AST, classifies constructs as mapped/review/gap, and emits
   per-item gap work orders. Fully mapped templates are written as `.eta` and
