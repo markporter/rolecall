@@ -44,8 +44,9 @@ domain lands. Domain shortlist and wire-up steps live in `.local/domain-shortlis
 
 ## Consequences
 
-- The TypeDoc API site (`docs/api`) is not yet part of the Pages deploy — the
-  initial deploy serves the VitePress guide + reference + concepts. Integrating
-  the API site is a follow-up.
+- The TypeDoc API site is generated inside the Pages workflow (not committed) and
+  copied into the VitePress output, so it deploys under `/rolecall/api/` alongside
+  the guide, reference, and concepts. `typedoc.pages.json` extends `typedoc.json`
+  with the matching `basePath`; keep both in step if the site base changes.
 - Enabling Pages requires a one-time repo setting: Settings → Pages → Source =
   "GitHub Actions".

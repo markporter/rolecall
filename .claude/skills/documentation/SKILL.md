@@ -37,6 +37,14 @@ bun run docs:api          # TypeDoc -> docs/api   (config in typedoc.json)
 cd docs && bun run build  # VitePress -> docs/.vitepress/dist
 ```
 
+`docs/api` is generated output and is gitignored: the Pages workflow
+(`.github/workflows/docs.yml`) runs `bun run docs:api:pages` (which extends
+`typedoc.json` via `typedoc.pages.json`, using `basePath: /rolecall/api/`), then
+copies `docs/api` into `docs/.vitepress/dist/api` so it deploys under
+`/rolecall/api/`. Never commit `docs/api`. If you change a `cleanJsdocTheme`
+option in `typedoc.json`, mirror it in `typedoc.pages.json` (the object is
+replaced, not deep-merged, by `extends`).
+
 Then confirm nothing broke behind them:
 
 ```sh
@@ -62,8 +70,9 @@ for this reason. Run plain `bun run build` inside `docs/` (that script is
 2. Regenerate the API reference. Run `bun run docs:api` (TypeDoc reads
    `typedoc.json`, whose entry points cover `src/cli`, `src/modules`,
    `src/orchestrator`, `src/store`, `src/config`, `src/transport`,
-   `src/util/runtime`). Commit the regenerated `docs/api` so signatures and comments
-   track source.
+   `src/util/runtime`). This is a local preview only — `docs/api` is gitignored and
+   the Pages workflow rebuilds it from source on every push to `main`, so never
+   commit the output.
 
 3. Refresh the guide where behavior changes. Update the relevant markdown under
    `docs/content/<section>/...md` (command-reference, global-options, serve-command,
