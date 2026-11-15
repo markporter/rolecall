@@ -103,7 +103,7 @@ function formatHuman(data: CliResult): string {
       if (data.totals) {
         lines.push(
           `Summary  : ok=${data.totals.ok} changed=${data.totals.changed} ` +
-            `failed=${data.totals.failed} ignored=${data.totals.ignored ?? 0} skipped=${data.totals.skipped}`,
+            `failed=${data.totals.failed} skipped=${data.totals.skipped}`,
         );
         lines.push("Outcomes:");
         for (const o of data.outcomes ?? []) {

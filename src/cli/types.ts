@@ -170,7 +170,6 @@ export interface ApplyTotals {
   ok: number;
   changed: number;
   failed: number;
-  ignored?: number;
   skipped: number;
 }
 

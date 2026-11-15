@@ -234,7 +234,7 @@ export async function runPlaybookCommand(
   }
 
   const totals: ApplyTotals = result
-    ? { ok: result.ok, changed: result.changed, failed: result.failed, ignored: result.ignored, skipped: result.skipped }
+    ? { ok: result.ok, changed: result.changed, failed: result.failed, skipped: result.skipped }
     : { ok: 0, changed: 0, failed: 0, skipped: 0 };
   const outcomes: TaskApplyOutcome[] = [];
   const rendered: RenderedTemplate[] = [];

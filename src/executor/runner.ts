@@ -371,9 +371,8 @@ export async function runTaskOnHost(
     conn = await getConnection(state, host, task.connection);
   } catch (err) {
     outcome.failed = true;
-    outcome.ignored = task.ignore_errors === true;
     outcome.msg = `connection failed: ${err instanceof Error ? err.message : String(err)}`;
-    if (!task.ignore_errors) state.failed.add(host);
+    state.failed.add(host);
     emit("end", "failed", taskStartedAt, Date.now(), Math.round(performance.now() - taskT0), { error: outcome.msg });
     fireEvent(outcome);
     return outcome;
@@ -389,9 +388,8 @@ export async function runTaskOnHost(
     loopItems = expandLoop(task.loop, buildVars(state, host, undefined, undefined, task), policy);
   } catch (err) {
     outcome.failed = true;
-    outcome.ignored = task.ignore_errors === true;
     outcome.msg = err instanceof Error ? err.message : String(err);
-    if (!task.ignore_errors) state.failed.add(host);
+    state.failed.add(host);
     emit("end", "failed", taskStartedAt, Date.now(), Math.round(performance.now() - taskT0), { error: outcome.msg });
     fireEvent(outcome);
     return outcome;
@@ -623,40 +621,6 @@ export async function runTaskOnHost(
             };
           }
         }
-        if (task.changed_when !== undefined || task.failed_when !== undefined) {
-          const resultView = {
-            changed: res.changed,
-            failed: Boolean(res.failed),
-            stdout: res.stdout,
-            stderr: res.stderr,
-            rc: (res.data as Record<string, unknown> | undefined)?.["rc"],
-            ...(res.data ?? {}),
-          };
-          const evalScope = {
-            ...vars,
-            reg: {
-              ...vars.reg,
-              result: resultView,
-              ...(task.register !== undefined ? { [task.register]: resultView } : {}),
-            },
-          };
-          if (task.changed_when !== undefined) {
-            try {
-              res.changed = evalWhen(task.changed_when, evalScope, policy);
-            } catch (err) {
-              res.failed = true;
-              res.msg = `changed_when: ${err instanceof Error ? err.message : String(err)}`;
-            }
-          }
-          if (task.failed_when !== undefined) {
-            try {
-              res.failed = evalWhen(task.failed_when, evalScope, policy);
-            } catch (err) {
-              res.failed = true;
-              res.msg = `failed_when: ${err instanceof Error ? err.message : String(err)}`;
-            }
-          }
-        }
         iter.changed = res.changed;
         iter.failed = Boolean(res.failed);
         iter.stdout = res.stdout;
@@ -703,8 +667,7 @@ export async function runTaskOnHost(
   outcome.changed = anyChanged;
   outcome.failed = anyFailed;
   if (anyFailed) {
-    outcome.ignored = task.ignore_errors === true;
-    if (!task.ignore_errors) state.failed.add(host);
+    state.failed.add(host);
     outcome.msg = outcome.msg ?? "task failed";
   }
   if (task.register && !outcome.skipped) {

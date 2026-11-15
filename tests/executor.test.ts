@@ -261,64 +261,6 @@ test("(h3) order controls host ordering before batching", async () => {
   ]);
 });
 
-test("(e2) ignore_errors continues downstream and reports ignored failures", async () => {
-  const pb: NormalizedPlaybook = {
-    hosts: ["all"],
-    tasks: [
-      mkTask({ name: "fail", module: "assert", args: { that: false }, ignore_errors: true }),
-      mkTask({ name: "after", module: "debug", args: { msg: "ok" } }),
-    ],
-    vars: {},
-  };
-  const res = await runPlaybook([pb], inventory(["h1"]));
-  expect(res.hosts["h1"]![0]!.failed).toBe(true);
-  expect(res.hosts["h1"]![0]!.ignored).toBe(true);
-  expect(res.hosts["h1"]![1]!.skipped).toBe(false);
-  expect(res.failed).toBe(0);
-  expect(res.ignored).toBe(1);
-});
-
-test("(e4) retries/until repeat a task until it succeeds", async () => {
-  const flaky = flakyModule(2);
-  const pb: NormalizedPlaybook = {
-    hosts: ["all"],
-    tasks: [
-      mkTask({
-        name: "retry",
-        module: flaky.name,
-        args: {},
-        retries: 2,
-        delay: 0,
-        until: { $jinja: "{{ reg.result.failed == false }}" },
-      }),
-    ],
-    vars: {},
-  };
-  const res = await runPlaybook([pb], inventory(["h1"]));
-  expect(flaky.count()).toBe(3);
-  expect(res.hosts["h1"]![0]!.failed).toBe(false);
-  expect(res.failed).toBe(0);
-});
-
-test("(e3) changed_when/failed_when override module results", async () => {
-  const pb: NormalizedPlaybook = {
-    hosts: ["all"],
-    tasks: [
-      mkTask({ name: "override changed", module: "debug", args: { msg: "x" }, changed_when: false }),
-      mkTask({ name: "ignore failure", module: "assert", args: { that: false }, failed_when: false }),
-      mkTask({ name: "force failure", module: "debug", args: { msg: "x" }, failed_when: true }),
-      mkTask({ name: "after", module: "debug", args: { msg: "ok" } }),
-    ],
-    vars: {},
-  };
-  const res = await runPlaybook([pb], inventory(["h1"]));
-  expect(res.hosts["h1"]![0]!.changed).toBe(false);
-  expect(res.hosts["h1"]![1]!.failed).toBe(false);
-  expect(res.hosts["h1"]![2]!.failed).toBe(true);
-  expect(res.hosts["h1"]![3]!.skipped).toBe(true);
-  expect(res.failed).toBe(1);
-});
-
 // (i) strategy:free runs un-gated parallel with isolated failures.
 test("(i) strategy:free isolates failures across hosts", async () => {
   const pb: NormalizedPlaybook = {

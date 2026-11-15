@@ -734,6 +734,52 @@ function convertTask(
     finding(state, file, path, rawModule, "mapped", `module renamed to ${module}`);
   }
 
+  const changedWhen = task.changed_when;
+  const failedWhen = task.failed_when;
+  const ignoreErrors = task.ignore_errors ?? inherited.ignore_errors;
+  const shellish = ["shell", "command", "raw"].includes(module);
+  let handledChanged = false;
+  let handledFailed = false;
+  let handledIgnore = false;
+  if (shellish && (ignoreErrors === true || failedWhen === false)) {
+    const a = asRecord(args) ?? {};
+    const command = a["command"] ?? a["cmd"];
+    if (command !== undefined) {
+      module = "shell_register";
+      args = {
+        command,
+        changed: changedWhen === false ? false : true,
+        capture_errors: true,
+        ...(typeof a["chdir"] === "string" ? { chdir: a["chdir"] } : {}),
+        ...(typeof a["executable"] === "string" ? { executable: a["executable"] } : {}),
+        ...(typeof a["timeout_seconds"] === "number" ? { timeout_seconds: a["timeout_seconds"] } : {}),
+      };
+      handledChanged = changedWhen === false || changedWhen === true;
+      handledFailed = failedWhen === false;
+      handledIgnore = ignoreErrors === true;
+      finding(state, file, path, "result-semantics", "mapped", "mapped to shell_register (capture_errors)");
+    } else {
+      finding(state, file, path, "result-semantics", "gap", "cannot map result overrides without a shell command");
+    }
+  } else if (shellish && changedWhen === false) {
+    (args as Record<string, unknown>)["run_mode"] = "readonly";
+    handledChanged = true;
+    finding(state, file, path, "changed_when", "mapped", "mapped to run_mode: readonly");
+  } else if (shellish && changedWhen === true) {
+    (args as Record<string, unknown>)["run_mode"] = "always";
+    handledChanged = true;
+    finding(state, file, path, "changed_when", "mapped", "mapped to run_mode: always");
+  }
+  if (changedWhen !== undefined && !handledChanged) {
+    finding(state, file, `${path}.changed_when`, "changed_when", "gap", "use run_mode for shell tasks or a module with intrinsic idempotency");
+  }
+  if (failedWhen !== undefined && failedWhen !== false && !handledFailed) {
+    finding(state, file, `${path}.failed_when`, "failed_when", "gap", "use shell_register capture_errors or an explicit assert task");
+  }
+  if (ignoreErrors !== undefined && !handledIgnore) {
+    finding(state, file, `${path}.ignore_errors`, "ignore_errors", "gap", "use shell_register capture_errors for probes; otherwise keep RunTrace failure locality");
+  }
+
   const out: Record<string, unknown> = {};
   const rawName = typeof task.name === "string" ? task.name : undefined;
   out.name = staticName(rawName, `${module} task`);
@@ -890,22 +936,6 @@ function convertTask(
     else finding(state, file, `${path}.connection`, "connection", "gap", `connection '${connection}' has no RoleCall transport`);
   }
 
-  if (task.ignore_errors !== undefined || inherited.ignore_errors !== undefined) {
-    const raw = task.ignore_errors ?? inherited.ignore_errors;
-    const value = normalizeBoolean(raw);
-    if (value === undefined) {
-      finding(state, file, `${path}.ignore_errors`, "ignore_errors", "gap", "unsupported ignore_errors value; review it");
-    } else {
-      out.ignore_errors = value;
-      finding(state, file, `${path}.ignore_errors`, "ignore_errors", "mapped", "mapped to the native ignore_errors task field");
-    }
-  }
-
-  for (const key of ["changed_when", "failed_when"] as const) {
-    if (task[key] !== undefined) {
-      out[key] = convertResultCondition(task[key], state, file, `${path}.${key}`);
-    }
-  }
   if (task.retries !== undefined) {
     const retries = Number(task.retries);
     if (Number.isInteger(retries) && retries >= 0) out.retries = retries;
@@ -1044,7 +1074,7 @@ function convertPlay(raw: unknown, state: ConvertState, file: string, path: stri
       finding(state, file, `${path}.serial`, "serial", "gap", "unsupported serial value; use a number or an integer percentage");
     }
   }
-  for (const key of ["become_method", "any_errors_fatal", "force_handlers", "max_fail_percentage", "vars_prompt", "gather_subset"]) {
+  for (const key of ["ignore_errors", "become_method", "any_errors_fatal", "force_handlers", "max_fail_percentage", "vars_prompt", "gather_subset"]) {
     if (play[key] !== undefined) {
       finding(state, file, `${path}.${key}`, key, "gap", "no play-level RoleCall equivalent; apply it per task or review");
     }

@@ -460,6 +460,7 @@ test("docs modules --output json lists all modules with name + description + arg
          "set_reg",
          "set_stats",
         "shell",
+        "shell_register",
         "slurp",
         "snap",
         "sql",

@@ -110,7 +110,7 @@ describe("convert ansible MVP", () => {
       engine: "jinja",
     });
     expect(tasks[1]!.loop).toEqual(["a", "b"]);
-    expect((tasks[2]!.shell as Record<string, unknown>).command).toBe("/bin/false");
+    expect((tasks[2]!.shell_register as Record<string, unknown>).command).toBe("/bin/false");
     expect(tasks[3]!.tx).toBe("rc-block-1");
     expect((tasks[3]!.debug as Record<string, unknown>).msg).toEqual({ $jinja: "{{ vars.http_port }}" });
 
@@ -188,16 +188,15 @@ describe("convert ansible MVP", () => {
     expect(result.findings.some((f) => f.construct === "role-dependencies")).toBe(false);
   });
 
-  test("changed_when and failed_when map to native result predicates", () => {
+  test("maps shell changed_when:false to run_mode and failed_when:false to shell_register", () => {
     const dir = tmp("changed-when");
     const file = join(dir, "site.yml");
-    writeFileSync(file, `- hosts: web\n  tasks:\n    - name: check\n      shell: /bin/true\n      changed_when: false\n      failed_when: result.rc != 0\n`, "utf8");
+    writeFileSync(file, `- hosts: web\n  tasks:\n    - name: check\n      shell: /bin/true\n      changed_when: false\n    - name: probe\n      shell: /bin/false\n      failed_when: false\n`, "utf8");
     const result = convertAnsible(file, { write: true, out: join(dir, "out") });
     const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
-    const task = (converted[0]!.tasks as Array<Record<string, unknown>>)[0]!;
-    expect(task.changed_when).toBe(false);
-    expect(task.failed_when).toEqual({ $jinja: "{{ reg.result.rc != 0 }}" });
-    expect(result.findings.some((f) => f.construct === "changed_when" && f.disposition === "gap")).toBe(false);
+    const tasks = converted[0]!.tasks as Array<Record<string, unknown>>;
+    expect((tasks[0]!.shell as Record<string, unknown>).run_mode).toBe("readonly");
+    expect(tasks[1]!.shell_register).toEqual({ command: "/bin/false", changed: true, capture_errors: true });
   });
 
   test("percentage serial is preserved", () => {
@@ -378,15 +377,15 @@ describe("convert ansible MVP", () => {
     expect(result.findings.some((f) => f.construct === "retries" && f.disposition === "gap")).toBe(false);
   });
 
-  test("maps ignore_errors to the native task field", () => {
+  test("maps shell ignore_errors to shell_register capture_errors", () => {
     const dir = tmp("ignore-errors");
     const file = join(dir, "site.yml");
     writeFileSync(file, `- hosts: web\n  tasks:\n    - name: best effort\n      shell: /bin/false\n      ignore_errors: true\n`, "utf8");
     const result = convertAnsible(file, { write: true, out: join(dir, "out") });
     const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
     const task = (converted[0]!.tasks as Array<Record<string, unknown>>)[0]!;
-    expect(task.ignore_errors).toBe(true);
-    expect(result.findings.some((f) => f.construct === "ignore_errors" && f.disposition === "gap")).toBe(false);
+    expect(task.shell_register).toEqual({ command: "/bin/false", changed: true, capture_errors: true });
+    expect(task.ignore_errors).toBeUndefined();
   });
 
   test("strict mode flags remaining gap items", () => {
