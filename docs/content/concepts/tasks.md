@@ -31,6 +31,9 @@ Tasks may carry these first-class operators (not module args):
 - `notify` / `listen` — attach the task to a handler; handlers run on-change, are de-duplicated, and flush once at the end of the play.
 - `delegate_to` — run the task against a different target than the play's hosts.
 - `run_once` — execute only once (on the first host), not per host.
+- `ignore_errors` — record a failure but continue with downstream tasks.
+- `changed_when` / `failed_when` — post-result predicates evaluated against `reg.result` (or the task's `register` name).
+- `retries` / `delay` / `until` — repeat the task until the predicate passes (up to `retries` extra attempts, waiting `delay` seconds).
 - `become` / `become_user` — escalate privileges for the task (e.g. `become: true`, `become_user: root`).
 - `connection` — override the host's transport for this task only (`ssh`, `local`, or `network`). See [Transport](./transport.md).
 - `tags` — labels used by the global `--tags` / `--skip-tags` flags to select tasks (see [Tags](#tags)).

@@ -354,7 +354,7 @@ separate decision (ADR 0026).
   `globalThis` fallback also changes behavior for templates that leaned on ambient globals.
 - Nunjucks is closer to Jinja2 than LiquidJS but still not exact; JS-vs-Python truthiness,
   scoping, macro-argument forms, and missing Ansible filters/tests/lookups require a
-  compatibility layer and handoff items. Every Jinja render now pays the sandbox-worker
+  compatibility layer and gap items. Every Jinja render now pays the sandbox-worker
   startup/round-trip cost (amortized by a persistent per-run worker), and context
   minimization can break templates that assumed every variable was present.
 - Project `$call` helpers are code and need the same approval discipline as plugins; an

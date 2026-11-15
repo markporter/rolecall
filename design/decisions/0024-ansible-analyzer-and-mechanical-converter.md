@@ -1,9 +1,9 @@
-# 0024 — Ansible analyzer, mechanical converter, and LLM handoff
+# 0024 — Ansible analyzer, mechanical converter, and LLM gap
 
 - Status: **Proposed**
 - Date: 2026-11-01
 - Related: ADR 0009 (Ansible compatibility and mechanical conversion), ADR 0003 (Zod-driven schema), ADR 0008 (literal-by-default templating), ADR 0013 (`$var` namespacing), ADR 0014 (project/plugin architecture), ADR 0015 (collections), ADR 0016 (plugin SDK), ADR 0022 (secrets/vault), `design/ansible-compatibility-roadmap.md`
-- Refines: ADR 0009 §6 (the LLM-assisted conversion tool). This ADR keeps the converter vendor-neutral by emitting **handoff artifacts** for an external agent instead of calling an LLM itself.
+- Refines: ADR 0009 §6 (the LLM-assisted conversion tool). This ADR keeps the converter vendor-neutral by emitting **gap artifacts** for an external agent instead of calling an LLM itself.
 
 ## Context
 
@@ -40,7 +40,7 @@ reviewed, and how the reviewed residue is handed to an agent with enough context
 to finish the job safely.
 
 This ADR defines that contract: an analyzer, a mechanical rewriter, and a
-versioned LLM handoff bundle.
+versioned LLM conversion-gaps bundle.
 
 ## Decision
 
@@ -49,7 +49,7 @@ versioned LLM handoff bundle.
 Add a single CLI surface:
 
 ```sh
-rolecall convert ansible <path> [--out <dir>] [--handoff <dir>] [--write] [--strict] [--report json|md]
+rolecall convert ansible <path> [--out <dir>] [--gaps <dir>] [--write] [--strict] [--report json|md]
 rolecall convert ansible --validate <dir>
 ```
 
@@ -65,12 +65,12 @@ The command runs three phases:
 read-only analysis and prints a summary (or JSON via `-o json`). `--strict`
 exits non-zero if any non-mechanical item remains, for CI. `--validate <dir>`
 checks an already-converted tree against the RoleCall schema and prints the
-remaining handoff items.
+remaining gap items.
 
 ### 2. Classification comes from one machine-readable matrix
 
 The compatibility matrix is promoted from prose into a typed data module used by
-the analyzer, the rewriter, the handoff generator, and the docs:
+the analyzer, the rewriter, the gap generator, and the docs:
 
 ```ts
 type Disposition = "mapped" | "upgrade" | "partial" | "unsupported";
@@ -81,14 +81,14 @@ interface CompatibilityEntry {
   disposition: Disposition;
   target?: string;            // RoleCall construct or module
   reason?: string;
-  handoffKind?: "jinja" | "module" | "structure" | "template" | "vault" | "dynamic";
+  gapKind?: "jinja" | "module" | "structure" | "template" | "vault" | "dynamic";
 }
 ```
 
 The matrix covers play, task, role, inventory, module, collection, and templating
 constructs. Module mappings additionally consult the live builtin/registered
 module metadata, so a new builtin automatically becomes a conversion target.
-The analyzer's `analysis.json` references matrix ids; the handoff bundle carries
+The analyzer's `analysis.json` references matrix ids; the conversion-gaps bundle carries
 the relevant entries so an agent does not need the source tree or this ADR.
 
 ### 3. Analyzer
@@ -105,7 +105,7 @@ It produces a `ConversionModel` that preserves, for every relevant node:
 - the matrix classification and any module mapping,
 - relationships (play → tasks → handlers, role → files, collection → roles and
   modules),
-- a stable content-derived id so re-runs reconcile against previous handoffs.
+- a stable content-derived id so re-runs reconcile against previous gaps.
 
 The analyzer handles playbooks, roles, and collections:
 
@@ -121,8 +121,8 @@ Outputs:
 .rolecall/convert/
   analysis.json
   analysis.md
-  HANDOFF.md
-  handoff/
+  CONVERSION_GAPS.md
+  conversion_gaps/
     manifest.json
     context/
       compatibility.json
@@ -155,7 +155,7 @@ The rewriter is conservative and deterministic. It may mechanically:
 - copy static files and flag templates separately.
 
 The rewriter must validate its output against the strict RoleCall schema before
-writing. If a node cannot be validated, it is demoted to a handoff item; it is
+writing. If a node cannot be validated, it is demoted to a gap item; it is
 never written as invalid or silently dropped.
 
 #### Jinja policy: structured refs, then the Jinja engine, never eta
@@ -203,7 +203,7 @@ The converter applies this order:
    needs a boolean adapter (render
    `{% if <expr> %}true{% else %}false{% endif %}` and parse the result). In
    `loop` it needs a list/JSON adapter; if the expression cannot be represented
-   faithfully, it becomes a handoff item.
+   faithfully, it becomes a gap item.
 
 3. **Jinja templates stay Jinja files.** Converted Ansible `template` tasks keep
    their `.j2` source and render with `engine: jinja` through the existing `copy`
@@ -213,10 +213,10 @@ The converter applies this order:
    opaque runtime template like EJS, not playbook scalar interpolation. Ordinary
    `{{ }}` in task args/`when`/`loop` remains a lint error.
 
-4. **Unsupported Jinja goes to handoff.** Nunjucks is closer to Jinja2 than the
+4. **Unsupported Jinja goes to gap.** Nunjucks is closer to Jinja2 than the
    previous in-process engine but is still not complete: Python methods, some macro
    argument forms, Ansible lookups, and filters/tests without RoleCall equivalents
-   are classified by the analyzer and emitted as handoff items with the original
+   are classified by the analyzer and emitted as gap items with the original
    snippet. The converter must not silently approximate them.
 5. **Jinja always renders in the sandbox.** `engine: jinja` and `$jinja` are
    code-capable (Nunjucks compiles to JavaScript) and therefore render only in the
@@ -229,13 +229,13 @@ The converter applies this order:
 This policy keeps the fast typed path for the common case, preserves semantic
 fidelity for the long tail, and avoids a Jinja-to-JS translation layer.
 
-### 5. Handoff bundle contract
+### 5. Conversion gaps bundle contract
 
-The handoff bundle is the product boundary between the mechanical tool and an
+The conversion-gaps bundle is the product boundary between the mechanical tool and an
 LLM agent. It is designed to be consumed without access to this ADR or the
 original repository.
 
-`HANDOFF.md` contains:
+`CONVERSION_GAPS.md` contains:
 
 - a one-paragraph project summary and conversion counts,
 - the exact tool and source revisions/hashes,
@@ -245,7 +245,7 @@ original repository.
 - the validation command(s) to run after each item,
 - a list of items with links to their Markdown files.
 
-`handoff/manifest.json` is the machine-readable index:
+`conversion_gaps/manifest.json` is the machine-readable index:
 
 ```json
 {
@@ -256,7 +256,7 @@ original repository.
   "generatedAt": "2026-11-01T00:00:00.000Z",
   "counts": {
     "mapped": 120,
-    "handoff": 7,
+    "gap": 7,
     "unsupported": 2
   },
   "items": [
@@ -306,24 +306,24 @@ Each `items/<id>.md` is a standalone work order containing:
   documented divergence is recorded.
 - **Dependencies** — other item ids that must be completed first.
 
-The handoff bundle must be deterministic: two analyzer runs over the same source
+The conversion-gaps bundle must be deterministic: two analyzer runs over the same source
 hash produce byte-identical `manifest.json` and item ordering. Stable ids are
 derived from the source path plus node path, not random values.
 
 ### 6. LLM workflow and validation loop
 
 The converter does **not** call an LLM. The operator or harness may feed the
-handoff bundle to any agent. The intended loop is:
+conversion-gaps bundle to any agent. The intended loop is:
 
-1. `rolecall convert ansible <path> --write --handoff .rolecall/convert`
-2. Feed `HANDOFF.md` and the item files to the agent.
+1. `rolecall convert ansible <path> --write --gaps .rolecall/convert`
+2. Feed `CONVERSION_GAPS.md` and the item files to the agent.
 3. The agent edits the converted RoleCall tree.
 4. `rolecall convert ansible --validate <dir>` re-analyzes the tree and reports
-   remaining or newly introduced handoff items.
+   remaining or newly introduced gap items.
 5. Repeat until `--strict` passes or the operator accepts documented divergences.
 
 Validation must be able to run without the original Ansible tree, using the
-converted RoleCall files plus the handoff manifest. It checks schema validity,
+converted RoleCall files plus the gap manifest. It checks schema validity,
 unknown modules, unresolved placeholders, and any `REVIEW` markers.
 
 ### 7. Safety and security
@@ -335,7 +335,7 @@ unknown modules, unresolved placeholders, and any `REVIEW` markers.
 - Never decrypt vault data; classify it and redact it. Vault items reference
   ADR 0022 and carry placeholders only.
 - Treat all source paths as untrusted: reject traversal outside the output root.
-- Do not include secret-looking values in handoff artifacts. The analyzer applies
+- Do not include secret-looking values in gap artifacts. The analyzer applies
   the same `SecretRegistry`-style redaction or a conservative pattern scan for
   vault headers, `vault_password`, and encrypted blobs.
 - The mechanical rewriter only emits files under the explicit `--out` root.
@@ -346,11 +346,11 @@ unknown modules, unresolved placeholders, and any `REVIEW` markers.
   TypeScript.
 - Executing Ansible to compare behavior at conversion time.
 - A complete Jinja parser. The mechanical tier handles simple variable paths;
-  everything else stays Jinja and runs in the Jinja engine or becomes handoff.
+  everything else stays Jinja and runs in the Jinja engine or becomes gap.
 - Translating Jinja to eta/EJS. Eta is a native RoleCall authoring choice, not a
   compatibility target.
 - Preserving comments or original formatting in mechanically rewritten YAML.
-  The handoff item retains the original snippet.
+  The gap item retains the original snippet.
 - Guaranteeing semantic equivalence without operator review.
 - Calling an LLM from the RoleCall binary.
 
@@ -359,42 +359,42 @@ unknown modules, unresolved placeholders, and any `REVIEW` markers.
 1. Promote the compatibility matrix into `src/convert/ansible/matrix.ts` and keep
    the ADR 0009 appendix generated from or linked to it.
 2. Add the `src/convert/ansible/` module: `analyze.ts`, `rewrite.ts`,
-   `handoff.ts`, `validate.ts`, `types.ts`.
+   `gap.ts`, `validate.ts`, `types.ts`.
 3. Add `rolecall convert ansible` to the CLI HELP/dispatch and support `-o json`
    summaries.
 4. Implement the range-aware YAML source model (lazy dependency or a minimal
    position mapper) without changing the existing config loader.
 5. Implement mechanical playbook and role rewriting with strict schema
-   validation and demotion-to-handoff on any failure.
+   validation and demotion-to-gap on any failure.
 6. Add the `$jinja` structured node (args/when/loop adapters) backed by
    `src/templating/jinja.ts` (Nunjucks) and the ADR 0025 `__render-template` worker;
    keep `$template` eta for native authors.
 7. Implement the Ansible filter/test/global compatibility layer and the Jinja feature
-   classifier (Nunjucks-supported vs handoff), plus template-file mapping to `copy`
+   classifier (Nunjucks-supported vs gap), plus template-file mapping to `copy`
    with `engine: jinja`.
 8. Implement the module/FQCN map from matrix + live module metadata.
 9. Implement deterministic `manifest.json`, item ordering, and redaction.
 10. Implement `--validate` and the analyzer re-run loop.
 11. Add fixtures for playbooks, roles, collections, Jinja, templates, vault, and
-    unsupported modules; add golden converted outputs and handoff snapshots.
+    unsupported modules; add golden converted outputs and gap snapshots.
 12. Add the migration guide and four-surface docs sync (AGENTS/README/design/docs).
 
 ## Acceptance criteria
 
 - The analyzer parses valid Ansible playbooks/roles/collections without executing
   them and classifies every relevant construct with a matrix id.
-- Every non-mechanical construct produces exactly one handoff item; nothing is
+- Every non-mechanical construct produces exactly one gap item; nothing is
   silently dropped.
 - Mechanically converted output always validates against the strict RoleCall
   schema.
 - Jinja is never emitted as eta/EJS: simple forms become structured refs, the
-  rest is preserved as `$jinja` or flagged for handoff.
+  rest is preserved as `$jinja` or flagged for gap.
 - The loader lint allows `{{ }}` inside an explicit `copy` content template spec
   (Jinja or EJS) while continuing to reject bare `{{ }}` in ordinary playbook
   scalars.
-- Handoff items are self-contained, ordered, deterministic, and contain no secret
+- Gap items are self-contained, ordered, deterministic, and contain no secret
   values.
-- `--strict` fails when handoff items remain; `--validate` reports the remaining
+- `--strict` fails when gap items remain; `--validate` reports the remaining
   items after an agent edits the tree.
 - Two analyzer runs on the same source hash produce identical manifests.
 
@@ -402,17 +402,17 @@ unknown modules, unresolved placeholders, and any `REVIEW` markers.
 
 - **One-shot LLM converter** — rejected as the primary path. It hides what was
   mechanical, is hard to reproduce, and cannot guarantee schema validity or
-  secret safety. The handoff bundle gives the LLM only the residue.
+  secret safety. The conversion-gaps bundle gives the LLM only the residue.
 - **Mechanical-only converter** — rejected. It would either silently drop or
   reject too much of the real Ansible corpus.
 - **Embedded LLM provider** — rejected (ADR 0009 §6). RoleCall stays
-  vendor-neutral; the handoff is model-agnostic.
+  vendor-neutral; the gap is model-agnostic.
 - **Convert collections by translating Python modules** — rejected as
   infeasible. Collection structure and known FQCN mappings are in scope; Python
   module implementations are not.
 - **Preserve comments/formatting with a CST round-trip** — deferred. The
   mechanical tier is structural; the original snippet is preserved in the
-  handoff item for review.
+  gap item for review.
 
 ## Open questions
 
@@ -421,7 +421,7 @@ unknown modules, unresolved placeholders, and any `REVIEW` markers.
 - How much of the simple Jinja subset is mechanical in v1: bare `{{ var }}` only,
   or also `when` comparisons and simple filters.
 - Which Nunjucks feature gaps warrant engine extensions (custom tests, `is
-  defined`, additional filters, Ansible lookups) versus handoff items.
+  defined`, additional filters, Ansible lookups) versus gap items.
 - Whether `$jinja` in `when`/`loop` should evaluate through the sandboxed render
   worker or a dedicated expression adapter in the same worker.
 - Whether `analysis.json` should be the canonical data and Markdown generated, or

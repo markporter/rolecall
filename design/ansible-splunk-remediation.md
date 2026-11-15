@@ -3,18 +3,18 @@
 - Status: **Approved (build)**
 - Date: 2026-11-14
 - Source analysis: `.local/ansible_splunk_gaps.md`
-- Related: ADR 0009 (Ansible compatibility), ADR 0024 (analyzer/converter/handoff), ADR 0031 (opt-in Eta template conversion), ADR 0008 (literal-by-default templating), ADR 0013 (namespaced refs), ADR 0025 (isolation)
+- Related: ADR 0009 (Ansible compatibility), ADR 0024 (analyzer/converter/gap), ADR 0031 (opt-in Eta template conversion), ADR 0008 (literal-by-default templating), ADR 0013 (namespaced refs), ADR 0025 (isolation)
 - Scope: close the gaps between `ansible_splunk` and RoleCall by **converting to RoleCall idioms**, not by emulating Ansible in the executor.
 
 ## Decisions
 
 1. **Strict defaults.** Ansible-only constructs do not become new executor features.
    A construct is either mechanically converted to a RoleCall idiom or emitted as a
-   handoff item.
+   gap item.
 2. **No Ansible compatibility mode.** There is no `ansible_compat` switch and no
    `ansible_*` alias surface. Converted projects use RoleCall namespaces.
 3. **`block` / `rescue` / `always`** → `tx` / `checkpoint` during conversion;
-   `always` is a handoff item. No native block node is added.
+   `always` is a gap item. No native block node is added.
 4. **Strict Jinja by default.** Undefined names throw.
 5. **No Jinja in playbook YAML.** `{{ }}`, `{% %}`, and `{# #}` are load-time errors
    everywhere in playbook scalars. The only Jinja escape hatch is the explicit
@@ -74,7 +74,7 @@ Argument parity, highest corpus counts first:
 | `unarchive` | `owner`/`group`, `remote_src` (on-target always) |
 | `user` | `generate_ssh_key`, `comment`, `update_password` |
 | `blockinfile` | `insertbefore` |
-| `pause` | non-interactive; `prompt`/`echo` are converter handoffs/no-ops |
+| `pause` | non-interactive; `prompt`/`echo` are converter gaps/no-ops |
 | `synchronize` | `rsync_path`, `archive`, `use_ssh_args`, `checksum` mapping |
 | `pam_limits` | accept `limit_type`/`limit_item` names or converter rewrite |
 | `file` | `dest` alias; audit `recurse` |
@@ -88,38 +88,38 @@ pass. Docs and examples stay in sync.
 ## Cycle 2 — ADR 0024 converter MVP + strictness
 
 ```sh
-rolecall convert ansible <path> [--out <dir>] [--handoff <dir>] [--write] [--strict] [--report json|md]
+rolecall convert ansible <path> [--out <dir>] [--gaps <dir>] [--write] [--strict] [--report json|md]
 rolecall convert ansible --validate <dir>
 ```
 
 Deliverables:
 
-1. Typed compatibility matrix (single source for analyzer, rewriter, handoff, docs).
+1. Typed compatibility matrix (single source for analyzer, rewriter, gap, docs).
 2. Analyzer over YAML, templates, and Jinja expressions.
 3. Rewriter for mechanical items:
    - `when` → `$eq`/`$ne`/`$in`/`$and`/`$not`/`$exists`/`$jinja`.
    - derived `vars` → `$var`/`$concat`/`$if` or materialized literals.
    - `groups` → `inv.groups`; `hostvars` → `inv.hosts`; `inventory_hostname` →
      `play.host`; `playbook_dir` → `run.playbook_dir`; `role_path` → `role.path`.
-   - `ansible_*` → `facts.*` where a gatherer exists, else handoff.
+   - `ansible_*` → `facts.*` where a gatherer exists, else gap.
    - `with_items` / `loop` / `with_dict` / `with_together` / `with_nested` →
      `$each` (with `dict2items`/`zip`/`product` where needed).
-   - unconditional `include_role` → `roles:`; conditional → `include_tasks` or handoff.
-   - static `include_vars` → ordered `vars_files`; dynamic → handoff.
+   - unconditional `include_role` → `roles:`; conditional → `include_tasks` or gap.
+   - static `include_vars` → ordered `vars_files`; dynamic → gap.
    - static `import_playbook` → inlined plays.
    - static `with_first_found` on `copy`/`template` → ordered `src`/
      `template_file` candidates.
-   - `ignore_errors` / `failed_when` → handoff (no faithful RoleCall equivalent).
+   - `ignore_errors` / `failed_when` → gap (no faithful RoleCall equivalent).
    - shell `changed_when: false|true` → `run_mode: readonly|always`; other
-     `changed_when` uses are handoff.
-   - `block` / `rescue` → `tx`/`checkpoint` + REVIEW; `always` → handoff.
+     `changed_when` uses are gap.
+   - `block` / `rescue` → `tx`/`checkpoint` + REVIEW; `always` → gap.
    - play-level `become`/`connection`/`when`/`run_once` → task-level rewrite;
-     `remote_user` is handoff. `order` is preserved natively.
+     `remote_user` is gap. `order` is preserved natively.
    - task `vars`, `loop_control`, `delegate_facts`, `check_mode`, `async`, `until`,
-     `retries`, `delay` → handoff. Percentage `serial` is native.
-   - `lookup`/`query`/`q` → handoff (controller-side I/O is outside the bounded
+     `retries`, `delay` → gap. Percentage `serial` is native.
+   - `lookup`/`query`/`q` → gap (controller-side I/O is outside the bounded
      template surface).
-4. Handoff bundle: versioned `REVIEW.md` + machine-readable items with file/line,
+4. Conversion gaps bundle: versioned `REVIEW.md` + machine-readable items with file/line,
    construct, reason, and suggested RC idiom.
 5. Validation: schema + strict Jinja render dry-run, rejecting empty/unresolved output.
 6. Strictness hardening:
@@ -134,7 +134,7 @@ Deliverables:
 
 ## Cycle 3 — Conversion primitives
 
-Only RC-native primitives that reduce handoff count:
+Only RC-native primitives that reduce gap count:
 
 - `$exists` (unblocks `is defined` / `is not defined`).
 - `$length` and indexed `$var` paths (`vars.x[0]`).
@@ -165,7 +165,7 @@ rolecall convert ansible ./ansible-source --project ./new-project --write
 rolecall convert ansible --validate ./new-project/playbooks
 ```
 
-The bare command prompts for the source path, target project directory, write/handoff
+The bare command prompts for the source path, target project directory, write/gap
 choices, strict mode, and a final apply confirmation; `--yes`/`--non-interactive`/
 `--dry-run` skip the wizard.
 
@@ -178,9 +178,9 @@ the converter the first step of a real migration rather than a detached tree.
 ## Cycle 4 — Corpus conversion and iteration
 
 - Run the converter against `/home/mark/local_code/ansible_splunk`.
-- Track parsed files, mechanical rewrites, REVIEW items, handoffs, validation
+- Track parsed files, mechanical rewrites, REVIEW items, gaps, validation
   failures.
-- Fix the highest-frequency handoff classes first.
+- Fix the highest-frequency gap classes first.
 - Add an opt-in corpus harness (`ROLECALL_ANSIBLE_CORPUS=...`).
 
 ## Cycle 5 — ADR 0031 opt-in Eta template conversion
@@ -203,7 +203,7 @@ rolecall convert ansible <path> --templates eta    # attempt whole-file Eta outp
 - Conversion is committed per whole file. A file with any non-convertible
   construct stays Jinja; no half-converted template is emitted.
 - `--templates eta` still obeys `--write`/`--strict`; dry-run reports what would
-  convert, and strict mode fails on review/handoff template items.
+  convert, and strict mode fails on review/gap template items.
 
 ### Classification and output
 
@@ -215,7 +215,7 @@ Parse with the Nunjucks AST and classify every node:
 - **review** — edge-case fidelity: attribute `map`/`select`/`reject`,
   `namespace`, cross-scope mutation, `default(omit)`, truthiness-sensitive
   comparisons, whitespace trim markers, and tests whose undefined behavior differs.
-- **handoff** — macros, `call`, `import`/`from`, `include`, `extends`, `block`,
+- **gap** — macros, `call`, `import`/`from`, `include`, `extends`, `block`,
   `filter` blocks, lookups/`query`/`q`, Python-only methods, unknown
   filters/tests, and unresolved dynamic constructs.
 
@@ -224,8 +224,8 @@ For a fully converted file: write `<name>.eta`, rewrite the task to
 from the converted tree, and record the source→output mapping in `manifest.json`.
 
 For a file with unresolved constructs: keep the original `.j2` and
-`engine: jinja`; emit a handoff work order plus a complete partial Eta draft at
-`handoff/templates/<id>.eta.draft` with `/* HANDOFF: <construct> @ <line> */`
+`engine: jinja`; emit a gap work order plus a complete partial Eta draft at
+`conversion_gaps/templates/<id>.eta.draft` with `/* GAP: <construct> @ <line> */`
 markers. Each work order includes the original snippet/location, per-construct
 disposition, the draft, runtime helper mappings, and a render-equivalence fixture
 or an explicit statement that none is possible.
@@ -298,7 +298,7 @@ Plus golden converter tests per construct, “load must fail” tests for strict
 - **Cycle 2: complete.** Landed `$jinja`, `$exists`, `$length`, indexed `$var`
   paths, strict-by-default Jinja, bare-`when` rejection, the no-Jinja-in-playbook
   lint (only `$jinja` is exempt), and the ADR 0024 MVP (`rolecall convert ansible`
-  with analyzer/rewriter/`HANDOFF.md`/`manifest.json`, `--write`, `--strict`, and
+  with analyzer/rewriter/`CONVERSION_GAPS.md`/`manifest.json`, `--write`, `--strict`, and
   `--validate`), plus lazy structured-variable resolution (derived `vars` containing
   `$jinja`/`$concat`/`$var`).
 - **Cycle 3: complete for the current converter surface.** Added `$exists`/`$length`/indexed paths, the `omit`
@@ -310,7 +310,7 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   `with_together`/`with_nested`, static `include_vars`, static `import_playbook`
   inlining, `with_first_found` -> `copy` candidates, `group_vars`/`host_vars` and role `defaults`/`vars` Jinja, and
   `hostvars[...]`/`groups[...]` bracket access. The typed compatibility matrix lives
-  in `src/convert/matrix.ts`. Remaining handoffs are the non-mechanical/by-design
+  in `src/convert/matrix.ts`. Remaining gaps are the non-mechanical/by-design
   classes: dynamic includes/`include_role`, `with_first_found` on
   non-copy/template tasks, `ignore_errors`/`failed_when`, `async`/`until`/`retries`,
   play-level `remote_user`, `lookup`/`query`, and crypt-compatible `password_hash`.
@@ -320,18 +320,18 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   exposes the same scaffold directly, with `--force` and optional `--vcs git`.
 - **Cycle 4 (corpus run):** converted `/mnt/homes/mark/ANM/anm_dev/ansible_splunk`
   (1,819 files) with `--templates eta`; the current pass yields 8,308 mapped,
-  187 review, and 948 handoff findings, and validates 128 converted playbooks with
+  187 review, and 948 gap findings, and validates 128 converted playbooks with
   **0 failures**. A checked-in golden fixture (`tests/fixtures/ansible-golden`) keeps
-  the pipeline covered in CI. Remaining findings are the documented handoff classes
+  the pipeline covered in CI. Remaining findings are the documented gap classes
   (`ignore_errors`, `async`/`until`/`retries`, dynamic includes/roles, etc.).
 - **Cycle 5 (ADR 0031, slices 1–3 partial):** `--templates eta` parses each `.j2`
-  with the Nunjucks AST, classifies constructs as mapped/review/handoff, and emits
-  per-item handoff work orders. Fully mapped templates are written as `.eta` and
-  their task references are rewritten to `engine: eta`; review/handoff templates
+  with the Nunjucks AST, classifies constructs as mapped/review/gap, and emits
+  per-item gap work orders. Fully mapped templates are written as `.eta` and
+  their task references are rewritten to `engine: eta`; review/gap templates
   keep the original `.j2` and `engine: jinja`. The Eta runtime exposes shared
   `filters`/`tests`/`globals` views (including `omit`) and unwraps lenient missing
-  values for Ansible filters/tests. Partial Eta drafts with HANDOFF markers are emitted for
-  review/handoff templates. Review constructs can be explicitly accepted with
+  values for Ansible filters/tests. Partial Eta drafts with GAP markers are emitted for
+  review/gap templates. Review constructs can be explicitly accepted with
   `--templates-review accept`. Loop metadata now includes `cycle`, `previtem`, and `nextitem`; Nunjucks
   applies whitespace trim markers before codegen, so trimmed output is preserved.
   `--validate` now checks template references, engine/extension pairing, and
@@ -349,7 +349,7 @@ Plus golden converter tests per construct, “load must fail” tests for strict
 - The source report’s precedence claim appears inaccurate (Ansible has play vars
   above `host_vars`); verify against Ansible docs before changing precedence.
   The actionable divergence is `vars_files`/role-vars tier ordering.
-- Module parity is large; prioritize by corpus count and let the handoff report
+- Module parity is large; prioritize by corpus count and let the gap report
   drive the remainder.
 - ADR 0031 conversion changes an inert `.j2` into executable Eta. It must stay
   default-off, whole-file, and behind the ADR 0025 approval/sandbox path; a

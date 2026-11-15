@@ -25,7 +25,7 @@ SSH or local transports, and can run on either Node.js or Bun.
 - Apply Ansible-compatible modules across files, packages, services, accounts, APT
   keys, PAM rules, debconf preseeding, and transport readiness.
 - Convert Ansible playbooks mechanically with `rolecall convert ansible`, including a
-  review/handoff bundle for constructs that need manual attention.
+  review/conversion-gaps bundle for constructs that need manual attention.
 - Load module plugins with `plugin register`; project plugins auto-load.
 - Run the orchestrator with `--serve`: run dispatch, project/schedule CRUD, cron
   schedules, and Bearer-gated webhooks.

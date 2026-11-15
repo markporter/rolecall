@@ -2,7 +2,7 @@
 
 - Status: **Proposed**
 - Date: 2026-11-14
-- Related: [ADR 0024](0024-ansible-analyzer-and-mechanical-converter.md) (analyzer, rewriter, handoff bundle), [ADR 0009](0009-ansible-compatibility-and-mechanical-conversion.md) (mechanical conversion mandate), [ADR 0008](0008-literal-by-default-templating-and-template-operator.md) (literal-by-default templating), [ADR 0025](0025-local-execution-isolation.md) (restricted template code renders in the sandbox worker)
+- Related: [ADR 0024](0024-ansible-analyzer-and-mechanical-converter.md) (analyzer, rewriter, conversion-gaps bundle), [ADR 0009](0009-ansible-compatibility-and-mechanical-conversion.md) (mechanical conversion mandate), [ADR 0008](0008-literal-by-default-templating-and-template-operator.md) (literal-by-default templating), [ADR 0025](0025-local-execution-isolation.md) (restricted template code renders in the sandbox worker)
 - Amends: ADR 0024 §“Jinja policy: structured refs, then the Jinja engine, never eta”. The default remains “never eta”; this ADR adds an explicit opt-in conversion tier.
 
 ## Context
@@ -35,7 +35,7 @@ output is executable restricted code.
 The desired conversion workflow is mechanical-first, LLM-second. The mechanical
 tier should finish the simple majority and leave the LLM a working draft plus a
 precise list of gaps, rather than either refusing the file or leaving an all-Jinja
-passthrough. ADR 0024 already defines the handoff contract and its per-item work
+passthrough. ADR 0024 already defines the gap contract and its per-item work
 orders; this ADR extends that contract to template files.
 
 Current code constraints:
@@ -62,7 +62,7 @@ rolecall convert ansible <path> --templates eta    # attempt mechanical Eta outp
 ```
 
 `--templates eta` still obeys `--write` / `--strict`: in dry-run it reports what
-would convert; under `--strict` any `review`/`handoff` template item fails the run.
+would convert; under `--strict` any `review`/`gap` template item fails the run.
 
 ### 2. Template pass is per file and engine-exact
 
@@ -78,7 +78,7 @@ Eta by this pass.
 
 Conversion is committed **per whole file**. If any construct in the file is not
 safely translatable, the file is not emitted as Eta; the original `.j2` is
-preserved and the draft goes to handoff. There are no half-converted templates in
+preserved and the draft goes to gap. There are no half-converted templates in
 the output tree.
 
 ### 3. AST classification with three dispositions
@@ -93,14 +93,14 @@ Parse with the Nunjucks AST and classify every node:
   `reject` with attribute expressions, `namespace`, mutation across loop scopes,
   `default(omit)`, truthiness-sensitive comparisons, whitespace-control trim
   markers, or any test whose undefined behavior differs between Nunjucks and JS.
-- **handoff** — macros, `call`, `import`/`from`, `include`, `extends`, `block`,
+- **gap** — macros, `call`, `import`/`from`, `include`, `extends`, `block`,
   `filter` blocks, lookups/`query`/`q`, Python-only methods, unknown filters or
   tests, and dynamic constructs the parser cannot resolve.
 
 Classification is deterministic and recorded per construct. A file containing a
-`handoff` construct is not converted; a file with only `mapped` constructs is
+`gap` construct is not converted; a file with only `mapped` constructs is
 converted; a file with `review` constructs is converted only when the construct’s
-review rule is explicitly accepted (otherwise it is treated as handoff).
+review rule is explicitly accepted (otherwise it is treated as gap).
 
 ### 4. Output contract
 
@@ -114,9 +114,9 @@ For a converted file:
 For a file with unresolved constructs:
 
 - copy the original `.j2` unchanged and keep `engine: jinja`;
-- emit a handoff item under `handoff/items/<id>.md` (ADR 0024 contract) plus a
-  standalone draft at `handoff/templates/<id>.eta.draft`;
-- the draft is complete Eta with `/* HANDOFF: <construct> @ <line> */` delimiters
+- emit a gap item under `conversion_gaps/items/<id>.md` (ADR 0024 contract) plus a
+  standalone draft at `conversion_gaps/templates/<id>.eta.draft`;
+- the draft is complete Eta with `/* GAP: <construct> @ <line> */` delimiters
   marking each unresolved fragment, so an LLM edits gaps rather than starting
   from scratch.
 
@@ -147,7 +147,7 @@ the supported subset:
 - Eta output is restricted code. Converted `engine: eta` templates require the
   ADR 0025 approval/sandbox path exactly like hand-written Eta, and are never run
   under `--isolation none` without the existing unsafe escape hatch.
-- Handoff artifacts redact secret-looking values per ADR 0024; original template
+- Gap artifacts redact secret-looking values per ADR 0024; original template
   text is included only as needed for the work order.
 - `--templates eta` must not widen the default trust posture: without the flag,
   converted trees contain no new executable template surface.
@@ -182,7 +182,7 @@ Positive:
 
 - The mechanical tier finishes the common template majority instead of leaving it
   all to an LLM.
-- Handoff items become working drafts with precise gap markers, shortening the LLM
+- Gap items become working drafts with precise gap markers, shortening the LLM
   loop and making acceptance testable.
 - Default behavior and fidelity are unchanged; the new path is opt-in.
 
@@ -190,7 +190,7 @@ Negative:
 
 - RoleCall must maintain a Jinja-expression-to-JS code generator and its parity
   matrix.
-- `review`/`handoff` classification adds surface area to the converter and handoff
+- `review`/`gap` classification adds surface area to the converter and gap
   schema.
 - Converted templates become executable restricted code and need approval even
   though their source was inert.
@@ -209,7 +209,7 @@ Mitigations:
 - **Regex-based translation.** Rejected: cannot parse nested expressions, filters,
   scoping, or whitespace-control tags reliably.
 - **Full Jinja→Eta compiler including macros/includes/extends.** Deferred: high
-  maintenance and low payoff; those constructs stay `handoff`.
+  maintenance and low payoff; those constructs stay `gap`.
 - **Translate inline playbook `$jinja` to Eta.** Rejected: playbook expressions
   remain structured refs or `$jinja`; template conversion applies only to template
   files/specs.
@@ -218,7 +218,7 @@ Mitigations:
 
 ## Non-goals
 
-- Calling an LLM from the converter. The handoff bundle remains the product
+- Calling an LLM from the converter. The conversion-gaps bundle remains the product
   boundary.
 - Converting arbitrary Python modules, collection plugins, or Ansible lookups.
 - Removing Jinja support or changing `$jinja` semantics.

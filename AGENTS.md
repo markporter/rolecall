@@ -61,8 +61,8 @@ rolecall runtime install|status|remove [--bun-version <ver>] [--from-dir <dir>] 
 rolecall docs search <query>            # query RoleCall prose docs by substring
 rolecall project create <name> [--dir <path>] [--namespace <ns>] [--vcs none|git]  # scaffold a blank project
 rolecall project init [--dir <path>] [--name <name>] [--namespace <ns>] [--vcs none|git]
-rolecall convert                          # TTY wizard: source -> project -> apply/handoff/strict
-rolecall convert ansible <path> [--out <dir>] [--project <dir>] [--handoff <dir>] [--write] [--strict] [--templates keep|eta] [--templates-review accept|reject] [--validate <dir>]  # mechanical Ansible -> RoleCall conversion + handoff
+rolecall convert                          # TTY wizard: source -> project -> apply/gaps/strict
+rolecall convert ansible <path> [--out <dir>] [--project <dir>] [--gaps <dir>] [--write] [--strict] [--templates keep|eta] [--templates-review accept|reject] [--validate <dir>]  # mechanical Ansible -> RoleCall conversion + gaps
 rolecall plugin list                               # registered module/fact + built-in inventory plugins
 rolecall plugin register <name> --path <file> [--global]   # persist a module kept outside a project (project plugins in plugins/ need no registration)
 ```
@@ -130,8 +130,8 @@ Subcommand reality (from the HELP string):
    structured output).
 - `convert ansible <path>` analyzes and mechanically rewrites Ansible playbooks into
    RoleCall YAML (ADR 0024 MVP): module remaps, `with_items` -> `loop`, block -> `tx`,
-   Jinja -> `$jinja`, plus a `HANDOFF.md`/`manifest.json` bundle for non-mechanical
-   constructs. `--write` emits files, `--strict` exits non-zero on review/handoff items,
+   Jinja -> `$jinja`, plus a `CONVERSION_GAPS.md`/`manifest.json` bundle for non-mechanical
+   constructs. `--write` emits files, `--strict` exits non-zero on review/gap items,
    and `--validate <dir>` strict-loads an already-converted tree.
 - `plugin list`/`register` are implemented: `register` persists a user module/fact
    plugin to `.rolecall/plugins.json` and it auto-loads at startup; only the richer SDK
