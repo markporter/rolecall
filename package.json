@@ -46,6 +46,7 @@
     "prepack": "npm run build:js",
     "dev": "bun run src/cli/index.ts",
     "docs:api": "typedoc",
+    "docs:api:pages": "typedoc --options typedoc.pages.json",
     "docs:guide": "vitepress build docs",
     "docs:build": "bun run docs:api && bun run docs:guide"
   },

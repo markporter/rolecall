@@ -32,6 +32,9 @@ temp/
 .vitepress/temp/
 .DS_Store
 
+# TypeDoc API reference (generated at build time by the Pages workflow)
+docs/api/
+
 # --- Persistence DBs (store persistence added later) ---
 *.db
 *.sqlite

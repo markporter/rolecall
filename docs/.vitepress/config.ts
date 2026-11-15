@@ -32,6 +32,7 @@ export default defineConfig({
       { text: 'Best Practices', link: '/best-practices/' },
       { text: 'Deployment', link: '/deployment/ways-to-run' },
       { text: 'Contributing', link: '/contributing/' },
+      { text: 'API', link: '/api/' },
     ],
 
     sidebar: {

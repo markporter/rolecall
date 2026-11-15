@@ -1,12 +1,16 @@
 name: docs
 
-# Deploy the VitePress user guide to GitHub Pages on every push to main.
+# Deploy the VitePress user guide + generated TypeDoc API reference to GitHub
+# Pages on every push to main.
 #
 # The site is built with `--base=/rolecall/` so it works under the
 # markporter.github.io/rolecall subpath. When a custom domain is attached later,
-# change BASE below to `/` (see .local/domain-shortlist.md and ADR 0005).
+# change BASE below to `/` (see .local/domain-shortlist.md and ADR 0005) and keep
+# `cleanJsdocTheme.basePath` in typedoc.pages.json in step (`/api/`).
 #
-# One-time setup: repo Settings → Pages → Source = "GitHub Actions".
+# The API reference in docs/api is generated here, not committed; it is copied
+# into the VitePress output so it deploys under <BASE>api/. One-time setup:
+# repo Settings → Pages → Source = "GitHub Actions".
 
 on:
   push:
@@ -36,10 +40,16 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Build API reference (TypeDoc)
+        run: bun run docs:api:pages
+
       - name: Build guide (VitePress)
         env:
           BASE: /rolecall/
         run: bunx vitepress build docs --base "$BASE"
+
+      - name: Merge API reference into Pages output
+        run: cp -R docs/api docs/.vitepress/dist/api
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

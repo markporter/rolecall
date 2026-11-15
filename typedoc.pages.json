@@ -1,0 +1,9 @@
+{
+  "extends": ["./typedoc.json"],
+  "cleanJsdocTheme": {
+    "siteName": "RoleCall",
+    "siteUrl": "https://rolecall.example.com",
+    "llmsTxt": { "api": "index" },
+    "basePath": "/rolecall/api/"
+  }
+}
