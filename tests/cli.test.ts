@@ -699,10 +699,10 @@ test("convert ansible --output json returns a ConvertResult", async () => {
   expect(data.findings.length).toBeGreaterThan(0);
 });
 
-test("convert ansible --strict exits non-zero when handoff items remain", async () => {
+test("convert ansible --strict exits non-zero when gap items remain", async () => {
   const dir = mkdtempSync(join(tmpdir(), "rolecall-cli-convert-strict-"));
   const file = join(dir, "site.yml");
-  writeFileSync(file, `- hosts: web\n  tasks:\n    - name: t\n      shell: /bin/false\n      ignore_errors: true\n`, "utf8");
+  writeFileSync(file, `- hosts: web\n  tasks:\n    - name: t\n      shell: /bin/false\n      async: 10\n`, "utf8");
   const r = await runRolecall(["convert", "ansible", file, "--strict", "--output", "json"]);
   expect(r.code).toBe(1);
 });

@@ -108,6 +108,10 @@ export async function runPlaybookCommand(
     inventory = await loadInventoryFile(flags.inventory, source);
     const dirVars = await resolveDirectoryVars(flags.inventory, source);
     directoryVars = { groupVars: dirVars.groupVarsByGroup, hostVars: dirVars.hostVarsByHost };
+    const remoteUsers = new Set(
+      playbook.map((play) => play.remote_user).filter((user): user is string => user !== undefined),
+    );
+    const playRemoteUser = remoteUsers.size === 1 ? [...remoteUsers][0] : undefined;
     const mergedVars: Record<string, Record<string, unknown>> = {};
     const hostSet = new Set<string>();
     for (const play of playbook) {
@@ -118,7 +122,10 @@ export async function runPlaybookCommand(
       );
       for (const h of res.matchedHosts) {
         hostSet.add(h);
-        mergedVars[h] = res.hosts[h] ?? {};
+        mergedVars[h] = {
+          ...(res.hosts[h] ?? {}),
+          ...(playRemoteUser !== undefined ? { rolecall_user: playRemoteUser } : {}),
+        };
       }
     }
     resolvedHosts = [...hostSet].sort();
@@ -227,7 +234,7 @@ export async function runPlaybookCommand(
   }
 
   const totals: ApplyTotals = result
-    ? { ok: result.ok, changed: result.changed, failed: result.failed, skipped: result.skipped }
+    ? { ok: result.ok, changed: result.changed, failed: result.failed, ignored: result.ignored, skipped: result.skipped }
     : { ok: 0, changed: 0, failed: 0, skipped: 0 };
   const outcomes: TaskApplyOutcome[] = [];
   const rendered: RenderedTemplate[] = [];

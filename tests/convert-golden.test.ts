@@ -16,7 +16,7 @@ describe("golden Ansible corpus", () => {
 
     const site = readFileSync(join(out, "playbooks", "site.yml"), "utf8");
     expect(site).toContain("package:");
-    expect(site).toContain("run_mode: readonly");
+    expect(site).toContain("changed_when: false");
     expect(site).toContain("tx: rc-block-1");
     expect(site).toContain("template_file: app.eta");
     expect(site).toContain("engine: eta");
@@ -31,10 +31,10 @@ describe("golden Ansible corpus", () => {
     const groupVars = readFileSync(join(out, "group_vars", "all.yml"), "utf8");
     expect(groupVars).toContain("$jinja");
 
-    expect(readFileSync(join(out, "handoff", "HANDOFF.md"), "utf8")).toContain("ignore_errors");
-    expect(readdirSync(join(out, "handoff", "items")).length).toBeGreaterThan(0);
-    expect(readdirSync(join(out, "handoff", "templates")).length).toBeGreaterThan(0);
-    expect(result.totals.handoff).toBeGreaterThan(0);
+    expect(readFileSync(join(out, "conversion_gaps", "CONVERSION_GAPS.md"), "utf8")).toContain("macro");
+    expect(readdirSync(join(out, "conversion_gaps", "items")).length).toBeGreaterThan(0);
+    expect(readdirSync(join(out, "conversion_gaps", "templates")).length).toBeGreaterThan(0);
+    expect(result.totals.gaps).toBeGreaterThan(0);
 
     const validated = validateConvertedTree(out);
     expect(validated.length).toBeGreaterThan(0);

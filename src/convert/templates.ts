@@ -1,7 +1,7 @@
 // ADR 0031 slice 1 — Ansible/Jinja template analyzer (classification only).
 //
 // Parses a template with the Nunjucks AST and classifies every construct as
-// mapped/review/handoff. No Eta code is generated here; the output is a precise
+// mapped/review/gap. No Eta code is generated here; the output is a precise
 // work order that an LLM (or a later codegen slice) can act on.
 
 import nunjucks from "nunjucks";
@@ -152,7 +152,7 @@ function walk(value: unknown, findings: ConvertFinding[], file: string): void {
       if (call !== undefined && SAFE_METHODS.has(call.method)) break;
       const name = nodeName(node["name"]);
       if (name === "lookup" || name === "query" || name === "q") {
-        add(findings, file, node as { lineno?: number }, name, "handoff", "Ansible lookups/query are controller-side I/O and have no Eta equivalent");
+        add(findings, file, node as { lineno?: number }, name, "gap", "Ansible lookups/query are controller-side I/O and have no Eta equivalent");
       } else {
         add(findings, file, node as { lineno?: number }, name ?? "call", "review", "function calls need an explicit Eta helper mapping");
       }
@@ -167,22 +167,22 @@ function walk(value: unknown, findings: ConvertFinding[], file: string): void {
     case "Block":
     case "Super":
     case "TemplateRef":
-      add(findings, file, node as { lineno?: number }, typename.toLowerCase(), "handoff", `${typename} constructs are outside the mechanical Eta subset`);
+      add(findings, file, node as { lineno?: number }, typename.toLowerCase(), "gap", `${typename} constructs are outside the mechanical Eta subset`);
       break;
     case "CallExtension":
     case "CallExtensionAsync":
     case "FilterAsync":
-      add(findings, file, node as { lineno?: number }, typename.toLowerCase(), "handoff", `${typename} has no deterministic Eta mapping`);
+      add(findings, file, node as { lineno?: number }, typename.toLowerCase(), "gap", `${typename} has no deterministic Eta mapping`);
       break;
     default:
-      add(findings, file, node as { lineno?: number }, typename, "handoff", `unknown Nunjucks node type '${typename}'`);
+      add(findings, file, node as { lineno?: number }, typename, "gap", `unknown Nunjucks node type '${typename}'`);
       break;
   }
 
   if (typename === "Filter") {
     const name = nodeName(node["name"]) ?? "filter";
     if (!knownFilter(name)) {
-      add(findings, file, node as { lineno?: number }, `filter:${name}`, "handoff", `filter '${name}' has no verified Eta equivalent`);
+      add(findings, file, node as { lineno?: number }, `filter:${name}`, "gap", `filter '${name}' has no verified Eta equivalent`);
     } else if (["map", "select", "reject", "selectattr", "rejectattr"].includes(name)) {
       add(findings, file, node as { lineno?: number }, `filter:${name}`, "review", `filter '${name}' with attribute expressions needs an Eta parity fixture`);
     } else if (name === "default") {
@@ -195,7 +195,7 @@ function walk(value: unknown, findings: ConvertFinding[], file: string): void {
   if (typename === "Is") {
     const test = nodeName(node["right"]);
     if (test !== undefined && !knownTest(test)) {
-      add(findings, file, node as { lineno?: number }, `test:${test}`, "handoff", `test '${test}' has no verified Eta equivalent`);
+      add(findings, file, node as { lineno?: number }, `test:${test}`, "gap", `test '${test}' has no verified Eta equivalent`);
     }
   }
 
@@ -207,7 +207,7 @@ function walk(value: unknown, findings: ConvertFinding[], file: string): void {
 }
 
 /**
- * @summary Analyze a Jinja/Nunjucks template for ADR 0031 conversion. Classifies constructs as mapped/review/handoff without generating Eta.
+ * @summary Analyze a Jinja/Nunjucks template for ADR 0031 conversion. Classifies constructs as mapped/review/gap without generating Eta.
  * @param source Template text.
  * @param file Source path used in findings.
  * @returns Per-construct findings and the overall file disposition.
@@ -227,12 +227,12 @@ export function analyzeTemplate(source: string, file: string): TemplateAnalysis 
       file,
       undefined,
       "parse-error",
-      "handoff",
+      "gap",
       `could not parse template: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
-  const disposition: ConvertDisposition = findings.some((f) => f.disposition === "handoff")
-    ? "handoff"
+  const disposition: ConvertDisposition = findings.some((f) => f.disposition === "gap")
+    ? "gap"
     : findings.some((f) => f.disposition === "review")
       ? "review"
       : "mapped";
@@ -258,9 +258,9 @@ function fail(message: string): never {
   throw new Error(message);
 }
 
-function handoffMarker(node: unknown, label: string): string {
+function gapMarker(node: unknown, label: string): string {
   const line = (node as { lineno?: number } | undefined)?.lineno ?? 0;
-  return `/* HANDOFF: ${label} @ line ${line} */`;
+  return `/* GAP: ${label} @ line ${line} */`;
 }
 
 function emitExpr(node: unknown, ctx: EmitContext): string {
@@ -330,7 +330,7 @@ function emitExpr(node: unknown, ctx: EmitContext): string {
     case "Is": {
       const test = nodeName(rec["right"]);
       if (test === undefined || !knownTest(test)) {
-        if (ctx.draft) return `${handoffMarker(node, `test ${test ?? "?"}`)} undefined`;
+        if (ctx.draft) return `${gapMarker(node, `test ${test ?? "?"}`)} undefined`;
         fail("test calls with arguments are not supported");
       }
       return `tests.${test}(${emitExpr(rec["left"], ctx)})`;
@@ -361,13 +361,13 @@ function emitExpr(node: unknown, ctx: EmitContext): string {
             return `String(${target})`;
         }
       }
-      if (ctx.draft) return `${handoffMarker(node, "call")} undefined`;
+      if (ctx.draft) return `${gapMarker(node, "call")} undefined`;
       fail("function calls are not supported");
     }
     case "Filter": {
       const name = nodeName(rec["name"]);
       if (name === undefined || !knownFilter(name)) {
-        if (ctx.draft) return `${handoffMarker(node, `filter ${name ?? "?"}`)} undefined`;
+        if (ctx.draft) return `${gapMarker(node, `filter ${name ?? "?"}`)} undefined`;
         fail("filter without a known name");
       }
       const args = ((rec["args"] as { children?: unknown[] } | undefined)?.children ?? []).map((arg) =>
@@ -376,7 +376,7 @@ function emitExpr(node: unknown, ctx: EmitContext): string {
       return `filters.${name}(${args.join(", ")})`;
     }
     default:
-      if (ctx.draft) return `${handoffMarker(node, typename || "expression")} undefined`;
+      if (ctx.draft) return `${gapMarker(node, typename || "expression")} undefined`;
       fail(`unsupported expression node '${typename || "unknown"}'`);
   }
 }
@@ -416,7 +416,7 @@ function emitNode(node: unknown, ctx: EmitContext): string {
     case "CallExtension":
     case "CallExtensionAsync":
     case "FilterAsync":
-      if (ctx.draft) return `<% ${handoffMarker(rec, typename)} %>`;
+      if (ctx.draft) return `<% ${gapMarker(rec, typename)} %>`;
       fail(`${typename} constructs are not supported`);
     case "If": {
       const cond = emitExpr(rec["cond"], ctx);
@@ -432,21 +432,21 @@ function emitNode(node: unknown, ctx: EmitContext): string {
       } else if (name?.["typename"] === "NodeList" || name?.["typename"] === "Array") {
         const children = (name["children"] as Array<Record<string, unknown>>) ?? [];
         if (children.length !== 2 || children.some((child) => child["typename"] !== "Symbol")) {
-          if (ctx.draft) return `<% ${handoffMarker(rec, "tuple loop")} %>`;
+          if (ctx.draft) return `<% ${gapMarker(rec, "tuple loop")} %>`;
           fail("tuple loop targets must be two symbols");
         }
         variables = children.map((child) => String(child["value"]));
       } else {
-        if (ctx.draft) return `<% ${handoffMarker(rec, "tuple loop")} %>`;
+        if (ctx.draft) return `<% ${gapMarker(rec, "tuple loop")} %>`;
         fail("tuple loop targets are not supported");
       }
       const arr = rec["arr"] as Record<string, unknown>;
       if (arr?.["cond"] !== undefined) {
-        if (ctx.draft) return `<% ${handoffMarker(rec, "filtered loop")} %>`;
+        if (ctx.draft) return `<% ${gapMarker(rec, "filtered loop")} %>`;
         fail("filtered loops are not supported");
       }
       if (rec["else_"] !== null && rec["else_"] !== undefined) {
-        if (ctx.draft) return `<% ${handoffMarker(rec, "for/else")} %>`;
+        if (ctx.draft) return `<% ${gapMarker(rec, "for/else")} %>`;
         fail("for/else is not supported");
       }
       const id = ++ctx.loopId;
@@ -466,11 +466,11 @@ function emitNode(node: unknown, ctx: EmitContext): string {
     case "Set": {
       const targets = (rec["targets"] as Array<Record<string, unknown>>) ?? [];
       if (targets.length !== 1 || targets[0]?.["typename"] !== "Symbol") {
-        if (ctx.draft) return `<% ${handoffMarker(rec, "multi-target set")} %>`;
+        if (ctx.draft) return `<% ${gapMarker(rec, "multi-target set")} %>`;
         fail("multi-target set is not supported");
       }
       if ((rec["value"] as Record<string, unknown>)?.["typename"] === "Capture") {
-        if (ctx.draft) return `<% ${handoffMarker(rec, "set-block")} %>`;
+        if (ctx.draft) return `<% ${gapMarker(rec, "set-block")} %>`;
         fail("set-blocks are not supported");
       }
       return `<% let ${String(targets[0]["value"])} = ${emitExpr(rec["value"], ctx)}; %>`;
@@ -482,7 +482,7 @@ function emitNode(node: unknown, ctx: EmitContext): string {
 }
 
 /**
- * @summary Generate Eta for a template that the analyzer classified as fully mapped. Returns `ok:false` for any review/handoff construct or unsupported expression.
+ * @summary Generate Eta for a template that the analyzer classified as fully mapped. Returns `ok:false` for any review/gap construct or unsupported expression.
  * @param source Template text.
  * @param file Source path used in analysis/failures.
  * @returns Generated Eta or a reason it was skipped.
@@ -493,8 +493,8 @@ export function generateEta(
   opts: { acceptReview?: boolean } = {},
 ): EtaGeneration {
   const analysis = analyzeTemplate(source, file);
-  if (analysis.disposition === "handoff") {
-    return { ok: false, reason: "template has handoff constructs" };
+  if (analysis.disposition === "gap") {
+    return { ok: false, reason: "template has gaps constructs" };
   }
   if (analysis.disposition === "review" && opts.acceptReview !== true) {
     return { ok: false, reason: "template has review constructs; pass --templates-review accept to convert" };
@@ -509,7 +509,7 @@ export function generateEta(
 }
 
 /**
- * @summary Generate a complete partial Eta draft for a template with review/handoff constructs. Unsupported fragments become HANDOFF comment markers.
+ * @summary Generate a complete partial Eta draft for a template with review/gap constructs. Unsupported fragments become GAP comment markers.
  * @param source Template text.
  * @param file Source path used for markers.
  * @returns Eta draft text.
@@ -520,6 +520,6 @@ export function generateEtaDraft(source: string, file: string): string {
     const ast = parser.parse(source);
     return emitNode(ast, { loopId: 0, draft: true });
   } catch (error) {
-    return `<% ${handoffMarker(undefined, "parse-error")} %>\n/* ${String(error)} */\n`;
+    return `<% ${gapMarker(undefined, "parse-error")} %>\n/* ${String(error)} */\n`;
   }
 }

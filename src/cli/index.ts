@@ -135,8 +135,8 @@ Subcommands:
                                                 Create a blank RoleCall project
      project init [--dir <path>] [--name <name>] [--namespace <ns>] [--vcs none|git]
                                                 Scaffold into an existing directory
-     convert                                    Interactive wizard: source -> project -> apply/handoff/strict
-     convert ansible <path> [--out <dir>] [--project <dir>] [--handoff <dir>] [--write] [--strict] [--templates keep|eta] [--templates-review accept|reject] [--report json|md]
+     convert                                    Interactive wizard: source -> project -> apply/gaps/strict
+     convert ansible <path> [--out <dir>] [--project <dir>] [--gaps <dir>] [--write] [--strict] [--templates keep|eta] [--templates-review accept|reject] [--report json|md]
                         Analyze + mechanically convert an Ansible file/directory to RoleCall YAML
      convert ansible --validate <dir>
                         Validate an already-converted tree with the strict loader
@@ -214,7 +214,7 @@ const GLOBAL_OPTS = {
   "bun-version": { type: "string" },
   "add-bun-to-path": { type: "boolean" },
   out: { type: "string" },
-  handoff: { type: "string" },
+  gaps: { type: "string" },
   write: { type: "boolean" },
   strict: { type: "boolean" },
   report: { type: "string" },
@@ -329,7 +329,7 @@ function buildFlags(values: Record<string, unknown>): GlobalFlags {
     bunVersion: values["bun-version"] as string | undefined,
     addBunToPath: values["add-bun-to-path"] === true,
     out: values["out"] as string | undefined,
-    handoff: values["handoff"] as string | undefined,
+    gaps: values["gaps"] as string | undefined,
     write: values["write"] === true,
     strict: values["strict"] === true,
     report: values["report"] as string | undefined,

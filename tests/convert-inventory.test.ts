@@ -48,6 +48,6 @@ describe("inventory connection vars", () => {
     const file = join(dir, "inventory.yml");
     writeFileSync(file, `all:\n  hosts:\n    win1:\n      ansible_connection: winrm\n`, "utf8");
     const result = convertAnsible(file, { write: true, out: join(dir, "out") });
-    expect(result.findings.some((f) => f.construct === "ansible_connection" && f.disposition === "handoff")).toBe(true);
+    expect(result.findings.some((f) => f.construct === "ansible_connection" && f.disposition === "gap")).toBe(true);
   });
 });

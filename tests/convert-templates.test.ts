@@ -56,15 +56,15 @@ describe("template analyzer", () => {
     expect(analyzeTemplate("{{ xs.append(1) }}", "append.j2").disposition).toBe("review");
   });
 
-  test("flags macros, lookups, and unknown filters as handoff", () => {
+  test("flags macros, lookups, and unknown filters as gap", () => {
     const analysis = analyzeTemplate(
       `{% macro m() %}x{% endmacro %}{{ lookup("file", "x") }}{{ y | frobnicate }}`,
-      "handoff.j2",
+      "gap.j2",
     );
-    expect(analysis.disposition).toBe("handoff");
-    expect(analysis.findings.some((f) => f.construct === "macro" && f.disposition === "handoff")).toBe(true);
-    expect(analysis.findings.some((f) => f.construct === "lookup" && f.disposition === "handoff")).toBe(true);
-    expect(analysis.findings.some((f) => f.construct === "filter:frobnicate" && f.disposition === "handoff")).toBe(true);
+    expect(analysis.disposition).toBe("gap");
+    expect(analysis.findings.some((f) => f.construct === "macro" && f.disposition === "gap")).toBe(true);
+    expect(analysis.findings.some((f) => f.construct === "lookup" && f.disposition === "gap")).toBe(true);
+    expect(analysis.findings.some((f) => f.construct === "filter:frobnicate" && f.disposition === "gap")).toBe(true);
   });
 });
 
@@ -127,7 +127,7 @@ describe("partial Eta drafts", () => {
       `{% macro m() %}x{% endmacro %}Hello {{ name }} {{ value | frobnicate }}`,
       "draft.j2",
     );
-    expect(draft).toContain("HANDOFF");
+    expect(draft).toContain("GAP");
     expect(() => render(draft, { name: "bob" })).not.toThrow();
   });
 });
@@ -174,7 +174,7 @@ describe("convert ansible --templates eta", () => {
     expect(result.findings.some((f) => f.disposition === "review" && f.message.includes("accepted"))).toBe(true);
   });
 
-  test("keeps .j2 and Jinja for review/handoff templates", () => {
+  test("keeps .j2 and Jinja for review/gap templates", () => {
     const dir = tmp("keep-jinja");
     mkdirSync(join(dir, "playbooks"), { recursive: true });
     writeFileSync(join(dir, "playbooks", "site.yml"), `- hosts: web
@@ -189,21 +189,21 @@ describe("convert ansible --templates eta", () => {
     expect(existsSync(join(dir, "out", "playbooks", "app.j2"))).toBe(true);
     expect(existsSync(join(dir, "out", "playbooks", "app.eta"))).toBe(false);
     expect(readFileSync(join(dir, "out", "playbooks", "site.yml"), "utf8")).toContain("engine: jinja");
-    const drafts = readdirSync(join(result.handoff, "templates"));
+    const drafts = readdirSync(join(result.gaps, "templates"));
     expect(drafts.length).toBe(1);
-    expect(readFileSync(join(result.handoff, "templates", drafts[0]!), "utf8")).toContain("HANDOFF");
+    expect(readFileSync(join(result.gaps, "templates", drafts[0]!), "utf8")).toContain("GAP");
   });
 
-  test("records template findings and writes per-item handoff files", () => {
+  test("records template findings and writes per-item gap files", () => {
     const dir = tmp("project");
     mkdirSync(join(dir, "playbooks"), { recursive: true });
     writeFileSync(join(dir, "playbooks", "site.yml"), `- hosts: web\n  tasks:\n    - name: t\n      template:\n        src: app.j2\n        dest: /etc/app.conf\n`);
     writeFileSync(join(dir, "playbooks", "app.j2"), `{{ value | frobnicate }}`);
     const result = convertAnsible(dir, { templates: "eta", write: true, out: join(dir, "out") });
-    expect(result.findings.some((f) => f.construct === "filter:frobnicate" && f.disposition === "handoff")).toBe(true);
-    const items = readdirSync(join(result.handoff, "items"));
+    expect(result.findings.some((f) => f.construct === "filter:frobnicate" && f.disposition === "gap")).toBe(true);
+    const items = readdirSync(join(result.gaps, "items"));
     expect(items.length).toBeGreaterThan(0);
-    expect(readFileSync(join(result.handoff, "items", items[0]!), "utf8")).toContain("File:");
+    expect(readFileSync(join(result.gaps, "items", items[0]!), "utf8")).toContain("File:");
   });
 
   test("keep mode does not analyze templates", () => {

@@ -371,8 +371,9 @@ export async function runTaskOnHost(
     conn = await getConnection(state, host, task.connection);
   } catch (err) {
     outcome.failed = true;
+    outcome.ignored = task.ignore_errors === true;
     outcome.msg = `connection failed: ${err instanceof Error ? err.message : String(err)}`;
-    state.failed.add(host);
+    if (!task.ignore_errors) state.failed.add(host);
     emit("end", "failed", taskStartedAt, Date.now(), Math.round(performance.now() - taskT0), { error: outcome.msg });
     fireEvent(outcome);
     return outcome;
@@ -388,8 +389,9 @@ export async function runTaskOnHost(
     loopItems = expandLoop(task.loop, buildVars(state, host, undefined, undefined, task), policy);
   } catch (err) {
     outcome.failed = true;
+    outcome.ignored = task.ignore_errors === true;
     outcome.msg = err instanceof Error ? err.message : String(err);
-    state.failed.add(host);
+    if (!task.ignore_errors) state.failed.add(host);
     emit("end", "failed", taskStartedAt, Date.now(), Math.round(performance.now() - taskT0), { error: outcome.msg });
     fireEvent(outcome);
     return outcome;
@@ -526,6 +528,44 @@ export async function runTaskOnHost(
                 rolecallManagedOnly: state.idempotency.rolecallManagedOnly,
               })
             : mod.run(moduleCtx);
+        const runWithRetries = async (): Promise<ModuleResult> => {
+          if (task.until === undefined) return runModule();
+          const maxAttempts = Math.max(1, (task.retries ?? 3) + 1);
+          let last: ModuleResult = { changed: false };
+          for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+            last = await runModule();
+            const resultView = {
+              ...last,
+              changed: last.changed,
+              failed: Boolean(last.failed),
+              ...(last.data ?? {}),
+              rc: (last.data as Record<string, unknown> | undefined)?.["rc"],
+            };
+            const scope = {
+              ...vars,
+              reg: {
+                ...vars.reg,
+                result: resultView,
+                ...(task.register !== undefined ? { [task.register]: resultView } : {}),
+              },
+            };
+            let satisfied = false;
+            try {
+              satisfied = evalWhen(task.until, scope, policy);
+            } catch (err) {
+              last.failed = true;
+              last.msg = `until: ${err instanceof Error ? err.message : String(err)}`;
+              return last;
+            }
+            if (satisfied) return last;
+            if (attempt < maxAttempts && (task.delay ?? 0) > 0) {
+              await new Promise((resolve) => setTimeout(resolve, (task.delay ?? 0) * 1000));
+            }
+          }
+          last.failed = true;
+          last.msg = last.msg ?? `until condition not met after ${maxAttempts} attempt(s)`;
+          return last;
+        };
         const checkFn = (mod as CheckableModule).check;
         const canCheck = supportsCheck(mod);
         let observed: { current: unknown; inDesired: boolean } | undefined;
@@ -569,7 +609,7 @@ export async function runTaskOnHost(
             if (wouldChange) res = { ...res, changed: true, skipped: false };
           }
         } else {
-          res = await runModule();
+          res = await runWithRetries();
           if (diffMode && observed && typeof checkFn === "function") {
             let after: { current: unknown; inDesired: boolean } | undefined;
             try {
@@ -581,6 +621,40 @@ export async function runTaskOnHost(
               ...res,
               data: { ...(res.data ?? {}), diff: makeDiff(observed.current, after ? after.current : publicArgs(args)) },
             };
+          }
+        }
+        if (task.changed_when !== undefined || task.failed_when !== undefined) {
+          const resultView = {
+            changed: res.changed,
+            failed: Boolean(res.failed),
+            stdout: res.stdout,
+            stderr: res.stderr,
+            rc: (res.data as Record<string, unknown> | undefined)?.["rc"],
+            ...(res.data ?? {}),
+          };
+          const evalScope = {
+            ...vars,
+            reg: {
+              ...vars.reg,
+              result: resultView,
+              ...(task.register !== undefined ? { [task.register]: resultView } : {}),
+            },
+          };
+          if (task.changed_when !== undefined) {
+            try {
+              res.changed = evalWhen(task.changed_when, evalScope, policy);
+            } catch (err) {
+              res.failed = true;
+              res.msg = `changed_when: ${err instanceof Error ? err.message : String(err)}`;
+            }
+          }
+          if (task.failed_when !== undefined) {
+            try {
+              res.failed = evalWhen(task.failed_when, evalScope, policy);
+            } catch (err) {
+              res.failed = true;
+              res.msg = `failed_when: ${err instanceof Error ? err.message : String(err)}`;
+            }
           }
         }
         iter.changed = res.changed;
@@ -629,7 +703,8 @@ export async function runTaskOnHost(
   outcome.changed = anyChanged;
   outcome.failed = anyFailed;
   if (anyFailed) {
-    state.failed.add(host);
+    outcome.ignored = task.ignore_errors === true;
+    if (!task.ignore_errors) state.failed.add(host);
     outcome.msg = outcome.msg ?? "task failed";
   }
   if (task.register && !outcome.skipped) {

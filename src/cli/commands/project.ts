@@ -99,7 +99,7 @@ export async function runProjectCommand(
     if (git.status !== 0) throw new CliError(false, `project ${sub}: 'git init' failed in ${root}`);
     const ignore = join(root, ".gitignore");
     if (!existsSync(ignore)) {
-      writeFileSync(ignore, "node_modules/\n.rolecall/state.db\nhandoff/\n", "utf8");
+      writeFileSync(ignore, "node_modules/\n.rolecall/state.db\nconversion_gaps/\n", "utf8");
     }
   }
 

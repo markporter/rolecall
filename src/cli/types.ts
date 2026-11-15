@@ -118,11 +118,11 @@ export interface GlobalFlags {
   allowAnonymous?: boolean;
   /** convert ansible: output directory for converted files. */
   out?: string;
-  /** convert ansible: handoff directory for REVIEW/HANDOFF artifacts. */
-  handoff?: string;
+  /** convert ansible: conversion-gaps directory for review/gap artifacts. */
+  gaps?: string;
   /** convert ansible: write converted files to disk. */
   write?: boolean;
-  /** convert ansible: fail when review/handoff items remain. */
+  /** convert ansible: fail when review/gap items remain. */
   strict?: boolean;
   /** convert ansible: report format hint (json|md). */
   report?: string;
@@ -170,6 +170,7 @@ export interface ApplyTotals {
   ok: number;
   changed: number;
   failed: number;
+  ignored?: number;
   skipped: number;
 }
 
@@ -399,7 +400,7 @@ export interface ConvertFinding {
   file: string;
   path: string;
   construct: string;
-  disposition: "mapped" | "review" | "handoff";
+  disposition: "mapped" | "review" | "gap";
   message: string;
 }
 
@@ -429,7 +430,7 @@ export interface ConvertResult {
   mode?: "convert" | "validate";
   source: string;
   out: string;
-  handoff: string;
+  gaps: string;
   applied: boolean;
   files: ConvertFileResult[];
   written: string[];
@@ -437,7 +438,7 @@ export interface ConvertResult {
     files: number;
     mapped: number;
     review: number;
-    handoff: number;
+    gaps: number;
     findings: number;
   };
   findings: ConvertFinding[];

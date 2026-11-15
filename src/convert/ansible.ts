@@ -2,7 +2,7 @@
 //
 // The analyzer + rewriter run in one pass over YAML documents. Mechanical
 // rewrites are applied when semantics are clear; everything else is recorded as
-// a review/handoff item so a converted tree never silently changes behavior.
+// a review/gap item so a converted tree never silently changes behavior.
 // Jinja never lands in a playbook scalar: expressions are wrapped in `$jinja`
 // (the sole Jinja escape hatch) or translated to structured refs.
 
@@ -103,11 +103,11 @@ const JINJA_RE = /\{\{|\}\}|\{%|%\}|\{#|#\}/;
 export interface ConvertAnsibleOptions {
   /** Output directory; required to write converted files. */
   out?: string;
-  /** Handoff directory (defaults to `<out>/handoff` or `./handoff`). */
-  handoff?: string;
+  /** Conversion gaps directory (defaults to `<out>/conversion_gaps`). */
+  gaps?: string;
   /** Write converted files to disk. */
   write?: boolean;
-  /** Fail (exit non-zero) when any review/handoff item remains. */
+  /** Fail (exit non-zero) when any review/gap item remains. */
   strict?: boolean;
   /** Report format hint (json|md); the CLI handles rendering. */
   report?: string;
@@ -124,6 +124,11 @@ interface ConvertState {
   blockCounter: number;
   /** Play var names collected from `vars:` so bare Ansible refs can be qualified. */
   knownVars?: Set<string>;
+  /** Role defaults/vars collected while expanding task-level include_role. */
+  roleDefaults?: Record<string, unknown>;
+  roleVars?: Record<string, unknown>;
+  roleHandlers?: unknown[];
+  includeStack?: string[];
 }
 
 const SCALAR_MODULE_ARG: Record<string, string> = {
@@ -304,6 +309,23 @@ function rewriteAnsibleExpr(expr: string, knownVars?: Set<string>): { text: stri
     [/\binventory_hostname\b/g, "play.host"],
     [/\bplaybook_dir\b/g, "run.playbook_dir"],
     [/\brole_path\b/g, "role.path"],
+    [/\bansible_lsb\.major_release\b/g, "facts.distribution_major_version"],
+    [/\bansible_lsb\.release\b/g, "facts.distribution_version"],
+    [/\bansible_lsb\.codename\b/g, "facts.distribution_release"],
+    [/\bansible_lsb\.id\b/g, "facts.distribution"],
+    [/\bansible_lsb\b/g, "facts.distribution"],
+    [/\bansible_domain\b/g, "facts.dns.domain"],
+    [/\bansible_play_hosts\b/g, "play.hosts"],
+    [/\bansible_limit\b/g, "run.limit"],
+    [/\bansible_host\b/g, "inv.host_vars[play.host].rolecall_host | default(play.host)"],
+    [/\bansible_ssh_pass\b/g, "inv.host_vars[play.host].rolecall_ssh_pass"],
+    [/\bansible_password\b/g, "inv.host_vars[play.host].rolecall_ssh_pass"],
+    [/\bansible_ssh_user\b/g, "inv.host_vars[play.host].rolecall_user"],
+    [/\bansible_user\b/g, "inv.host_vars[play.host].rolecall_user"],
+    [/\bansible_ssh_port\b/g, "inv.host_vars[play.host].rolecall_port"],
+    [/\bansible_port\b/g, "inv.host_vars[play.host].rolecall_port"],
+    [/\bansible_connection\b/g, "inv.host_vars[play.host].rolecall_connection"],
+    [/\bansible_ssh_private_key_file\b/g, "inv.host_vars[play.host].rolecall_ssh_private_key_file"],
     [/\bansible_os_family\b/g, "facts.os_family"],
     [/\bansible_distribution_major_version\b/g, "facts.distribution_major_version"],
     [/\bansible_distribution_version\b/g, "facts.distribution_version"],
@@ -322,15 +344,23 @@ function rewriteAnsibleExpr(expr: string, knownVars?: Set<string>): { text: stri
     [/\bansible_all_ipv4_addresses\b/g, "facts.ip_addresses"],
   ];
   for (const [re, replacement] of fixes) text = text.replace(re, replacement);
-  text = rewriteBracketAccess(text, "hostvars", "inv.hosts", ".vars");
-  text = rewriteBracketAccess(text, "groups", "inv.groups", ".hosts");
+  text = rewriteBracketAccess(text, "hostvars", "inv.host_vars", "");
+  text = rewriteBracketAccess(text, "groups", "inv.group_hosts", "");
   text = qualifyVars(text, knownVars);
   const unresolved: string[] = [];
-  for (const m of text.matchAll(/\bansible_[A-Za-z0-9_]+/g)) unresolved.push(m[0]);
+  const knownUnmapped = new Set([
+    "ansible_become_pass",
+    "ansible_become_user",
+    "ansible_python_interpreter",
+    "ansible_ssh_common_args",
+    "ansible_ssh_extra_args",
+    "ansible_winrm_transport",
+  ]);
+  for (const m of text.matchAll(/\bansible_[A-Za-z0-9_]+/g)) {
+    if (knownUnmapped.has(m[0])) unresolved.push(m[0]);
+  }
   if (/\b(?:lookup|query)\s*\(/.test(text)) unresolved.push("lookup/query");
   if (/\bpassword_hash\b/.test(text)) unresolved.push("password_hash (not crypt(3)-compatible)");
-  if (/\bhostvars\b/.test(text)) unresolved.push("bare hostvars");
-  if (/\bgroups\b/.test(text)) unresolved.push("bare groups");
   return { text, unresolved };
 }
 
@@ -351,12 +381,28 @@ function convertWhen(value: unknown, state: ConvertState, file: string, path: st
         file,
         path,
         "when",
-        "handoff",
+        "gap",
         `expression references unsupported inputs (${unresolved.join(", ")}); review the generated $jinja or rewrite it as a structured predicate`,
       );
     }
     const expr = JINJA_RE.test(trimmed) ? text : `{{ ${text} }}`;
     finding(state, file, path, "when", "mapped", "wrapped in $jinja (strict Nunjucks)");
+    return { $jinja: expr };
+  }
+  return value;
+}
+
+/** Convert a changed_when/failed_when predicate, mapping Ansible `result` to `reg.result`. */
+function convertResultCondition(value: unknown, state: ConvertState, file: string, path: string): unknown {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const withResult = value.replace(/\bresult\b/g, "reg.result");
+    const { text, unresolved } = rewriteAnsibleExpr(withResult, state.knownVars);
+    if (unresolved.length > 0) {
+      finding(state, file, path, "result-condition", "gap", `expression references unsupported inputs (${unresolved.join(", ")})`);
+    }
+    const expr = JINJA_RE.test(withResult) ? text : `{{ ${text} }}`;
+    finding(state, file, path, "result-condition", "mapped", "wrapped in $jinja against reg.result");
     return { $jinja: expr };
   }
   return value;
@@ -373,7 +419,7 @@ function convertValue(value: unknown, state: ConvertState, file: string, path: s
         file,
         path,
         "jinja-value",
-        "handoff",
+        "gap",
         `value references unsupported inputs (${unresolved.join(", ")}); review the generated $jinja`,
       );
     }
@@ -422,7 +468,7 @@ function convertTemplateTask(
   const src = typeof args.src === "string" ? args.src : undefined;
   const dest = typeof args.dest === "string" ? args.dest : undefined;
   if (src === undefined || dest === undefined) {
-    finding(state, file, `${path}.template`, "template", "handoff", "template task needs static `src` and `dest`");
+    finding(state, file, `${path}.template`, "template", "gap", "template task needs static `src` and `dest`");
     return undefined;
   }
   const copyArgs: Record<string, unknown> = {
@@ -435,6 +481,19 @@ function convertTemplateTask(
   finding(state, file, `${path}.template`, "template", "mapped", "mapped to copy + content.template_file");
   void task;
   return { module: "copy", args: copyArgs };
+}
+
+/** Find the nearest `roles/` directory for a playbook or role task file. */
+function findRolesRoot(file: string): string | undefined {
+  let dir = dirname(file);
+  for (;;) {
+    if (basename(dir) === "roles") return dir;
+    const candidate = join(dir, "roles");
+    if (existsSync(candidate)) return candidate;
+    const parent = dirname(dir);
+    if (parent === dir) return undefined;
+    dir = parent;
+  }
 }
 
 /** Convert one Ansible task into zero or more RoleCall tasks. */
@@ -453,10 +512,10 @@ function convertTask(
     const tx = `rc-block-${++state.blockCounter}`;
     finding(state, file, `${path}.block`, "block", "mapped", `flattened into tx: ${tx}; review transaction boundaries`);
     if (task.rescue !== undefined) {
-      finding(state, file, `${path}.rescue`, "rescue", "handoff", "rescue semantics are not mechanically equivalent to tx/checkpoint");
+      finding(state, file, `${path}.rescue`, "rescue", "gap", "rescue semantics are not mechanically equivalent to tx/checkpoint");
     }
     if (task.always !== undefined) {
-      finding(state, file, `${path}.always`, "always", "handoff", "`always` has no tx/checkpoint equivalent; add an explicit final task");
+      finding(state, file, `${path}.always`, "always", "gap", "`always` has no tx/checkpoint equivalent; add an explicit final task");
     }
     const blockInherited: Record<string, unknown> = { ...inherited };
     for (const key of ["when", "become", "become_user", "tags", "environment", "connection", "run_once"]) {
@@ -471,10 +530,114 @@ function convertTask(
     return out;
   }
 
+  if (task.include_role !== undefined || task.import_role !== undefined) {
+    const spec = task.include_role ?? task.import_role;
+    const specRec = asRecord(spec);
+    const name =
+      typeof spec === "string"
+        ? spec
+        : typeof specRec?.["name"] === "string"
+          ? specRec["name"]
+          : undefined;
+    if (name === undefined) {
+      finding(state, file, `${path}.include_role`, "include_role", "gap", "include_role needs a role name");
+      return [];
+    }
+    const rolesRoot = findRolesRoot(file);
+    const roleDir = rolesRoot === undefined ? undefined : join(rolesRoot, name);
+    if (roleDir === undefined || !existsSync(roleDir)) {
+      finding(state, file, `${path}.include_role`, "include_role", "gap", `could not resolve role '${name}'`);
+      return [];
+    }
+    const stack = state.includeStack ?? [];
+    if (stack.includes(roleDir)) {
+      finding(state, file, `${path}.include_role`, "include_role", "gap", `cyclic include_role '${name}'`);
+      return [];
+    }
+    state.includeStack = [...stack, roleDir];
+    try {
+      const defaultsFrom = typeof specRec?.["defaults_from"] === "string" ? specRec["defaults_from"] : "main.yml";
+      const varsFrom = typeof specRec?.["vars_from"] === "string" ? specRec["vars_from"] : "main.yml";
+      const tasksFrom = typeof specRec?.["tasks_from"] === "string" ? specRec["tasks_from"] : "main.yml";
+      const defaultsFile = join(roleDir, "defaults", defaultsFrom);
+      const varsFile = join(roleDir, "vars", varsFrom);
+      const loadMap = (target: string): Record<string, unknown> | undefined => {
+        try {
+          return asRecord(convertValue(yamlLoad(readFileSync(target, "utf8")), state, target, `${path}.include_role`));
+        } catch (error) {
+          finding(state, file, `${path}.include_role`, "include_role", "gap", `could not parse ${target}: ${error instanceof Error ? error.message : String(error)}`);
+          return undefined;
+        }
+      };
+      if (existsSync(defaultsFile)) {
+        const defaults = loadMap(defaultsFile);
+        if (defaults !== undefined) {
+          state.roleDefaults = { ...(state.roleDefaults ?? {}), ...defaults };
+          for (const key of Object.keys(defaults)) state.knownVars!.add(key);
+        }
+      }
+      if (existsSync(varsFile)) {
+        const vars = loadMap(varsFile);
+        if (vars !== undefined) {
+          state.roleVars = { ...(state.roleVars ?? {}), ...vars };
+          for (const key of Object.keys(vars)) state.knownVars!.add(key);
+        }
+      }
+      const tasksFile = join(roleDir, "tasks", tasksFrom);
+      if (!existsSync(tasksFile)) {
+        finding(state, file, `${path}.include_role`, "include_role", "gap", `role '${name}' has no tasks/${tasksFrom}`);
+        return [];
+      }
+      let doc: unknown;
+      try {
+        doc = yamlLoad(readFileSync(tasksFile, "utf8"));
+      } catch (error) {
+        finding(state, file, `${path}.include_role`, "include_role", "gap", `could not parse ${tasksFile}: ${error instanceof Error ? error.message : String(error)}`);
+        return [];
+      }
+      if (!Array.isArray(doc)) {
+        finding(state, file, `${path}.include_role`, "include_role", "gap", `role '${name}' tasks file is not a list`);
+        return [];
+      }
+      const inherited: Record<string, unknown> = {};
+      for (const key of ["when", "tags", "become", "become_user", "environment", "run_once", "ignore_errors", "connection"]) {
+        if (task[key] !== undefined) inherited[key] = task[key];
+      }
+      const converted: Record<string, unknown>[] = [];
+      doc.forEach((child, i) => {
+        converted.push(...convertTask(child, state, tasksFile, `${path}.include_role[${i}]`, inherited));
+      });
+      const handlersFile = join(roleDir, "handlers", "main.yml");
+      if (existsSync(handlersFile)) {
+        let handlers: unknown;
+        try {
+          handlers = yamlLoad(readFileSync(handlersFile, "utf8"));
+        } catch (error) {
+          finding(state, file, `${path}.include_role`, "include_role", "gap", `could not parse ${handlersFile}: ${error instanceof Error ? error.message : String(error)}`);
+          handlers = undefined;
+        }
+        if (Array.isArray(handlers)) {
+          handlers.forEach((handler, i) => {
+            state.roleHandlers!.push(...convertTask(handler, state, handlersFile, `${path}.include_role.handlers[${i}]`, inherited));
+          });
+        }
+      }
+      const unsupported = Object.keys(specRec ?? {}).filter(
+        (key) => !["name", "tasks_from", "vars_from", "defaults_from"].includes(key),
+      );
+      if (unsupported.length > 0) {
+        finding(state, file, `${path}.include_role`, "include_role", "review", `role options (${unsupported.join(", ")}) are not inlined`);
+      }
+      finding(state, file, `${path}.include_role`, "include_role", "mapped", `inlined role '${name}' tasks, defaults/vars, and handlers`);
+      return converted;
+    } finally {
+      state.includeStack = stack;
+    }
+  }
   if (task.include_tasks !== undefined || task.import_tasks !== undefined) {
     const value = task.include_tasks ?? task.import_tasks;
     if (typeof value === "string" && hasJinja(value)) {
-      finding(state, file, path, "include_tasks", "handoff", "dynamic include paths are not load-time expandable");
+      finding(state, file, path, "include_tasks", "gap", "dynamic include paths are not load-time expandable");
       return [];
     }
     if (task.import_tasks !== undefined) {
@@ -486,16 +649,12 @@ function convertTask(
     if (task.when !== undefined) out.when = convertWhen(task.when, state, file, `${path}.when`);
     return [out];
   }
-  if (task.include_role !== undefined || task.import_role !== undefined) {
-    finding(state, file, path, "include_role", "handoff", "task-level role includes have no RoleCall equivalent; add the role to the play `roles:` list");
-    return [];
-  }
   if (task.include_vars !== undefined) {
-    finding(state, file, path, "include_vars", "handoff", "move static var files to play `vars_files:`; dynamic include_vars is unsupported");
+    finding(state, file, path, "include_vars", "gap", "move static var files to play `vars_files:`; dynamic include_vars is unsupported");
     return [];
   }
   if (task.import_playbook !== undefined) {
-    finding(state, file, path, "import_playbook", "handoff", "import_playbook must become a separate top-level playbook or an `imports:` entry");
+    finding(state, file, path, "import_playbook", "gap", "import_playbook must become a separate top-level playbook or an `imports:` entry");
     return [];
   }
   if (task.local_action !== undefined) {
@@ -516,7 +675,7 @@ function convertTask(
     const out: Record<string, unknown> = {};
     out.name = staticName(task.name, laModule ?? "local_action");
     if (laModule !== undefined) out[laModule] = convertValue(laArgs, state, file, `${path}.local_action`);
-    else finding(state, file, `${path}.local_action`, "local_action", "handoff", "could not identify the local_action module");
+    else finding(state, file, `${path}.local_action`, "local_action", "gap", "could not identify the local_action module");
     out.delegate_to = "localhost";
     out.connection = "local";
     if (task.when !== undefined) out.when = convertWhen(task.when, state, file, `${path}.when`);
@@ -529,7 +688,7 @@ function convertTask(
     finding(state, file, path, scalar, "mapped", `scalar module argument mapped to { ${SCALAR_MODULE_ARG[scalar] ?? "name"}: ... }`);
   }
   if (rawModule === undefined) {
-    finding(state, file, path, "task", "handoff", "could not identify a module key");
+    finding(state, file, path, "task", "gap", "could not identify a module key");
     return [];
   }
   if (rawModule === "setup" || rawModule === "gather_facts") {
@@ -556,7 +715,7 @@ function convertTask(
           ? "/root/.ssh/authorized_keys"
           : `/home/${user}/.ssh/authorized_keys`;
     if (key === undefined) {
-      finding(state, file, path, "authorized_key", "handoff", "authorized_key needs a static key");
+      finding(state, file, path, "authorized_key", "gap", "authorized_key needs a static key");
       return [];
     }
     module = "lineinfile";
@@ -633,7 +792,7 @@ function convertTask(
         }));
         finding(state, file, `${path}.with_dict`, "with_dict", "mapped", "literal dict mapped to key/value loop items");
       } else {
-        finding(state, file, `${path}.with_dict`, "with_dict", "handoff", "with_dict form has no mechanical $each equivalent");
+        finding(state, file, `${path}.with_dict`, "with_dict", "gap", "with_dict form has no mechanical $each equivalent");
       }
     }
   } else if (task.with_together !== undefined || task.with_nested !== undefined) {
@@ -641,7 +800,7 @@ function convertTask(
     const filter = key === "with_together" ? "zip" : "product";
     const value = task[key];
     if (!Array.isArray(value) || value.length === 0) {
-      finding(state, file, `${path}.${key}`, key, "handoff", "loop form needs a literal list of operands");
+      finding(state, file, `${path}.${key}`, key, "gap", "loop form needs a literal list of operands");
     } else {
       const operands = value.map((entry) => {
         if (typeof entry === "string" && hasJinja(entry)) {
@@ -654,7 +813,7 @@ function convertTask(
         return JSON.stringify(entry);
       });
       if (operands.some((operand) => operand === undefined)) {
-        finding(state, file, `${path}.${key}`, key, "handoff", "could not build a mechanical zip/product expression");
+        finding(state, file, `${path}.${key}`, key, "gap", "could not build a mechanical zip/product expression");
       } else {
         out.loop = { $each: { $jinja: `{{ ${operands[0]} | ${filter}(${operands.slice(1).join(", ")}) | to_json }}` } };
         finding(state, file, `${path}.${key}`, key, "mapped", `mapped to $each + ${filter}`);
@@ -677,14 +836,14 @@ function convertTask(
           content["template_file"] = converted;
           finding(state, file, `${path}.with_first_found`, "with_first_found", "mapped", "mapped to copy template_file candidates");
         } else {
-          finding(state, file, `${path}.with_first_found`, "with_first_found", "handoff", "template conversion did not produce a content spec");
+          finding(state, file, `${path}.with_first_found`, "with_first_found", "gap", "template conversion did not produce a content spec");
         }
       } else {
         (args as Record<string, unknown>)["src"] = converted;
         finding(state, file, `${path}.with_first_found`, "with_first_found", "mapped", "mapped to copy src candidates");
       }
     } else {
-      finding(state, file, `${path}.with_first_found`, "with_first_found", "handoff", "with_first_found is only mechanical for static copy/template candidates");
+      finding(state, file, `${path}.with_first_found`, "with_first_found", "gap", "with_first_found is only mechanical for static copy/template candidates");
     }
   }
 
@@ -693,7 +852,7 @@ function convertTask(
     if (value === undefined) continue;
     const normalized = normalizeBoolean(value);
     if (normalized === undefined) {
-      finding(state, file, `${path}.${key}`, key, "handoff", `unsupported ${key} value; review it`);
+      finding(state, file, `${path}.${key}`, key, "gap", `unsupported ${key} value; review it`);
     } else {
       out[key] = normalized;
     }
@@ -701,16 +860,16 @@ function convertTask(
   if (task.become_user !== undefined || inherited.become_user !== undefined) {
     const value = task.become_user ?? inherited.become_user;
     if (typeof value === "string") out.become_user = value;
-    else finding(state, file, `${path}.become_user`, "become_user", "handoff", "dynamic become_user is unsupported");
+    else finding(state, file, `${path}.become_user`, "become_user", "gap", "dynamic become_user is unsupported");
   }
   for (const key of ["register", "delegate_to"]) {
     const value = task[key] ?? inherited[key];
     if (value === undefined) continue;
     if (typeof value === "string" && !hasJinja(value)) out[key] = value;
-    else finding(state, file, `${path}.${key}`, key, "handoff", `dynamic ${key} has no RoleCall equivalent; review it`);
+    else finding(state, file, `${path}.${key}`, key, "gap", `dynamic ${key} has no RoleCall equivalent; review it`);
   }
   if (task.listen !== undefined) out.listen = convertValue(task.listen, state, file, `${path}.listen`);
-  const tags = normalizeTags(task.tags);
+  const tags = normalizeTags(task.tags ?? inherited.tags);
   if (tags !== undefined) out.tags = tags;
   const environment = task.environment ?? inherited.environment;
   if (environment !== undefined) {
@@ -720,7 +879,7 @@ function convertTask(
   if (notify !== undefined) {
     const list = Array.isArray(notify) ? notify : [notify];
     if (list.some((n) => hasJinja(n))) {
-      finding(state, file, `${path}.notify`, "notify", "handoff", "dynamic handler names are not supported; make notify static");
+      finding(state, file, `${path}.notify`, "notify", "gap", "dynamic handler names are not supported; make notify static");
     } else {
       out.notify = list;
     }
@@ -728,29 +887,40 @@ function convertTask(
   const connection = task.connection ?? inherited.connection;
   if (typeof connection === "string") {
     if (["ssh", "local", "network"].includes(connection)) out.connection = connection;
-    else finding(state, file, `${path}.connection`, "connection", "handoff", `connection '${connection}' has no RoleCall transport`);
+    else finding(state, file, `${path}.connection`, "connection", "gap", `connection '${connection}' has no RoleCall transport`);
   }
 
-  let handledChangedWhen = false;
-  if (task.changed_when !== undefined && ["shell", "command", "raw"].includes(module)) {
-    const argsRecord = asRecord(args);
-    const hasGuard =
-      argsRecord !== undefined &&
-      ["creates", "removes", "creates_cmd", "removes_cmd"].some((key) => argsRecord[key] !== undefined);
-    const mode = argsRecord?.["run_mode"];
-    if (task.changed_when === false && !hasGuard && (mode === undefined || mode === "readonly")) {
-      (args as Record<string, unknown>)["run_mode"] = "readonly";
-      finding(state, file, `${path}.changed_when`, "changed_when", "mapped", "mapped changed_when: false to run_mode: readonly");
-      handledChangedWhen = true;
-    } else if (task.changed_when === true && (mode === undefined || mode === "always")) {
-      (args as Record<string, unknown>)["run_mode"] = "always";
-      finding(state, file, `${path}.changed_when`, "changed_when", "mapped", "mapped changed_when: true to run_mode: always");
-      handledChangedWhen = true;
+  if (task.ignore_errors !== undefined || inherited.ignore_errors !== undefined) {
+    const raw = task.ignore_errors ?? inherited.ignore_errors;
+    const value = normalizeBoolean(raw);
+    if (value === undefined) {
+      finding(state, file, `${path}.ignore_errors`, "ignore_errors", "gap", "unsupported ignore_errors value; review it");
+    } else {
+      out.ignore_errors = value;
+      finding(state, file, `${path}.ignore_errors`, "ignore_errors", "mapped", "mapped to the native ignore_errors task field");
     }
   }
 
+  for (const key of ["changed_when", "failed_when"] as const) {
+    if (task[key] !== undefined) {
+      out[key] = convertResultCondition(task[key], state, file, `${path}.${key}`);
+    }
+  }
+  if (task.retries !== undefined) {
+    const retries = Number(task.retries);
+    if (Number.isInteger(retries) && retries >= 0) out.retries = retries;
+    else finding(state, file, `${path}.retries`, "retries", "gap", "retries must be a non-negative integer");
+  }
+  if (task.delay !== undefined) {
+    const delay = Number(task.delay);
+    if (Number.isFinite(delay) && delay >= 0) out.delay = delay;
+    else finding(state, file, `${path}.delay`, "delay", "gap", "delay must be a non-negative number");
+  }
+  if (task.until !== undefined) {
+    out.until = convertResultCondition(task.until, state, file, `${path}.until`);
+  }
+
   for (const rule of Object.values(TASK_RULES)) {
-    if (rule.id === "changed_when" && handledChangedWhen) continue;
     if (task[rule.id] !== undefined) {
       finding(state, file, `${path}.${rule.id}`, rule.id, rule.disposition, rule.message);
     }
@@ -758,7 +928,7 @@ function convertTask(
 
   for (const key of Object.keys(task)) {
     if (key === rawModule || STRUCTURAL_KEYS.has(key)) continue;
-    finding(state, file, `${path}.${key}`, key, "handoff", "unrecognized task key; review or remove it");
+    finding(state, file, `${path}.${key}`, key, "gap", "unrecognized task key; review or remove it");
   }
 
   return [out];
@@ -814,9 +984,28 @@ function convertPlay(raw: unknown, state: ConvertState, file: string, path: stri
   const play = asRecord(raw);
   if (play === undefined) return undefined;
   const previousVars = state.knownVars;
+  state.roleDefaults = {};
+  state.roleVars = {};
+  state.roleHandlers = [];
   const vars = asRecord(play.vars);
   if (vars !== undefined) {
     state.knownVars = new Set([...(previousVars ?? []), ...Object.keys(vars)]);
+  }
+  if (play.vars_files !== undefined) {
+    for (const entry of Array.isArray(play.vars_files) ? play.vars_files : [play.vars_files]) {
+      const ref = Array.isArray(entry) ? entry[0] : entry;
+      if (typeof ref !== "string" || hasJinja(ref)) continue;
+      for (const candidate of [join(dirname(file), ref), join(dirname(file), "vars", ref)]) {
+        if (!existsSync(candidate)) continue;
+        try {
+          const doc = asRecord(yamlLoad(readFileSync(candidate, "utf8")));
+          if (doc !== undefined) for (const key of Object.keys(doc)) state.knownVars!.add(key);
+        } catch {
+          /* parse errors are reported when the file is converted */
+        }
+        break;
+      }
+    }
   }
   const out: Record<string, unknown> = {};
   if (play.name !== undefined) {
@@ -828,7 +1017,7 @@ function convertPlay(raw: unknown, state: ConvertState, file: string, path: stri
   }
   if (play.gather_facts !== undefined) {
     const gather = normalizeGatherFacts(play.gather_facts);
-    if (gather === undefined) finding(state, file, `${path}.gather_facts`, "gather_facts", "handoff", "unsupported gather_facts value; review it");
+    if (gather === undefined) finding(state, file, `${path}.gather_facts`, "gather_facts", "gap", "unsupported gather_facts value; review it");
     else out.gather_facts = gather;
   }
   const playTags = normalizeTags(play.tags);
@@ -841,7 +1030,7 @@ function convertPlay(raw: unknown, state: ConvertState, file: string, path: stri
         files.push(entry[0]);
         finding(state, file, `${path}.vars_files`, "vars_files", "review", "first-found vars_files entry flattened to its first candidate");
       } else {
-        finding(state, file, `${path}.vars_files`, "vars_files", "handoff", "dynamic vars_files entry dropped; review it");
+        finding(state, file, `${path}.vars_files`, "vars_files", "gap", "dynamic vars_files entry dropped; review it");
       }
     }
     if (files.length > 0) out.vars_files = files;
@@ -852,28 +1041,36 @@ function convertPlay(raw: unknown, state: ConvertState, file: string, path: stri
       out.serial = play.serial;
       finding(state, file, `${path}.serial`, "serial", "mapped", "percentage serial is supported natively");
     } else {
-      finding(state, file, `${path}.serial`, "serial", "handoff", "unsupported serial value; use a number or an integer percentage");
+      finding(state, file, `${path}.serial`, "serial", "gap", "unsupported serial value; use a number or an integer percentage");
     }
   }
-  for (const key of ["remote_user", "ignore_errors", "become_method", "any_errors_fatal", "force_handlers", "max_fail_percentage", "vars_prompt", "gather_subset"]) {
+  for (const key of ["become_method", "any_errors_fatal", "force_handlers", "max_fail_percentage", "vars_prompt", "gather_subset"]) {
     if (play[key] !== undefined) {
-      finding(state, file, `${path}.${key}`, key, "handoff", "no play-level RoleCall equivalent; apply it per task or review");
+      finding(state, file, `${path}.${key}`, key, "gap", "no play-level RoleCall equivalent; apply it per task or review");
+    }
+  }
+  if (play.remote_user !== undefined) {
+    if (typeof play.remote_user === "string" && !hasJinja(play.remote_user)) {
+      out.remote_user = play.remote_user;
+      finding(state, file, `${path}.remote_user`, "remote_user", "mapped", "applied to the play connection user");
+    } else {
+      finding(state, file, `${path}.remote_user`, "remote_user", "gap", "dynamic remote_user is unsupported");
     }
   }
   if (typeof play.strategy === "string" && !["linear", "free"].includes(play.strategy)) {
-    finding(state, file, `${path}.strategy`, "strategy", "handoff", `strategy '${play.strategy}' is not supported (linear|free)`);
+    finding(state, file, `${path}.strategy`, "strategy", "gap", `strategy '${play.strategy}' is not supported (linear|free)`);
   }
   if (play.order !== undefined) {
     if (["inventory", "sorted", "reverse_sorted", "reverse_inventory", "shuffle"].includes(String(play.order))) {
       out.order = play.order;
       finding(state, file, `${path}.order`, "order", "mapped", "host ordering is supported natively");
     } else {
-      finding(state, file, `${path}.order`, "order", "handoff", `order '${String(play.order)}' is not supported`);
+      finding(state, file, `${path}.order`, "order", "gap", `order '${String(play.order)}' is not supported`);
     }
   }
   const playWhen = play.when;
   const inherited: Record<string, unknown> = {};
-  for (const key of ["when", "become", "become_user", "connection", "environment", "run_once"]) {
+  for (const key of ["when", "become", "become_user", "connection", "environment", "run_once", "ignore_errors"]) {
     if (play[key] !== undefined) inherited[key] = play[key];
   }
   const includeVarsFiles: string[] = [];
@@ -900,13 +1097,21 @@ function convertPlay(raw: unknown, state: ConvertState, file: string, path: stri
     });
     if (handlers.length > 0) out.handlers = handlers;
   }
+  if (Object.keys(state.roleDefaults ?? {}).length > 0 || Object.keys(state.roleVars ?? {}).length > 0) {
+    const playVars = asRecord(out.vars) ?? {};
+    out.vars = { ...(state.roleDefaults ?? {}), ...playVars, ...(state.roleVars ?? {}) };
+    finding(state, file, `${path}.vars`, "include_role", "review", "inlined role defaults/vars merged into play vars; verify precedence");
+  }
+  if ((state.roleHandlers ?? []).length > 0) {
+    out.handlers = [...(Array.isArray(out.handlers) ? out.handlers : []), ...(state.roleHandlers ?? [])];
+  }
   if (out.tasks === undefined) out.tasks = [];
   if (playWhen !== undefined) {
     finding(state, file, `${path}.when`, "play-when", "mapped", "applied to each task as an inherited guard");
   }
   for (const key of Object.keys(play)) {
     if (!PLAY_KEYS.has(key)) {
-      finding(state, file, `${path}.${key}`, key, "handoff", "unrecognized play key; review or remove it");
+      finding(state, file, `${path}.${key}`, key, "gap", "unrecognized play key; review or remove it");
     }
   }
   state.knownVars = previousVars;
@@ -932,12 +1137,12 @@ function convertYamlDocument(
         }
         const ref = String(rec.import_playbook);
         if (hasJinja(ref)) {
-          finding(state, file, `[${index}].import_playbook`, "import_playbook", "handoff", "dynamic import_playbook paths are not load-time expandable");
+          finding(state, file, `[${index}].import_playbook`, "import_playbook", "gap", "dynamic import_playbook paths are not load-time expandable");
           return;
         }
         const target = isAbsolute(ref) ? ref : join(dirname(file), ref);
         if (seen.has(target) || !existsSync(target)) {
-          finding(state, file, `[${index}].import_playbook`, "import_playbook", "handoff", `could not expand import_playbook '${ref}' (missing or cyclic)`);
+          finding(state, file, `[${index}].import_playbook`, "import_playbook", "gap", `could not expand import_playbook '${ref}' (missing or cyclic)`);
           return;
         }
         seen.add(target);
@@ -947,10 +1152,10 @@ function convertYamlDocument(
             plays.push(...imported.converted);
             finding(state, file, `[${index}].import_playbook`, "import_playbook", "mapped", `inlined plays from ${ref}`);
           } else {
-            finding(state, file, `[${index}].import_playbook`, "import_playbook", "handoff", `imported file '${ref}' is not a playbook`);
+            finding(state, file, `[${index}].import_playbook`, "import_playbook", "gap", `imported file '${ref}' is not a playbook`);
           }
         } catch (error) {
-          finding(state, file, `[${index}].import_playbook`, "import_playbook", "handoff", `could not parse imported file '${ref}': ${error instanceof Error ? error.message : String(error)}`);
+          finding(state, file, `[${index}].import_playbook`, "import_playbook", "gap", `could not parse imported file '${ref}': ${error instanceof Error ? error.message : String(error)}`);
         }
       });
       return { converted: plays, kind: "playbook" };
@@ -1095,7 +1300,7 @@ function convertInventoryValue(value: unknown, state: ConvertState, file: string
       if (key === "ansible_connection" && typeof child === "string") {
         const value = CONNECTION_VALUE_MAP[child];
         if (value === undefined) {
-          finding(state, file, `${path}.${key}`, key, "handoff", `connection '${child}' has no RoleCall transport`);
+          finding(state, file, `${path}.${key}`, key, "gap", `connection '${child}' has no RoleCall transport`);
           out[key] = child;
           continue;
         }
@@ -1126,7 +1331,7 @@ function convertInventoryIni(text: string, state: ConvertState, file: string): s
       return undefined;
     }
     if (key === "ansible_connection" && !Object.prototype.hasOwnProperty.call(CONNECTION_VALUE_MAP, value.trim())) {
-      finding(state, file, key, key, "handoff", `connection '${value.trim()}' has no RoleCall transport`);
+      finding(state, file, key, key, "gap", `connection '${value.trim()}' has no RoleCall transport`);
       return undefined;
     }
     finding(state, file, key, key, "mapped", `rewritten to ${mapped}`);
@@ -1159,9 +1364,9 @@ function convertInventoryIni(text: string, state: ConvertState, file: string): s
 }
 
 /**
- * @summary Analyze and mechanically convert an Ansible file or directory into RoleCall YAML, collecting review/handoff findings for anything not safely convertible.
+ * @summary Analyze and mechanically convert an Ansible file or directory into RoleCall YAML, collecting review/gap findings for anything not safely convertible.
  * @param source Source file or directory.
- * @param options Conversion options (`out`, `handoff`, `write`, `strict`).
+ * @param options Conversion options (`out`, `gaps`, `write`, `strict`).
  * @returns Structured conversion result, including per-file findings and written paths.
  */
 export function convertAnsible(source: string, options: ConvertAnsibleOptions = {}): ConvertResult {
@@ -1172,13 +1377,13 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
     options.out ??
     project?.root ??
     (isDir ? join(sourceAbs, "rolecall-converted") : `${sourceAbs}.rolecall`);
-  const handoffDir = options.handoff ?? join(outDir, "handoff");
+  const gapsDir = options.gaps ?? join(outDir, "conversion_gaps");
   const inside = (child: string, parent: string): boolean => {
     const rel = relative(parent, child);
     return rel !== "" && !rel.startsWith("..") && !isAbsolute(rel);
   };
   const files = (isDir ? walkFiles(sourceAbs) : [sourceAbs]).filter(
-    (abs) => !inside(abs, outDir) && !inside(abs, handoffDir),
+    (abs) => !inside(abs, outDir) && !inside(abs, gapsDir),
   );
   const state: ConvertState = { findings: [], blockCounter: 0, knownVars: new Set<string>() };
   // Collect var names across every Ansible var file so bare refs in one file can
@@ -1244,25 +1449,25 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
         fileResults.push({ source: abs, output: etaOut, written: options.write === true, findings: state.findings.slice(findingStart) });
       } else {
         if (analysis.disposition === "mapped" && generation.reason !== undefined) {
-          finding(state, abs, "template", "template", "handoff", `Eta codegen failed: ${generation.reason}`);
+          finding(state, abs, "template", "template", "gap", `Eta codegen failed: ${generation.reason}`);
         }
         const draft = generateEtaDraft(text, abs);
         draftIndex += 1;
         const draftId = `${String(draftIndex).padStart(4, "0")}-${basename(rel)
           .replace(/\.[^.]+$/, "")
           .replace(/[^a-zA-Z0-9]+/g, "-")}`;
-        const draftPath = join(handoffDir, "templates", `${draftId}.eta.draft`);
-        if (options.write || options.handoff !== undefined) {
+        const draftPath = join(gapsDir, "templates", `${draftId}.eta.draft`);
+        if (options.write || options.gaps !== undefined) {
           mkdirSync(dirname(draftPath), { recursive: true });
           writeFileSync(draftPath, draft, "utf8");
         }
         finding(
           state,
           abs,
-          `handoff/templates/${draftId}.eta.draft`,
+          `templates/${draftId}.eta.draft`,
           "template",
           "review",
-          "partial Eta draft emitted with HANDOFF markers",
+          "partial Eta draft emitted with GAP markers",
         );
         if (options.write) {
           mkdirSync(dirname(relOut), { recursive: true });
@@ -1311,12 +1516,21 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
       continue;
     }
     const text = readFileSync(abs, "utf8");
+    if (!text.trim() || text.trim().split(/\r?\n/).every((line) => !line.trim() || line.trim().startsWith("#"))) {
+      if (options.write) {
+        mkdirSync(dirname(relOut), { recursive: true });
+        copyFileSync(abs, relOut);
+        written.push(relOut);
+      }
+      fileResults.push({ source: abs, output: relOut, written: options.write === true, findings: [] });
+      continue;
+    }
     let doc: unknown;
     try {
       doc = yamlLoad(text);
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
-      finding(state, abs, "", "yaml", "handoff", `could not parse YAML: ${detail}`);
+      finding(state, abs, "", "yaml", "gap", `could not parse YAML: ${detail}`);
       fileResults.push({ source: abs, output: relOut, written: false, findings: state.findings.filter((f) => f.file === abs), error: detail });
       continue;
     }
@@ -1386,13 +1600,13 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
   }
 
   const review = state.findings.filter((f) => f.disposition === "review").length;
-  const handoff = state.findings.filter((f) => f.disposition === "handoff").length;
+  const gaps = state.findings.filter((f) => f.disposition === "gap").length;
   const mapped = state.findings.filter((f) => f.disposition === "mapped").length;
   const result: ConvertResult = {
     command: "convert ansible",
     source: sourceAbs,
     out: outDir,
-    handoff: handoffDir,
+    gaps: gapsDir,
     applied: options.write === true,
     files: fileResults,
     written,
@@ -1400,39 +1614,39 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
       files: fileResults.length,
       mapped,
       review,
-      handoff,
+      gaps,
       findings: state.findings.length,
     },
     findings: state.findings,
     ...(project !== undefined ? { project } : {}),
   };
 
-  if ((options.write === true || options.handoff !== undefined) && result.findings.length > 0) {
-    writeHandoff(result, handoffDir);
+  if ((options.write === true || options.gaps !== undefined) && result.findings.length > 0) {
+    writeGapsBundle(result, gapsDir);
   }
   return result;
 }
 
-/** Write the deterministic review/handoff bundle (`HANDOFF.md` + `manifest.json`). */
-export function writeHandoff(result: ConvertResult, handoffDir: string): void {
-  mkdirSync(handoffDir, { recursive: true });
+/** Write the deterministic conversion-gaps bundle (`CONVERSION_GAPS.md` + `manifest.json`). */
+export function writeGapsBundle(result: ConvertResult, gapsDir: string): void {
+  mkdirSync(gapsDir, { recursive: true });
   const lines: string[] = [
-    "# RoleCall conversion handoff",
+    "# RoleCall conversion gaps",
     "",
     `Source: \`${result.source}\``,
     `Converted: \`${result.out}\``,
     "",
-    `Mapped: ${result.totals.mapped} · Review: ${result.totals.review} · Handoff: ${result.totals.handoff}`,
+    `Mapped: ${result.totals.mapped} · Review: ${result.totals.review} · Gaps: ${result.totals.gaps}`,
     "",
-    "Review and handoff items are not mechanically equivalent. Fix each one before",
+    "Review and gap items are not mechanically equivalent. Fix each one before",
     "treating the converted tree as a faithful replacement.",
     "",
   ];
   for (const item of result.findings.filter((f) => f.disposition !== "mapped")) {
     lines.push(`## ${item.disposition}: ${item.construct}`, "", `- File: \`${item.file}\``, `- Path: \`${item.path}\``, "", item.message, "");
   }
-  writeFileSync(join(handoffDir, "HANDOFF.md"), lines.join("\n"), "utf8");
-  const itemsDir = join(handoffDir, "items");
+  writeFileSync(join(gapsDir, "CONVERSION_GAPS.md"), lines.join("\n"), "utf8");
+  const itemsDir = join(gapsDir, "items");
   mkdirSync(itemsDir, { recursive: true });
   let index = 0;
   for (const item of result.findings.filter((f) => f.disposition !== "mapped")) {
@@ -1454,7 +1668,7 @@ export function writeHandoff(result: ConvertResult, handoffDir: string): void {
     writeFileSync(join(itemsDir, `${String(index).padStart(4, "0")}-${slug}.md`), body, "utf8");
   }
   writeFileSync(
-    join(handoffDir, "manifest.json"),
+    join(gapsDir, "manifest.json"),
     `${JSON.stringify(
       {
         version: 1,

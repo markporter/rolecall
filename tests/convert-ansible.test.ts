@@ -57,7 +57,7 @@ describe("$jinja / $exists / $length primitives", () => {
 });
 
 describe("convert ansible MVP", () => {
-  test("mechanically converts modules/when/loop/template/block and writes handoff", () => {
+  test("mechanically converts modules/when/loop/template/block and writes conversion gaps", () => {
     const dir = tmp("src");
     const file = join(dir, "site.yml");
     writeFileSync(
@@ -99,7 +99,7 @@ describe("convert ansible MVP", () => {
     const out = join(dir, "out");
     const result = convertAnsible(file, { write: true, out });
     expect(result.totals.mapped).toBeGreaterThan(0);
-    expect(result.totals.handoff).toBeGreaterThan(0);
+    expect(result.totals.gaps).toBeGreaterThan(0);
 
     const converted = yamlLoad(readFileSync(join(out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
     const tasks = converted[0]!.tasks as Array<Record<string, unknown>>;
@@ -114,7 +114,7 @@ describe("convert ansible MVP", () => {
     expect(tasks[3]!.tx).toBe("rc-block-1");
     expect((tasks[3]!.debug as Record<string, unknown>).msg).toEqual({ $jinja: "{{ vars.http_port }}" });
 
-    expect(readFileSync(join(out, "handoff", "HANDOFF.md"), "utf8")).toContain("ignore_errors");
+    expect(readFileSync(join(out, "conversion_gaps", "CONVERSION_GAPS.md"), "utf8")).toContain("rescue");
     // Single-file conversion does not copy sibling assets; stage the .j2 to
     // exercise the template-reference validation path.
     writeFileSync(join(out, "nginx.conf.j2"), "server {}");
@@ -154,14 +154,14 @@ describe("convert ansible MVP", () => {
     expect((converted[0]!.tasks as Array<Record<string, unknown>>).length).toBe(1);
   });
 
-  test("hostvars and groups bracket access gain .vars/.hosts", () => {
+  test("hostvars and groups bracket access map to inventory views", () => {
     const dir = tmp("hostvars");
     const file = join(dir, "site.yml");
     writeFileSync(file, `- hosts: web\n  tasks:\n    - name: t\n      debug:\n        msg: ok\n      when: hostvars[item].foo == "bar" and groups['web'] | length > 0\n`, "utf8");
     const result = convertAnsible(file, { write: true, out: join(dir, "out") });
     const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
     const task = (converted[0]!.tasks as Array<Record<string, unknown>>)[0]!;
-    expect(task.when).toEqual({ $jinja: "{{ inv.hosts[loop.item].vars.foo == \"bar\" and inv.groups['web'].hosts | length > 0 }}" });
+    expect(task.when).toEqual({ $jinja: "{{ inv.host_vars[loop.item].foo == \"bar\" and inv.group_hosts['web'] | length > 0 }}" });
   });
 
   test("import_playbook inlines imported plays", () => {
@@ -188,15 +188,16 @@ describe("convert ansible MVP", () => {
     expect(result.findings.some((f) => f.construct === "role-dependencies")).toBe(false);
   });
 
-  test("changed_when on shell maps to run_mode", () => {
+  test("changed_when and failed_when map to native result predicates", () => {
     const dir = tmp("changed-when");
     const file = join(dir, "site.yml");
-    writeFileSync(file, `- hosts: web\n  tasks:\n    - name: check\n      shell: /bin/true\n      changed_when: false\n`, "utf8");
+    writeFileSync(file, `- hosts: web\n  tasks:\n    - name: check\n      shell: /bin/true\n      changed_when: false\n      failed_when: result.rc != 0\n`, "utf8");
     const result = convertAnsible(file, { write: true, out: join(dir, "out") });
     const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
     const task = (converted[0]!.tasks as Array<Record<string, unknown>>)[0]!;
-    expect(task.shell).toEqual({ command: "/bin/true", run_mode: "readonly" });
-    expect(result.findings.some((f) => f.construct === "changed_when" && f.disposition === "handoff")).toBe(false);
+    expect(task.changed_when).toBe(false);
+    expect(task.failed_when).toEqual({ $jinja: "{{ reg.result.rc != 0 }}" });
+    expect(result.findings.some((f) => f.construct === "changed_when" && f.disposition === "gap")).toBe(false);
   });
 
   test("percentage serial is preserved", () => {
@@ -206,7 +207,7 @@ describe("convert ansible MVP", () => {
     const result = convertAnsible(file, { write: true, out: join(dir, "out") });
     const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
     expect(converted[0]!.serial).toBe("30%");
-    expect(result.findings.some((f) => f.construct === "serial" && f.disposition === "handoff")).toBe(false);
+    expect(result.findings.some((f) => f.construct === "serial" && f.disposition === "gap")).toBe(false);
   });
 
   test("with_together and with_nested map to zip/product", () => {
@@ -220,15 +221,15 @@ describe("convert ansible MVP", () => {
     expect(tasks[1]!.loop).toEqual({ $each: { $jinja: "{{ vars.a | product(vars.b) | to_json }}" } });
   });
 
-  test("handoff bundle can be written without --write", () => {
-    const dir = tmp("handoff-only");
+  test("conversion-gaps bundle can be written without --write", () => {
+    const dir = tmp("gaps-only");
     const file = join(dir, "site.yml");
     writeFileSync(file, `- hosts: web\n  tasks:\n    - name: t\n      shell: /bin/false\n      ignore_errors: true\n`, "utf8");
-    const handoff = join(dir, "handoff");
-    const result = convertAnsible(file, { handoff });
+    const gaps = join(dir, "conversion_gaps");
+    const result = convertAnsible(file, { gaps });
     expect(result.applied).toBe(false);
-    expect(existsSync(join(handoff, "HANDOFF.md"))).toBe(true);
-    expect(existsSync(join(handoff, "manifest.json"))).toBe(true);
+    expect(existsSync(join(gaps, "CONVERSION_GAPS.md"))).toBe(true);
+    expect(existsSync(join(gaps, "manifest.json"))).toBe(true);
   });
 
   test("with_first_found maps to copy/template candidates", () => {
@@ -255,7 +256,7 @@ describe("convert ansible MVP", () => {
     const result = convertAnsible(file, { write: true, out: join(dir, "out") });
     const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
     expect(converted[0]!.order).toBe("reverse_inventory");
-    expect(result.findings.some((f) => f.construct === "order" && f.disposition === "handoff")).toBe(false);
+    expect(result.findings.some((f) => f.construct === "order" && f.disposition === "gap")).toBe(false);
   });
 
   test("--project scaffolds a blank project and populates it", () => {
@@ -315,12 +316,85 @@ describe("convert ansible MVP", () => {
     expect(tasks[2]!.name).toBe("include_tasks");
   });
 
-  test("strict mode flags remaining handoff items", () => {
+  test("maps common Ansible magic vars without flagging project ansible_* vars", () => {
+    const dir = tmp("magic-vars");
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- hosts: web\n  vars:\n    ansible_splunk: true\n  tasks:\n    - name: t\n      debug:\n        msg: ok\n      when: ansible_host is defined and ansible_limit is defined and ansible_play_hosts | length > 0 and ansible_splunk\n`, "utf8");
+    const result = convertAnsible(file, { write: true, out: join(dir, "out") });
+    const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
+    const task = (converted[0]!.tasks as Array<Record<string, unknown>>)[0]!;
+    const when = task.when as Record<string, unknown>;
+    expect(String(when.$jinja)).toContain("inv.host_vars[play.host].rolecall_host");
+    expect(String(when.$jinja)).toContain("run.limit");
+    expect(String(when.$jinja)).toContain("play.hosts");
+    expect(String(when.$jinja)).toContain("vars.ansible_splunk");
+    expect(result.findings.some((f) => f.message.includes("ansible_host"))).toBe(false);
+  });
+
+  test("preserves a static play remote_user", () => {
+    const dir = tmp("remote-user");
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- hosts: web\n  remote_user: root\n  tasks:\n    - name: t\n      debug:\n        msg: ok\n`, "utf8");
+    const result = convertAnsible(file, { write: true, out: join(dir, "out") });
+    const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
+    expect(converted[0]!.remote_user).toBe("root");
+    expect(result.findings.some((f) => f.construct === "remote_user" && f.disposition === "gap")).toBe(false);
+  });
+
+  test("inlines task-level include_role with defaults, vars, and handlers", () => {
+    const dir = tmp("include-role");
+    mkdirSync(join(dir, "roles", "base", "tasks"), { recursive: true });
+    mkdirSync(join(dir, "roles", "base", "defaults"), { recursive: true });
+    mkdirSync(join(dir, "roles", "base", "vars"), { recursive: true });
+    mkdirSync(join(dir, "roles", "base", "handlers"), { recursive: true });
+    writeFileSync(join(dir, "roles", "base", "tasks", "main.yml"), `- name: role task\n  debug:\n    msg: "{{ role_default }} {{ role_var }}"\n`);
+    writeFileSync(join(dir, "roles", "base", "defaults", "main.yml"), `role_default: default-value\n`);
+    writeFileSync(join(dir, "roles", "base", "vars", "main.yml"), `role_var: var-value\n`);
+    writeFileSync(join(dir, "roles", "base", "handlers", "main.yml"), `- name: role handler\n  debug:\n    msg: handled\n  listen: role-handler\n`);
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- hosts: web\n  vars:\n    enabled: true\n  tasks:\n    - name: include\n      include_role:\n        name: base\n      when: enabled\n`, "utf8");
+    const result = convertAnsible(file, { write: true, out: join(dir, "out") });
+    const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
+    const play = converted[0]!;
+    const tasks = play.tasks as Array<Record<string, unknown>>;
+    expect(tasks[0]!.name).toBe("role task");
+    expect((tasks[0]!.when as Record<string, unknown>).$jinja).toContain("vars.enabled");
+    expect((play.vars as Record<string, unknown>).role_default).toBe("default-value");
+    expect((play.vars as Record<string, unknown>).role_var).toBe("var-value");
+    expect((play.handlers as Array<Record<string, unknown>>)[0]!.name).toBe("role handler");
+    expect(result.findings.some((f) => f.construct === "include_role" && f.disposition === "mapped")).toBe(true);
+  });
+
+  test("maps retries/until/delay to native fields", () => {
+    const dir = tmp("retries");
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- hosts: web\n  tasks:\n    - name: retry\n      shell: /bin/false\n      retries: 2\n      delay: 0\n      until: not result.failed\n`, "utf8");
+    const result = convertAnsible(file, { write: true, out: join(dir, "out") });
+    const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
+    const task = (converted[0]!.tasks as Array<Record<string, unknown>>)[0]!;
+    expect(task.retries).toBe(2);
+    expect(task.delay).toBe(0);
+    expect(task.until).toEqual({ $jinja: "{{ not reg.result.failed }}" });
+    expect(result.findings.some((f) => f.construct === "retries" && f.disposition === "gap")).toBe(false);
+  });
+
+  test("maps ignore_errors to the native task field", () => {
+    const dir = tmp("ignore-errors");
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- hosts: web\n  tasks:\n    - name: best effort\n      shell: /bin/false\n      ignore_errors: true\n`, "utf8");
+    const result = convertAnsible(file, { write: true, out: join(dir, "out") });
+    const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
+    const task = (converted[0]!.tasks as Array<Record<string, unknown>>)[0]!;
+    expect(task.ignore_errors).toBe(true);
+    expect(result.findings.some((f) => f.construct === "ignore_errors" && f.disposition === "gap")).toBe(false);
+  });
+
+  test("strict mode flags remaining gap items", () => {
     const dir = tmp("strict");
     const file = join(dir, "site.yml");
-    writeFileSync(file, `- hosts: web\n  tasks:\n    - name: bad\n      shell: /bin/false\n      ignore_errors: true\n`, "utf8");
+    writeFileSync(file, `- hosts: web\n  tasks:\n    - name: bad\n      shell: /bin/false\n      async: 10\n`, "utf8");
     const result = convertAnsible(file, { strict: true });
-    expect(result.totals.handoff).toBeGreaterThan(0);
+    expect(result.totals.gaps).toBeGreaterThan(0);
   });
 });
 
@@ -330,7 +404,7 @@ describe("compatibility matrix", () => {
     expect(new Set(ids).size).toBe(ids.length);
     for (const rule of Object.values(TASK_RULES)) {
       expect(rule.message.length).toBeGreaterThan(10);
-      expect(rule.disposition).toBe("handoff");
+      expect(rule.disposition).toBe("gap");
     }
     expect(MODULE_REMAP.template).toBe("copy");
     expect(MODULE_REMAP.apt).toBe("package");

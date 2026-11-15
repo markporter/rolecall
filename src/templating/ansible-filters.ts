@@ -447,12 +447,12 @@ export const ANSIBLE_GLOBALS: Record<string, unknown> = {
     return fmt === undefined ? d.toISOString() : d.toISOString();
   },
   lookup: () => {
-    throw new Error("jinja lookup() is not supported; use a RoleCall module or a handoff item");
+    throw new Error("jinja lookup() is not supported; use a RoleCall module or a conversion gap item");
   },
   query: () => {
-    throw new Error("jinja query() is not supported; use a RoleCall module or a handoff item");
+    throw new Error("jinja query() is not supported; use a RoleCall module or a conversion gap item");
   },
   q: () => {
-    throw new Error("jinja q() is not supported; use a RoleCall module or a handoff item");
+    throw new Error("jinja q() is not supported; use a RoleCall module or a conversion gap item");
   },
 };

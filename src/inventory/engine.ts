@@ -93,6 +93,10 @@ export interface InventoryGroupEntry {
 export interface InventorySnapshot {
   hosts: Record<string, InventoryHostEntry>;
   groups: Record<string, InventoryGroupEntry>;
+  /** Ansible-style `groups[g]` view: group name -> sorted host list. */
+  group_hosts: Record<string, string[]>;
+  /** Ansible-style `hostvars[h]` view: host name -> resolved vars. */
+  host_vars: Record<string, Record<string, unknown>>;
   defaults: Record<string, unknown>;
 }
 
@@ -363,7 +367,7 @@ export async function resolveInventorySnapshot(
   inventory: NormalizedInventory | null,
   options: ResolveOptions = {},
 ): Promise<InventorySnapshot> {
-  if (!inventory) return { hosts: {}, groups: {}, defaults: {} };
+  if (!inventory) return { hosts: {}, groups: {}, group_hosts: {}, host_vars: {}, defaults: {} };
   const allGroupName = options.allGroupName ?? "all";
   const g = await buildGraph(inventory, options);
 
@@ -383,7 +387,13 @@ export async function resolveInventorySnapshot(
     };
   }
 
-  return { hosts, groups, defaults: sortedRecord(g.defaults) };
+  const group_hosts = Object.fromEntries(
+    Object.entries(groups).map(([name, entry]) => [name, entry.hosts]),
+  );
+  const host_vars = Object.fromEntries(
+    Object.entries(hosts).map(([name, entry]) => [name, entry.vars]),
+  );
+  return { hosts, groups, group_hosts, host_vars, defaults: sortedRecord(g.defaults) };
 }
 
 // ---------------------------------------------------------------------------

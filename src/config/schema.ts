@@ -73,6 +73,15 @@ export const TaskSchema = z
     delegate_to: z.string().optional(),
     // run_once: execute the task a single time (on the first matched host).
     run_once: z.boolean().optional(),
+    // ignore_errors: record the failure but continue with downstream tasks.
+    ignore_errors: z.boolean().optional(),
+    // changed_when / failed_when: post-result predicates evaluated against reg.result.
+    changed_when: z.unknown().optional(),
+    failed_when: z.unknown().optional(),
+    // retries/until/delay: repeat the task until the predicate passes or attempts run out.
+    retries: z.number().int().nonnegative().optional(),
+    delay: z.number().nonnegative().optional(),
+    until: z.unknown().optional(),
      // listen: marks this task as a handler triggered by `notify` of the same name.
      listen: z.string().optional(),
       // become: escalate privileges (sudo) on the target for this task.
@@ -126,7 +135,7 @@ export const TaskSchema = z
 /** Structural (non-module) task keys; any other single top-level key names a module. */
 const TASK_STRUCTURAL_KEYS = new Set<string>([
   "name", "module", "args", "when", "loop", "notify", "include_tasks",
-  "hosts", "register", "delegate_to", "run_once", "listen", "become", "become_user",
+  "hosts", "register", "delegate_to", "run_once", "ignore_errors", "changed_when", "failed_when", "retries", "delay", "until", "listen", "become", "become_user",
   "environment", "no_log", "roleDir", "tx", "checkpoint", "tags", "connection",
 ]);
 
@@ -215,6 +224,8 @@ export const PlaybookObject = z
     strategy: z.enum(["linear", "free"]).optional(),
     // order: host ordering within each serial batch (inventory/sorted/reverse_sorted/reverse_inventory/shuffle).
     order: z.enum(["inventory", "sorted", "reverse_sorted", "reverse_inventory", "shuffle"]).optional(),
+    // remote_user: play-level SSH user, applied to the connection for all matched hosts.
+    remote_user: z.string().optional(),
     // --- Transaction + checkpoint grouping (Todo 26) ---
     // tx: when set, this play's deltas join the named transaction; a later member
     //     failure reverse-walks the tx's ledger rows and undoes each reversible one.
@@ -365,6 +376,18 @@ export interface NormalizedTask {
   register?: string;
   delegate_to?: string;
   run_once?: boolean;
+  /** Continue with downstream tasks after this task fails. */
+  ignore_errors?: boolean;
+  /** Post-result predicate overriding the changed flag. */
+  changed_when?: unknown;
+  /** Post-result predicate overriding the failed flag. */
+  failed_when?: unknown;
+  /** Number of additional attempts when `until` is false. */
+  retries?: number;
+  /** Seconds to wait between attempts. */
+  delay?: number;
+  /** Predicate evaluated against reg.result after each attempt. */
+  until?: unknown;
    listen?: string;
     /** When true, escalate privileges (sudo) on the target for this task. */
     become?: boolean;
@@ -410,6 +433,7 @@ export interface NormalizedPlaybook {
   serial?: number | string;
   strategy?: "linear" | "free";
   order?: "inventory" | "sorted" | "reverse_sorted" | "reverse_inventory" | "shuffle";
+  remote_user?: string;
   /** Transaction id grouping dependent plays for rollback (Todo 26). */
   tx?: string;
   /** Checkpoint id this play applies under (Todo 26). */
@@ -463,6 +487,12 @@ export function normalizeTask(raw: RawTask): NormalizedTask {
     ...(raw.register !== undefined ? { register: raw.register } : {}),
     ...(raw.delegate_to !== undefined ? { delegate_to: raw.delegate_to } : {}),
     ...(raw.run_once !== undefined ? { run_once: raw.run_once } : {}),
+    ...(raw.ignore_errors !== undefined ? { ignore_errors: raw.ignore_errors } : {}),
+    ...(raw.changed_when !== undefined ? { changed_when: raw.changed_when } : {}),
+    ...(raw.failed_when !== undefined ? { failed_when: raw.failed_when } : {}),
+    ...(raw.retries !== undefined ? { retries: raw.retries } : {}),
+    ...(raw.delay !== undefined ? { delay: raw.delay } : {}),
+    ...(raw.until !== undefined ? { until: raw.until } : {}),
     ...(raw.listen !== undefined ? { listen: raw.listen } : {}),
     ...(raw.become !== undefined ? { become: raw.become } : {}),
     ...(raw.become_user !== undefined ? { become_user: raw.become_user } : {}),
@@ -524,6 +554,7 @@ function normalizeOnePlay(raw: RawPlaybook): NormalizedPlaybook {
     ...(raw.serial !== undefined ? { serial: raw.serial } : {}),
     ...(raw.strategy !== undefined ? { strategy: raw.strategy } : {}),
     ...(raw.order !== undefined ? { order: raw.order } : {}),
+    ...(raw.remote_user !== undefined ? { remote_user: raw.remote_user } : {}),
     ...(raw.tx !== undefined ? { tx: raw.tx } : {}),
     ...(raw.checkpoint !== undefined ? { checkpoint: raw.checkpoint } : {}),
   };
@@ -559,6 +590,12 @@ export function serializeTask(task: NormalizedTask): Record<string, unknown> {
   out.notify = task.notify;
   if (task.hosts !== undefined) out.hosts = task.hosts;
   if (task.include_tasks !== undefined) out.include_tasks = task.include_tasks;
+  if (task.ignore_errors !== undefined) out.ignore_errors = task.ignore_errors;
+  if (task.changed_when !== undefined) out.changed_when = task.changed_when;
+  if (task.failed_when !== undefined) out.failed_when = task.failed_when;
+  if (task.retries !== undefined) out.retries = task.retries;
+  if (task.delay !== undefined) out.delay = task.delay;
+  if (task.until !== undefined) out.until = task.until;
   if (task.become !== undefined) out.become = task.become;
   if (task.tags !== undefined) out.tags = task.tags;
   if (task.connection !== undefined) out.connection = task.connection;
@@ -591,6 +628,7 @@ export function serializePlaybook(
   if (playbook.tags !== undefined) out.tags = playbook.tags;
   if (playbook.trigger !== undefined) out.trigger = playbook.trigger;
   if (playbook.order !== undefined) out.order = playbook.order;
+  if (playbook.remote_user !== undefined) out.remote_user = playbook.remote_user;
   return out;
 }
 

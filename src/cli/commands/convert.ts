@@ -1,6 +1,6 @@
-// `rolecall convert ansible` — ADR 0024 analyzer/rewriter/handoff command.
+// `rolecall convert ansible` — ADR 0024 analyzer/rewriter/gaps command.
 // Bare `rolecall convert` in a TTY opens a small wizard (source -> project ->
-// apply/handoff/strict) modeled on the install/project-create flow.
+// apply/gaps/strict) modeled on the install/project-create flow.
 
 import { existsSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
@@ -28,16 +28,16 @@ function validationResult(dir: string): ConvertResult {
     mode: "validate",
     source: dir,
     out: dir,
-    handoff: "",
+    gaps: "",
     applied: false,
     files: [],
     written: [],
-    totals: { files: validated.length, mapped: 0, review: 0, handoff: failed.length, findings: failed.length },
+    totals: { files: validated.length, mapped: 0, review: 0, gaps: failed.length, findings: failed.length },
     findings: failed.map((entry) => ({
       file: entry.file,
       path: "",
       construct: "validate",
-      disposition: "handoff" as const,
+      disposition: "gap" as const,
       message: entry.error ?? "validation failed",
     })),
     validated,
@@ -96,7 +96,7 @@ export async function runConvertCommand(
   let project = flags.project;
   let write = flags.dryRun === true ? false : flags.write === true || flags.yes === true;
   let strict = flags.strict === true;
-  let handoff = flags.handoff;
+  let gaps = flags.gaps;
   let templates: "keep" | "eta" = flags.templates === "eta" ? "eta" : "keep";
   let templatesReview: "accept" | "reject" = flags.templatesReview === "accept" ? "accept" : "reject";
 
@@ -108,12 +108,12 @@ export async function runConvertCommand(
     if (flags.write !== true && flags.dryRun !== true) {
       write = await confirm(ask, `Write converted files into ${project}?`, true);
     }
-    if (handoff === undefined) {
-      const wantHandoff = await confirm(ask, "Write the review/handoff bundle?", true);
-      if (wantHandoff) handoff = join(project, "handoff");
+    if (gaps === undefined) {
+      const wantGaps = await confirm(ask, "Write the conversion gaps bundle?", true);
+      if (wantGaps) gaps = join(project, "conversion_gaps");
     }
     if (flags.strict !== true) {
-      strict = await confirm(ask, "Fail on review/handoff items (strict)?", false);
+      strict = await confirm(ask, "Fail on review/gap items (strict)?", false);
     }
     if (flags.templates === undefined) {
       const analyzeTemplates = await confirm(
@@ -137,8 +137,8 @@ export async function runConvertCommand(
     }
   }
 
-  if (flags.yes === true && handoff === undefined && project !== undefined) {
-    handoff = join(project, "handoff");
+  if (flags.yes === true && gaps === undefined && project !== undefined) {
+    gaps = join(project, "conversion_gaps");
   }
 
   if (flags.report === "json") flags.output = "json";
@@ -147,7 +147,7 @@ export async function runConvertCommand(
   const result = convertAnsible(source, {
     ...(out !== undefined ? { out } : {}),
     ...(write && project !== undefined ? { project } : {}),
-    ...(handoff !== undefined ? { handoff } : {}),
+    ...(gaps !== undefined ? { gaps } : {}),
     write,
     strict,
     templates,
@@ -155,7 +155,7 @@ export async function runConvertCommand(
     ...(flags.report !== undefined ? { report: flags.report } : {}),
   });
 
-  const nonMechanical = result.totals.review + result.totals.handoff;
+  const nonMechanical = result.totals.review + result.totals.gaps;
   if (strict && nonMechanical > 0) result.strictFailed = true;
   return result;
 }

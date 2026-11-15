@@ -317,6 +317,8 @@ export interface TaskOutcome {
   module: string;
   changed: boolean;
   failed: boolean;
+  /** True when the task failed but `ignore_errors` allowed the play to continue. */
+  ignored?: boolean;
   skipped: boolean;
   iterations: IterationOutcome[];
   notified: string[];
@@ -339,6 +341,7 @@ export interface PlaybookResult {
   registered: Record<string, Record<string, unknown>>;
   changed: number;
   failed: number;
+  ignored: number;
   skipped: number;
   ok: number;
 }
