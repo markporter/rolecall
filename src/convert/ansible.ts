@@ -37,6 +37,7 @@ const STRUCTURAL_KEYS = new Set([
   "become_method",
   "connection",
   "ignore_errors",
+  "accept_failure",
   "changed_when",
   "failed_when",
   "block",
@@ -518,7 +519,7 @@ function convertTask(
       finding(state, file, `${path}.always`, "always", "gap", "`always` has no tx/checkpoint equivalent; add an explicit final task");
     }
     const blockInherited: Record<string, unknown> = { ...inherited };
-    for (const key of ["when", "become", "become_user", "tags", "environment", "connection", "run_once"]) {
+    for (const key of ["when", "become", "become_user", "tags", "environment", "connection", "run_once", "ignore_errors", "accept_failure"]) {
       if (task[key] !== undefined) blockInherited[key] = task[key];
     }
     const out: Record<string, unknown>[] = [];
@@ -600,7 +601,7 @@ function convertTask(
         return [];
       }
       const inherited: Record<string, unknown> = {};
-      for (const key of ["when", "tags", "become", "become_user", "environment", "run_once", "ignore_errors", "connection"]) {
+      for (const key of ["when", "tags", "become", "become_user", "environment", "run_once", "ignore_errors", "accept_failure", "connection"]) {
         if (task[key] !== undefined) inherited[key] = task[key];
       }
       const converted: Record<string, unknown>[] = [];
@@ -736,12 +737,11 @@ function convertTask(
 
   const changedWhen = task.changed_when;
   const failedWhen = task.failed_when;
-  const ignoreErrors = task.ignore_errors ?? inherited.ignore_errors;
+  const acceptFailure = task.accept_failure ?? task.ignore_errors ?? inherited.accept_failure ?? inherited.ignore_errors;
   const shellish = ["shell", "command", "raw"].includes(module);
   let handledChanged = false;
   let handledFailed = false;
-  let handledIgnore = false;
-  if (shellish && (ignoreErrors === true || failedWhen === false)) {
+  if (shellish && failedWhen === false) {
     const a = asRecord(args) ?? {};
     const command = a["command"] ?? a["cmd"];
     if (command !== undefined) {
@@ -756,7 +756,6 @@ function convertTask(
       };
       handledChanged = changedWhen === false || changedWhen === true;
       handledFailed = failedWhen === false;
-      handledIgnore = ignoreErrors === true;
       finding(state, file, path, "result-semantics", "mapped", "mapped to shell_register (capture_errors)");
     } else {
       finding(state, file, path, "result-semantics", "gap", "cannot map result overrides without a shell command");
@@ -776,10 +775,6 @@ function convertTask(
   if (failedWhen !== undefined && failedWhen !== false && !handledFailed) {
     finding(state, file, `${path}.failed_when`, "failed_when", "gap", "use shell_register capture_errors or an explicit assert task");
   }
-  if (ignoreErrors !== undefined && !handledIgnore) {
-    finding(state, file, `${path}.ignore_errors`, "ignore_errors", "gap", "use shell_register capture_errors for probes; otherwise keep RunTrace failure locality");
-  }
-
   const out: Record<string, unknown> = {};
   const rawName = typeof task.name === "string" ? task.name : undefined;
   out.name = staticName(rawName, `${module} task`);
@@ -787,6 +782,27 @@ function convertTask(
     finding(state, file, `${path}.name`, "name", "review", "dynamic task name sanitized for schema validity");
   }
   out[module] = args;
+
+  if (acceptFailure !== undefined) {
+    const value = normalizeBoolean(acceptFailure);
+    if (value === undefined) {
+      finding(state, file, `${path}.accept_failure`, "accept_failure", "gap", "accept_failure must be a boolean");
+    } else {
+      out.accept_failure = value;
+      if (task.ignore_errors === true && shellish) {
+        finding(
+          state,
+          file,
+          `${path}.ignore_errors`,
+          "ignore_errors",
+          "review",
+          "ignore_errors on a shell task mapped to explicit accept_failure; prefer shell_register capture_errors for probes or run_mode/guards",
+        );
+      } else {
+        finding(state, file, `${path}.accept_failure`, "accept_failure", "mapped", "failure captured without failing the play");
+      }
+    }
+  }
 
   const taskWhen = task.when;
   const inheritedWhen = inherited.when;
@@ -1074,7 +1090,7 @@ function convertPlay(raw: unknown, state: ConvertState, file: string, path: stri
       finding(state, file, `${path}.serial`, "serial", "gap", "unsupported serial value; use a number or an integer percentage");
     }
   }
-  for (const key of ["ignore_errors", "become_method", "any_errors_fatal", "force_handlers", "max_fail_percentage", "vars_prompt", "gather_subset"]) {
+  for (const key of ["become_method", "any_errors_fatal", "force_handlers", "max_fail_percentage", "vars_prompt", "gather_subset"]) {
     if (play[key] !== undefined) {
       finding(state, file, `${path}.${key}`, key, "gap", "no play-level RoleCall equivalent; apply it per task or review");
     }
@@ -1100,7 +1116,7 @@ function convertPlay(raw: unknown, state: ConvertState, file: string, path: stri
   }
   const playWhen = play.when;
   const inherited: Record<string, unknown> = {};
-  for (const key of ["when", "become", "become_user", "connection", "environment", "run_once", "ignore_errors"]) {
+  for (const key of ["when", "become", "become_user", "connection", "environment", "run_once", "ignore_errors", "accept_failure"]) {
     if (play[key] !== undefined) inherited[key] = play[key];
   }
   const includeVarsFiles: string[] = [];

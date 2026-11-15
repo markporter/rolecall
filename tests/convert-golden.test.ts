@@ -17,6 +17,7 @@ describe("golden Ansible corpus", () => {
     const site = readFileSync(join(out, "playbooks", "site.yml"), "utf8");
     expect(site).toContain("package:");
     expect(site).toContain("run_mode: readonly");
+    expect(site).toContain("accept_failure: true");
     expect(site).toContain("tx: rc-block-1");
     expect(site).toContain("template_file: app.eta");
     expect(site).toContain("engine: eta");
