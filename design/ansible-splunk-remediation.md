@@ -109,7 +109,8 @@ Deliverables:
    - static `import_playbook` → inlined plays.
    - static `with_first_found` on `copy`/`template` → ordered `src`/
      `template_file` candidates.
-   - `ignore_errors` / `failed_when` → gap (no faithful RoleCall equivalent).
+   - shell `ignore_errors` / `failed_when: false` → `shell_register` with
+     `capture_errors: true`; non-shell uses are gap (intrinsic module idempotency).
    - shell `changed_when: false|true` → `run_mode: readonly|always`; other
      `changed_when` uses are gap.
    - `block` / `rescue` → `tx`/`checkpoint` + REVIEW; `always` → gap.
@@ -305,26 +306,29 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   sentinel, Ansible magic-fact gatherers (`system`, `default_ipv4`, `dns`,
   `date_time`), `run.playbook_dir`, filter/test parity (`zip`, `product`, `ipaddr`,
   `strftime`, `human_readable`, `password_hash`, `iterable`, `mapping`, result-state
-  tests), native role `meta` dependencies, percentage `serial`, and shell
-  `changed_when` -> `run_mode`. Converter mappings now cover `with_dict`,
+  tests), native role `meta` dependencies, percentage `serial`, native
+  `retries`/`until`/`delay`, and play `remote_user`. Shell `changed_when` maps to
+  `run_mode`; shell `ignore_errors`/`failed_when: false` map to `shell_register` +
+  `capture_errors`. Converter mappings now cover `with_dict`,
   `with_together`/`with_nested`, static `include_vars`, static `import_playbook`
   inlining, `with_first_found` -> `copy` candidates, `group_vars`/`host_vars` and role `defaults`/`vars` Jinja, and
   `hostvars[...]`/`groups[...]` bracket access. The typed compatibility matrix lives
   in `src/convert/matrix.ts`. Remaining gaps are the non-mechanical/by-design
-  classes: dynamic includes/`include_role`, `with_first_found` on
-  non-copy/template tasks, `ignore_errors`/`failed_when`, `async`/`until`/`retries`,
-  play-level `remote_user`, `lookup`/`query`, and crypt-compatible `password_hash`.
+  classes: `async`/`poll`, dynamic includes/`include_vars`, `lookup`/`query`,
+  non-shell `ignore_errors`/`failed_when`, `delegate_facts`, task-level `vars`, and
+  crypt-compatible `password_hash`.
 - **Conversion workflow:** `convert ansible --project <dir>` now scaffolds the blank
   ADR 0014/0030 project shape and populates it with the converted tree (tested with a
   representative playbook/role/group_vars sample). `rolecall project create|init` now
   exposes the same scaffold directly, with `--force` and optional `--vcs git`.
 - **Cycle 4 (corpus run):** converted `/mnt/homes/mark/ANM/anm_dev/ansible_splunk`
-  (1,819 files) with `--templates eta`; the current pass yields ~12.9k mapped,
-  432 review, and 237 gap findings, and validates 128 converted playbooks with
-  **0 failures**. Native `ignore_errors`, `changed_when`/`failed_when`,
-  `retries`/`until`/`delay`, play `remote_user`, inventory `host_vars`/
-  `group_hosts` views, and task-level `include_role` inlining closed the largest
-  classes. Remaining gaps are concentrated in `async`/`poll`, dynamic
+  (1,819 files) with `--templates eta`; the current pass yields ~12.6k mapped,
+  432 review, and 643 gap findings, and validates 128 converted playbooks with
+  **0 failures**. Shell `changed_when` -> `run_mode`, shell `ignore_errors`/`failed_when: false`
+  -> `shell_register` + `capture_errors`, native `retries`/`until`/`delay`, play
+  `remote_user`, inventory `host_vars`/`group_hosts` views, and task-level
+  `include_role` inlining closed the largest classes; non-shell result overrides
+  intentionally remain gaps so RoleCall keeps intrinsic module idempotency. Remaining gaps are concentrated in `async`/`poll`, dynamic
   includes/`include_vars`, `lookup`/`query`, `delegate_facts`, and task-level
   `vars`. A checked-in golden fixture (`tests/fixtures/ansible-golden`) keeps the
   pipeline covered in CI.
