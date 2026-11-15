@@ -1103,7 +1103,18 @@ function convertPlay(raw: unknown, state: ConvertState, file: string, path: stri
     finding(state, file, `${path}.vars`, "include_role", "review", "inlined role defaults/vars merged into play vars; verify precedence");
   }
   if ((state.roleHandlers ?? []).length > 0) {
-    out.handlers = [...(Array.isArray(out.handlers) ? out.handlers : []), ...(state.roleHandlers ?? [])];
+    const handlers = [...(Array.isArray(out.handlers) ? out.handlers : [])];
+    const seen = new Set(handlers.map((handler) => asRecord(handler)?.["name"]).filter((name): name is string => typeof name === "string"));
+    for (const handler of state.roleHandlers ?? []) {
+      const name = asRecord(handler)?.["name"];
+      if (typeof name === "string" && seen.has(name)) {
+        finding(state, file, `${path}.handlers`, "include_role", "review", `duplicate handler '${name}' skipped`);
+        continue;
+      }
+      if (typeof name === "string") seen.add(name);
+      handlers.push(handler);
+    }
+    out.handlers = handlers;
   }
   if (out.tasks === undefined) out.tasks = [];
   if (playWhen !== undefined) {
@@ -1404,7 +1415,6 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
   const written: string[] = [];
   const templateExact = new Map<string, string>();
   const templateBase = new Map<string, string>();
-  const ambiguousBases = new Set<string>();
   const preprocessed = new Set<string>();
   let draftIndex = 0;
 
@@ -1434,8 +1444,11 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
         templateExact.set(rel, etaRel);
         const base = basename(rel);
         const existing = templateBase.get(base);
-        if (existing !== undefined && existing !== etaRel) ambiguousBases.add(base);
-        else templateBase.set(base, etaRel);
+        if (existing !== undefined && existing !== etaRel) {
+          finding(state, abs, "template", "template", "review", `duplicate template basename '${base}'; using the first mapping`);
+        } else {
+          templateBase.set(base, etaRel);
+        }
         finding(
           state,
           abs,
@@ -1477,10 +1490,6 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
         fileResults.push({ source: abs, output: relOut, written: options.write === true, findings: state.findings.slice(findingStart) });
       }
       preprocessed.add(abs);
-    }
-    for (const base of ambiguousBases) {
-      finding(state, sourceAbs, "template", "template", "review", `multiple templates share the basename '${base}'; task references were not rewritten`);
-      templateBase.delete(base);
     }
   }
 
@@ -1729,7 +1738,7 @@ function validateTemplateRefs(root: string, doc: unknown): string[] {
     const direct = join(root, ref);
     if (existsSync(direct)) return direct;
     const matches = byBase.get(basename(ref)) ?? [];
-    return matches.length === 1 ? matches[0] : undefined;
+    return matches[0];
   };
   const errors: string[] = [];
   for (const { ref, engine } of collectTemplateRefs(doc)) {

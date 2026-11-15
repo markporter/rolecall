@@ -226,6 +226,14 @@ describe("validate converted template references", () => {
     writeFileSync(join(dir, "playbooks", "site.yml"), site("app.eta", "eta"));
     expect(validateConvertedTree(dir).every((entry) => entry.ok)).toBe(true);
 
+    // Duplicate basenames in different role template dirs still resolve.
+    mkdirSync(join(dir, "roles", "a", "templates"), { recursive: true });
+    mkdirSync(join(dir, "roles", "b", "templates"), { recursive: true });
+    writeFileSync(join(dir, "roles", "a", "templates", "shared.eta"), "a");
+    writeFileSync(join(dir, "roles", "b", "templates", "shared.eta"), "b");
+    writeFileSync(join(dir, "playbooks", "site.yml"), site("shared.eta", "eta"));
+    expect(validateConvertedTree(dir).every((entry) => entry.ok)).toBe(true);
+
     writeFileSync(join(dir, "playbooks", "site.yml"), site("missing.eta", "eta"));
     expect(validateConvertedTree(dir).some((entry) => !entry.ok && entry.error?.includes("does not resolve"))).toBe(true);
 
