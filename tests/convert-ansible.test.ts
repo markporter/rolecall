@@ -230,6 +230,10 @@ describe("convert ansible MVP", () => {
     expect(result.applied).toBe(false);
     expect(existsSync(join(gaps, "CONVERSION_GAPS.md"))).toBe(true);
     expect(existsSync(join(gaps, "manifest.json"))).toBe(true);
+    const readme = readFileSync(join(gaps, "README.md"), "utf8");
+    expect(readme).toContain("## Review workflow");
+    expect(readme).toContain("## Lookups, pipe, and controller shell");
+    expect(readme).toContain("## Agent checklist");
   });
 
   test("with_first_found maps to copy/template candidates", () => {
@@ -363,6 +367,33 @@ describe("convert ansible MVP", () => {
     expect((play.vars as Record<string, unknown>).role_var).toBe("var-value");
     expect((play.handlers as Array<Record<string, unknown>>)[0]!.name).toBe("role handler");
     expect(result.findings.some((f) => f.construct === "include_role" && f.disposition === "mapped")).toBe(true);
+  });
+
+  test("lifts pipe/file/env lookups into controller shell_register tasks", () => {
+    const dir = tmp("lookups");
+    const file = join(dir, "site.yml");
+    writeFileSync(file, `- hosts: web\n  tasks:\n    - name: probe\n      debug:\n        msg: "{{ lookup('pipe', 'echo hi') }}"\n    - name: file probe\n      debug:\n        msg: "{{ lookup('file', 'foo.txt') }}"\n    - name: env probe\n      debug:\n        msg: "{{ query('env', 'HOME') }}"\n    - name: loop probe\n      debug:\n        msg: "{{ item }}"\n      with_items: "{{ lookup('pipe', 'echo hi') }}"\n`, "utf8");
+    const result = convertAnsible(file, { write: true, out: join(dir, "out") });
+    const converted = yamlLoad(readFileSync(join(result.out, "site.yml"), "utf8")) as Array<Record<string, unknown>>;
+    const tasks = converted[0]!.tasks as Array<Record<string, unknown>>;
+    expect(tasks[0]!.shell_register).toEqual({
+      command: "echo hi",
+      changed: false,
+      capture_errors: false,
+    });
+    expect(tasks[0]!.delegate_to).toBe("localhost");
+    expect(tasks[0]!.connection).toBe("local");
+    expect(tasks[0]!.register).toBe("__lookup_1");
+    expect((tasks[1]!.debug as Record<string, unknown>).msg).toEqual({ $jinja: "{{ reg.__lookup_1.stdout | trim }}" });
+    expect((tasks[2]!.shell_register as Record<string, unknown>).command).toBe('cat "foo.txt"');
+    expect((tasks[2]!.shell_register as Record<string, unknown>).chdir).toEqual({ $jinja: "{{ run.playbook_dir }}" });
+    expect((tasks[4]!.shell_register as Record<string, unknown>).command).toBe('printenv "HOME"');
+    expect((tasks[5]!.debug as Record<string, unknown>).msg).toEqual({ $jinja: "{{ [reg.__lookup_3.stdout | trim] }}" });
+    expect(tasks[6]!.shell_register).toBeDefined();
+    expect((tasks[7]!.loop as Record<string, unknown>).$each).toEqual({
+      $jinja: "{{ [ reg.__lookup_4.stdout | trim ] }} | to_json",
+    });
+    expect(result.findings.some((f) => f.construct === "lookup" && f.disposition === "review")).toBe(true);
   });
 
   test("maps retries/until/delay to native fields", () => {

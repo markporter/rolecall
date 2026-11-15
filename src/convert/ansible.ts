@@ -130,6 +130,8 @@ interface ConvertState {
   roleVars?: Record<string, unknown>;
   roleHandlers?: unknown[];
   includeStack?: string[];
+  /** Monotonic counter for lifted controller lookups. */
+  lookupCounter?: number;
 }
 
 const SCALAR_MODULE_ARG: Record<string, string> = {
@@ -497,6 +499,61 @@ function findRolesRoot(file: string): string | undefined {
   }
 }
 
+
+/** Lift simple Ansible pipe/file/env lookups into controller-side shell_register tasks. */
+function liftLookups(
+  value: unknown,
+  state: ConvertState,
+  file: string,
+  path: string,
+  tasks: Record<string, unknown>[],
+): unknown {
+  if (typeof value === "string") {
+    const pattern = /\b(lookup|query|q)\s*\(\s*(['"])(pipe|file|env)\2\s*,\s*(['"])([\s\S]*?)\4\s*\)/g;
+    return value.replace(pattern, (whole, fn: string, _q1: string, kind: string, _q2: string, arg: string) => {
+      const register = `__lookup_${++state.lookupCounter!}`;
+      const escaped = arg.replace(/"/g, '\\"');
+      const command =
+        kind === "pipe" ? arg : kind === "file" ? `cat "${escaped}"` : `printenv "${escaped}"`;
+      const rewritten = rewriteAnsibleExpr(command, state.knownVars).text;
+      const commandValue = JINJA_RE.test(command) ? { $jinja: rewritten } : rewritten;
+      const task: Record<string, unknown> = {
+        name: `resolve ${kind} lookup (${register})`,
+        shell_register: {
+          command: commandValue,
+          changed: false,
+          capture_errors: false,
+          ...(kind === "file" ? { chdir: { $jinja: "{{ run.playbook_dir }}" } } : {}),
+        },
+        delegate_to: "localhost",
+        connection: "local",
+        register,
+      };
+      tasks.push(task);
+      const ref = `reg.${register}.stdout | trim`;
+      finding(
+        state,
+        file,
+        path,
+        "lookup",
+        "review",
+        `lifted lookup('${kind}') into a controller shell_register task; verify the command and treat it as code execution`,
+      );
+      return fn === "lookup" ? ref : `[${ref}]`;
+    });
+  }
+  if (Array.isArray(value)) {
+    return value.map((entry, i) => liftLookups(entry, state, file, `${path}[${i}]`, tasks));
+  }
+  const rec = asRecord(value);
+  if (rec === undefined) return value;
+  const out: Record<string, unknown> = {};
+  for (const [key, child] of Object.entries(rec)) {
+    out[key] = liftLookups(child, state, file, `${path}.${key}`, tasks);
+  }
+  return out;
+}
+
 /** Convert one Ansible task into zero or more RoleCall tasks. */
 function convertTask(
   raw: unknown,
@@ -507,6 +564,11 @@ function convertTask(
 ): Record<string, unknown>[] {
   const task = asRecord(raw);
   if (task === undefined) return [];
+
+  const lookupTasks: Record<string, unknown>[] = [];
+  const liftedWhen = liftLookups(task.when, state, file, `${path}.when`, lookupTasks);
+  const liftedLoop = liftLookups(task.loop, state, file, `${path}.loop`, lookupTasks);
+  const liftedWithItems = liftLookups(task.with_items, state, file, `${path}.with_items`, lookupTasks);
 
   const block = task.block;
   if (Array.isArray(block)) {
@@ -520,7 +582,8 @@ function convertTask(
     }
     const blockInherited: Record<string, unknown> = { ...inherited };
     for (const key of ["when", "become", "become_user", "tags", "environment", "connection", "run_once", "ignore_errors", "accept_failure"]) {
-      if (task[key] !== undefined) blockInherited[key] = task[key];
+      if (key === "when" && liftedWhen !== undefined) blockInherited[key] = liftedWhen;
+      else if (task[key] !== undefined) blockInherited[key] = task[key];
     }
     const out: Record<string, unknown>[] = [];
     block.forEach((child, i) => {
@@ -528,7 +591,7 @@ function convertTask(
         out.push({ ...converted, tx: (converted.tx as string | undefined) ?? tx });
       }
     });
-    return out;
+    return [...lookupTasks, ...out];
   }
 
   if (task.include_role !== undefined || task.import_role !== undefined) {
@@ -647,8 +710,8 @@ function convertTask(
     const out: Record<string, unknown> = {};
     out.name = staticName(task.name, "include_tasks");
     out.include_tasks = value;
-    if (task.when !== undefined) out.when = convertWhen(task.when, state, file, `${path}.when`);
-    return [out];
+    if (liftedWhen !== undefined) out.when = convertWhen(liftedWhen, state, file, `${path}.when`);
+    return [...lookupTasks, out];
   }
   if (task.include_vars !== undefined) {
     finding(state, file, path, "include_vars", "gap", "move static var files to play `vars_files:`; dynamic include_vars is unsupported");
@@ -679,12 +742,13 @@ function convertTask(
     else finding(state, file, `${path}.local_action`, "local_action", "gap", "could not identify the local_action module");
     out.delegate_to = "localhost";
     out.connection = "local";
-    if (task.when !== undefined) out.when = convertWhen(task.when, state, file, `${path}.when`);
+    if (liftedWhen !== undefined) out.when = convertWhen(liftedWhen, state, file, `${path}.when`);
     finding(state, file, `${path}.local_action`, "local_action", "review", "mapped to delegate_to: localhost + connection: local");
-    return [out];
+    return [...lookupTasks, out];
   }
 
   const { module: rawModule, args: rawArgs, scalar } = taskModule(task);
+  const liftedArgs = liftLookups(rawArgs, state, file, `${path}.${rawModule ?? "args"}`, lookupTasks);
   if (scalar !== undefined) {
     finding(state, file, path, scalar, "mapped", `scalar module argument mapped to { ${SCALAR_MODULE_ARG[scalar] ?? "name"}: ... }`);
   }
@@ -698,9 +762,9 @@ function convertTask(
   }
 
   let module = MODULE_REMAP[rawModule] ?? rawModule;
-  let args = convertValue(rawArgs, state, file, `${path}.${rawModule}`);
+  let args = convertValue(liftedArgs, state, file, `${path}.${rawModule}`);
   if (rawModule === "template") {
-    const converted = convertTemplateTask(task, rawArgs, state, file, path);
+    const converted = convertTemplateTask(task, liftedArgs as Record<string, unknown>, state, file, path);
     if (converted === undefined) return [];
     module = converted.module;
     args = converted.args;
@@ -804,7 +868,7 @@ function convertTask(
     }
   }
 
-  const taskWhen = task.when;
+  const taskWhen = liftedWhen;
   const inheritedWhen = inherited.when;
   if (taskWhen !== undefined && inheritedWhen !== undefined) {
     out.when = {
@@ -819,25 +883,29 @@ function convertTask(
     out.when = convertWhen(inheritedWhen, state, file, `${path}.inherited-when`);
   }
 
-  const withItems = task.with_items;
+  const withItems = liftedWithItems;
   if (withItems !== undefined) {
     if (Array.isArray(withItems)) {
       out.loop = withItems.map((v, i) => convertValue(v, state, file, `${path}.with_items[${i}]`));
     } else if (typeof withItems === "string" && hasJinja(withItems)) {
       const { text } = rewriteAnsibleExpr(withItems, state.knownVars);
-      out.loop = { $each: { $jinja: `${text} | to_json` } };
+      const lookupRef = /^\s*\{\{\s*reg\.__lookup_\d+\.stdout\s*\|\s*trim\s*\}\}\s*$/.test(text);
+      const expr = lookupRef ? `{{ [ ${text.slice(2, -2).trim()} ] }}` : text;
+      out.loop = { $each: { $jinja: `${expr} | to_json` } };
       finding(state, file, `${path}.with_items`, "with_items", "mapped", "mapped to loop + $each/$jinja");
     } else {
       finding(state, file, `${path}.with_items`, "with_items", "review", "literal with_items converted to loop");
       out.loop = withItems;
     }
-  } else if (task.loop !== undefined) {
-    if (typeof task.loop === "string" && hasJinja(task.loop)) {
-      const { text } = rewriteAnsibleExpr(task.loop, state.knownVars);
-      out.loop = { $each: { $jinja: `${text} | to_json` } };
+  } else if (liftedLoop !== undefined) {
+    if (typeof liftedLoop === "string" && hasJinja(liftedLoop)) {
+      const { text } = rewriteAnsibleExpr(liftedLoop, state.knownVars);
+      const lookupRef = /^\s*\{\{\s*reg\.__lookup_\d+\.stdout\s*\|\s*trim\s*\}\}\s*$/.test(text);
+      const expr = lookupRef ? `{{ [ ${text.slice(2, -2).trim()} ] }}` : text;
+      out.loop = { $each: { $jinja: `${expr} | to_json` } };
       finding(state, file, `${path}.loop`, "loop", "mapped", "mapped to $each/$jinja");
     } else {
-      out.loop = convertValue(task.loop, state, file, `${path}.loop`);
+      out.loop = convertValue(liftedLoop, state, file, `${path}.loop`);
     }
   } else if (task.with_dict !== undefined) {
     const value = task.with_dict;
@@ -977,7 +1045,7 @@ function convertTask(
     finding(state, file, `${path}.${key}`, key, "gap", "unrecognized task key; review or remove it");
   }
 
-  return [out];
+  return [...lookupTasks, out];
 }
 
 
@@ -1442,7 +1510,7 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
   const files = (isDir ? walkFiles(sourceAbs) : [sourceAbs]).filter(
     (abs) => !inside(abs, outDir) && !inside(abs, gapsDir),
   );
-  const state: ConvertState = { findings: [], blockCounter: 0, knownVars: new Set<string>() };
+  const state: ConvertState = { findings: [], blockCounter: 0, knownVars: new Set<string>(), lookupCounter: 0 };
   // Collect var names across every Ansible var file so bare refs in one file can
   // be qualified as `vars.<name>` even when they are declared in another file.
   if (isDir) {
@@ -1683,6 +1751,175 @@ export function convertAnsible(source: string, options: ConvertAnsibleOptions = 
 }
 
 /** Write the deterministic conversion-gaps bundle (`CONVERSION_GAPS.md` + `manifest.json`). */
+
+/** Human/agent guidance for common conversion-gap constructs. */
+const GAP_GUIDANCE: Record<string, string> = {
+  async: "Move the work to a background command plus an explicit wait; RoleCall has no native async/poll yet.",
+  poll: "Same as async: use a background command plus an explicit wait.",
+  include_tasks: "Inline the included file or make the path static; dynamic includes are not load-time expandable.",
+  include_vars: "Move static files to play `vars_files`; dynamic include_vars needs manual work.",
+  "jinja-value": "Lift controller lookups into a `shell_register` task (delegate_to localhost) and reference the register; keep templates data-only.",
+  lookup: "Lift pipe/file/env lookups into a `shell_register` task on localhost and reference `reg.<name>.stdout | trim`; password/template lookups need manual work.",
+  changed_when: "Use `run_mode` for shell tasks or a module with intrinsic idempotency; do not override module change semantics.",
+  failed_when: "Use `shell_register` with `capture_errors: true`, or add an explicit `assert` task.",
+  ignore_errors: "Use `accept_failure: true` explicitly; on shell prefer `shell_register`/`run_mode`.",
+  accept_failure: "Use the native `accept_failure` field; it records `accepted_failure` without failing the play.",
+  vars: "Inline task vars or move them to play vars.",
+  vars_files: "Use static `vars_files` entries; dynamic entries need manual resolution.",
+  rescue: "Model recovery with `tx`/`checkpoint` or explicit recovery tasks; `always` has no equivalent.",
+  "parse-error": "Fix the source syntax or split the expression; the parser could not build an AST.",
+  become_method: "Only sudo escalation is supported; remove `become_method` or rewrite the privilege path.",
+  serial: "Use a numeric batch size or an integer percentage.",
+  delegate_to: "Use a static `delegate_to` target; dynamic targets need manual work.",
+  delegate_facts: "No RoleCall equivalent; review the fact flow manually.",
+  yaml: "Fix duplicate keys or empty documents in the source YAML.",
+  template: "Review the Eta draft; complete or remove every `GAP` marker, or keep the `.j2` and `engine: jinja`.",
+  "with_first_found": "Use ordered `copy` `src`/`template_file` candidates, or inline the file choice.",
+  vars_prompt: "Replace with an explicit `vars` value or an operator-provided input.",
+  check_mode: "Use the global `--check` flag instead of per-task `check_mode`.",
+  "role-dependencies": "Role meta dependencies are resolved by the loader; verify the role order.",
+  "include_role": "Role tasks were inlined; verify defaults/vars/handlers and ordering.",
+  "import_playbook": "Static imports are inlined; dynamic imports need manual splitting.",
+};
+
+/** Additional guidance for `review` items (already converted, but needs verification). */
+const REVIEW_GUIDANCE: Record<string, string> = {
+  ignore_errors: "Converted to explicit `accept_failure`; verify the task really should continue on failure (prefer `shell_register`/`run_mode` for shell).",
+  lookup: "Verify the generated controller `shell_register` task and treat its command as code execution.",
+  template: "Review the Eta draft; complete or remove every `GAP` marker, or keep the `.j2` and `engine: jinja`.",
+  name: "A dynamic name was sanitized to a static one; verify the static name is acceptable.",
+  local_action: "Verify the generated `delegate_to: localhost` + `connection: local` target.",
+  include_role: "Role tasks were inlined with defaults/vars/handlers; verify ordering and handler names.",
+  authorized_key: "Mapped to `lineinfile`; verify the target user's home path and key ownership.",
+  vars_files: "A first-found `vars_files` entry was flattened; verify the chosen file.",
+  call: "Function call needs an explicit Eta helper mapping or a manual rewrite.",
+  "filter:reject": "Filter needs an Eta parity fixture or a manual rewrite.",
+  match: "Template match construct needs a manual review.",
+  debug: "Review the generated task and its rendered value.",
+};
+
+/** Render the human/agent README that accompanies a conversion-gaps bundle. */
+function renderGapsReadme(result: ConvertResult): string {
+  const findings = result.findings.filter((f) => f.disposition !== "mapped");
+  const counts = new Map<string, number>();
+  for (const item of findings) {
+    const key = `${item.disposition}	${item.construct}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const rows = [...counts.entries()]
+    .map(([key, count]) => {
+      const [disposition, construct] = key.split("	") as [string, string];
+      return { disposition, construct, count };
+    })
+    .sort((a, b) => b.count - a.count || a.disposition.localeCompare(b.disposition) || a.construct.localeCompare(b.construct));
+  const table = [
+    "| Disposition | Construct | Count | Next step |",
+    "| --- | --- | ---: | --- |",
+    ...rows.map(
+      (row) =>
+        `| ${row.disposition} | \`${row.construct}\` | ${row.count} | ${
+          (row.disposition === "review" ? REVIEW_GUIDANCE[row.construct] : undefined) ??
+          GAP_GUIDANCE[row.construct] ??
+          "Review the item and choose a RoleCall idiom."
+        } |`,
+    ),
+  ];
+  return [
+    "# Conversion gaps — start here",
+    "",
+    `Source: \`${result.source}\``,
+    `Converted: \`${result.out}\``,
+    "",
+    `Mapped: **${result.totals.mapped}** · Review: **${result.totals.review}** · Gaps: **${result.totals.gaps}**`,
+    "",
+    "## What this folder is",
+    "",
+    "This folder is generated by `rolecall convert ansible`. It contains only the",
+    "parts of the conversion that were **not** mechanically complete. Mapped items",
+    "are in the converted project; they are not repeated here.",
+    "",
+    "Do not treat the converted tree as a faithful replacement until every `gap`",
+    "and `review` item is resolved or explicitly accepted. This README and the",
+    "bundle are regenerated on every conversion run.",
+    "",
+    "## Files",
+    "",
+    "- `README.md` — this guide.",
+    "- `CONVERSION_GAPS.md` — flat, ordered list of every review/gap item.",
+    "- `manifest.json` — machine-readable bundle (`version`, source/out, totals, findings).",
+    "- `items/` — one self-contained work order per review/gap item, numbered in the same order as `CONVERSION_GAPS.md`.",
+    "- `templates/` — partial Eta drafts for templates that could not be fully converted.",
+    "",
+    "## Status vocabulary",
+    "",
+    "- **mapped** — converted mechanically; not in this folder.",
+    "- **review** — converted, but a human/agent must verify semantics or a generated draft.",
+    "- **gap** — not convertible mechanically; the converted playbook may be missing behavior.",
+    "",
+    "Runtime `accepted_failure` is different: it is a RoleCall task status for a",
+    "failure captured by `accept_failure`, not a conversion-gap status.",
+    "",
+    "## Review workflow",
+    "",
+    "1. Read this README and the summary table below.",
+    "2. Work `gap` items before `review` items; both block a faithful conversion.",
+    "3. Open the matching file under `items/` for file/path/construct/context.",
+    "   Items reference the original source path, not the converted output path.",
+    "4. Apply the suggested RoleCall idiom (or an equivalent) to the converted project.",
+    "5. For templates, finish `templates/*.eta.draft`: replace every `/* GAP: ... */`",
+    "   marker, rename the file to `.eta`, and update the task to",
+    "   `content: { template_file: <name>.eta, engine: eta }`. If a `review`",
+    "   construct is acceptable, `--templates-review accept` lets the converter",
+    "   generate it directly.",
+    "6. Re-run `rolecall convert ansible --validate <project>`.",
+    "7. Re-run the conversion with `--strict` until it exits zero.",
+    "",
+    "Duplicate source trees (for example `build_tmp/` or timestamped backups)",
+    "produce duplicate items. Fix the primary tree and ignore duplicates from",
+    "vendored copies.",
+    "",
+    "## Gap and review summary",
+    "",
+    ...table,
+    "",
+    "## Lookups, pipe, and controller shell",
+    "",
+    "RoleCall's `$jinja` is a bounded, data-only template language: it does not",
+    "execute controller shell commands. Ansible `lookup('pipe', ...)`, `lookup('file', ...)`,",
+    "and `lookup('env', ...)` are controller-side I/O, so they are lifted into an",
+    "explicit `shell_register` task with `delegate_to: localhost` and",
+    "`connection: local`; the template references `reg.<name>.stdout | trim`.",
+    "The converter does this for simple pipe/file/env lookups. Password, template,",
+    "and other lookups remain gaps and must be replaced with an explicit task or a",
+    "RoleCall secret provider.",
+    "",
+    "## Security",
+    "",
+    "Gap reports and drafts may contain source snippets, paths, hostnames, and",
+    "secret-looking values. Treat this folder as sensitive. Do not commit it for a",
+    "private source tree, and do not paste it into an untrusted service.",
+    "",
+    "## Regenerate and validate",
+    "",
+    "```sh",
+    "rolecall convert ansible <source> --project <project> --write --templates eta",
+    "rolecall convert ansible --validate <project>",
+    "rolecall convert ansible <source> --strict --gaps <dir>",
+    "```",
+    "",
+    "## Agent checklist",
+    "",
+    "- Read `manifest.json` (version 1) for structured findings; use `items/` for one-at-a-time work.",
+    "- Prefer existing RoleCall semantics (`run_mode`, `shell_register`, `accept_failure`,",
+    "  `tx`/`checkpoint`, `assert`, `$jinja`) over new Ansible-style fields.",
+    "- Never add raw Jinja outside `$jinja`; never add controller shell execution to a",
+    "  bounded template.",
+    "- Keep changes in the converted project, then regenerate the gaps bundle.",
+    "- Do not claim completion while any `gap` or `review` item remains.",
+    "",
+  ].join("\n");
+}
+
 export function writeGapsBundle(result: ConvertResult, gapsDir: string): void {
   mkdirSync(gapsDir, { recursive: true });
   const lines: string[] = [
@@ -1701,6 +1938,7 @@ export function writeGapsBundle(result: ConvertResult, gapsDir: string): void {
     lines.push(`## ${item.disposition}: ${item.construct}`, "", `- File: \`${item.file}\``, `- Path: \`${item.path}\``, "", item.message, "");
   }
   writeFileSync(join(gapsDir, "CONVERSION_GAPS.md"), lines.join("\n"), "utf8");
+  writeFileSync(join(gapsDir, "README.md"), renderGapsReadme(result), "utf8");
   const itemsDir = join(gapsDir, "items");
   mkdirSync(itemsDir, { recursive: true });
   let index = 0;
