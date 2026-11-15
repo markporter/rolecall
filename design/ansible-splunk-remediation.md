@@ -109,8 +109,9 @@ Deliverables:
    - static `import_playbook` → inlined plays.
    - static `with_first_found` on `copy`/`template` → ordered `src`/
      `template_file` candidates.
-   - shell `ignore_errors` / `failed_when: false` → `shell_register` with
-     `capture_errors: true`; non-shell uses are gap (intrinsic module idempotency).
+   - `ignore_errors` → `accept_failure` (an accepted-failure status that does not
+     fail the play); shell tasks get a review note pointing at `shell_register`/
+     `run_mode`. Shell `failed_when: false` → `shell_register` + `capture_errors`.
    - shell `changed_when: false|true` → `run_mode: readonly|always`; other
      `changed_when` uses are gap.
    - `block` / `rescue` → `tx`/`checkpoint` + REVIEW; `always` → gap.
@@ -322,10 +323,11 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   representative playbook/role/group_vars sample). `rolecall project create|init` now
   exposes the same scaffold directly, with `--force` and optional `--vcs git`.
 - **Cycle 4 (corpus run):** converted `/mnt/homes/mark/ANM/anm_dev/ansible_splunk`
-  (1,819 files) with `--templates eta`; the current pass yields ~12.6k mapped,
-  432 review, and 643 gap findings, and validates 128 converted playbooks with
-  **0 failures**. Shell `changed_when` -> `run_mode`, shell `ignore_errors`/`failed_when: false`
-  -> `shell_register` + `capture_errors`, native `retries`/`until`/`delay`, play
+  (1,819 files) with `--templates eta`; the current pass yields ~12.8k mapped,
+  699 review, and 252 gap findings, and validates 128 converted playbooks with
+  **0 failures**. Shell `changed_when` -> `run_mode`, `ignore_errors` -> `accept_failure`
+  (shell tasks get an explicit review note), `failed_when: false` -> `shell_register`
+  + `capture_errors`, native `retries`/`until`/`delay`, play
   `remote_user`, inventory `host_vars`/`group_hosts` views, and task-level
   `include_role` inlining closed the largest classes; non-shell result overrides
   intentionally remain gaps so RoleCall keeps intrinsic module idempotency. Remaining gaps are concentrated in `async`/`poll`, dynamic

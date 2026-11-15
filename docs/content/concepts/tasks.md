@@ -31,6 +31,7 @@ Tasks may carry these first-class operators (not module args):
 - `notify` / `listen` — attach the task to a handler; handlers run on-change, are de-duplicated, and flush once at the end of the play.
 - `delegate_to` — run the task against a different target than the play's hosts.
 - `run_once` — execute only once (on the first host), not per host.
+- `accept_failure` — capture a task failure and continue without failing the play; the task still reports `accepted_failure` with the reason. `ignore_errors` is accepted as an alias on non-shell modules only; on `shell`/`command`/`raw`/`script` it is rejected with guidance to use `accept_failure`, `shell_register` + `capture_errors`, or `run_mode`.
 - `retries` / `delay` / `until` — repeat the task until the predicate passes (up to `retries` extra attempts, waiting `delay` seconds).
 - `become` / `become_user` — escalate privileges for the task (e.g. `become: true`, `become_user: root`).
 - `connection` — override the host's transport for this task only (`ssh`, `local`, or `network`). See [Transport](./transport.md).
@@ -110,7 +111,7 @@ Tag selection runs against the fully-resolved task list — after role compositi
 - **`when` / `loop` use RoleCall operators** (`$if`, `$each`, …), not Ansible's `when:` string eval or `with_*`.
 - **Privilege is `become` / `become_user`**, the same idea as Ansible's become.
 - **`meta` control flags are honored**: `end_play` / `end_host` halt the play or current host, `flush_handlers` flushes pending handlers immediately, `end_batch` stops the current serial batch, and `refresh_inventory` re-reads the configured inventory source.
-- **Idempotency is built in**: the `shell` module requires a guard (or `run_mode`) rather than relying on `changed_when`. For probes that should capture a non-zero rc without failing, use `shell_register` with `capture_errors: true` and branch on the registered rc. See [Shell & idempotency](./shell-idempotency.md).
+- **Idempotency is built in**: the `shell` module requires a guard (or `run_mode`) rather than relying on `changed_when`. For probes that should capture a non-zero rc without failing, use `shell_register` with `capture_errors: true` and branch on the registered rc. `accept_failure` on a shell task is allowed but emits a warning pointing at those alternatives. See [Shell & idempotency](./shell-idempotency.md).
 
 ## Related concepts
 

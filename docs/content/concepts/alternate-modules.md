@@ -15,7 +15,7 @@ These are not 1:1 ports — RoleCall replaced the Ansible approach with a built-
 
 | Ansible concept | RoleCall alternative | Why | How in RoleCall |
 | --- | --- | --- | --- |
-| `shell` / `command` / `raw` / `script` split + `changed_when` / `check_mode` | single `shell` module + `run_mode`; `shell_register` for probes | `command`, `raw`, and `script` are aliases of `shell`; explicit idempotency intent | `run_mode: idempotent \| readonly \| always` (see below) |
+| `shell` / `command` / `raw` / `script` split + `changed_when` / `check_mode` | single `shell` module + `run_mode`; `shell_register` for probes; `accept_failure` for captured failures | `command`, `raw`, and `script` are aliases of `shell`; explicit idempotency intent | `run_mode: idempotent \| readonly \| always` (see below) |
 | `template` / `copy` + Jinja `{{ }}` | `$template` + EJS `<%= %>` | Structured, typed templating over facts/vars | `content: $template: "<%= vars.x %>"` |
 | `setup` / `gather_facts` + host vars | `facts gather` + facts in `when`/`loop` | Targeted/cached fact gathering, no implicit magic | `rolecall facts gather <inv>`; `$var: facts.os.family` |
 | `ini_file` / `xml` / `lineinfile` for config | `config_edit` | One structured module for INI/TOML/JSON/YAML/XML | `config_edit` with `section`/`option` for `ini_file` parity |
