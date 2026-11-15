@@ -324,13 +324,16 @@ Plus golden converter tests per construct, “load must fail” tests for strict
   exposes the same scaffold directly, with `--force` and optional `--vcs git`.
 - **Cycle 4 (corpus run):** converted `/mnt/homes/mark/ANM/anm_dev/ansible_splunk`
   (1,819 files) with `--templates eta`; the current pass yields ~12.8k mapped,
-  699 review, and 252 gap findings, and validates 128 converted playbooks with
+  956 review, and 246 gap findings, and validates 128 converted playbooks with
   **0 failures**. Shell `changed_when` -> `run_mode`, `ignore_errors` -> `accept_failure`
   (shell tasks get an explicit review note), `failed_when: false` -> `shell_register`
   + `capture_errors`, native `retries`/`until`/`delay`, play
   `remote_user`, inventory `host_vars`/`group_hosts` views, and task-level
-  `include_role` inlining closed the largest classes; non-shell result overrides
-  intentionally remain gaps so RoleCall keeps intrinsic module idempotency. Remaining gaps are concentrated in `async`/`poll`, dynamic
+  `include_role` inlining closed the largest classes; simple pipe/file/env
+  lookups are lifted into controller `shell_register` tasks, and the gaps bundle
+  now ships a human/agent `README.md` with workflow and per-construct guidance.
+  Non-shell result overrides intentionally remain gaps so RoleCall keeps intrinsic
+  module idempotency. Remaining gaps are concentrated in `async`/`poll`, dynamic
   includes/`include_vars`, `lookup`/`query`, `delegate_facts`, and task-level
   `vars`. A checked-in golden fixture (`tests/fixtures/ansible-golden`) keeps the
   pipeline covered in CI.

@@ -51,6 +51,8 @@ rolecall convert ansible --validate ./site        # strict-load playbooks + temp
 
 `--project <dir>` ensures a blank RoleCall project exists at that root (the ADR 0014/0030 shape: `rolecall.yaml`, `playbooks/`, `inventory/`, `plugins/<type>/<namespace>/`, `roles/`, `group_vars/`, `host_vars/`, `collections/`, `.rolecall/isolation.yaml`) and then populates it with the converted tree. Existing files are never overwritten, so it is safe to run against an existing project.
 
+The bundle includes `README.md` (workflow + per-construct guidance), `CONVERSION_GAPS.md`, `manifest.json`, `items/`, and `templates/`. Simple `lookup(pipe|file|env, ...)` calls are lifted into explicit controller `shell_register` tasks (`delegate_to: localhost`, `connection: local`) and the expression is replaced with `reg.<name>.stdout | trim`; password/template lookups remain gaps.
+
 Constructs with no faithful mechanical equivalent (`async`/`poll`, dynamic includes/`include_vars`, `lookup`/`query`, `delegate_facts`, task-level `vars`, etc.) are recorded in `CONVERSION_GAPS.md` and `manifest.json` under `--gaps` (default `<out>/conversion_gaps`). `--strict` exits non-zero when any review or gap item remains. `--validate` strict-loads each converted playbook and also checks that `copy.content.template_file` references resolve, that `engine` matches the file extension (`.eta` for eta, `.j2`/`.jinja` for jinja), and that no template is half-converted (both `.eta` and `.j2` present). The handler lives in `src/cli/commands/convert.ts`, the analyzer/rewriter in `src/convert/ansible.ts`, and the typed compatibility matrix in `src/convert/matrix.ts`; add `-o json` (or `--report json`) for the structured `ConvertResult`.
 
 ### vars list
