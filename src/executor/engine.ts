@@ -72,6 +72,7 @@ export async function runPlaybook(
     registered: {},
     changed: 0,
     failed: 0,
+    accepted_failures: 0,
     skipped: 0,
     ok: 0,
   };
@@ -255,7 +256,8 @@ async function runPlay(
 
   for (const h of allHosts) {
     for (const o of result.hosts[h]!) {
-      if (o.failed) result.failed++;
+      if (o.failed && o.accepted_failure) result.accepted_failures++;
+      else if (o.failed) result.failed++;
       else if (o.skipped) result.skipped++;
       else result.ok++;
       if (o.changed) result.changed++;

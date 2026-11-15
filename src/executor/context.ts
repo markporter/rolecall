@@ -25,7 +25,7 @@ export type { RunTrace } from "../store/types";
 export type TraceSink = (trace: RunTrace) => void;
 
 /** Status of a single task execution, used by the realtime syslog event sink. */
-export type TaskEventStatus = "ok" | "changed" | "failed" | "skipped";
+export type TaskEventStatus = "ok" | "changed" | "failed" | "accepted_failure" | "skipped";
 
 /** Realtime per-task event emitted AS a task is executed (drives `-o syslog`). */
 export interface TaskEvent {
@@ -317,6 +317,8 @@ export interface TaskOutcome {
   module: string;
   changed: boolean;
   failed: boolean;
+  /** True when the failure was captured by `accept_failure` and did not fail the play. */
+  accepted_failure?: boolean;
   skipped: boolean;
   iterations: IterationOutcome[];
   notified: string[];
@@ -339,6 +341,7 @@ export interface PlaybookResult {
   registered: Record<string, Record<string, unknown>>;
   changed: number;
   failed: number;
+  accepted_failures: number;
   skipped: number;
   ok: number;
 }

@@ -234,7 +234,7 @@ export async function runPlaybookCommand(
   }
 
   const totals: ApplyTotals = result
-    ? { ok: result.ok, changed: result.changed, failed: result.failed, skipped: result.skipped }
+    ? { ok: result.ok, changed: result.changed, failed: result.failed, accepted_failures: result.accepted_failures, skipped: result.skipped }
     : { ok: 0, changed: 0, failed: 0, skipped: 0 };
   const outcomes: TaskApplyOutcome[] = [];
   const rendered: RenderedTemplate[] = [];
@@ -251,6 +251,7 @@ export async function runPlaybookCommand(
           module: o.module,
           changed: o.changed,
           failed: o.failed,
+          accepted_failure: o.accepted_failure,
           skipped: o.skipped,
           iterations: o.iterations.length,
           iterationData: o.iterations.map((i) => i.data),

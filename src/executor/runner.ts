@@ -322,7 +322,15 @@ export async function runTaskOnHost(
   const fireEvent = (o: TaskOutcome): void => {
     const sink = state.options.eventSink;
     if (!sink) return;
-    const status = o.failed ? "failed" : o.skipped ? "skipped" : o.changed ? "changed" : "ok";
+    const status = o.failed
+      ? o.accepted_failure
+        ? "accepted_failure"
+        : "failed"
+      : o.skipped
+        ? "skipped"
+        : o.changed
+          ? "changed"
+          : "ok";
     const event: TaskEvent = {
       ts: new Date().toISOString(),
       host: o.host,
@@ -371,8 +379,9 @@ export async function runTaskOnHost(
     conn = await getConnection(state, host, task.connection);
   } catch (err) {
     outcome.failed = true;
+    outcome.accepted_failure = task.accept_failure === true;
     outcome.msg = `connection failed: ${err instanceof Error ? err.message : String(err)}`;
-    state.failed.add(host);
+    if (!task.accept_failure) state.failed.add(host);
     emit("end", "failed", taskStartedAt, Date.now(), Math.round(performance.now() - taskT0), { error: outcome.msg });
     fireEvent(outcome);
     return outcome;
@@ -388,8 +397,9 @@ export async function runTaskOnHost(
     loopItems = expandLoop(task.loop, buildVars(state, host, undefined, undefined, task), policy);
   } catch (err) {
     outcome.failed = true;
+    outcome.accepted_failure = task.accept_failure === true;
     outcome.msg = err instanceof Error ? err.message : String(err);
-    state.failed.add(host);
+    if (!task.accept_failure) state.failed.add(host);
     emit("end", "failed", taskStartedAt, Date.now(), Math.round(performance.now() - taskT0), { error: outcome.msg });
     fireEvent(outcome);
     return outcome;
@@ -647,7 +657,7 @@ export async function runTaskOnHost(
         if (res.failed) anyFailed = true;
         emit(
           "module-run",
-          res.failed ? "failed" : "ok",
+          res.failed ? (task.accept_failure ? "accepted_failure" : "failed") : "ok",
           iterStartedAt,
           Date.now(),
           Math.round(performance.now() - iterStart),
@@ -667,7 +677,8 @@ export async function runTaskOnHost(
   outcome.changed = anyChanged;
   outcome.failed = anyFailed;
   if (anyFailed) {
-    state.failed.add(host);
+    outcome.accepted_failure = task.accept_failure === true;
+    if (!task.accept_failure) state.failed.add(host);
     outcome.msg = outcome.msg ?? "task failed";
   }
   if (task.register && !outcome.skipped) {
@@ -675,6 +686,7 @@ export async function runTaskOnHost(
     reg[task.register] = {
       changed: outcome.changed,
       failed: outcome.failed,
+      accepted_failure: outcome.accepted_failure === true,
       stdout: outcome.iterations
         .map((i) => i.stdout)
         .filter((s): s is string => s !== undefined)
@@ -696,7 +708,14 @@ export async function runTaskOnHost(
     outcome.notified = [...notify];
     emit("notify", "ok", Date.now(), Date.now(), 0, { handlers: notify });
   }
-  emit("end", outcome.skipped ? "skipped" : anyFailed ? "failed" : "ok", taskStartedAt, Date.now(), Math.round(performance.now() - taskT0), { changed: anyChanged, failed: anyFailed });
+  emit(
+    "end",
+    outcome.skipped ? "skipped" : anyFailed ? (task.accept_failure ? "accepted_failure" : "failed") : "ok",
+    taskStartedAt,
+    Date.now(),
+    Math.round(performance.now() - taskT0),
+    { changed: anyChanged, failed: anyFailed },
+  );
   fireEvent(outcome);
   return outcome;
 }

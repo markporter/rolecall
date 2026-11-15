@@ -73,6 +73,11 @@ export const TaskSchema = z
     delegate_to: z.string().optional(),
     // run_once: execute the task a single time (on the first matched host).
     run_once: z.boolean().optional(),
+    // accept_failure: capture a failure and continue without failing the play.
+    accept_failure: z.boolean().optional(),
+    // ignore_errors: Ansible-compatible alias for accept_failure on non-shell modules.
+    // On shell/command/raw/script the superRefine below rejects it with guidance.
+    ignore_errors: z.boolean().optional(),
     // retries/until/delay: repeat the task until the predicate passes or attempts run out.
     retries: z.number().int().nonnegative().optional(),
     delay: z.number().nonnegative().optional(),
@@ -114,6 +119,25 @@ export const TaskSchema = z
           "module is required for a task unless include_tasks is set (directive task)",
       });
     }
+    if (
+      task.ignore_errors === true &&
+      ["shell", "command", "raw", "script"].includes(task.module ?? "")
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["ignore_errors"],
+        message:
+          "ignore_errors is not allowed on shell/command/raw/script; use accept_failure: true explicitly, or shell_register with capture_errors: true for probes",
+      });
+    }
+    if (task.accept_failure !== undefined && task.module === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["accept_failure"],
+        message:
+          "accept_failure belongs on the included tasks, not the include_tasks directive",
+      });
+    }
   });
 
 // ---------------------------------------------------------------------------
@@ -130,7 +154,7 @@ export const TaskSchema = z
 /** Structural (non-module) task keys; any other single top-level key names a module. */
 const TASK_STRUCTURAL_KEYS = new Set<string>([
   "name", "module", "args", "when", "loop", "notify", "include_tasks",
-  "hosts", "register", "delegate_to", "run_once", "retries", "delay", "until", "listen", "become", "become_user",
+  "hosts", "register", "delegate_to", "run_once", "accept_failure", "ignore_errors", "retries", "delay", "until", "listen", "become", "become_user",
   "environment", "no_log", "roleDir", "tx", "checkpoint", "tags", "connection",
 ]);
 
@@ -371,6 +395,8 @@ export interface NormalizedTask {
   register?: string;
   delegate_to?: string;
   run_once?: boolean;
+  /** Capture a failure and continue without failing the play. */
+  accept_failure?: boolean;
   /** Number of additional attempts when `until` is false. */
   retries?: number;
   /** Seconds to wait between attempts. */
@@ -476,6 +502,9 @@ export function normalizeTask(raw: RawTask): NormalizedTask {
     ...(raw.register !== undefined ? { register: raw.register } : {}),
     ...(raw.delegate_to !== undefined ? { delegate_to: raw.delegate_to } : {}),
     ...(raw.run_once !== undefined ? { run_once: raw.run_once } : {}),
+    ...((raw.accept_failure ?? raw.ignore_errors) !== undefined
+      ? { accept_failure: raw.accept_failure ?? raw.ignore_errors }
+      : {}),
     ...(raw.retries !== undefined ? { retries: raw.retries } : {}),
     ...(raw.delay !== undefined ? { delay: raw.delay } : {}),
     ...(raw.until !== undefined ? { until: raw.until } : {}),

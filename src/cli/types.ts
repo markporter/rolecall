@@ -151,6 +151,7 @@ export interface TaskApplyOutcome {
   module: string;
   changed: boolean;
   failed: boolean;
+  accepted_failure?: boolean;
   skipped: boolean;
   iterations?: number;
   /** Per-iteration module `data` (e.g. `{ idempotent: true }` for no-op applies); surface for idempotency visibility without a new status. */
@@ -170,6 +171,7 @@ export interface ApplyTotals {
   ok: number;
   changed: number;
   failed: number;
+  accepted_failures?: number;
   skipped: number;
 }
 

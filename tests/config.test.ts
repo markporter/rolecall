@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import { ZodError } from "zod";
 
 import {
+  lintPlaybookIdempotency,
   lintTemplateRefs,
   loadInventory,
   loadInventoryFile,
@@ -847,4 +848,43 @@ test("array-of-plays normalizes to an array of plays", () => {
   expect(pb).toHaveLength(2);
   const cmd1 = renderArgs(pb[0]!.tasks[0]!.args, varsScope({ host: "web1" }), {}).command;
   expect(cmd1).toBe("echo <%= host %>");
+});
+
+test("ignore_errors is rejected on shell tasks with guidance", () => {
+  expect(() =>
+    loadPlaybook(`
+- hosts: web
+  tasks:
+    - name: probe
+      shell:
+        command: /bin/false
+      ignore_errors: true
+`),
+  ).toThrow(/ignore_errors is not allowed on shell/);
+});
+
+test("ignore_errors aliases accept_failure on non-shell modules", () => {
+  const pb = loadPlaybook(`
+- hosts: web
+  tasks:
+    - name: install
+      apt:
+        name: nginx
+      ignore_errors: true
+`);
+  expect(pb[0]!.tasks[0]!.accept_failure).toBe(true);
+});
+
+test("lint warns on shell accept_failure with alternatives", () => {
+  const pb = loadPlaybook(`
+- hosts: web
+  tasks:
+    - name: probe
+      shell:
+        command: /bin/true
+        run_mode: always
+      accept_failure: true
+`);
+  const warnings = lintPlaybookIdempotency(pb[0]!);
+  expect(warnings.some((w) => w.warning.includes("accept_failure"))).toBe(true);
 });

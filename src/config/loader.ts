@@ -99,6 +99,14 @@ export function lintPlaybookIdempotency(pb: NormalizedPlaybook): IdempotencyWarn
     if (seenTasks.has(t)) continue;
     seenTasks.add(t);
     const module = t.module ?? "";
+    if (["shell", "command", "raw", "script"].includes(module) && t.accept_failure === true) {
+      out.push({
+        task: t.name,
+        module,
+        warning: `module '${module}' uses accept_failure; prefer shell_register with capture_errors: true for probes, or make the command idempotent with run_mode/guards`,
+      });
+      continue;
+    }
     if (!UNGUARDED_MODULES.has(module)) continue;
     const args = t.args ?? {};
     // `run_mode: readonly`/`always` explicitly opt out of guarding, so no warning.
