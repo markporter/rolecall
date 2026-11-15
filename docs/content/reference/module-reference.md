@@ -2055,6 +2055,47 @@ _idempotent · source: builtin_
 
 > ≠ Ansible `shell`: executes via `/bin/sh` (local) or the remote login shell over SSH unless an explicit `executable` is set (then `&lt;executable&gt; -c '&lt;cmd&gt;'`) — RoleCall has no `command` vs `shell` split. Guarded by default via `run_mode: idempotent` (set `run_mode: always` for unguarded runs, `run_mode: readonly` for pure checks). When idempotent, skips via creates/removes/creates_cmd/removes_cmd so re-runs can be no-ops. The command comes from `command`/`cmd` (inline), `local_src` (a control-node script read here — the `script` module is an alias of this), or `src` (a script already on the target, run directly). A guard combined with `run_mode: readonly`/`always` throws. See Writing idempotent shell tasks (/concepts/shell-idempotency) for the full guide, including multi-line scripts, $template vars/facts, and read-only checks.
 
+## shell_register
+
+Run a command and capture rc/stdout/stderr into the task register (probe/observation semantics; changed defaults false). Use `capture_errors: true` to record a non-zero rc instead of failing.
+
+_idempotent · source: builtin_
+
+**Args**
+
+| Arg | Type | Required | Description |
+| --- | --- | --- | --- |
+| `command` | `string` | required | Command to run (alias: cmd). |
+| `cmd` | `string` | optional | Alias for command. |
+| `changed` | `boolean` | optional | Report the task as changed (default false; set true for a mutating command). |
+| `capture_errors` | `boolean` | optional | Record a non-zero rc in data.rc instead of failing the task (default false). |
+| `chdir` | `string` | optional | Working directory for the command. |
+| `executable` | `string` | optional | Explicit shell/process binary; the command runs as `&lt;executable&gt; -c '&lt;cmd&gt;'`. |
+| `timeout_seconds` | `number` | optional | Per-command timeout in seconds. |
+
+**Examples**
+
+```yaml
+- shell_register:
+    command: test -f /etc/app.conf
+    capture_errors: true
+  register: app_conf_probe
+
+- debug:
+    msg:
+      $var: reg.app_conf_probe.data.rc
+```
+
+```yaml
+- shell_register:
+    command: systemctl is-active nginx
+    capture_errors: true
+  register: nginx_probe
+```
+
+
+> Observation semantics: changed defaults false and there is no run_mode/guard. `capture_errors: true` records non-zero rc without failing; use `when` on the registered rc to branch. This replaces Ansible's changed_when:false + failed_when:false + register probe pattern.
+
 ## slurp
 
 Read a remote file's contents into a variable (Ansible `slurp` alternate). Returns decoded text and base64 under both `data.slurp` and the top-level `data`.

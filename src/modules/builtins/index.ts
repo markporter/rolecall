@@ -83,6 +83,7 @@ import { waitForConnectionModule } from "./wait_for_connection";
 import { pamdModule } from "./pamd";
 import { aptKeyModule } from "./apt_key";
 import { debconfModule } from "./debconf";
+import { shellRegisterModule } from "./shell_register";
 
 /**
  * Register all built-in modules with the executor registry (idempotent — safe to
@@ -293,6 +294,9 @@ export function registerAllModules(): void {
   registerModule(debconfModule);
   if ((debconfModule as Module & { meta?: ModuleSummary }).meta)
     setModuleMeta(debconfModule.name, (debconfModule as Module & { meta?: ModuleSummary }).meta!);
+  registerModule(shellRegisterModule);
+  if ((shellRegisterModule as Module & { meta?: ModuleSummary }).meta)
+    setModuleMeta(shellRegisterModule.name, (shellRegisterModule as Module & { meta?: ModuleSummary }).meta!);
 }
 export {
   httpModule,
@@ -367,4 +371,5 @@ export {
   pamdModule,
   aptKeyModule,
   debconfModule,
+  shellRegisterModule,
 };
